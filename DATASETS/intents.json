@@ -1,0 +1,501 @@
+{
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": ["Hi", "Hello", "Good morning", "Good afternoon", "Good evening", "Hey there"],
+      "responses": ["Hello! How can I help you explore Oriental Mindoro?", "Hi! Ask me about tourist spots, routes, hotels, or AR tours."]
+    },
+    {
+      "tag": "goodbye",
+      "patterns": ["Bye", "Thank you", "Thanks", "See you", "Goodbye"],
+      "responses": ["Thank you for visiting! Enjoy your trip to Oriental Mindoro!", "Goodbye! Message me anytime for travel help."]
+    },
+
+    {
+      "tag": "municipalities",
+      "patterns": [
+        "What are the municipalities in Oriental Mindoro?",
+        "List all municipalities",
+        "How many municipalities are in Oriental Mindoro?",
+        "Ano ang mga bayan sa Oriental Mindoro?"
+      ],
+      "responses": [
+        "Oriental Mindoro has 14 municipalities: Baco, Bongabong, Bulalacao, Calapan City, Gloria, Mansalay, Naujan, Pinamalayan, Pola, Puerto Galera, Roxas, San Teodoro, Socorro, and Victoria."
+      ]
+    },
+
+    {
+      "tag": "puerto_galera",
+      "patterns": [
+        "What to do in Puerto Galera?",
+        "Tourist spots in Puerto Galera",
+        "Where to go in Puerto Galera?",
+        "Puerto Galera attractions"
+      ],
+      "responses": [
+        "Top attractions in Puerto Galera include White Beach, Sabang Beach, Tukuran Falls, Tamaraw Falls, and the Puerto Galera Mangrove Eco-Park. You can also try diving, snorkeling, and island hopping."
+      ]
+    },
+
+    {
+      "tag": "calapan",
+      "patterns": [
+        "What to visit in Calapan City?",
+        "Calapan tourist spots",
+        "Things to do in Calapan"
+      ],
+      "responses": [
+        "Popular attractions in Calapan City include Sto. Niño Cathedral, Mambuaya Falls, Calapan Plaza, and the Oriental Mindoro Heritage Museum."
+      ]
+    },
+
+    {
+      "tag": "baco",
+      "patterns": ["What to see in Baco?", "Baco tourist spots"],
+      "responses": ["Visit Mount Halcon, Baco River, and Eco-Adventure areas in Baco."]
+    },
+    {
+      "tag": "bongabong",
+      "patterns": ["Bongabong attractions", "What to do in Bongabong?"],
+      "responses": ["Enjoy Malugay Falls, Kuta Shrine, and Bongabong Eco-Park."]
+    },
+    {
+      "tag": "bulalacao",
+      "patterns": ["Bulalacao tourist attractions", "Where to go in Bulalacao?"],
+      "responses": ["Explore Tambaron Island, Suguicay Island, and Aslom Island."]
+    },
+    {
+      "tag": "gloria",
+      "patterns": ["What to see in Gloria?", "Gloria tourist spots"],
+      "responses": ["Check out Malpoc Falls, Bighani Farm, and rural nature attractions."]
+    },
+    {
+      "tag": "mansalay",
+      "patterns": ["Mansalay tourist spots"],
+      "responses": ["Mansalay is known for Amnay Fossil Site and Mangyan cultural heritage."]
+    },
+    {
+      "tag": "naujan",
+      "patterns": [
+        "What to do in Naujan?",
+        "Naujan Lake attractions",
+        "Naujan tourist spots",
+        "Things to do in Naujan",
+        "Attractions in Naujan",
+        "Places to visit Naujan"
+      ],
+      "responses": [
+        "Naujan offers amazing natural attractions! Visit Naujan Lake National Park (migratory birds and stunning views), Simbahang Bato historic ruins, Liwasang Bonifacio plaza, Dao Waterlily Mini Park, Montelago Hot Spring & Forest Falls, AgriGold Farm, waterfalls like Karacha Falls, and beautiful beaches like Celeste Beach House. Perfect for nature lovers!",
+        "Naujan has diverse attractions: Naujan Lake National Park (Philippines' 5th largest lake), historic Simbahang Bato, eco-parks, hot springs, waterfalls, beaches, resorts, and farmhouses. You can do birdwatching, boat rides, hiking, swimming, photography, and local farming activities."
+      ]
+    },
+    {
+      "tag": "pinamalayan",
+      "patterns": ["Pinamalayan tourist spots", "What to visit in Pinamalayan?"],
+      "responses": ["Enjoy Dapdap Beach, Kuta Falls, and various heritage points."]
+    },
+    {
+      "tag": "pola",
+      "patterns": ["Pola tourist spots"],
+      "responses": ["Pola offers Infinity Farm, Pula River, and wide eco-rural attractions."]
+    },
+    {
+      "tag": "roxas",
+      "patterns": ["What to see in Roxas?", "Roxas attractions"],
+      "responses": ["Visit Baybay Beach, Villa Sylvina, St. Peter Mass Church, and eco-areas."]
+    },
+    {
+      "tag": "san_teodoro",
+      "patterns": ["San Teodoro tourist spots"],
+      "responses": ["San Teodoro is known for Dulangan River, Hidden Paradise eco-areas."]
+    },
+    {
+      "tag": "socorro",
+      "patterns": ["Socorro attractions"],
+      "responses": ["Socorro features lakeside views, heritage zones, and rural farm areas."]
+    },
+    {
+      "tag": "victoria",
+      "patterns": ["Victoria tourist spots"],
+      "responses": ["Enjoy Halcon Base Camp, adventure trails, and scenic natural streams."]
+    },
+
+    {
+      "tag": "gps",
+      "patterns": [
+        "How do I get there?",
+        "Show direction",
+        "How far is it?",
+        "Paano pumunta doon?",
+        "Guide me to the location"
+      ],
+      "responses": [
+        "You can view the location in Google Maps. Please tell me your current location and destination."
+      ]
+    },
+
+
+    {
+      "tag": "ar_tour",
+      "patterns": [
+        "Show me 360 view",
+        "Do you have AR tour?",
+        "Virtual tour please",
+        "Can I see the place in 360?"
+      ],
+      "responses": [
+        "Yes! We offer AR 360° virtual tours for selected destinations. Which location would you like to view?"
+      ]
+    },
+
+    {
+      "tag": "booking",
+      "patterns": [
+        "Book a hotel",
+        "Hotel booking",
+        "I want to book a room",
+        "Reserve a hotel"
+      ],
+      "responses": [
+        "Sure! Please provide your preferred hotel, check-in date, check-out date, and number of guests."
+      ]
+    },
+
+    {
+      "tag": "reservation",
+      "patterns": [
+        "Reserve a tour",
+        "I want to reserve a slot",
+        "Book a tour activity",
+        "Tour reservation"
+      ],
+      "responses": [
+        "I can help you secure a reservation. Please provide the tour name, date, and number of people."
+      ]
+    },
+
+    {
+      "tag": "ecommerce",
+      "patterns": [
+        "Where can I buy souvenirs?",
+        "Online store",
+        "Local products",
+        "Where can I shop?"
+      ],
+      "responses": [
+        "You can browse local products in our e-commerce shop featuring handicrafts, delicacies, and souvenirs."
+      ]
+    },
+
+    {
+      "tag": "dining",
+      "patterns": [
+        "Where can I eat?",
+        "Restaurant recommendations",
+        "Best places to dine",
+        "Food options",
+        "Dining spots"
+      ],
+      "responses": [
+        "Oriental Mindoro offers delicious local cuisine. Try restaurants serving fresh seafood, Filipino dishes, and international options. Check our dining page for recommendations."
+      ]
+    },
+
+    {
+      "tag": "diving",
+      "patterns": [
+        "Diving spots",
+        "Scuba diving",
+        "Where to dive",
+        "Best dive sites"
+      ],
+      "responses": [
+        "Oriental Mindoro has excellent diving sites with coral reefs and marine life. Popular spots include Apo Reef and Anilao. Check our diving page for tours and packages."
+      ]
+    },
+
+    {
+      "tag": "accommodation",
+      "patterns": [
+        "Where to stay",
+        "Hotel options",
+        "Accommodation",
+        "Places to stay",
+        "Lodging"
+      ],
+      "responses": [
+        "We have various accommodation options from luxury resorts to budget hotels. Browse our accommodation page for hotels, resorts, and guesthouses in Oriental Mindoro."
+      ]
+    },
+
+    {
+      "tag": "attractions",
+      "patterns": [
+        "What to see",
+        "Tourist attractions",
+        "Places of interest",
+        "Sightseeing"
+      ],
+      "responses": [
+        "Oriental Mindoro has beautiful beaches, waterfalls, and cultural sites. Visit Puerto Galera, Calapan, and other municipalities for diverse attractions."
+      ]
+    },
+
+    {
+      "tag": "shopping",
+      "patterns": [
+        "Shopping areas",
+        "Where to shop",
+        "Markets",
+        "Boutiques"
+      ],
+      "responses": [
+        "Shop for local handicrafts, souvenirs, and fresh produce at markets and stores. Our e-commerce platform also offers online shopping for local products."
+      ]
+    },
+
+    {
+      "tag": "booking_help",
+      "patterns": [
+        "How to book",
+        "Booking process",
+        "Make a reservation",
+        "Book online"
+      ],
+      "responses": [
+        "You can book hotels, tours, and activities through our website. Select your dates, provide details, and confirm your booking. Contact us for assistance."
+      ]
+    },
+
+    {
+      "tag": "contact",
+      "patterns": [
+        "How to contact",
+        "Get in touch",
+        "Customer service",
+        "Support"
+      ],
+      "responses": [
+        "Reach out to us via our contact page, email, or phone. We're here to help with your travel plans to Oriental Mindoro."
+      ]
+    },
+
+    {
+      "tag": "about",
+      "patterns": [
+        "About the app",
+        "What is this",
+        "Tell me about LAKBAY",
+        "App information",
+        "What can you do",
+        "Chatbot capabilities",
+        "Features of LAKBAY",
+        "How can you help me"
+      ],
+      "responses": [
+        "LAKBAY is your travel companion for Oriental Mindoro. I can help with: tourist spots, hotel bookings, itinerary planning, directions, weather info, local food tips, festival schedules, and more. Just ask!",
+        "LAKBAY features: Hotel booking, interactive maps, AR 360° virtual tours, multilingual chatbot (8 languages), itinerary planner, and voice input. Ask me anything about traveling in Oriental Mindoro!"
+      ]
+    },
+
+    {
+      "tag": "oriental_mindoro_overview",
+      "patterns": [
+        "Tell me about Oriental Mindoro",
+        "What is Oriental Mindoro",
+        "About Oriental Mindoro",
+        "Oriental Mindoro overview",
+        "Oriental Mindoro province"
+      ],
+      "responses": [
+        "Oriental Mindoro is a province in the MIMAROPA region of the Philippines with 14 municipalities. It's known for stunning beaches, world-class diving, the iconic Naujan Lake National Park, Mangyan indigenous culture, and lush mountains including Mount Halcon.",
+        "Oriental Mindoro offers beaches (Puerto Galera), waterfalls (Tamaraw, Mambuaya), mountains (Mount Halcon), wetlands (Naujan Lake), and rich cultural heritage (Mangyan tribes). The capital is Calapan City, accessible by ferry from Batangas."
+      ]
+    },
+
+    {
+      "tag": "transportation",
+      "patterns": [
+        "How to get to Oriental Mindoro",
+        "Ferry to Mindoro",
+        "Batangas to Calapan ferry",
+        "How to travel to Mindoro",
+        "Getting to Oriental Mindoro",
+        "Bus from Manila to Mindoro",
+        "Ferry schedule",
+        "Travel from Manila"
+      ],
+      "responses": [
+        "To reach Oriental Mindoro: From Manila, take a bus to Batangas Pier (2–3 hrs), then a ferry to Calapan City (fastcraft ~1 hr, RORO ~3 hrs). Ferry companies include Montenegro Lines, Starlite Ferries, and Archipelago Philippine Ferries (ATSC). From Calapan, vans and jeepneys go to all municipalities.",
+        "Travel guide: Manila → Batangas Pier (bus, ~2 hrs) → Calapan Port (ferry, ~1–3 hrs) → Van/jeepney to destination. Naujan is 30–45 min from Calapan. Puerto Galera also has direct boat connections from Batangas Pier."
+      ]
+    },
+
+    {
+      "tag": "local_food",
+      "patterns": [
+        "Local food in Oriental Mindoro",
+        "What to eat in Mindoro",
+        "Mindoro cuisine",
+        "Food to try",
+        "Local delicacies",
+        "Best food in Mindoro",
+        "Restaurants in Calapan",
+        "Seafood Mindoro"
+      ],
+      "responses": [
+        "Must-try foods in Oriental Mindoro: Fresh seafood (grilled tuna, lapu-lapu, squid), nasudan (dried fish), native rice cakes (kakanin), binagoongan, and coconut-based dishes. Calapan City and Puerto Galera have the most restaurant options.",
+        "Food highlights: Fresh catch from the sea (best in Puerto Galera and Roxas), native kakanin sold at Calapan market, tuba (coconut wine), and Mangyan-inspired root crop dishes. Enjoy affordable meals at carinderias near local markets."
+      ]
+    },
+
+    {
+      "tag": "festivals",
+      "patterns": [
+        "Festivals in Oriental Mindoro",
+        "Sinadya sa Halaran",
+        "Cultural events Mindoro",
+        "Annual events Oriental Mindoro",
+        "When are the festivals",
+        "Town fiesta Mindoro"
+      ],
+      "responses": [
+        "Major festivals: Sinadya sa Halaran (Calapan City, December) — the biggest provincial festival with street dances and cultural shows. Puerto Galera Foundation Day (April). Naujan town fiesta. Bongabong Kuta Festival. Each municipality also celebrates its own patron saint fiesta.",
+        "Key events calendar: Sinadya sa Halaran (December, Calapan), Puerto Galera diving fest (April), Naujan eco-tourism fair (varies), local fiestas in every municipality. December–April is the peak travel season for celebrations and good weather."
+      ]
+    },
+
+    {
+      "tag": "mangyan_culture",
+      "patterns": [
+        "Mangyan culture",
+        "Mangyan tribe",
+        "Indigenous people Mindoro",
+        "Mangyan crafts",
+        "Hanunuo Mangyan",
+        "Mangyan heritage",
+        "Ethnic group Mindoro"
+      ],
+      "responses": [
+        "The Mangyan are the indigenous people of Mindoro. Eight tribes include the Hanunuo (known for pre-colonial script recognized by UNESCO), Iraya, Alangan, Tau-buid, Buhid, and others. They produce beautiful woven baskets, abaca textiles, and compose ambahan (traditional poetry).",
+        "Mangyan cultural heritage: The Hanunuo Mangyan script is one of the only pre-colonial Philippine writing systems still in use. Mangyan communities can be found in Mansalay, other interior areas of Oriental Mindoro, and parts of Occidental Mindoro. Always visit with respect and proper guidance."
+      ]
+    },
+
+    {
+      "tag": "best_time_to_visit",
+      "patterns": [
+        "Best time to visit Mindoro",
+        "When to go to Mindoro",
+        "Dry season Mindoro",
+        "Rainy season Mindoro",
+        "Tourist season Oriental Mindoro",
+        "Best season travel Mindoro"
+      ],
+      "responses": [
+        "Best time to visit: November to May (dry season). December to April offers clear skies, calm seas, and ideal conditions for beaches and diving. June to October is the rainy/typhoon season — rough seas may affect ferry schedules, but waterfalls and greenery are stunning.",
+        "Peak season: December–April. Holy Week (April) is very busy in Puerto Galera. For quieter travel, visit November or May. Avoid July–September if you want to avoid typhoons."
+      ]
+    },
+
+    {
+      "tag": "budget_travel",
+      "patterns": [
+        "How much to travel to Mindoro",
+        "Budget travel Mindoro",
+        "Cost of travel",
+        "Affordable Mindoro",
+        "Ferry cost",
+        "Accommodation prices Mindoro"
+      ],
+      "responses": [
+        "Budget guide: Ferry Batangas→Calapan: ₱200–₱350 (fastcraft). Tricycle rides: ₱10–₱50. Budget accommodation: ₱500–₱1,500/night. Carinderia meals: ₱80–₱150. Estimated daily budget: ₱800–₱1,500 (budget traveler) or ₱2,500–₱5,000 (mid-range).",
+        "Travel costs: Ferry ₱200–₱350, jeepney/van rides ₱50–₱200 between towns, meals ₱80–₱300, accommodation ₱500–₱4,000/night depending on location and hotel type. Puerto Galera is generally pricier than inland areas."
+      ]
+    },
+
+    {
+      "tag": "waterfalls",
+      "patterns": [
+        "Waterfalls in Oriental Mindoro",
+        "Tamaraw Falls",
+        "Mambuaya Falls",
+        "Tukuran Falls",
+        "Malugay Falls",
+        "Best waterfalls Mindoro",
+        "Swimming at waterfalls"
+      ],
+      "responses": [
+        "Top waterfalls in Oriental Mindoro: Tamaraw Falls (Puerto Galera, 14m) — most popular; Tukuran Falls (Puerto Galera) — multi-tiered; Mambuaya Falls (Calapan) — great for swimming; Malugay Falls (Bongabong); Kuta Falls (Pinamalayan); Inarawan Falls (Calapan). All have natural pools for a refreshing swim.",
+        "Waterfall highlights: Tamaraw Falls in Puerto Galera is the most visited (accessible from the national highway). Mambuaya Falls is a 30-min hike from Calapan. Tukuran Falls offers a scenic multi-level cascade. Bring water shoes and respect the natural environment."
+      ]
+    },
+
+    {
+      "tag": "safety_tips",
+      "patterns": [
+        "Emergency contacts Mindoro",
+        "Is Mindoro safe",
+        "Safety tips travel",
+        "Police number Oriental Mindoro",
+        "Hospital in Oriental Mindoro",
+        "Travel safety Mindoro"
+      ],
+      "responses": [
+        "Emergency contacts: Police (Calapan PNP): (043) 288-1111 or 166. Bureau of Fire: (043) 441-0123. National Emergency Hotline: 911. Oriental Mindoro Provincial Hospital: (043) 288-2532. Philippine Coast Guard Puerto Galera: (043) 287-3093.",
+        "Travel safety in Oriental Mindoro: The province is generally safe. Register with your accommodation, keep ID copies, use licensed transport, avoid swimming alone at night, and hire registered guides for mountain treks. Check weather forecasts before sea travel — rough seas can occur June–October."
+      ]
+    },
+
+    {
+      "tag": "souvenirs_shopping",
+      "patterns": [
+        "What to buy in Oriental Mindoro",
+        "Souvenirs Mindoro",
+        "Local products Mindoro",
+        "Handicrafts Mindoro",
+        "Pasalubong Mindoro",
+        "Shopping Oriental Mindoro"
+      ],
+      "responses": [
+        "Best souvenirs: Mangyan woven baskets and bags (rattan/abaca), Mangyan jewelry, dried fish, local honey, organic coconut products, handmade abaca items, and native kakanin (rice cakes). Find them at Calapan City Market, Puerto Galera souvenir shops, and certified Mangyan craft sellers.",
+        "Pasalubong ideas: Mangyan handwoven crafts, bottled local honey, dried seafood, coconut wine (tuba), native sweets, and shell jewelry. Always buy Mangyan crafts from fair-trade or community-certified sellers to support indigenous artisans."
+      ]
+    },
+
+    {
+      "tag": "wildlife_birdwatching",
+      "patterns": [
+        "Birdwatching in Mindoro",
+        "Wildlife Oriental Mindoro",
+        "Birds in Naujan Lake",
+        "Animals in Mindoro",
+        "Philippine duck",
+        "Crocodile Oriental Mindoro",
+        "Eco-tour Mindoro"
+      ],
+      "responses": [
+        "Naujan Lake National Park is a RAMSAR wetland with over 100 bird species including the Philippine Duck (endangered) and migratory birds from Siberia. Also found: freshwater crocodiles, monitor lizards, and diverse fish. Birdwatching tours can be arranged with the Naujan LGU.",
+        "Wildlife highlights: Naujan Lake (birds, crocodiles), Apo Reef (sea turtles, sharks, manta rays), Mount Halcon forests (Philippine Eagle occasional sightings, endemic birds), and coastal areas (sea turtles nesting). Oriental Mindoro has some of the Philippines' richest biodiversity."
+      ]
+    },
+
+    {
+      "tag": "booking_help",
+      "patterns": [
+        "How to book a hotel",
+        "Book hotel on LAKBAY",
+        "Hotel reservation",
+        "How to make a reservation",
+        "Booking process",
+        "Reserve accommodation",
+        "Online booking LAKBAY",
+        "How do I book"
+      ],
+      "responses": [
+        "To book on LAKBAY: 1) Go to Hotels section. 2) Browse and select a property. 3) Choose check-in/check-out dates and number of guests. 4) Complete payment. You'll get a booking confirmation. View your bookings anytime under My Bookings in your account.",
+        "Booking is simple: Browse Hotels → Select your hotel → Pick dates → Pay securely. For tours, use the Itinerary Planner section. For assistance, contact our support team through the app."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,273 @@
+/* ==========================================================
+   Global Responsive System
+   Mobile-first responsive layer for all major device classes.
+   Breakpoints:
+   - Small phones: 320px - 480px
+   - Large phones: 481px - 767px
+   - Tablets / iPads: 768px - 1024px
+   - Laptops: 1025px - 1440px
+   - Large desktops: 1441px+
+   Note: These rules avoid changing JavaScript behavior.
+   ========================================================== */
+
+/* [Responsive Change] Prevent horizontal scrolling globally */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* [Responsive Change] Safe media scaling */
+img,
+video,
+canvas,
+svg,
+iframe {
+  max-width: 100%;
+  height: auto;
+}
+
+/* [Responsive Change] Base mobile-first sizing */
+.container {
+  width: min(100%, 1440px);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+}
+
+.grid,
+.stats-grid,
+.attractions-preview-grid,
+.hotels-preview-grid,
+.action-grid,
+.benefits-grid,
+.inspiration-grid {
+  grid-template-columns: 1fr;
+  gap: 0.9rem;
+}
+
+.card,
+.stat-card,
+.attraction-card,
+.hotel-card,
+.action-card,
+.benefit-item,
+.inspiration-card {
+  border-radius: 12px;
+  padding: 0.95rem;
+  min-width: 0;
+}
+
+.section-title {
+  font-size: clamp(1.35rem, 6vw, 1.7rem);
+  line-height: 1.2;
+}
+
+.section-subtitle,
+.section-description,
+p,
+li,
+label {
+  line-height: 1.55;
+}
+
+button,
+.btn,
+.cta-button,
+.learn-more-btn,
+.hero-btn,
+.gov-btn,
+input,
+textarea,
+select {
+  min-height: 46px;
+}
+
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
+.table-responsive,
+.table-container,
+.gov-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* [Responsive Change] Small phones: 320px - 480px */
+@media (min-width: 320px) and (max-width: 480px) {
+  .container {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .section-title {
+    font-size: clamp(1.35rem, 6.4vw, 1.8rem);
+  }
+
+  .section-subtitle,
+  .section-description,
+  p {
+    font-size: 0.9rem;
+  }
+
+  button,
+  .btn,
+  .cta-button,
+  .learn-more-btn,
+  .hero-btn,
+  .gov-btn {
+    font-size: 0.9rem;
+    padding: 0.72rem 0.95rem;
+  }
+}
+
+/* [Responsive Change] Large phones: 481px - 767px */
+@media (min-width: 481px) and (max-width: 767px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .grid,
+  .stats-grid,
+  .attractions-preview-grid,
+  .hotels-preview-grid,
+  .action-grid,
+  .benefits-grid,
+  .inspiration-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .section-title {
+    font-size: clamp(1.55rem, 4.8vw, 2rem);
+  }
+
+  .section-subtitle,
+  .section-description,
+  p {
+    font-size: 0.95rem;
+  }
+
+  button,
+  .btn,
+  .cta-button,
+  .learn-more-btn,
+  .hero-btn,
+  .gov-btn {
+    font-size: 0.94rem;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* [Responsive Change] Tablets / iPads: 768px - 1024px */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .container {
+    max-width: 100%;
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+
+  .grid,
+  .stats-grid,
+  .attractions-preview-grid,
+  .hotels-preview-grid,
+  .action-grid,
+  .benefits-grid,
+  .inspiration-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.2rem;
+  }
+
+  .card,
+  .stat-card,
+  .attraction-card,
+  .hotel-card,
+  .action-card,
+  .benefit-item,
+  .inspiration-card {
+    border-radius: 14px;
+    padding: 1.15rem;
+  }
+
+  .section-title {
+    font-size: clamp(1.75rem, 3.4vw, 2.25rem);
+  }
+
+  button,
+  .btn,
+  .cta-button,
+  .learn-more-btn,
+  .hero-btn,
+  .gov-btn {
+    min-height: 44px;
+    font-size: 0.95rem;
+    padding: 0.8rem 1.05rem;
+  }
+}
+
+/* [Responsive Change] Laptops: 1025px - 1440px */
+@media (min-width: 1025px) and (max-width: 1440px) {
+  .container {
+    max-width: 1280px;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .grid,
+  .stats-grid,
+  .attractions-preview-grid,
+  .hotels-preview-grid,
+  .action-grid,
+  .benefits-grid,
+  .inspiration-grid {
+    gap: 1.25rem;
+  }
+
+  .card,
+  .stat-card,
+  .attraction-card,
+  .hotel-card,
+  .action-card,
+  .benefit-item,
+  .inspiration-card {
+    border-radius: 16px;
+  }
+
+  .section-title {
+    font-size: clamp(1.9rem, 2.5vw, 2.4rem);
+  }
+}
+
+/* [Responsive Change] Large desktops: 1441px+ */
+@media (min-width: 1441px) {
+  .container {
+    max-width: 1440px;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .grid,
+  .stats-grid,
+  .attractions-preview-grid,
+  .hotels-preview-grid,
+  .action-grid,
+  .benefits-grid,
+  .inspiration-grid {
+    gap: 1.5rem;
+  }
+
+  .card,
+  .stat-card,
+  .attraction-card,
+  .hotel-card,
+  .action-card,
+  .benefit-item,
+  .inspiration-card {
+    border-radius: 18px;
+  }
+}

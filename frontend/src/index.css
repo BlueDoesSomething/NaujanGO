@@ -1,0 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import './styles/modern-design.css';
+@import './styles/global-modern.css';
+@import './styles/responsive.css';
+@import './styles/dark-mode.css';
+
+:root {
+  --bg: #f9fafb;
+  --surface: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+}
+
+* {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: all var(--transition-base);
+}
+
+/* Override navbar links to be white */
+a.navbar-link,
+.navbar-link,
+.about-dropdown-btn {
+  color: white !important;
+}
+
+a.navbar-link:hover,
+.navbar-link:hover,
+.about-dropdown-btn:hover {
+  color: white !important;
+}
+
+a:hover {
+  color: var(--primary-dark);
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: inherit;
+}
+
+/* ═══════════════════════════════════════════════
+   UNIVERSAL ICON ALIGNMENT SYSTEM
+   - All SVGs: no shrink, no distort
+   - Icon+text rows: 8px gap, vertically centered
+   ═══════════════════════════════════════════════ */
+
+/* All SVGs must never stretch or distort inside any container */
+svg {
+  flex-shrink: 0;
+  display: block;
+}
+
+/* Restore inline behaviour for SVGs inside text-flow contexts */
+button svg,
+a svg,
+label svg,
+span svg,
+p svg,
+h1 svg, h2 svg, h3 svg, h4 svg, h5 svg,
+li svg,
+td svg,
+th svg,
+.dropdown-link svg,
+.social-link svg,
+.contact-item svg,
+.highlight-item svg {
+  display: inline-block;
+  vertical-align: -0.1em;
+  flex-shrink: 0;
+}
+
+/* Icon+text row utility — use class="icon-row" on any wrapper */
+.icon-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  line-height: 1.3;
+}
+.icon-row svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Button icon standard: 18px, centred, 8px gap (global-modern.css
+   already sets display:inline-flex + gap:0.5rem on buttons, this
+   guarantees the SVG inside stays the right size) */
+button svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Larger heading/section icons still respect flex alignment */
+.gov-page-title svg,
+.section-title svg {
+  flex-shrink: 0;
+}
+
+/* Dashboard nav icon chips */
+.gov-nav-btn__icon svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Stat card decorative icons */
+.gov-stat-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.gov-stat-card__icon svg {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+/* Responsive: scale button icons down one step on mobile */
+@media (max-width: 640px) {
+  button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+input,
+textarea,
+select {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem 1rem;
+  transition: all var(--transition-base);
+  font-size: 0.9375rem;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
+}
+
+button {
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-base);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+button:hover {
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+/* Reserve space for the footer so it never overlaps page content.
+   Adjust the value if your footer height changes. */
+main {
+  box-sizing: border-box;
+  padding-bottom: 260px; /* space for footer (approx). tweak if needed */
+}

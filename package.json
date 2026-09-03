@@ -1,0 +1,20 @@
+{
+    "name": "backend",
+    "version": "1.0.0",
+    "scripts": {
+        "start": "concurrently \"npm run dev --prefix backend\" \"npm start --prefix frontend\""
+    },
+    "devDependencies": {
+        "concurrently": "^9.0.0"
+    },
+    "dependencies": {
+        "bcrypt": "^6.0.0",
+        "jsonwebtoken": "^9.0.2",
+        "leaflet": "^1.9.4",
+        "mysql2": "^3.15.3",
+        "passport-facebook": "^3.0.0",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0",
+        "react-leaflet": "^5.0.0"
+    }
+}

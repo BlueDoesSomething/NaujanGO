@@ -1,0 +1,116 @@
+=== Chatbot Evaluation Metrics ===
+
+Overall Performance:
+- Accuracy: 1.0000 (100%)
+- Precision: 1.0000 (100%)
+- Recall: 1.0000 (100%)
+- F1-Score: 1.0000 (100%)
+
+Dataset Information:
+- Total intents: 30
+- Total patterns: 96
+- Training epochs: 300
+- Model: TensorFlow Sequential (128-64-30 neurons)
+
+=== Classification Report ===
+                precision    recall  f1-score   support
+
+         about       1.00      1.00      1.00         4
+ accommodation       1.00      1.00      1.00         5
+       ar_tour       1.00      1.00      1.00         4
+   attractions       1.00      1.00      1.00         4
+          baco       1.00      1.00      1.00         2
+     bongabong       1.00      1.00      1.00         2
+       booking       1.00      1.00      1.00         4
+  booking_help       1.00      1.00      1.00         4
+     bulalacao       1.00      1.00      1.00         2
+       calapan       1.00      1.00      1.00         3
+       contact       1.00      1.00      1.00         4
+        dining       1.00      1.00      1.00         5
+        diving       1.00      1.00      1.00         4
+     ecommerce       1.00      1.00      1.00         4
+        gloria       1.00      1.00      1.00         2
+       goodbye       1.00      1.00      1.00         5
+           gps       1.00      1.00      1.00         5
+      greeting       1.00      1.00      1.00         6
+      mansalay       1.00      1.00      1.00         1
+municipalities       1.00      1.00      1.00         4
+        naujan       1.00      1.00      1.00         2
+   pinamalayan       1.00      1.00      1.00         2
+          pola       1.00      1.00      1.00         1
+ puerto_galera       1.00      1.00      1.00         4
+   reservation       1.00      1.00      1.00         4
+         roxas       1.00      1.00      1.00         2
+   san_teodoro       1.00      1.00      1.00         1
+      shopping       1.00      1.00      1.00         4
+       socorro       1.00      1.00      1.00         1
+      victoria       1.00      1.00      1.00         1
+
+      accuracy                           1.00        96
+     macro avg       1.00      1.00      1.00        96
+  weighted avg       1.00      1.00      1.00        96
+
+=== Confusion Matrix ===
+Classes: ['about', 'accommodation', 'ar_tour', 'attractions', 'baco', 'bongabong', 'booking', 'booking_help', 'bulalacao', 'calapan', 'contact', 'dining', 'diving', 'ecommerce', 'gloria', 'goodbye', 'gps', 'greeting', 'mansalay', 'municipalities', 'naujan', 'pinamalayan', 'pola', 'puerto_galera', 'reservation', 'roxas', 'san_teodoro', 'shopping', 'socorro', 'victoria']
+[[4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 3 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 5 0 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 6 0 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 2 0 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 4 0 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 0]
+ [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1]]
+
+=== Sample Predictions ===
+Input: 'Hello there' -> Predicted: greeting (confidence: 0.9999999)
+Input: 'What can I do in Puerto Galera?' -> Predicted: puerto_galera (confidence: 0.9999999)
+Input: 'I want to book a hotel' -> Predicted: booking (confidence: 1.0)
+Input: 'Where can I eat?' -> Predicted: dining (confidence: 0.99995637)
+Input: 'How do I get to Calapan?' -> Predicted: calapan (confidence: 0.9774079)
+Input: 'Tell me about diving' -> Predicted: about (confidence: 0.9999938)
+Input: 'Goodbye' -> Predicted: goodbye (confidence: 0.99991477)
+
+=== Training Details ===
+- Model Architecture: Sequential Neural Network
+  - Layer 1: Dense(128, activation='relu', input_shape=(len(words),))
+  - Dropout: 0.5
+  - Layer 2: Dense(64, activation='relu')
+  - Dropout: 0.5
+  - Output Layer: Dense(len(classes), activation='softmax')
+- Optimizer: SGD (learning_rate=0.01, momentum=0.9, nesterov=True)
+- Loss Function: categorical_crossentropy
+- Metrics: accuracy
+- Epochs: 300
+- Batch Size: 5
+- Final Training Accuracy: ~94.79%
+
+=== Dataset Summary ===
+- Total Intents: 30
+- Total Patterns: 96
+- Average Patterns per Intent: ~3.2
+- Language: English (with some Filipino phrases)
+- Domain: Travel and Tourism (Oriental Mindoro, Philippines)
+
+Generated on: 2025-11-18

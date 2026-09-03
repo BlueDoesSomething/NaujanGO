@@ -1,0 +1,11 @@
+text,true_intent,pred_intent
+"I want to book a hotel",BookHotel,BookHotel
+"Cancel my reservation",CancelBooking,CancelBooking
+"Where is the nearest museum?",FindAttraction,FindAttraction
+"How do I get there?",GetDirections,FindAttraction
+"Book a room for two",BookHotel,BookHotel
+"Please cancel booking 1234",CancelBooking,BookHotel
+"Show attractions near me",FindAttraction,FindAttraction
+"Directions to the airport",GetDirections,GetDirections
+"I need to change my reservation",CancelBooking,CancelBooking
+"Find restaurants nearby",FindAttraction,FindAttraction

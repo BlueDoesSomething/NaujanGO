@@ -1,0 +1,232 @@
+/* Global Button and Input Styles - Based on Login and Profile Pages */
+
+/* Primary Buttons */
+.btn-primary,
+button[class*="primary"],
+button[style*="linear-gradient(135deg, #16a34a"] {
+  background: rgba(22, 163, 74, 0.15) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  color: #16a34a !important;
+  border: 2px solid #16a34a !important;
+  border-radius: 12px !important;
+  padding: 1rem 1.5rem !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2) !important;
+}
+
+.btn-primary:hover,
+button[class*="primary"]:hover {
+  background: rgba(22, 163, 74, 0.25) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.3) !important;
+}
+
+/* Secondary/Cancel Buttons */
+.btn-secondary,
+.btn-cancel,
+button[class*="cancel"],
+button[class*="ghost"] {
+  background: rgba(107, 114, 128, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  color: #6b7280 !important;
+  border: 2px solid #9ca3af !important;
+  border-radius: 12px !important;
+  padding: 1rem 1.5rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+}
+
+.btn-secondary:hover,
+.btn-cancel:hover {
+  background: rgba(107, 114, 128, 0.2) !important;
+  border-color: #6b7280 !important;
+}
+
+/* Input Fields */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="tel"],
+input[type="date"],
+input[type="number"],
+textarea,
+select {
+  padding: 1rem 1.2rem !important;
+  background: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 2px solid rgba(156, 163, 175, 0.3) !important;
+  border-radius: 12px !important;
+  font-size: 1rem !important;
+  outline: none !important;
+  transition: all 0.3s ease !important;
+  color: #1f2937 !important;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="tel"]:focus,
+input[type="date"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  border-color: #16a34a !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1) !important;
+}
+
+input:disabled,
+textarea:disabled,
+select:disabled {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #9ca3af !important;
+  cursor: not-allowed !important;
+}
+
+/* Labels */
+label {
+  font-size: 0.9rem !important;
+  font-weight: 600 !important;
+  color: #374151 !important;
+  display: flex !important;
+  align-items: center !important;
+  margin-bottom: 0.5rem !important;
+}
+
+/* Cards/Containers with borders */
+.card,
+.container-bordered,
+div[style*="border: 1px solid"],
+div[style*="border: 2px solid"] {
+  background: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(30px) !important;
+  -webkit-backdrop-filter: blur(30px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Filter/Toggle Buttons */
+button[class*="filter"],
+button[class*="toggle"],
+button[class*="tab"] {
+  padding: 0.875rem 1.5rem !important;
+  background: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 2px solid rgba(156, 163, 175, 0.3) !important;
+  border-radius: 12px !important;
+  color: #6b7280 !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+}
+
+button[class*="filter"]:hover,
+button[class*="toggle"]:hover,
+button[class*="tab"]:hover {
+  border-color: #16a34a !important;
+  background: rgba(22, 163, 74, 0.1) !important;
+  color: #16a34a !important;
+}
+
+button[class*="active"],
+button.active {
+  background: rgba(22, 163, 74, 0.15) !important;
+  color: #16a34a !important;
+  border-color: #16a34a !important;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, 0.2) !important;
+}
+
+/* Search Inputs */
+input[type="search"],
+input[placeholder*="Search"],
+input[placeholder*="search"] {
+  padding: 1rem 1.25rem !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 2px solid rgba(156, 163, 175, 0.3) !important;
+  border-radius: 50px !important;
+  color: #1f2937 !important;
+}
+
+/* Action Buttons (View, Edit, Delete, etc.) */
+button[class*="action"],
+button[class*="view"],
+button[class*="edit"],
+button[class*="delete"] {
+  padding: 0.75rem 1.25rem !important;
+  background: rgba(255, 255, 255, 0.4) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 2px solid rgba(156, 163, 175, 0.3) !important;
+  border-radius: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+}
+
+button[class*="action"]:hover,
+button[class*="view"]:hover,
+button[class*="edit"]:hover {
+  border-color: #16a34a !important;
+  background: rgba(22, 163, 74, 0.1) !important;
+  color: #16a34a !important;
+}
+
+button[class*="delete"]:hover {
+  border-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #ef4444 !important;
+}
+
+/* Modal Styles */
+.modal-content,
+div[style*="position: fixed"][style*="zIndex: 1000"],
+div[style*="position: fixed"][style*="z-index: 1000"] {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-radius: 20px !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Badges */
+.badge,
+span[class*="badge"] {
+  padding: 0.5rem 1rem !important;
+  background: rgba(22, 163, 74, 0.15) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border: 1px solid rgba(22, 163, 74, 0.3) !important;
+  border-radius: 20px !important;
+  color: #16a34a !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+}
+
+/* Checkbox and Radio Styles */
+input[type="checkbox"],
+input[type="radio"] {
+  width: 18px !important;
+  height: 18px !important;
+  cursor: pointer !important;
+  accent-color: #16a34a !important;
+}
+
+/* Select Dropdown */
+select {
+  cursor: pointer !important;
+  appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236b7280' d='M6 9L1 4h10z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 1rem center !important;
+  padding-right: 3rem !important;
+}

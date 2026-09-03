@@ -1,0 +1,151 @@
+{
+  "greeting": [
+    "¡Hola! Soy el Asistente de Naujan. ¿En qué puedo ayudarte?",
+    "¡Bienvenido a Naujan! ¿Qué te gustaría saber?",
+    "Saludos. Estoy aquí para ayudarte con información sobre Naujan."
+  ],
+  "goodbye": [
+    "¡Gracias! Espero haber sido de utilidad. ¡Que tengas un buen día!",
+    "¡De nada! Siéntete libre de preguntar cuando necesites información sobre Naujan.",
+    "Adiós. Fue un placer ayudarte con información sobre Naujan."
+  ],
+  "Naujan_Location": [
+    "Naujan es un Municipio de Primera Clase en la provincia de Naujan, Filipinas.",
+    "Naujan se encuentra en la costa noreste de la isla de Mindoro, en la provincia de Naujan.",
+    "Puedes encontrar Naujan en la región MIMAROPA, en la provincia de Naujan, Filipinas."
+  ],
+  "Naujan_Lake_About": [
+    "El Lago Naujan es el quinto lago más grande de Filipinas y un Humedal Ramsar desde 1999. Alberga aves migratorias como el pato filipino.",
+    "El lago es conocido por su biodiversidad y es importante para la conservación de aves en el sudeste asiático.",
+    "Es un santuario para más de 60 especies de aves, incluyendo el pato filipinos en peligro de extinción."
+  ],
+  "LGU_Contact_Mayor": [
+    "El alcalde actual de Naujan es Henry Joel C. Teves, en servicio desde 2022 hasta el presente. Puedes comunicarte con la Alcaldía al (043) 208-3382 o (043) 208-3479. La oficina maneja asuntos municipales, permisos y consultas generales.",
+    "La oficina del alcalde está disponible en (043) 208-3382 o (043) 208-3479 para consultas municipales. Henry Joel C. Teves lidera la administración municipal.",
+    "El Alcalde Henry Joel C. Teves (2022-Presente) es el alcalde actual de Naujan. Para servicios municipales e inquietudes, contacta a la Alcaldía al (043) 208-3382.",
+    "Alcalde Actual: Henry Joel C. Teves (Término: 2022-Presente). El gobierno municipal opera desde la Alcaldía de Naujan. Contacto: (043) 208-3382 o (043) 208-3479."
+  ],
+  "Municipal_Vice_Mayor": [
+    "El vicealcalde actual de Naujan es Candido J. Melgar Jr. El vicealcalde asiste en la gobernanza y administración municipal.",
+    "Candido J. Melgar Jr. es el vicealcalde actual de Naujan. Para asuntos oficiales relacionados con la oficina del vicealcalde, puedes contactar a la Alcaldía Municipal.",
+    "El vicealcalde es Candido J. Melgar Jr., quien sirve junto al Alcalde Henry Joel C. Teves. Contacta la oficina municipal al (043) 208-3382 para consultas relacionadas con el vicealcalde."
+  ],
+  "Municipal_Government_Structure": [
+    "El gobierno de Naujan está organizado bajo el liderazgo del Alcalde con el Vicealcalde y varios departamentos municipales. Estos incluyen Salud, Educación, Agricultura, Servicios Sociales e Ingeniería. Contacta la Alcaldía al (043) 208-3382 para información específica de departamentos.",
+    "El gobierno municipal de Naujan consiste en la Oficina Ejecutiva (Alcalde), el Sangguniang Bayan (consejo) y varios departamentos municipales que sirven a la comunidad.",
+    "La estructura administrativa de Naujan incluye la Oficina Ejecutiva (Alcalde), el Sangguniang Bayan (consejo legislativo) y varios departamentos municipales. Para información detallada sobre departamentos o servicios específicos, contacta la Alcaldía Municipal."
+  ],
+  "Historical_Mayors": [
+    "Naujan ha tenido varios alcaldes a lo largo de su historia administrativa. El alcalde actual es Henry Joel C. Teves (en servicio desde 2022). Para información histórica detallada sobre alcaldes anteriores y sus términos, contacta la Alcaldía Municipal al (043) 208-3382.",
+    "La historia del liderazgo municipal de Naujan abarca varios años. Henry Joel C. Teves es el alcalde actual que sirve desde 2022. Los registros históricos de alcaldes anteriores y sus períodos están disponibles en la Alcaldía o en la Oficina de Registro Civil.",
+    "Los registros de alcaldes de Naujan muestran varias administraciones a lo largo de su historia, con Henry Joel C. Teves actualmente en servicio como alcalde (2022-Presente). Para información histórica detallada sobre alcaldes específicos, sus términos y logros, visita la Alcaldía Municipal o consulta con la Oficina de Registro Civil."
+  ],
+  "Emergency_Police": [
+    "Para asistencia policial, llama a la Estación de Policía de Naujan al (043) 208-3362.",
+    "Contacto de emergencia policial: (043) 208-3362.",
+    "Si necesitas ayuda de la policía, marca (043) 208-3362 inmediatamente."
+  ],
+  "Agriculture_Crops": [
+    "Cultivos principales: Arroz y coco (copra). También maíz, cultivos de raíz, frutas, vegetales. Las plantaciones ofrecen vistas panorámicas hermosas."
+  ],
+  "Weather_Info": [
+    "Clima tropical. Estación seca (Nov-May) es ideal. Estación de lluvia (Jun-Oct): arrozales verdes pero posibles tifones. Para pronóstico actual, consulte PAGASA."
+  ],
+  "Itinerary_Plan": [
+    "Viaje de 3 días: Día 1 - Iglesia y plaza. Día 2 - Lago Naujan y avistamiento de aves. Día 3 - Granjas y mercado. O haga un tour guiado."
+  ],
+  "History_Heritage": [
+    "Naujan fue fundada en 1578 por misioneros espanoles. La Iglesia Parroquial de San Juan Bautista data de la era colonial espanola y es un patrimonio cultural local.",
+    "La Iglesia de San Juan Bautista en Naujan tiene fachada de piedra y gruesas paredes historicas que reflejan la arquitectura colonial espanola.",
+    "La historia de Naujan incluye siglos de tradicion agricola y pesquera. El Lago Naujan fue reconocido como sitio Ramsar de humedales internacionales en 1999."
+  ],
+  "Transportation_How_To_Get_There": [
+    "Cómo llegar: 1) Bus desde Manila a Puerto Batangas (~2 horas) 2) Ferry a Calapan (~1-3 horas) 3) Jeepney a Naujan (~30-45 minutos). Tiempo total: 4-6 horas desde Manila."
+  ],
+  "Naujan_Overview": [
+    "Naujan es un municipio de primera clase en Filipinas. Es famoso por el Lago Naujan, el 5º lago más grande del país y sitio Ramsar. También tiene agricultura, comunidades Mangyan y gente acogedora.",
+    "Naujan ofrece: El Parque Nacional del Lago Naujan (observación de aves, ecoturismo), la Iglesia de Naujan, granjas de arroz y coco, y patrimonio cultural Mangyan."
+  ],
+  "Local_Food_Cuisine": [
+    "Comida típica: Pescado fresco del lago (tilapia, dalag), arroz, platos de coco, binagoongan. Kakanin y dulces nativos. Affordable meals en carinderias (₱80-150)."
+  ],
+  "Festivals_Events": [
+    "Fiesta Principal: 8 de septiembre (Natividad de María). Incluye misa, desfile, comida, presentaciones culturales. Picos de observación de aves: Nov-Marzo."
+  ],
+  "Mangyan_Culture": [
+    "Comunidades Mangyan (Iraya, Alangan): Viven en zonas altas de Naujan. Conocidas por cestas tejidas, joyería tradicional y poesía ambahan. Visite con respeto y guía local. Las artesanías apoyan sus medios de vida."
+  ],
+  "Naujan_Natural_Features": [
+    "Naturaleza: Lago Naujan (20,000+ hectáreas), Río Sadya, arrozales, manglares, costa. Excelente para fotografía rural y caminatas."
+  ],
+  "Naujan_Lake_Activities": [
+    "Actividades en el Lago Naujan:\n• Avistamiento de aves — más de 100 especies incluyendo el Pato Filipino\n• Paseo en barca — alquilar una barca local para navegar el lago\n• Pesca — los pescadores locales ofrecen tours guiados\n• Kayaking — explorar orillas y manglares del lago\n• Senderismo por senderos eco del Parque Nacional\n• Picnic y relajación en las orillas del lago"
+  ],
+  "Best_Time_To_Visit": [
+    "Mejor época: Noviembre a Mayo (estación seca). Noviembre a Marzo es excelente para observar aves migratorias. Evite junio-octubre (lluvia y tifones)."
+  ],
+  "App_Capabilities": [
+    "LAKBAY ayuda con: Reserva de hoteles, planes de viaje, información de atracciones, restaurantes, transporte, clima, consejos culturales y guías de viaje para Naujan."
+  ],
+  "Website_Hotels_Guide": [
+    "Para reservar un hotel en LAKBAY:\n1. Ve a la sección 'Hoteles'.\n2. Explora los hoteles disponibles en Naujan.\n3. Selecciona tus fechas de entrada y salida.\n4. Verifica los detalles y confirma tu reserva.\nSe necesita cuenta para completar la reserva."
+  ],
+  "Eco_Tourism": [
+    "Ecoturismo en Lago Naujan: tours de observacion de aves, paseos en banca, visitas a granjas sostenibles y caminatas en el humedal.",
+    "Naujan: observacion de aves en Naujan, kayak en manglares en Gloria y Pola, snorkel en arrecifes de Puerto Galera.",
+    "Viaje sostenible: contrata guias locales acreditados, visita granjas comunitarias y practica principios de Leave No Trace cerca del lago."
+  ],
+  "Local_Transport": [
+    "Transporte local: Tricycle (₱10-30), habal-habal para barangays, vans alquilados. El lago está a 15-25 minutos del pueblo."
+  ],
+  "Hiking_Trekking": [
+    "Actividades: Caminatas de observación de aves, senderos de manglar, visitas agrícolas, camping cerca del lago. Mejor: 5-8 AM para aves."
+  ],
+  "Budget_Travel": [
+    "Presupuesto 3 días: ₱2,500-4,500 por persona. Hotel: ₱400-1,000/noche. Comida: ₱80-150/meal. Transporte local: ₱10-30."
+  ],
+  "Safety_Emergency": [
+    "Emergencia Naujan: Policia (043) 208-3362, Alcaldia (043) 208-3382. Para emergencias medicas, Hospital Distrital de Naujan.",
+    "Consejos de seguridad: guarda objetos de valor, usa guias autorizados para senderismo, controla el clima antes de actividades acuaticas.",
+    "Filipinas emergencia nacional: marca 911. Guardia Costera: 5734-CGEA. Comparte tu itinerario con alguien de confianza antes de actividades remotas."
+  ],
+  "Naujan_Lake_Wildlife": [
+    "El Lago Naujan alberga más de 100 especies de aves, incluyendo:\n• Pato Filipino (Anas luzonica) — especie endémica en peligro de extinción\n• Aves acuáticas migratorias de Siberia y Asia Oriental (nov–mar)\n• Cocodrilo de agua dulce (Crocodylus mindorensis) — en peligro crítico\nLa mejor época para observar aves es de noviembre a marzo, temprano en la mañana."
+  ],
+  "Naujan_Barangays": [
+    "Naujan tiene 39 barangays repartidos en zonas agrícolas, costeras y montañosas. El Poblacion (centro urbano) es el más grande. Para la lista completa, contacta la Alcaldía de Naujan: (043) 208-3382."
+  ],
+  "Naujan_Agriculture": [
+    "Naujan es uno de los principales municipios agrícolas de Naujan:\n• Arroz — cultivo principal, reconocido por sus abundantes cosechas\n• Coco/Copra — segundo producto principal\n• Pesca en el lago — tilapia, maliputo y otros peces frescos\n• Tours agro-eco — visitar granjas locales y presenciar el cultivo de arroz"
+  ],
+  "Accommodation_Types": [
+    "Hospedaje: Pequeñas posadas en el pueblo (₱400-1,000/noche), casas de huéspedes, algo de ecolodges cerca del lago. Opciones limitadas pero cómodas."
+  ],
+  "Naujan_Lake_National_Park": [
+    "El Parque Nacional Lago Naujan es el quinto lago más grande de Filipinas. Está rodeado de montañas exuberantes y biodiversidad rica. Actividades: paseos en bote, observación de aves (más de 100 especies), fotografía de naturaleza, y disfrutar de hermosas puestas de sol. Perfecto para amantes de la naturaleza y relajación."
+  ],
+  "Simbahang_Bato": [
+    "La Simbahang Bato (Ruinas de Bancuro) es una iglesia de coral y adobe del siglo XVII con un diseño único de 'iglesia dentro de iglesia'. Las paredes cubiertas de musgo y estructuras abiertas crean una atmósfera hermosa pero misteriosa. Puedes explorar las ruinas, tomar fotos, aprender sobre la herencia española, y sentir el silencio reverente del lugar en Brgy. Bancuro, Naujan."
+  ],
+  "Naujan_Attractions_Major": [
+    "Principales atracciones en Naujan:\n• Parque Nacional Lago Naujan - hermoso lago para paseos en bote\n• Simbahang Bato - ruinas históricas de iglesia\n• Liwasang Bonifacio - plaza principal del pueblo\n• Dao Waterlily Mini Park - parque eco con flores de agua\n• Montelago Hot Spring & Forest Falls - aguas termales y cascadas\n• AgriGold Farm - granja educativa\n• Karacha Falls - cascada hermosa para senderismo\n• ORIC sa Bathala Waterfalls - destino ecoturístico\n• Playas como Celeste Beach House y Nabul Beach Resort"
+  ],
+  "Naujan_Accommodations_Budget": [
+    "Alojamiento Económico en Naujan:\n• Darie Tambayan Hotel - habitaciones limpias. ₱500-800/noche\n• El Caviteño Apartelle - asequible y central. ₱600-900/noche\n• Naujan Traveller's Inn - presupuesto-friendly. ₱550-850/noche\n• Bahay Tuklasan Dormitory - habitaciones compartidas. ₱300-400/noche\n¡Todos ofrecen comodidad y hospitalidad filipina auténtica!"
+  ],
+  "Naujan_Accommodations_Midrange": [
+    "Alojamiento de Rango Medio en Naujan:\n• Balay Murraya - posada moderna. ₱1,200-1,800/noche\n• Villa Catalina Eco Farm Resort - resort eco-friendly. ₱1,500-2,200/noche\n• Benilda ng Bancuro Resort - con piscinas. ₱1,800-2,500/noche\n• Largo Castillo Farmhouse - estancia rústica. ₱1,600-2,200/noche\n• Villa Cornitz Mini Resort - resort encantador. ₱1,500-2,000/noche\n¡Perfecto para familias y parejas que buscan confort!"
+  ],
+  "Naujan_Accommodations_Upscale": [
+    "Alojamiento de Lujo en Naujan:\n• La Hacienda - resort estilo balinés. ₱2,500-4,000/noche\n• Villa Valerie Resort - piscina grande, ambiance lujosa. ₱2,200-3,500/noche\n• Mai's Place Private Pool - villa privada. ₱3,000-4,500/noche\n¡Ideal para escapadas románticas y celebraciones especiales!"
+  ],
+  "Naujan_Beaches_Resorts": [
+    "Playas y Resorts de Playa en Naujan:\n• Celeste Beach House - arena suave y agua clara. Perfecto para familias.\n• Nabul Beach Resort - playa simple con cabañas kubo\n• Emerald Resort - propiedad de playa hermosa\n• Hafa Adai - muelles con vistas al océano\nActividades: natación, bronceado, caminatas en playa, picnics"
+  ],
+  "Naujan_Best_Activities": [
+    "Mejores Actividades en Naujan:\n• Observación de aves en Lago Naujan (más de 100 especies)\n• Paseos en bote en el lago tranquilo\n• Exploración de ruinas históricas\n• Fotografía de naturaleza\n• Senderismo y cascadas\n• Experiencias de agricultura orgánica\n• Natación en playas\n• Paseos a caballo\n• Comida local auténtica\n• Relajación y bienestar\n¡Naujan es perfecto para amantes de la naturaleza y cultura!"
+  ],
+  "Booking_Help": [
+    "Para reservar: 1) Ir a Hoteles 2) Seleccionar fechas 3) Revisar detalles 4) Pagar. Recibirá confirmación inmediatamente."
+  ]
+}

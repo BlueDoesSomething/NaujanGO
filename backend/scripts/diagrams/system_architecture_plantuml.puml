@@ -1,0 +1,238 @@
+@startuml System Overview
+!theme plain
+title Naujan Tourism Application - System Overview
+
+' User Types
+actor "Tourist\n(Visitor)" as Tourist #LightBlue
+actor "Registered User\n(Trip Planner)" as RegisteredUser #LightGreen  
+actor "Administrator\n(Content Manager)" as Admin #LightPink
+
+' Core System
+package "Core Tourism Platform" #LightCyan {
+    component [Tourism Web Application\n(Vue.js Frontend)] as WebApp
+    component [API Server\n(Node.js/Express)] as APIServer
+    database "Tourism Database\n(MySQL)" as Database
+}
+
+' System Features
+package "System Features" #LightGreen {
+    component [Attraction Management] as AttractionMgmt
+    component [Trip Planning\n& Itineraries] as TripPlanning
+    component [Review & Rating System] as ReviewSystem
+    component [AI Tourism Chatbot] as ChatBot
+    component [Weather Integration] as WeatherInfo
+}
+
+' External Services
+cloud "External Services" #LightYellow {
+    component [OpenWeather API] as WeatherAPI
+    component [Cloudinary Image CDN] as CloudinaryAPI
+    component [Maps API\n(Future)] as MapsAPI #LightGray
+}
+
+' User Interactions
+Tourist --> WebApp : Browse & Explore
+RegisteredUser --> WebApp : Plan & Review
+Admin --> WebApp : Manage Content
+
+' Core System Flow
+WebApp <--> APIServer : API Calls (REST)
+APIServer <--> Database : CRUD Operations
+
+' Feature Integration
+APIServer --> AttractionMgmt : Manages
+APIServer --> TripPlanning : Processes
+APIServer --> ReviewSystem : Handles
+APIServer --> ChatBot : Powers
+APIServer --> WeatherInfo : Provides
+
+' External Service Integration
+WeatherInfo --> WeatherAPI : Fetches Data
+AttractionMgmt --> CloudinaryAPI : Image Storage
+TripPlanning ..> MapsAPI : Route Planning (Future)
+
+' Data Storage
+AttractionMgmt --> Database : Store Data
+TripPlanning --> Database : Store Data
+ReviewSystem --> Database : Store Data
+ChatBot --> Database : Store Data
+
+note right of MapsAPI : Future Enhancement\nfor Route Optimization
+
+@enduml
+
+@startuml System Architecture
+!theme plain
+
+' Frontend Architecture
+package "Presentation Layer" {
+    component [Vue.js SPA] as SPA
+    
+    package "Pages" {
+        component [Public Pages] as PublicPages
+        component [Auth Pages] as AuthPages
+        component [User Pages] as UserPages
+        component [Admin Pages] as AdminPages
+    }
+    
+    package "Components" {
+        component [Layout Components] as LayoutComp
+        component [UI/UX Components] as UIComp
+        component [Business Components] as BusinessComp
+        component [Utility Components] as UtilityComp
+    }
+    
+    package "State" {
+        component [Reactive State] as ReactiveState
+        component [Local Storage] as LocalStorage
+        component [Session Management] as SessionMgmt
+    }
+}
+
+' Backend Architecture
+package "Application Layer" {
+    component [Express.js Server] as ExpressServer
+    
+    package "API Routes" {
+        component [Auth Routes] as AuthRoutes
+        component [Attraction Routes] as AttractionRoutes
+        component [User Routes] as UserRoutes
+        component [Chat Routes] as ChatRoutes
+        component [Itinerary Routes] as ItineraryRoutes
+    }
+    
+    package "Controllers" {
+        component [Auth Controller] as AuthController
+        component [Attraction Controller] as AttractionController
+        component [User Controller] as UserController
+        component [Chat Controller] as ChatController
+        component [Itinerary Controller] as ItineraryController
+    }
+    
+    package "Middleware" {
+        component [Auth Middleware] as AuthMiddleware
+        component [CORS Handler] as CORSHandler
+        component [Logger] as Logger
+        component [Validator] as Validator
+        component [Error Handler] as ErrorHandler
+    }
+    
+    package "Services" {
+        component [Auth Service] as AuthService
+        component [Attraction Service] as AttractionService
+        component [User Service] as UserService
+        component [Chat Service] as ChatService
+        component [Itinerary Service] as ItineraryService
+    }
+}
+
+' Business Logic Layer
+package "Business Logic Layer" {
+    package "Models" {
+        component [User Model] as UserModel
+        component [Attraction Model] as AttractionModel
+        component [Review Model] as ReviewModel
+        component [Itinerary Model] as ItineraryModel
+    }
+    
+    package "Validators" {
+        component [Input Validator] as InputValidator
+        component [Schema Validator] as SchemaValidator
+        component [Business Validator] as BusinessValidator
+        component [Security Validator] as SecurityValidator
+    }
+    
+    package "Helpers" {
+        component [Password Helper] as PasswordHelper
+        component [JWT Helper] as JWTHelper
+        component [Crypto Helper] as CryptoHelper
+        component [Upload Helper] as UploadHelper
+    }
+}
+
+' Data Layer
+package "Data Layer" {
+    database "MySQL Database" as MySQL {
+        component [Users Table] as UsersTable
+        component [Attractions Table] as AttractionsTable
+        component [Reviews Table] as ReviewsTable
+        component [Itineraries Table] as ItinerariesTable
+        component [Chatbot Tables] as ChatbotTables
+    }
+    
+    package "External APIs" {
+        component [Weather API] as WeatherAPI
+        component [Maps API] as MapsAPI
+        component [Geocoding API] as GeocodingAPI
+    }
+    
+    package "File Storage" {
+        component [Cloudinary] as Cloudinary
+        component [CDN] as CDN
+    }
+    
+    package "Cache System" {
+        component [Memory Cache] as MemoryCache
+        component [Redis Cache] as RedisCache
+        component [Session Store] as SessionStore
+    }
+}
+
+' Connections - Frontend
+SPA --> PublicPages
+SPA --> AuthPages
+SPA --> UserPages
+SPA --> AdminPages
+
+PublicPages --> LayoutComp
+AuthPages --> UIComp
+UserPages --> BusinessComp
+AdminPages --> UtilityComp
+
+LayoutComp --> ReactiveState
+UIComp --> LocalStorage
+BusinessComp --> SessionMgmt
+
+' Connections - API Flow
+SPA -down-> ExpressServer : HTTP/HTTPS
+
+ExpressServer --> AuthRoutes
+ExpressServer --> AttractionRoutes
+ExpressServer --> UserRoutes
+ExpressServer --> ChatRoutes
+ExpressServer --> ItineraryRoutes
+
+AuthRoutes --> AuthMiddleware
+AuthMiddleware --> AuthController
+AuthController --> AuthService
+AuthService --> UserModel
+
+AttractionRoutes --> CORSHandler
+CORSHandler --> AttractionController
+AttractionController --> AttractionService
+AttractionService --> AttractionModel
+
+' Data Layer Connections
+UserModel --> UsersTable
+AttractionModel --> AttractionsTable
+ReviewModel --> ReviewsTable
+ItineraryModel --> ItinerariesTable
+
+AuthService --> WeatherAPI
+AttractionService --> MapsAPI
+ChatService --> GeocodingAPI
+
+AuthService --> Cloudinary
+UserService --> CDN
+
+AuthController --> MemoryCache
+ChatController --> RedisCache
+ExpressServer --> SessionStore
+
+' Validators and Helpers
+InputValidator --> AuthController
+PasswordHelper --> AuthService
+JWTHelper --> AuthMiddleware
+UploadHelper --> AttractionService
+
+@enduml

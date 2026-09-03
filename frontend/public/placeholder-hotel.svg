@@ -1,0 +1,26 @@
+<svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0f4c3a" />
+      <stop offset="1" stop-color="#2c7a62" />
+    </linearGradient>
+    <linearGradient id="card" x1="0" y1="0" x2="700" y2="420" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9" />
+      <stop offset="1" stop-color="#e8f5ef" stop-opacity="0.9" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#bg)" />
+  <circle cx="980" cy="160" r="120" fill="#ffffff" fill-opacity="0.12" />
+  <circle cx="1080" cy="260" r="80" fill="#ffffff" fill-opacity="0.08" />
+  <rect x="160" y="180" width="880" height="440" rx="28" fill="url(#card)" />
+  <rect x="220" y="240" width="320" height="240" rx="18" fill="#d9efe7" />
+  <rect x="580" y="260" width="360" height="26" rx="13" fill="#0f4c3a" fill-opacity="0.8" />
+  <rect x="580" y="306" width="260" height="18" rx="9" fill="#0f4c3a" fill-opacity="0.45" />
+  <rect x="580" y="342" width="300" height="14" rx="7" fill="#0f4c3a" fill-opacity="0.35" />
+  <rect x="580" y="372" width="220" height="14" rx="7" fill="#0f4c3a" fill-opacity="0.35" />
+  <rect x="580" y="428" width="140" height="36" rx="18" fill="#0f4c3a" fill-opacity="0.9" />
+  <path d="M280 420V320L340 280L400 320V420" stroke="#0f4c3a" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
+  <rect x="310" y="350" width="60" height="70" rx="8" fill="#0f4c3a" fill-opacity="0.18" />
+  <text x="220" y="560" font-family="Arial, sans-serif" font-size="36" fill="#0f4c3a" fill-opacity="0.85">Temporary hotel image</text>
+  <text x="220" y="610" font-family="Arial, sans-serif" font-size="20" fill="#0f4c3a" fill-opacity="0.65">Replace with real photos when ready</text>
+</svg>

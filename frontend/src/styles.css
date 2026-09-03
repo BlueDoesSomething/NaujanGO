@@ -1,0 +1,375 @@
+@import './styles/dark-mode.css';
+@import './styles/site-responsive.css';
+
+/* Restoring old navbar and footer styles from backup or typical defaults */
+
+/* Navbar styles */
+
+/* Rest of the styles remain from the previous layout changes */
+
+:root {
+  --font-heading: 'Inter', sans-serif;
+  --font-body: 'Arial Rounded MT Bold', Arial, sans-serif;
+  --font-heading-weight: 800;
+  --font-body-weight: 400;
+  --font-heading-line-height: 1.15;
+  --font-body-line-height: 1.7;
+  --font-heading-letter-spacing: -0.02em;
+  --font-body-letter-spacing: 0em;
+  --font-size-base: 1rem;
+  --font-size-body: 1rem;
+  --font-size-nav: 0.95rem;
+  --font-size-button: 0.95rem;
+  --font-size-h1: 3.5rem;
+  --font-size-h2: 2.5rem;
+  --font-size-h3: 1.75rem;
+  --content-max-width: 1200px;
+  --primary: #0288d1; /* Bright Blue for Call to Action */
+  --accent: #fbc02d;  /* Warm Yellow */
+  --bg: #f0f8ff;      /* Alice Blue Background */
+  --card: #ffffff;    /* White card background */
+  --text-primary: #2c3e50; /* Dark Blue-Gray text */
+  --text-secondary: #0288d1; /* Bright Blue accent text */
+}
+
+/* Global resets and base styles */
+* {
+  box-sizing: border-box;
+  font-family: var(--font-body, "Arial Rounded MT Bold", Arial, sans-serif);
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+}
+
+/* Navbar text must stay white even with the global text reset above. */
+.navbar-link,
+.navbar-link .link-text,
+.about-dropdown-btn,
+.about-dropdown-btn .link-text,
+.about-dropdown-btn .dropdown-arrow {
+  color: #ffffff !important;
+}
+
+.navbar-link:hover,
+.navbar-link:focus,
+.navbar-link.active,
+.about-dropdown-btn:hover,
+.about-dropdown-btn:focus,
+.about-dropdown-btn.active {
+  color: #ffffff !important;
+}
+
+body {
+  background: var(--bg);
+  font-size: var(--font-size-base, 1rem);
+  line-height: var(--font-body-line-height, 1.7);
+  font-weight: var(--font-body-weight, 400);
+  letter-spacing: var(--font-body-letter-spacing, 0em);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.logo-text,
+.footer-brand-name,
+.footer-title {
+  font-family: var(--font-heading, 'Inter', sans-serif);
+  font-weight: var(--font-heading-weight, 800);
+  line-height: var(--font-heading-line-height, 1.15);
+  letter-spacing: var(--font-heading-letter-spacing, -0.02em);
+}
+
+h1 {
+  font-size: var(--font-size-h1, 3.5rem);
+}
+
+h2,
+.section h2 {
+  font-size: var(--font-size-h2, 2.5rem);
+}
+
+h3,
+.slide-overlay h2,
+.hero p {
+  font-size: var(--font-size-h3, 1.75rem);
+}
+
+p,
+li,
+a,
+button,
+input,
+textarea,
+select,
+label {
+  font-size: var(--font-size-body, 1rem);
+  font-weight: var(--font-body-weight, 400);
+  line-height: var(--font-body-line-height, 1.7);
+  letter-spacing: var(--font-body-letter-spacing, 0em);
+}
+
+/* Containers and grids */
+.container {
+  max-width: min(100%, var(--content-max-width, 1200px));
+  margin: 40px auto 50px;
+  padding: 0 20px;
+  width: 90%;
+}
+
+button,
+.button,
+.cta-button,
+.auth-btn,
+.learn-more-btn,
+.hero-btn,
+.gov-btn,
+.search-button,
+.map-login-btn,
+.map-register-btn,
+.quick-action-btn,
+.send-button {
+  font-size: var(--font-size-button, 0.95rem);
+}
+
+.section {
+  margin-bottom: 50px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+}
+
+/* Card Design */
+.card {
+  background: var(--card);
+  border-radius: 15px;
+  box-shadow: 0 12px 24px rgba(2, 136, 209, 0.2);
+  padding: 25px;
+  color: var(--text-primary);
+  transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.card:hover {
+  box-shadow: 0 16px 32px rgba(2, 136, 209, 0.35);
+  transform: translateY(-8px);
+}
+
+/* Hero Section */
+.hero {
+  position: relative;
+  height: 80vh;
+  background-image: url('/images/tropical_beach.jpg');
+  background-position: center;
+  background-size: cover;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: var(--card);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+  padding: 0 20px;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.hero h1 {
+  font-size: 4rem;
+  font-weight: 900;
+  letter-spacing: -2px;
+  margin-bottom: 0.5rem;
+}
+.hero p {
+  font-size: 1.8rem;
+  font-weight: 600;
+  max-width: 700px;
+}
+
+/* Slide Show */
+.slideshow-container {
+  max-width: 1000px;
+  margin: 0 auto 60px;
+  position: relative;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 14px 30px rgba(2, 136, 209, 0.3);
+}
+
+.mySlides {
+  display: none;
+  width: 100%;
+  height: 450px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 18px;
+  transition: opacity 1s ease-in-out;
+}
+
+.mySlides.active {
+  display: block;
+  opacity: 1;
+}
+
+.slide-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 40px 50px;
+  background: linear-gradient(transparent, rgba(2, 136, 209, 0.85));
+  color: white;
+  text-align: left;
+}
+
+.slide-overlay h2 {
+  font-size: 2.8rem;
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+.slide-overlay p {
+  font-size: 1.3rem;
+  opacity: 0.95;
+}
+
+/* Slide Controls */
+.prev, .next {
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  width: 50px;
+  margin-top: -25px;
+  padding: 15px;
+  font-weight: bold;
+  font-size: 24px;
+  color: var(--card);
+  border-radius: 50%;
+  user-select: none;
+  background-color: rgba(2, 136, 209, 0.7);
+  transition: background-color 0.3s ease;
+}
+.prev:hover, .next:hover {
+  background-color: var(--accent);
+  color: var(--bg);
+}
+.next {
+  right: 10px;
+}
+.prev {
+  left: 10px;
+}
+
+/* Navigation Dots */
+.dot-container {
+  text-align: center;
+  padding: 20px 0;
+  background: transparent;
+  margin-top: -30px;
+}
+
+.dot {
+  cursor: pointer;
+  height: 18px;
+  width: 18px;
+  margin: 0 7px;
+  background-color: #bbb;
+  border-radius: 50%;
+  display: inline-block;
+  transition: background-color 0.4s ease;
+}
+
+.dot.active, .dot:hover {
+  background-color: var(--accent);
+}
+
+/* Sections */
+.section h2 {
+  font-size: 2.8rem;
+  font-weight: 900;
+  margin-bottom: 30px;
+  color: var(--primary);
+  text-align: center;
+  text-shadow: 1px 1px 2px #fff;
+}
+
+/* Festival list */
+.festivals-list {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+.festival-item {
+  border-bottom: 2px solid var(--accent);
+  padding: 20px 0;
+  text-align: center;
+}
+
+.festival-item h3 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.festival-item p {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+/* Contact form */
+.contact-form {
+  max-width: 600px;
+  margin: 0 auto 70px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 15px;
+  border: 2px solid var(--accent);
+  border-radius: 15px;
+  background: var(--card);
+}
+
+.contact-form input, .contact-form textarea {
+  font-size: 1.2rem;
+  padding: 15px 20px;
+  border-radius: 10px;
+  border: 2px solid var(--primary);
+  transition: border-color 0.3s ease;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.contact-form input:focus, .contact-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.contact-form textarea {
+  resize: vertical;
+  min-height: 150px;
+}
+
+.contact-form button {
+  background-color: var(--primary);
+  color: var(--card);
+  font-weight: 900;
+  font-size: 1.5rem;
+  padding: 15px 0;
+  border: none;
+  border-radius: 15px;
+  cursor: pointer;
+  transition: background-color 0.4s ease;
+}
+
+.contact-form button:hover {
+  background-color: var(--accent);
+}

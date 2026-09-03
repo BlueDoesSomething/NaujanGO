@@ -1,0 +1,52 @@
+{
+  "chatbot_config": {
+    "name": "Multilingual Naujan Chatbot",
+    "version": "2.0",
+    "description": "Language-specific models for improved accuracy and performance",
+    "supported_languages": [
+      {
+        "code": "en",
+        "name": "English"
+      },
+      {
+        "code": "es",
+        "name": "Spanish"
+      },
+      {
+        "code": "tl",
+        "name": "Tagalog (Filipino)"
+      },
+      {
+        "code": "zh",
+        "name": "Chinese (Simplified)"
+      },
+      {
+        "code": "ja",
+        "name": "Japanese"
+      },
+      {
+        "code": "ko",
+        "name": "Korean"
+      },
+      {
+        "code": "fr",
+        "name": "French"
+      },
+      {
+        "code": "de",
+        "name": "German"
+      }
+    ],
+    "model_settings": {
+      "embedding_model": "distiluse-base-multilingual-cased-v2",
+      "classifier": "SVM",
+      "confidence_threshold": 0.65,
+      "cache_enabled": true
+    },
+    "performance": {
+      "average_inference_time_ms": 30,
+      "expected_accuracy": "85-90%",
+      "response_cache_size": "unlimited"
+    }
+  }
+}

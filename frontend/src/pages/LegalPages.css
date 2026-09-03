@@ -1,0 +1,147 @@
+.legal-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+  padding: 2rem 1rem;
+}
+
+.legal-container {
+  max-width: 900px;
+  margin: 0 auto;
+  background: white;
+  padding: 3rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.legal-container h1 {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1a202c;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  border-bottom: 3px solid var(--primary-color, #16a34a);
+  padding-bottom: 1rem;
+}
+
+.legal-container .last-updated {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-style: italic;
+  margin-bottom: 2rem;
+}
+
+.legal-container section {
+  margin-bottom: 2.5rem;
+}
+
+.legal-container h2 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #2d3748;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  border-left: 4px solid var(--primary-color, #16a34a);
+  padding-left: 1rem;
+}
+
+.legal-container h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #4a5568;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.legal-container p {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #4a5568;
+  margin-bottom: 1rem;
+}
+
+.legal-container ul {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+.legal-container li {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #4a5568;
+  margin-bottom: 0.5rem;
+}
+
+.legal-container li strong {
+  color: #2d3748;
+  font-weight: 600;
+}
+
+.legal-container a {
+  color: var(--primary-color, #16a34a);
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.legal-container a:hover {
+  color: var(--primary-dark, #15803d);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .legal-page {
+    padding: 1rem 0.5rem;
+  }
+
+  .legal-container {
+    padding: 2rem 1.5rem;
+    border-radius: 12px;
+  }
+
+  .legal-container h1 {
+    font-size: 1.75rem;
+  }
+
+  .legal-container h2 {
+    font-size: 1.4rem;
+  }
+
+  .legal-container h3 {
+    font-size: 1.1rem;
+  }
+
+  .legal-container p,
+  .legal-container li {
+    font-size: 0.95rem;
+  }
+
+  .legal-container ul {
+    padding-left: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .legal-container {
+    padding: 1.5rem 1rem;
+  }
+
+  .legal-container h1 {
+    font-size: 1.5rem;
+  }
+
+  .legal-container h2 {
+    font-size: 1.25rem;
+    padding-left: 0.75rem;
+    border-left-width: 3px;
+  }
+
+  .legal-container h3 {
+    font-size: 1rem;
+  }
+
+  .legal-container p,
+  .legal-container li {
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+}

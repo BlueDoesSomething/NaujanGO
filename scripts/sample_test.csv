@@ -1,0 +1,11 @@
+text,true_lang,predicted_lang
+"Hello, I want to book a hotel",en,en
+"¿Dónde está la playa?",es,es
+"Bonjour, je cherche un hôtel",fr,fr
+"Kumusta, gusto ko mag-book",tl,tl
+"Quero reservar um hotel",pt,es
+"Hi",en,en
+"Buenas",es,pt
+"Salut",fr,fr
+"Mag-book ako",tl,en
+"Reservar",pt,pt

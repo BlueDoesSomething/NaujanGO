@@ -1,0 +1,144 @@
+{
+  "greeting": [
+    "Magandang araw! Ako ang Naujan Chatbot. Ano ang kailangan mong malaman?",
+    "Kumusta! Ito ay Naujan Information Assistant. Paano kita makakatulong?",
+    "Bienvenido sa Naujan! Ano ang gusto mong malaman?"
+  ],
+  "goodbye": [
+    "Salamat din! Magandang araw sa iyo.",
+    "Walang problema! Kaway-kaway sa iyo at balik soon.",
+    "Maraming salamat! Huwag kalimutang bisitahin ang Naujan."
+  ],
+  "Naujan_Location": [
+    "Ang Naujan ay isang 1st Class Municipality sa lalawigan ng Naujan, sa hilagang-silangang bahagi ng Mindoro Island.",
+    "Naujan ay matatagpuan sa probinsya ng Naujan, sa rehiyon ng MIMAROPA.",
+    "Ito ay isang munisipyo sa Naujan, Pilipinas, sa hilaga-silangan ng Mindoro Island."
+  ],
+  "Naujan_Lake_About": [
+    "Ang Naujan Lake ay ang panlimang pinakamalaking lawa sa Pilipinas at isang Ramsar Wetland of International Importance (1999).",
+    "Ito ay kilala bilang sanctuary para sa mahigit 60 uri ng ibon, lalo na ang endangered Philippine duck.",
+    "Ang lawa ay mahalaga para sa conservation ng ibon at sa kalikasan ng Asya-Pasipiko."
+  ],
+  "LGU_Contact_Mayor": [
+    "Ang kasalukuyang Mayor ng Naujan ay si Henry Joel C. Teves, naglilingkod mula 2022 hanggang sa kasalukuyan. Ang opisina ay matatawagan sa (043) 208-3382 o (043) 208-3479. Ang opisina ay tumutugon sa munisipal na mga katanungan at pahintulot.",
+    "Pwede kang makipag-ugnayan sa Mayor's Office ng Naujan sa (043) 208-3382 o (043) 208-3479 para sa mga tanong. Ang Mayor Henry Joel C. Teves ang namumuno sa munisipal na administrasyon.",
+    "Ang Mayor ng Naujan ay si Henry Joel C. Teves (Termino: 2022-Kasalukuyan). Para sa munisipal na serbisyo at mga katanungan, makipag-ugnayan sa Mayor's Office sa (043) 208-3382.",
+    "Kasalukuyang Mayor: Henry Joel C. Teves (Termino: 2022-Kasalukuyan). Ang munisipal na pamahalaan ay gumagana mula sa City Hall ng Naujan. Makipag-ugnayan: (043) 208-3382 o (043) 208-3479."
+  ],
+  "Municipal_Vice_Mayor": [
+    "Ang kasalukuyang Vice Mayor ng Naujan ay si Candido J. Melgar Jr. Ang Vice Mayor ay tumutulong sa pmunoang-papel at administrasyon ng munisipyo.",
+    "Si Candido J. Melgar Jr. ang Vice Mayor ng Naujan. Para sa mga galing-opisyal na katanungan tungkol sa Vice Mayor's office, maaari kang makipag-ugnayan sa Munisipal na Opisina.",
+    "Ang Vice Mayor ay si Candido J. Melgar Jr., na nagsisilbi kasama ang Mayor Henry Joel C. Teves. Makipag-ugnayan sa munisipal na opisina sa (043) 208-3382 para sa mga tanong tungkol sa Vice Mayor."
+  ],
+  "Municipal_Government_Structure": [
+    "Ang pamahalaan ng Naujan ay organisado sa pagpapuno ng Mayor kasama ang Vice Mayor at iba't ibang munisipal na departamento. Ito ay kasama ang Health, Education, Agriculture, Social Services at Engineering departments. Makipag-ugnayan sa Mayor's Office sa (043) 208-3382 para sa espesipikong impormasyon ng departamento.",
+    "Ang munisipal na pamahalaan ng Naujan ay binubuo ng Executive Office (Mayor), ang Sangguniang Bayan (Council) at maraming munisipal na departamento na nagsisilbi sa komunidad.",
+    "Ang administratibong estruktura ng Naujan ay kinabibilangan ng Executive Office (Mayor), ang Sangguniang Bayan (Legislative Council) at iba't ibang munisipal na departamento. Para sa detalyadong impormasyon tungkol sa partikular na departamento o serbisyo, makipag-ugnayan sa Munisipal na Opisina."
+  ],
+  "Historical_Mayors": [
+    "Ang Naujan ay may maraming mayor sa magkakaibang panahon ng administrasyon. Ang kasalukuyang Mayor ay si Henry Joel C. Teves (nagsisilbi mula 2022). Para sa detalyadong kasaysayan impormasyon tungkol sa mga nakaraang Mayor at kanilang mga termino, makipag-ugnayan sa Munisipal na Opisina sa (043) 208-3382.",
+    "Ang kasaysayan ng munisipal na pamumuno ng Naujan ay sumasaklaw sa maraming taon. Si Henry Joel C. Teves ang kasalukuyang Mayor na nagsisilbi mula 2022 palayo. Ang mga rekord ng mga dating Mayor at kanilang panahon ay available sa Munisipal na Archive at Civil Registry.",
+    "Ang mga rehistro ng Mayor ng Naujan ay nagpapakita ng iba't ibang administrasyon sa buong kasaysayan nito, kasama si Henry Joel C. Teves na kasalukuyang nagsisilbi bilang Mayor (2022-Kasalukuyan). Para sa komprehensibong impormasyon sa kasaysayan tungkol sa partikular na mga Mayor, kanilang mga termino at tagumpay, bisitahin ang Munisipal na Opisina o magtanong sa Civil Registry."
+  ],
+  "Emergency_Police": [
+    "Para sa tulong ng pulis, tumawag sa Naujan Police Station sa (043) 208-3362.",
+    "Emergency hotline ng pulis: (043) 208-3362.",
+    "Kung kailangan mo ng tulong ng pulis, tumawag agad sa (043) 208-3362."
+  ],
+  "Agriculture_Crops": [
+    "Pangunahing pananim: Palay at niyog (copra). Pati na rin mais, ugat, prutas, gulay. Magandang tanawin mula sa mga sakahan."
+  ],
+  "Weather_Info": [
+    "Tropical climate. Dry season (Nov-May) ideal. Rainy (Jun-Oct): berdeng palay pero posibleng bagyo. Para sa weather, tingnan PAGASA forecast."
+  ],
+  "Itinerary_Plan": [
+    "3-araw na trip: Araw 1 - Simbahan at plaza. Araw 2 - Naujan Lake at bird watching. Araw 3 - Sasakyan at merkado. O kumuha ng guided tour."
+  ],
+  "Naujan_Overview": [
+    "Ang Naujan ay isang First Class Municipality sa Pilipinas. Kilala sa Naujan Lake National Park - ang 5th pinakamalaking lawa sa bansa at Ramsar Wetland."
+  ],
+  "Transportation_How_To_Get_There": [
+    "Paano makarating: 1) Bus mula Manila hanggang Batangas Port (~2 oras) 2) Ferry papunta Calapan (~1-3 oras) 3) Jeepney papunta Naujan (~30-45 min). Kabuuan: 4-6 oras mula Manila."
+  ],
+  "Local_Food_Cuisine": [
+    "Lokal na pagkain: Sariwa isda mula sa lawa (tilapia, dalag), kanin, mga putaheng gawa sa niyog, binagoongan. Kakanin at mga kakanin. Abot-kayang presyo (₱80-150)."
+  ],
+  "Festivals_Events": [
+    "Pangunahing pista: Setyembre 8 (Nativity ng Maria). May misa, pasada, putahe, palabas. Peak bird watching: Nov-Marso."
+  ],
+  "Mangyan_Culture": [
+    "Komunidad Mangyan (Iraya, Alangan): Nakatira sa taas ng Naujan. Kilala sa woven baskets, alahas at ambahan poetry. Bisitahin ng may paggalang at lokal na gabay."
+  ],
+  "Best_Time_To_Visit": [
+    "Pinakamahusay: Nobyembre hanggang Mayo (dry season). Nov-Mar ay perpekto para sa bird watching. Iwasan ang Hunyo-Oktubre (ulan at bagyo)."
+  ],
+  "App_Capabilities": [
+    "Tumutulong ang LAKBAY sa: Pag-book ng hotel, pagplanong biyahe, impormasyon sa akit, restaurant, transportasyon, panahon, tips, at gabay."
+  ],
+  "Booking_Help": [
+    "Para mag-reserve: 1) Pumunta sa Hotels 2) Piliin ang petsa 3) Tingnan ang detalye 4) Bayaran. Makakatanggap ng confirmation kaagad."
+  ],
+  "Naujan_Natural_Features": [
+    "Kalikasan: Naujan Lake (20,000+ hektarya), Sadya River, palay, mangrove, dalampasigan. Maganda para sa fotografia at paglalakbay."
+  ],
+  "Safety_Emergency": [
+    "Emergency contacts sa Naujan:\n• Naujan PNP (Pulis): (043) 208-3362\n• Municipal Hall: (043) 208-3382\n• Naujan District Hospital: (043) 208-3380\n• Bureau of Fire Protection: (043) 208-3385\n• National Emergency Hotline: 911\n\nAng Naujan ay isang mapayapang komunidad. Palaging sabihin sa iyong accommodation ang iyong itinerary kapag nagbibiyahe sa bundok o sa lawa."
+  ],
+  "Naujan_Lake_Wildlife": [
+    "Ang Naujan Lake ay tahanan ng mahigit 100 uri ng ibon, kabilang ang:\n• Philippine Duck (Anas luzonica) — endangered na endemic species\n• Migratory waterfowl mula Siberia at East Asia (Nobyembre–Marso)\n• Mga lawin, alon, at sarimanok na naninirahan sa paligid ng lawa\n• Freshwater crocodile (Crocodylus mindorensis) — critically endangered\nAng pinakamainam na panahon para sa bird-watching ay Nobyembre hanggang Marso ng maaga sa umaga."
+  ],
+  "Naujan_Lake_Activities": [
+    "Mga aktibidad sa Naujan Lake:\n• Bird-watching — ang pangunahing atraksyon; daan-daang uri ng ibon\n• Bangka tour — magsewa ng lokal na bangka para maglayag sa lawa\n• Pangingisda — ang mga lokal na mangingisda ay nagbibigay ng guided tours\n• Kayaking — mag-explore ng mga kuweba at mangrove edges ng lawa\n• Lakad sa kalikasan — mag-lakad sa mga eco-trail sa paligid ng National Park\n• Picnicking — mga itinakdang lugar sa pampang ng lawa\nMakipag-ugnayan sa Naujan LGU para sa impormasyon sa pahintulot at lokal na gabay."
+  ],
+  "Naujan_Barangays": [
+    "Ang Naujan ay may 39 barangay na nagkalat sa lowland farming areas, coastal zones, at upland forests. Ang Poblacion (town center) ang pinakamalaking barangay. Ilan sa mga kilalang barangay:\n• Poblacion — town center na may munisipal na tanggapan at pamilihan\n• Naujan Lake shore barangays — mga komunidad ng mangingisda\n• Upland barangays — malapit sa mga kagubatan at taniman ng Mangyan\nPara sa kumpletong listahan, makipag-ugnayan sa Naujan Municipal Hall: (043) 208-3382."
+  ],
+  "Naujan_Agriculture": [
+    "Ang Naujan ay isa sa mga pangunahing lungsod ng agrikultura sa Naujan:\n• Palay (bigas) — pangunahing pananim; kilala sa masaganang pag-aani\n• Niyog/Copra — pangalawang pangunahing produkto ng probinsya\n• Pangingisda sa lawa — tilapia, maliputo, at iba pang sariwang isda\n• Mais, saging, at gulay — suplementaryong mga pananim\n• Eco-agri tours — bisitahin ang mga lokal na farm at makita ang proseso ng pagtatanim ng bigas"
+  ],
+  "Eco_Tourism": [
+    "Eco-tourism sa Naujan Lake:\n• Bird-watching guided tours (pinakamainam: Nobyembre–Marso)\n• Bangka eco-tours sa lawa at mga mangrove\n• Bisita sa mga sustainable na farm at organic farming\n• Lakad sa eco-trail sa paligid ng National Park\n• Mga programang nagtataguyod ng konserbasyon ng Ramsar wetland\nSumunod sa Leave No Trace principles at huwag magsaboy ng basura sa paligid ng lawa."
+  ],
+  "Accommodation_Types": [
+    "Tulugan: Maliit na inn sa bayan (₱400-1,000/gabi), guesthouses, ilang ecolodges malapit sa lawa. Limitado pero komportable."
+  ],
+  "Budget_Travel": [
+    "3-araw na badyet: ₱2,500-4,500 bawat tao. Hotel: ₱400-1,000/gabi. Pagkain: ₱80-150/hapag. Local transport: ₱10-30."
+  ],
+  "History_Heritage": [
+    "Kasaysayan at pamana ng Naujan:\n• Ang Naujan ay itinatag noong 1578 ng mga Espanyol na misyonero\n• Simbahan ng Our Lady of the Nativity — itinayo noong panahon ng kolonyal na Espanyol, makasaysayang landmark sa Poblacion\n• Ang mga katutubo (Mangyan) ay naninirahan sa Mindoro nang mahigit 2,000 taon\n• Noong Ikalawang Digmaang Pandaigdig, ang Mindoro ay naging kasasakayan ng mga labanan ng guerrilla laban sa mg Hapon\n• Ang Naujan Lake ay naging sentro ng pangingisda at kabuhayan ng mga komunidad sa loob ng maraming siglo"
+  ],
+  "Hiking_Trekking": [
+    "Gawain: Bird watching walks, mangrove trails, farm visits, camping. Pinakamahusay: 5-8 AM para sa mga ibon."
+  ],
+  "Local_Transport": [
+    "Local transport: Tricycle (₱10-30), habal-habal para barangays, van rental. Ang lawa ay 15-25 minuto mula sa lungsod."
+  ],
+  "Shopping_Souvenirs": [
+    "Mga pasalubong at souvenir mula sa Naujan:\n• Mga basket at bag na gawa ng Mangyan (rattan/abaca)\n• Sariwang isda mula sa Naujan Lake (tilapia, maliputo)\n• Lokal na kakanin (puto, bibingka, sapin-sapin)\n• Organic na coconut products (virgin coconut oil, copra)\n• Lokal na pulot-pukyutan (honey) mula sa mga kabundukan\nBisitahin ang Naujan Public Market sa Poblacion para sa iba't ibang lokal na produkto."
+  ],
+  "Naujan_Lake_National_Park": [
+    "Ang Naujan Lake National Park ay ang ikalimang pinakamalaking lawa sa Pilipinas. Ito ay nakapaligid ng bundok at mayaman sa biodiversity. Maaari kang mag-enjoy ng boat rides, bird watching (mahigit 100 uri ng ibon), nature photography, at magsilang ng sunset sa tahimik na tubig. Perpekto para sa nature lovers!"
+  ],
+  "Simbahang_Bato": [
+    "Ang Simbahang Bato (Bancuro Ruins) ay isang 17th-century na putol na simbahan na may natatanging disenyo ng 'simbahan sa loob ng simbahan'. Ang mga dingding ay nakabalot ng lumot at bukas ang istruktura. Maaari kang mag-explore, kumuha ng larawan, matuto tungkol sa Spanish heritage, at maramdaman ang katahimikan ng lugar na ito sa Brgy. Bancuro, Naujan."
+  ],
+  "Naujan_Attractions_Major": [
+    "Mga pangunahing atraksyon sa Naujan:\n• Naujan Lake National Park - malaking lawa na perpekto para sa ibon watching at boat rides\n• Simbahang Bato - lumang simbahan na may heritage appeal\n• Liwasang Bonifacio - pangunahing plaza ng bayan\n• Dao Waterlily Mini Park - eco-park na puno ng mga bulaklak\n• Montelago Hot Spring & Forest Falls - mainit na tubig at waterfalls\n• AgriGold Farm Learning Center - educational farm\n• Karacha Falls - magandang waterfall para sa hiking\n• ORIC sa Bathala Waterfalls - eco-tourism destination\n• Mga beach tulad ng Celeste Beach House at Nabul Beach Resort"
+  ],
+  "Naujan_Accommodations_Budget": [
+    "Murang Accommodations sa Naujan:\n• Darie Tambayan Hotel (Along Nautical Highway) - malinis at komportable. ₱500-800/gabi\n• El Caviteño Apartelle (Brgy. Estrella) - abot-kayang presyo, malapit sa town center. ₱600-900/gabi\n• Naujan Traveller's Inn and Resto Bar (Barcenaga) - may restaurant. ₱550-850/gabi\n• Bahay Tuklasan Dormitory (Brgy. Poblacion) - shared rooms para sa mga grupo. ₱300-400/gabi\nLahat ay may malinis na pasilidad at Filipino hospitality!"
+  ],
+  "Naujan_Accommodations_Midrange": [
+    "Mid-range Accommodations sa Naujan:\n• Balay Murraya (Brgy. Poblacion) - modernong homestay. ₱1,200-1,800/gabi\n• Villa Catalina Eco Farm Resort (Buhangin Road) - eco-friendly resort sa garden. ₱1,500-2,200/gabi\n• Benilda ng Bancuro Resort (Brgy. Bancuro) - may pool at horseback riding. ₱1,800-2,500/gabi\n• Largo Castillo Farmhouse (Brgy. Nag-Iba 1) - rustic farmhouse. ₱1,600-2,200/gabi\n• Villa Cornitz Mini Resort (Brgy. Adrialuna) - maliit pero charming. ₱1,500-2,000/gabi\nPerfekto para sa mga pamilya at couples na naghahanap ng comfort!"
+  ],
+  "Naujan_Accommodations_Upscale": [
+    "Luxury Accommodations sa Naujan:\n• La Hacienda (Brgy. Poblacion) - Balinese-inspired resort na elegante at malinaw. ₱2,500-4,000/gabi\n• Villa Valerie Resort (Brgy. Estrella) - malaking pool at landscaped grounds. ₱2,200-3,500/gabi\n• Mai's Place Private Pool (Brgy. Poblacion) - private villa na perpekto para sa special occasions. ₱3,000-4,500/gabi\nIdeal para sa romantic getaways at celebrations!"
+  ],
+  "Naujan_Beaches_Resorts": [
+    "Mga Beach at Beach Resorts sa Naujan:\n• Celeste Beach House (Brgy. Estrella) - malambot na buhangin at malinaw na tubig. Perpekto para sa pamilya.\n• Nabul Beach Resort (Brgy. Nabul) - simpleng beach na may kubo cottages\n• Emerald Resort (Brgy. Estrella) - malakas na dalampasigan\n• Hafa Adai (Brgy. Estrella) - pwedeng kumain habang nakatingin sa dagat\nMaaari kang lumangoy, mag-relax, at mag-picnic!"
+  ],
+  "Naujan_Best_Activities": [
+    "Mga Magagandang Aktividad sa Naujan:\n• Ibon watching sa Naujan Lake National Park\n• Boat rides sa maayos na lawa\n• Pag-explore ng lumang simbahan (Simbahang Bato)\n• Nature photography\n• Trekking sa waterfalls (Montelago, Karacha, Bathala)\n• Organic farming experience\n• Beach swimming at relaxation\n• Horseback riding\n• Pagkain ng local cuisine\n• Wellness at relaxation\nNaujan ay perpekto para sa nature lovers at culturally-interested travelers!"
+  ]
+}

@@ -1,0 +1,21 @@
+/* Global Button Styles - Curved edges for all buttons */
+
+button,
+.button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+a[role="button"],
+.cta-button,
+.auth-btn,
+.learn-more-btn,
+.nav-arrow,
+.indicator,
+.account-button,
+.dropdown-link,
+.auth-button,
+.action-card,
+.hotel-card,
+.attraction-card {
+  border-radius: 12px !important;
+}

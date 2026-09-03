@@ -1,0 +1,425 @@
+.itinerary-search-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.itinerary-search-input-wrap,
+.saved-search-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.itinerary-search-input,
+.saved-search-input {
+  width: 100%;
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  padding: 10px 40px 10px 42px;
+  font-size: 14px;
+  background: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Apply unified dropdown/select/button look across the entire Itinerary Builder
+   - make selects and toggle buttons visually match the left sidebar controls
+   - use specific selectors to avoid global overrides */
+.itinerary-search-input,
+.saved-search-input,
+.itinerary-filter-input,
+.itinerary-filter-panel select,
+.saved-filter-panel select,
+#rating-select,
+#sort-select,
+.saved-filter-grid select {
+  border: 1px solid #d1d5db !important;
+  border-radius: 10px !important;
+  background: #fff !important;
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+  box-sizing: border-box !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+}
+
+/* Consistent arrow for all selects in the itinerary builder */
+.itinerary-filter-panel select,
+.saved-filter-panel select,
+#rating-select,
+#sort-select,
+.saved-filter-grid select {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7%2010l5%205%205-5'%20stroke='%236b7280'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  padding-right: 2.5rem !important;
+}
+
+/* Make toggle buttons match input boxes (rounded, same height and padding) */
+
+
+.itinerary-search-input:focus,
+.saved-search-input:focus,
+.itinerary-filter-input:focus,
+.saved-filter-panel input:focus,
+.saved-filter-panel select:focus {
+  border-color: #16a34a;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+}
+
+.itinerary-search-clear,
+.saved-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+}
+
+.itinerary-search-dropdown,
+.saved-search-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 20;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+.itinerary-search-item,
+.saved-search-item {
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border: 0;
+  background: #fff;
+  cursor: pointer;
+  color: #1f2937;
+}
+
+.itinerary-search-item:hover,
+.saved-search-item:hover,
+.itinerary-search-item.is-active,
+.saved-search-item.is-active {
+  background: #f0fdf4;
+}
+
+.itinerary-search-loading,
+.saved-search-loading {
+  font-size: 12px;
+  color: #64748b;
+  padding: 2px 2px 0;
+}
+
+
+/* Panel animation: use max-height + translate for smooth open/close */
+.itinerary-filter-panel,
+.saved-filter-panel {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: max-height 320ms cubic-bezier(.2,.9,.2,1), opacity 220ms ease, transform 220ms ease;
+  margin-top: 0.25rem;
+}
+
+.itinerary-filter-panel.is-open,
+.saved-filter-panel.is-open {
+  max-height: 800px; /* large enough to reveal content */
+  opacity: 1;
+  transform: translateY(0);
+  margin-top: 1rem;
+}
+
+/* Desktop: panels are always visible — override to remove max-height limit */
+@media (min-width: 769px) {
+  .itinerary-filter-panel,
+  .saved-filter-panel {
+    max-height: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    margin-top: 1rem !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+}
+
+
+
+.itinerary-filter-panel,
+.saved-filter-panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.25s ease, opacity 0.25s ease;
+  margin-top: 1rem;
+}
+
+.itinerary-filter-panel > *,
+.saved-filter-panel > * {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.itinerary-filter-panel.is-open,
+.saved-filter-panel.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.itinerary-filter-group {
+  margin-bottom: 10px;
+}
+
+.itinerary-filter-label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+.itinerary-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.itinerary-chip-btn {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #111827;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.itinerary-chip-btn.is-active {
+  border-color: #16a34a;
+  background: #ecfdf3;
+  color: #166534;
+}
+
+.itinerary-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.saved-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.saved-filter-grid > * {
+  min-width: 0;
+  width: 100%;
+}
+
+.itinerary-filter-input,
+.saved-filter-panel input,
+.saved-filter-panel select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+/* Override global select arrow for itinerary sidebar selects */
+#rating-select,
+#sort-select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7%2010l5%205%205-5'%20stroke='%236b7280'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+  padding-right: 2.5rem !important;
+  cursor: pointer !important;
+}
+
+/* Ensure the select renders consistently with surrounding inputs */
+#rating-select,
+#sort-select {
+  border: 1px solid #d1d5db !important;
+  border-radius: 8px !important;
+  padding: 8px 10px 8px 10px !important;
+  font-size: 13px !important;
+  background-color: #fff !important;
+}
+
+/* Make all selects inside itinerary builder match input fields */
+.itinerary-filter-group select,
+.itinerary-filter-grid select,
+.itinerary-filter-panel select,
+.saved-filter-panel select,
+.itinerary-filter-panel .itinerary-filter-input,
+.itinerary-filter-input {
+  box-sizing: border-box;
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  background: #fff;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* Add a consistent arrow for selects in the itinerary builder */
+.itinerary-filter-group select,
+.itinerary-filter-grid select,
+.itinerary-filter-panel select,
+.saved-filter-panel select {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7%2010l5%205%205-5'%20stroke='%236b7280'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+/* Toggle-button styles removed (buttons were removed from JSX) */
+
+.saved-filter-panel input[type=\"number\"] {
+  border: 1.5px solid #d1d5db;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.saved-filter-panel input[type=\"number\"]:focus,
+.saved-filter-panel select:focus {
+  outline: none;
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+/* Remove spinner arrows from number input */
+.saved-filter-panel input[type=\"number\"]::-webkit-outer-spin-button,
+.saved-filter-panel input[type=\"number\"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.saved-filter-panel input[type=\"number\"] {
+  -moz-appearance: textfield;
+}
+
+.itinerary-active-chips,
+.saved-active-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.itinerary-active-chip,
+.saved-active-chip {
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+}
+
+/* Style the small remove (X) button inside chips */
+.itinerary-active-chip > button,
+.itinerary-chip-btn > button,
+.saved-active-chip > button {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 8px;
+  border-radius: 50%;
+  background: transparent;
+  color: #166534;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.itinerary-active-chip > button:hover,
+.itinerary-chip-btn > button:hover,
+.saved-active-chip > button:hover {
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.itinerary-clear-all-btn,
+.saved-clear-all {
+  border: 0;
+  background: transparent;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.saved-itinerary-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.saved-filter-panel {
+  width: 100%;
+}
+
+.saved-itinerary-header-row h3 {
+  margin: 0;
+}
+
+@media (min-width: 769px) {
+  /* On desktop, hide the left (sidebar) toggle because the panel is always visible,
+     but keep the Saved Itineraries toggle visible so the right sidebar can be collapsed */
+  .itn-toggle-btn {
+    display: none;
+  }
+
+  .itinerary-filter-panel,
+  .saved-filter-panel {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    transform: none;
+  }
+
+  .itinerary-filter-panel > *,
+  .saved-filter-panel > * {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 768px) {
+  .itinerary-filter-grid,
+  .saved-filter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .saved-itinerary-header-row {
+    margin-bottom: 6px;
+  }
+}

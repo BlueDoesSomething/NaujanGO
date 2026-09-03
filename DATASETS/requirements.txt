@@ -1,0 +1,4 @@
+tensorflow
+nltk
+numpy
+# Removed pickle5 to fix installation errors due to incompatibility with Python 3.13 and above

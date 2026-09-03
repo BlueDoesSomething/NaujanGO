@@ -1,0 +1,18 @@
+<svg width="600" height="240" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .bar { fill: #4c9f70; }
+    .label { font: 12px sans-serif; }
+  </style>
+  <text x="10" y="20" class="label">Language Selector — Per-Language Accuracy (10 test examples)</text>
+  <rect x="150" y="40" width="420" height="18" class="bar" />
+  <text x="10" y="54" class="label">en (English) — 1.00 (2/2)</text>
+  <rect x="150" y="70" width="420" height="18" class="bar" />
+  <text x="10" y="84" class="label">fr (French) — 1.00 (2/2)</text>
+  <rect x="150" y="100" width="210" height="18" class="bar" />
+  <text x="10" y="114" class="label">es (Spanish) — 0.50 (1/2)</text>
+  <rect x="150" y="130" width="210" height="18" class="bar" />
+  <text x="10" y="144" class="label">pt (Portuguese) — 0.50 (1/2)</text>
+  <rect x="150" y="160" width="210" height="18" class="bar" />
+  <text x="10" y="174" class="label">tl (Tagalog) — 0.50 (1/2)</text>
+  <text x="10" y="210" class="label">Overall accuracy — 0.70 (7/10)</text>
+</svg>
