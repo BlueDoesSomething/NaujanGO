@@ -1,8 +1,7 @@
 import jwt from 'jsonwebtoken';
 import db from '../db.js';
 import { getUserColumns } from '../services/userSchema.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
+import { JWT_SECRET } from '../config/security.js';
 
 // Middleware to verify JWT token and extract user
 export const authenticateToken = async (req, res, next) => {

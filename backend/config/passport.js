@@ -4,8 +4,7 @@ import GoogleStrategy from 'passport-google-oauth20';
 import JWTStrategy from 'passport-jwt';
 import bcrypt from 'bcryptjs';
 import db from '../db.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
+import { JWT_SECRET } from './security.js';
 const extractJwt = JWTStrategy.ExtractJwt;
 
 // Detect column names to handle preferred_language vs language_preference and phone vs phone_number

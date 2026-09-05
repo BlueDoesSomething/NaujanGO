@@ -14,6 +14,7 @@ import { createRateLimiter } from '../middleware/rateLimit.js';
 import { buildFrontendUrl, sendAuthEmail } from '../services/authMailer.js';
 import { findSecurityToken, invalidateSecurityTokens, issueSecurityToken, markSecurityTokenUsed } from '../services/securityTokens.js';
 import { getUserColumns } from '../services/userSchema.js';
+import { JWT_SECRET } from '../config/security.js';
 
 const router = express.Router();
 
@@ -49,8 +50,6 @@ const isStrategyAvailable = (name) => {
   return typeof passport._strategy === 'function' ? !!passport._strategy(name) : false;
 };
 
-// Secret for JWT signing
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
 const PASSWORD_POLICY_MESSAGE = 'Password must be at least 12 characters long and include uppercase, lowercase, number, and symbol.';
 
 // Helper function to create JWT token
@@ -221,8 +220,9 @@ router.get('/google/callback', (req, res, next) => {
       path: '/'
     });
     
-    // Redirect to frontend with token
-    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:4000'}/oauth-callback?token=${token}&provider=google&user=${encodeURIComponent(JSON.stringify(user))}`;
+    // The browser already has the HttpOnly cookie; keep bearer tokens out of URLs and history.
+    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:4000'}/oauth-callback?provider=google`;
+    res.set('Cache-Control', 'no-store');
     res.redirect(redirectUrl);
   } catch (err) {
     console.error('Google callback error:', err);
@@ -309,13 +309,14 @@ router.post('/register-send-code', registerLimiter, async (req, res) => {
     }
 
     // Generate verification code (6 digits)
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = crypto.randomInt(100000, 1000000).toString();
+    const passwordHash = await bcrypt.hash(password, await bcrypt.genSalt(10));
     
     // Store in cache/temp storage with expiration (10 minutes)
     const tempData = {
       username: normalizedUsername,
       email: normalizedEmail,
-      password: password,
+      password_hash: passwordHash,
       first_name: normalizedFirstName,
       last_name: normalizedLastName,
       phone: normalizedPhone,
@@ -395,14 +396,10 @@ router.post('/register-verify-code', verificationLimiter, async (req, res) => {
       return res.status(400).json({ error: 'Registration data mismatch' });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const password_hash = await bcrypt.hash(tempData.password, salt);
-
     // Insert new user
     const { lang, phone: phoneCol, emailVerified, emailVerifiedAt } = await getUserColumns();
     const columns = ['username', 'email', 'password_hash', 'first_name', 'last_name', 'date_of_birth', 'gender', 'user_type'];
-    const values = [tempData.username, tempData.email, password_hash, tempData.first_name || null, tempData.last_name || null, tempData.date_of_birth || null, tempData.gender || 'prefer_not_to_say', tempData.user_type || 'foreigner'];
+    const values = [tempData.username, tempData.email, tempData.password_hash, tempData.first_name || null, tempData.last_name || null, tempData.date_of_birth || null, tempData.gender || 'prefer_not_to_say', tempData.user_type || 'foreigner'];
 
     if (phoneCol) {
       columns.push(phoneCol);
@@ -474,7 +471,7 @@ router.post('/register-resend-code', verificationLimiter, async (req, res) => {
     }
 
     // Generate new verification code
-    const newVerificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const newVerificationCode = crypto.randomInt(100000, 1000000).toString();
     
     // Update temp data with new code and new expiration
     tempData.code = newVerificationCode;

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../api';
 
 const OAuthCallback = () => {
   const navigate = useNavigate();
@@ -16,9 +17,7 @@ const OAuthCallback = () => {
     hasProcessedRef.current = true;
 
     const handleCallback = async () => {
-      const token = searchParams.get('token');
       const provider = searchParams.get('provider');
-      const userStr = searchParams.get('user');
       const error = searchParams.get('error');
 
       if (error) {
@@ -28,7 +27,7 @@ const OAuthCallback = () => {
         return;
       }
 
-      if (!token || !provider) {
+      if (!provider) {
         console.error('Missing OAuth parameters');
         setStatus('Invalid authentication data. Redirecting...');
         setTimeout(() => navigate('/login?error=missing_params'), 2000);
@@ -36,18 +35,9 @@ const OAuthCallback = () => {
       }
 
       try {
-        // Parse user data
-        const user = userStr ? JSON.parse(decodeURIComponent(userStr)) : null;
-        
-        if (!user) {
-          throw new Error('User data is missing');
-        }
-
-        console.log('OAuth login - Token:', token.substring(0, 20) + '...');
-        console.log('OAuth login - User:', user);
-
-        // Use AuthContext to properly log in the user
-        const result = await loginWithOAuth(token, user, true);
+        // The backend callback set the HttpOnly cookie. Read the authenticated profile instead of accepting URL data.
+        const response = await api.get('/auth/profile');
+        const result = await loginWithOAuth(null, response.data.user, true);
         
         if (result.success) {
           console.log('OAuth login successful!');

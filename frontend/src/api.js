@@ -59,6 +59,14 @@ apiClient.interceptors.request.use((config) => {
   config.headers = config.headers || {}
   config.headers['x-language'] = lang
 
+  // Send the readable CSRF cookie back in a header for cookie-authenticated writes.
+  const csrfCookie = document.cookie
+    .split('; ')
+    .find((cookie) => cookie.startsWith('csrf_token='));
+  if (csrfCookie) {
+    config.headers['X-CSRF-Token'] = decodeURIComponent(csrfCookie.split('=').slice(1).join('='));
+  }
+
   // Also add query param for backward compatibility if not present
   if (!config.params) config.params = {}
   if (!('lang' in config.params)) config.params.lang = lang

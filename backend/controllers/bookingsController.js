@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import db from '../db.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
+import { JWT_SECRET } from '../config/security.js';
 
 const getUserIdFromToken = (req) => {
   // Check for token in HttpOnly cookie FIRST (more secure)

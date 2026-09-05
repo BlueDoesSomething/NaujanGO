@@ -7,7 +7,7 @@ import nodemailer from 'nodemailer';
 import { authenticateToken, requireAdmin, requireOwnerOrAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
+import { JWT_SECRET } from '../config/security.js';
 // Treat 'sandbox' as real payments mode (uses provider test keys) so sandbox can exercise real provider flows
 const USE_REAL_PAYMENTS = process.env.PAYMENT_MODE === 'live' || process.env.PAYMENT_MODE === 'sandbox' || process.env.USE_REAL_PAYMENTS === 'true';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'https://localhost:4000';

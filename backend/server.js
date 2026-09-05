@@ -34,6 +34,8 @@ import aboutRouter from './routes/about.js';
 import translationAdminRouter from './routes/translationAdmin.js';
 import { trackVisitorCount } from './middleware/trackVisitor.js';
 import detectLanguage from './middleware/detectLanguage.js';
+import { SESSION_SECRET } from './config/security.js';
+import { csrfProtection } from './middleware/csrf.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -74,11 +76,25 @@ app.use(cors({
   },
   credentials: true,  // Allow cookies/credentials
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
   maxAge: 600  // preflight cache 10 minutes
 }));
 app.use(cookieParser());
 app.use(express.json());
+app.use((req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin'
+  });
+
+  if (process.env.NODE_ENV === 'production') {
+    res.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+
+  next();
+});
+app.use(csrfProtection);
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -102,7 +118,7 @@ const USE_HTTPS = process.env.USE_HTTPS === 'true';
 
 // Session middleware for OAuth
 const sessionMiddleware = session({
-  secret: process.env.SESSION_SECRET || 'session-secret-key',
+  secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: { 
