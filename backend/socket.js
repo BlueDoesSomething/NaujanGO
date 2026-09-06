@@ -10,7 +10,7 @@ async function initSocket(server, opts = {}) {
   const Server = mod.Server || mod.default;
   io = new Server(server, {
     cors: {
-      origin: opts.origin || (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*'),
+      origin: opts.origin || (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean) : '*'),
       credentials: true
     }
   });

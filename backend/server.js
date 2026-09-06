@@ -48,9 +48,21 @@ import morgan from 'morgan';  // Commenting out morgan import to avoid ERR_MODUL
 // Middleware
 // app.use(morgan('dev'));  // Commenting out morgan usage due to missing package error
 // CORS configuration - restrict origins properly
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
-  : ['http://localhost:4000', 'http://127.0.0.1:4000', 'https://localhost:4000'];
+const defaultAllowedOrigins = [
+  'http://localhost:4000',
+  'http://127.0.0.1:4000',
+  'https://localhost:4000',
+  'https://frontend-production-8bfbf.up.railway.app'
+];
+const configuredOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+  : [];
+const frontendOrigin = process.env.FRONTEND_URL?.trim().replace(/\/$/, '');
+const allowedOrigins = [...new Set([
+  ...defaultAllowedOrigins,
+  ...configuredOrigins,
+  ...(frontendOrigin ? [frontendOrigin] : [])
+])];
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -395,7 +407,7 @@ if (USE_HTTPS) {
     console.log(`   This is normal for development. Click "Advanced" > "Proceed to localhost" to continue.`);
   });
   // Initialize socket.io
-  initSocket(server, { sessionMiddleware }).then(() => console.log('🔌 Socket.IO initialized (HTTPS)')).catch((e) => console.error('Failed to init Socket.IO', e));
+  initSocket(server, { sessionMiddleware, origin: allowedOrigins }).then(() => console.log('🔌 Socket.IO initialized (HTTPS)')).catch((e) => console.error('Failed to init Socket.IO', e));
 } else {
   // Start HTTP server (default for development)
   const server = http.createServer(app);
@@ -404,5 +416,5 @@ if (USE_HTTPS) {
     console.log(`🌐 Network access: http://<your-local-ip>:${PORT}`);
     console.log(`   To use HTTPS, set USE_HTTPS=true in your .env file`);
   });
-  initSocket(server, { sessionMiddleware }).then(() => console.log('🔌 Socket.IO initialized (HTTP)')).catch((e) => console.error('Failed to init Socket.IO', e));
+  initSocket(server, { sessionMiddleware, origin: allowedOrigins }).then(() => console.log('🔌 Socket.IO initialized (HTTP)')).catch((e) => console.error('Failed to init Socket.IO', e));
 }
