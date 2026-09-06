@@ -8,9 +8,39 @@ async function initSocket(server, opts = {}) {
   // dynamic import so server can start even if socket.io isn't installed yet
   const mod = await import('socket.io');
   const Server = mod.Server || mod.default;
+
+  // Mirror the Express CORS whitelist so Socket.IO accepts the same origins.
+  const defaultAllowedOrigins = [
+    'http://localhost:4000',
+    'http://127.0.0.1:4000',
+    'https://localhost:4000',
+    'https://frontend-production-8bfbf.up.railway.app'
+  ];
+  const envOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
+    : [];
+  const frontendOrigin = process.env.FRONTEND_URL?.trim().replace(/\/$/, '');
+  const fallbackOrigins = [...new Set([
+    ...defaultAllowedOrigins,
+    ...envOrigins,
+    ...(frontendOrigin ? [frontendOrigin] : [])
+  ])];
+
+  // Prefer the allowedOrigins list passed in from server.js; fall back to
+  // env vars / defaults if it wasn't provided or is empty.
+  const allowedOrigins = Array.isArray(opts.origin) && opts.origin.length > 0
+    ? opts.origin
+    : fallbackOrigins;
+
   io = new Server(server, {
     cors: {
-      origin: opts.origin || (process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean) : '*'),
+      origin: (origin, callback) => {
+        // Allow requests with no origin (native apps, curl, server-to-server)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        console.warn(`⚠️  Socket.IO CORS blocked origin: ${origin}`);
+        return callback(new Error('Not allowed by CORS'), false);
+      },
       credentials: true
     }
   });
