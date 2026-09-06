@@ -269,6 +269,60 @@ router.post('/oauth-login', async (req, res) => {
   }
 });
 
+// Login endpoint
+router.post('/login', loginLimiter, async (req, res) => {
+  const { emailOrUsername, password } = req.body;
+
+  const normalizedIdentifier = normalizeIdentifier(emailOrUsername);
+
+  if (!normalizedIdentifier || !password) {
+    return res.status(400).json({ error: 'Email/username and password are required' });
+  }
+
+  try {
+    const [rows] = await db.promise().query(
+      'SELECT * FROM users WHERE email = ? OR username = ?',
+      [normalizedIdentifier, normalizedIdentifier]
+    );
+
+    if (rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const user = rows[0];
+    const passwordMatches = await bcrypt.compare(password, user.password_hash);
+
+    if (!passwordMatches) {
+      return res.status(401).json({ error: 'Invalid credentials' });
+    }
+
+    const token = createToken(user.user_id, user.email, user.role);
+
+    // Set HttpOnly cookie (matches the pattern used by /oauth-login)
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 12 * 60 * 60 * 1000,
+      path: '/'
+    });
+
+    const mappedUser = mapUserRow(user);
+
+    res.status(200).json({
+      success: true,
+      message: mappedUser.email_verified
+        ? 'Login successful'
+        : 'Login successful. Please verify your email to unlock all features.',
+      user: mappedUser,
+      token
+    });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Register endpoint - MODIFIED to send code first
 router.post('/register-send-code', registerLimiter, async (req, res) => {
   const { username, email, password, preferred_language, first_name, last_name, phone, date_of_birth, gender, user_type } = req.body;
