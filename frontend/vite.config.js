@@ -17,10 +17,12 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',  // Listen on all network interfaces
     port: 4000,
+    allowedHosts: ['frontend-production-8bfbf.up.railway.app'],
     ...(useHttps ? { https: {
       key: fs.readFileSync(sslKeyPath),
       cert: fs.readFileSync(sslCertPath)
     } } : {}),
+    // Local development proxy: production uses VITE_API_URL instead.
     proxy: {
       '/api': {
         target: 'https://127.0.0.1:3000',  // Use 127.0.0.1 (works from any interface on same machine)
@@ -39,5 +41,9 @@ export default defineConfig({
         secure: false
       }
     }
+  },
+  preview: {
+    host: '0.0.0.0',
+    allowedHosts: ['frontend-production-8bfbf.up.railway.app']
   }
 })
