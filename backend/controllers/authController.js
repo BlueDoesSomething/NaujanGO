@@ -343,8 +343,10 @@ router.post('/register-send-code', registerLimiter, async (req, res) => {
 
     if (!delivery.delivered) {
       console.error(`[REGISTRATION] Failed to send verification email to ${normalizedEmail}:`, delivery);
-      // Don't delete temp data so user can try to resend
-      return res.status(500).json({ error: 'Failed to send verification code. Please check your email settings or try again in a moment.' });
+      return res.status(503).json({
+        error: 'Verification email service is temporarily unavailable. Please try again later.',
+        code: 'EMAIL_DELIVERY_UNAVAILABLE'
+      });
     }
 
     console.log(`[REGISTRATION] Sent verification code to ${normalizedEmail}. Message ID: ${delivery.messageId}`);
@@ -486,7 +488,10 @@ router.post('/register-resend-code', verificationLimiter, async (req, res) => {
 
     if (!delivery.delivered) {
       console.error(`[REGISTRATION] Failed to send verification email to ${normalizedEmail}:`, delivery);
-      return res.status(500).json({ error: 'Failed to send verification code. Please try again.' });
+      return res.status(503).json({
+        error: 'Verification email service is temporarily unavailable. Please try again later.',
+        code: 'EMAIL_DELIVERY_UNAVAILABLE'
+      });
     }
 
     console.log(`[REGISTRATION] Resent verification code to ${normalizedEmail}. Message ID: ${delivery.messageId}`);
@@ -504,6 +509,11 @@ router.post('/register-resend-code', verificationLimiter, async (req, res) => {
 
 // Original register endpoint (kept for backward compatibility)
 router.post('/register', registerLimiter, async (req, res) => {
+  return res.status(410).json({
+    error: 'This registration endpoint has been retired. Start registration with email verification.',
+    code: 'REGISTRATION_REQUIRES_EMAIL_VERIFICATION'
+  });
+
   const { username, email, password, preferred_language, first_name, last_name, phone, date_of_birth } = req.body;
 
   const normalizedUsername = cleanString(username);

@@ -4,6 +4,8 @@ import {
   contactOwner,
   getMessages,
   getNotifications,
+  markAllMessagesAsRead,
+  markAllNotificationsAsRead,
   markMessageAsRead,
   markNotificationAsRead,
   sendMessage
@@ -18,6 +20,7 @@ router.get('/notifications', getNotifications);
 
 // Mark notification as read
 router.put('/notifications/:id/read', markNotificationAsRead);
+router.put('/notifications/read-all', markAllNotificationsAsRead);
 
 // Get user messages
 router.get('/messages', getMessages);
@@ -30,5 +33,6 @@ router.post('/messages', sendMessage);
 
 // Mark message as read
 router.put('/messages/:id/read', markMessageAsRead);
+router.put('/messages/read-all', markAllMessagesAsRead);
 
 export default router;

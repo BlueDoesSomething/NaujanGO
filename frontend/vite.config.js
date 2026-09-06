@@ -9,6 +9,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const sslKeyPath  = path.resolve(__dirname, '../backend/ssl/key.pem');
 const sslCertPath = path.resolve(__dirname, '../backend/ssl/cert.pem');
 const sslExists   = fs.existsSync(sslKeyPath) && fs.existsSync(sslCertPath);
+const useHttps = process.env.HTTPS === 'true' && sslExists;
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -16,10 +17,10 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',  // Listen on all network interfaces
     port: 4000,
-    https: {
+    ...(useHttps ? { https: {
       key: fs.readFileSync(sslKeyPath),
       cert: fs.readFileSync(sslCertPath)
-    },
+    } } : {}),
     proxy: {
       '/api': {
         target: 'https://127.0.0.1:3000',  // Use 127.0.0.1 (works from any interface on same machine)

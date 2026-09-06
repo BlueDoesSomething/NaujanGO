@@ -29,6 +29,20 @@ export const markNotificationAsRead = async (req, res) => {
   }
 };
 
+export const markAllNotificationsAsRead = async (req, res) => {
+  const userId = req.user.user_id;
+  try {
+    await db.promise().query(
+      'UPDATE notifications SET is_read = TRUE WHERE user_id = ? AND is_read = FALSE',
+      [userId]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Mark all notifications read error:', error);
+    res.status(500).json({ error: 'Failed to mark notifications as read' });
+  }
+};
+
 export const getMessages = async (req, res) => {
   const userId = req.user.user_id;
   try {
@@ -127,5 +141,19 @@ export const markMessageAsRead = async (req, res) => {
   } catch (error) {
     console.error('Mark message read error:', error);
     res.status(500).json({ error: 'Failed to mark message as read' });
+  }
+};
+
+export const markAllMessagesAsRead = async (req, res) => {
+  const userId = req.user.user_id;
+  try {
+    await db.promise().query(
+      'UPDATE messages SET is_read = TRUE WHERE receiver_id = ? AND is_read = FALSE',
+      [userId]
+    );
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Mark all messages read error:', error);
+    res.status(500).json({ error: 'Failed to mark messages as read' });
   }
 };

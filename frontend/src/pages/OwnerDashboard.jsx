@@ -168,6 +168,11 @@ const OwnerDashboard = () => {
     // Notifications State
     const [notifications, setNotifications] = useState([]);
   const [messages, setMessages] = useState([]);
+    const [messageSearch, setMessageSearch] = useState('');
+    const [messageFilter, setMessageFilter] = useState('all');
+    const [messageComposer, setMessageComposer] = useState(null);
+    const [messageSending, setMessageSending] = useState(false);
+    const [messageSendError, setMessageSendError] = useState('');
   const [archivedBookings, setArchivedBookings] = useState([]);
   const [archivedPayments, setArchivedPayments] = useState([]);
   const [archiveSubSection, setArchiveSubSection] = useState('bookings');
@@ -711,6 +716,8 @@ const OwnerDashboard = () => {
     { id: 'messages', label: 'Messages', icon: <Icons.Email size={22} /> },
     { id: 'archive', label: 'Archive', icon: <Icons.Archive size={22} /> }
   ];
+
+  const isCurrentUser = (userId) => String(userId) === String(user?.user_id);
   
     const ownerHotelIds = new Set(hotels.map((hotel) => hotel.hotel_id));
     const filteredPayments = payments;
@@ -735,6 +742,24 @@ const OwnerDashboard = () => {
       }
       return true;
     });
+
+    const normalizedMessageSearch = messageSearch.trim().toLowerCase();
+    const filteredNotifications = notifications.filter((notification) => {
+      if (messageFilter === 'unread' && notification.is_read) return false;
+      if (!normalizedMessageSearch) return true;
+      return `${notification.title} ${notification.message}`.toLowerCase().includes(normalizedMessageSearch);
+    });
+    const filteredMessages = messages.filter((message) => {
+      if (messageFilter === 'unread' && (message.is_read || !isCurrentUser(message.receiver_id))) return false;
+      if (messageFilter === 'sent' && !isCurrentUser(message.sender_id)) return false;
+      if (messageFilter === 'received' && !isCurrentUser(message.receiver_id)) return false;
+      if (!normalizedMessageSearch) return true;
+      return `${message.subject} ${message.message} ${message.sender_name} ${message.receiver_name}`
+        .toLowerCase()
+        .includes(normalizedMessageSearch);
+    });
+    const unreadNotificationCount = notifications.filter((notification) => !notification.is_read).length;
+    const unreadMessageCount = messages.filter((message) => !message.is_read && isCurrentUser(message.receiver_id)).length;
   
     const handleBookingStatusChange = async (bookingId, newStatus) => {
       try {
@@ -798,6 +823,52 @@ const OwnerDashboard = () => {
         console.error('Error loading notifications:', error);
         setNotifications([]);
         setMessages([]);
+      }
+    };
+
+    const markAllNotificationsRead = async () => {
+      try {
+        await api.put('/messages/notifications/read-all');
+        setNotifications((currentNotifications) => currentNotifications.map((notification) => ({
+          ...notification,
+          is_read: true
+        })));
+      } catch (error) {
+        console.error('Failed to mark all notifications as read:', error);
+      }
+    };
+
+    const markAllMessagesRead = async () => {
+      try {
+        await api.put('/messages/messages/read-all');
+        setMessages((currentMessages) => currentMessages.map((message) => ({
+          ...message,
+          is_read: true
+        })));
+      } catch (error) {
+        console.error('Failed to mark all messages as read:', error);
+      }
+    };
+
+    const sendOwnerMessage = async (event) => {
+      event.preventDefault();
+      if (!messageComposer?.receiver_id || !messageComposer.message.trim()) return;
+
+      try {
+        setMessageSending(true);
+        setMessageSendError('');
+        await api.post('/messages/messages', {
+          receiver_id: messageComposer.receiver_id,
+          subject: messageComposer.subject.trim() || 'No Subject',
+          message: messageComposer.message.trim()
+        });
+        setMessageComposer(null);
+        await loadNotifications();
+      } catch (error) {
+        console.error('Failed to send message:', error);
+        setMessageSendError(error.response?.data?.error || 'Failed to send message. Please try again.');
+      } finally {
+        setMessageSending(false);
       }
     };
 
@@ -923,7 +994,14 @@ const OwnerDashboard = () => {
                   }}
                 >
                   <span className="gov-nav-btn__icon">{module.icon}</span>
-                  <span className="gov-nav-btn__label">{module.label}</span>
+                  <span className="gov-nav-btn__label">
+                    {module.label}
+                    {module.id === 'messages' && (unreadNotificationCount + unreadMessageCount) > 0 && (
+                      <span style={{ marginLeft: '0.5rem', minWidth: '1.25rem', padding: '0.1rem 0.35rem', borderRadius: '999px', background: '#c62828', color: '#fff', fontSize: '0.7rem', fontWeight: 800, textAlign: 'center' }}>
+                        {unreadNotificationCount + unreadMessageCount}
+                      </span>
+                    )}
+                  </span>
                 </button>
               );
             })}
@@ -2872,6 +2950,34 @@ const OwnerDashboard = () => {
               <h1 className="gov-page-title">
                 <Icons.Email size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Messages & Notifications
               </h1>
+
+              <div className="gov-glass-panel" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                <input
+                  type="search"
+                  value={messageSearch}
+                  onChange={(event) => setMessageSearch(event.target.value)}
+                  placeholder="Search messages and notifications"
+                  aria-label="Search messages and notifications"
+                  style={{ flex: '1 1 260px', minWidth: '220px', padding: '0.7rem 0.85rem', border: '1px solid #c8e6c9', borderRadius: '6px' }}
+                />
+                <select
+                  value={messageFilter}
+                  onChange={(event) => setMessageFilter(event.target.value)}
+                  aria-label="Filter messages"
+                  style={{ padding: '0.7rem 0.85rem', border: '1px solid #c8e6c9', borderRadius: '6px' }}
+                >
+                  <option value="all">All activity</option>
+                  <option value="unread">Unread ({unreadNotificationCount + unreadMessageCount})</option>
+                  <option value="received">Received messages</option>
+                  <option value="sent">Sent messages</option>
+                </select>
+                <button className="gov-btn-ghost" onClick={markAllNotificationsRead} disabled={unreadNotificationCount === 0}>
+                  Mark notifications read
+                </button>
+                <button className="gov-btn-ghost" onClick={markAllMessagesRead} disabled={unreadMessageCount === 0}>
+                  Mark messages read
+                </button>
+              </div>
             
               {/* Notifications Section */}
               <div className="gov-glass-panel">
@@ -2879,8 +2985,8 @@ const OwnerDashboard = () => {
                   <Icons.Sparkles size={20} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Recent Notifications
                 </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {notifications.length > 0 ? (
-                    notifications.map((notif) => (
+                  {filteredNotifications.length > 0 ? (
+                    filteredNotifications.map((notif) => (
                       <div key={notif.notification_id} style={{
                         padding: '1.25rem',
                         background: notif.is_read ? '#f8fdf7' : '#e8f5e9',
@@ -2931,7 +3037,7 @@ const OwnerDashboard = () => {
                     ))
                   ) : (
                     <div style={{ padding: '2rem', textAlign: 'center', color: '#718096' }}>
-                      No notifications yet
+                      {notifications.length > 0 ? 'No notifications match your filter' : 'No notifications yet'}
                     </div>
                   )}
                 </div>
@@ -2939,12 +3045,12 @@ const OwnerDashboard = () => {
 
               {/* Messages Section */}
               <div className="gov-glass-panel">
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1B5E20', marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1B5E20', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                   <Icons.Chat size={20} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Messages
                 </h2>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {messages.length > 0 ? (
-                    messages.map((msg) => (
+                  {filteredMessages.length > 0 ? (
+                    filteredMessages.map((msg) => (
                       <div key={msg.message_id} style={{
                         padding: '1.5rem',
                         background: msg.is_read ? '#f8fdf7' : '#e8f5e9',
@@ -2955,10 +3061,15 @@ const OwnerDashboard = () => {
                         cursor: 'pointer'
                       }}
                       onClick={async () => {
-                        if (!msg.is_read && msg.receiver_id === user?.user_id) {
+                        if (!msg.is_read && isCurrentUser(msg.receiver_id)) {
                           try {
                             await api.put(`/messages/messages/${msg.message_id}/read`);
-                            loadNotifications();
+                              setMessages((currentMessages) => currentMessages.map((currentMessage) => (
+                                currentMessage.message_id === msg.message_id
+                                  ? { ...currentMessage, is_read: true }
+                                  : currentMessage
+                              )));
+                              loadNotifications();
                           } catch (err) {
                             console.error('Failed to mark message as read:', err);
                           }
@@ -2969,13 +3080,13 @@ const OwnerDashboard = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                           <div>
                             <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1B5E20' }}>
-                              {msg.sender_id === user?.user_id ? `To: ${msg.receiver_name}` : `From: ${msg.sender_name}`}
+                              {isCurrentUser(msg.sender_id) ? `To: ${msg.receiver_name}` : `From: ${msg.sender_name}`}
                             </div>
                             <div style={{ fontSize: '0.95rem', fontWeight: 600, color: '#2d3748', marginTop: '0.25rem' }}>
                               {msg.subject}
                             </div>
                           </div>
-                          {!msg.is_read && msg.receiver_id === user?.user_id && (
+                          {!msg.is_read && isCurrentUser(msg.receiver_id) && (
                             <div style={{
                               padding: '0.25rem 0.75rem',
                               background: '#2E7D32',
@@ -2994,15 +3105,70 @@ const OwnerDashboard = () => {
                         <div style={{ fontSize: '0.8rem', color: '#718096' }}>
                           {new Date(msg.created_at).toLocaleString()}
                         </div>
+                        {!isCurrentUser(msg.sender_id) && (
+                          <button
+                            type="button"
+                            className="gov-btn-ghost"
+                            style={{ marginTop: '0.75rem' }}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setMessageSendError('');
+                              setMessageComposer({
+                                receiver_id: msg.sender_id,
+                                recipient_name: msg.sender_name,
+                                subject: msg.subject?.startsWith('Re:') ? msg.subject : `Re: ${msg.subject || 'No Subject'}`,
+                                message: ''
+                              });
+                            }}
+                          >
+                            <Icons.Email size={16} style={{ verticalAlign: 'middle', marginRight: '0.35rem' }} /> Reply
+                          </button>
+                        )}
                       </div>
                     ))
                   ) : (
                     <div style={{ padding: '2rem', textAlign: 'center', color: '#718096' }}>
-                      No messages yet
+                      {messages.length > 0 ? 'No messages match your filter' : 'No messages yet'}
                     </div>
                   )}
                 </div>
               </div>
+
+              {messageComposer && (
+                <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(15, 23, 42, 0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }} onClick={() => setMessageComposer(null)}>
+                  <div className="gov-glass-panel" style={{ width: 'min(620px, 100%)', border: '2px solid #2E7D32', boxShadow: '0 20px 50px rgba(0, 0, 0, 0.2)' }} onClick={(event) => event.stopPropagation()}>
+                    <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1B5E20', marginBottom: '1rem' }}>
+                      Reply to {messageComposer.recipient_name}
+                    </h2>
+                    <form onSubmit={sendOwnerMessage} style={{ display: 'grid', gap: '0.75rem' }}>
+                    <input
+                      value={messageComposer.subject}
+                      onChange={(event) => setMessageComposer({ ...messageComposer, subject: event.target.value })}
+                      placeholder="Subject"
+                      aria-label="Message subject"
+                      style={{ padding: '0.7rem 0.85rem', border: '1px solid #c8e6c9', borderRadius: '6px' }}
+                    />
+                    <textarea
+                      value={messageComposer.message}
+                      onChange={(event) => setMessageComposer({ ...messageComposer, message: event.target.value })}
+                      placeholder="Write your reply..."
+                      aria-label="Message body"
+                      rows={5}
+                      required
+                      autoFocus
+                      style={{ padding: '0.7rem 0.85rem', border: '1px solid #c8e6c9', borderRadius: '6px', resize: 'vertical' }}
+                    />
+                    {messageSendError && <div role="alert" style={{ color: '#b91c1c', fontSize: '0.9rem' }}>{messageSendError}</div>}
+                    <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                      <button type="button" className="gov-btn-ghost" onClick={() => setMessageComposer(null)}>Cancel</button>
+                      <button type="submit" className="gov-btn-primary" disabled={messageSending || !messageComposer.message.trim()}>
+                        {messageSending ? 'Sending...' : 'Send reply'}
+                      </button>
+                    </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

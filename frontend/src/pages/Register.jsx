@@ -305,14 +305,6 @@ const preloadImage = (src) => new Promise((resolve) => {
   image.src = src;
 });
 
-const devVerificationStyle = {
-  display: 'inline-block',
-  marginBottom: '1rem',
-  color: '#dcfce7',
-  fontWeight: '700',
-  textDecoration: 'underline'
-};
-
 const Register = () => {
   const [formData, setFormData] = useState({
     username: '',
@@ -333,7 +325,6 @@ const Register = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState(0);
-  const [devVerificationUrl, setDevVerificationUrl] = useState('');
   const [registrationStage, setRegistrationStage] = useState('form'); // 'form' or 'verify'
   const [verificationCode, setVerificationCode] = useState('');
   const [tempUserData, setTempUserData] = useState(null); // Store user data waiting for verification
@@ -461,7 +452,6 @@ const Register = () => {
     e.preventDefault();
     setError(null);
     setSuccessMessage(null);
-    setDevVerificationUrl('');
 
     if (!validateForm()) return;
 
@@ -486,10 +476,11 @@ const Register = () => {
       setTempUserData(formData);
       setRegistrationStage('verify');
       setSuccessMessage(response.data?.message || 'Verification code sent to your email. Please enter the code to continue.');
-      setDevVerificationUrl(response.data?.devVerificationCode || '');
     } catch (err) {
       console.error('Registration error:', err);
-      const errMsg = err.response?.data?.error || err.message || 'Registration failed';
+      const errMsg = err.response?.data?.code === 'EMAIL_DELIVERY_UNAVAILABLE'
+        ? 'Registration email could not be sent. Please ask the administrator to check the SMTP email settings.'
+        : err.response?.data?.error || err.message || 'Registration failed';
       setError(errMsg);
     } finally {
       setIsLoading(false);
@@ -625,31 +616,9 @@ const Register = () => {
         {successMessage && (
           <div style={successStyle}>
             <p>{successMessage}</p>
-            {devVerificationUrl && (
-              <div style={{marginTop: '1rem', padding: '1rem', backgroundColor: '#ecfdf5', borderRadius: '8px'}}>
-                <p style={{margin: '0 0 0.5rem 0', fontSize: '0.9rem'}}>✓ Development verification link available:</p>
-                <a 
-                  href={devVerificationUrl} 
-                  style={{
-                    ...devVerificationStyle,
-                    display: 'inline-block',
-                    padding: '0.75rem 1rem',
-                    backgroundColor: '#16a34a',
-                    color: '#fff',
-                    textDecoration: 'none',
-                    borderRadius: '8px',
-                    marginTop: '0.5rem'
-                  }}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Click here to verify email
-                </a>
-              </div>
-            )}
           </div>
         )}
-        {successMessage && !devVerificationUrl && (
+        {successMessage && (
           <div style={{marginTop: '1rem', padding: '1rem', backgroundColor: '#fef3c7', borderRadius: '8px', border: '1px solid #fcd34d', color: '#92400e'}}>
             <p style={{margin: '0 0 0.5rem 0', fontWeight: '600'}}>📧 Check your email</p>
             <p style={{margin: 0, fontSize: '0.9rem'}}>A verification code has been sent to your email. Enter it below to verify your account.</p>

@@ -31,6 +31,8 @@ const Profile = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [pickerViewDate, setPickerViewDate] = useState(null);
   const [pickerPos, setPickerPos] = useState({ top: 0, left: 0, width: 300 });
+  const [messages, setMessages] = useState([]);
+  const [messagesLoading, setMessagesLoading] = useState(true);
   const datePickerTriggerRef = useRef(null);
   const datePickerPopupRef = useRef(null);
 
@@ -59,6 +61,34 @@ const Profile = () => {
     
     loadProfile();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const loadMessages = async () => {
+      try {
+        const response = await api.get('/messages/messages');
+        setMessages(response.data || []);
+      } catch (error) {
+        console.error('Failed to load profile messages:', error);
+      } finally {
+        setMessagesLoading(false);
+      }
+    };
+
+    if (user) loadMessages();
+  }, [user]);
+
+  const markMessageAsRead = async (messageId) => {
+    try {
+      await api.put(`/messages/messages/${messageId}/read`);
+      setMessages(currentMessages => currentMessages.map(currentMessage => (
+        currentMessage.message_id === messageId
+          ? { ...currentMessage, is_read: true }
+          : currentMessage
+      )));
+    } catch (error) {
+      console.error('Failed to mark profile message as read:', error);
+    }
+  };
 
   // Outside-click handled by transparent backdrop overlay in the portal — no document listener needed
 
@@ -509,6 +539,60 @@ const Profile = () => {
                 </select>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div style={{ ...profileCard, marginTop: '1.5rem' }}>
+          <div style={formSection}>
+            <h3 style={sectionTitle}>Messages from Hotel Owners</h3>
+            <p style={{ color: '#6b7280', marginTop: '-0.5rem', marginBottom: '1.25rem' }}>
+              Replies to your hotel inquiries appear here.
+            </p>
+            {messagesLoading ? (
+              <p style={{ color: '#6b7280' }}>Loading messages...</p>
+            ) : messages.length === 0 ? (
+              <p style={{ color: '#6b7280' }}>No owner messages yet.</p>
+            ) : (
+              <div style={{ display: 'grid', gap: '1rem' }}>
+                {messages.map((ownerMessage) => {
+                  const isReceived = ownerMessage.receiver_id === user?.user_id;
+                  return (
+                    <article
+                      key={ownerMessage.message_id}
+                      onClick={() => isReceived && !ownerMessage.is_read && markMessageAsRead(ownerMessage.message_id)}
+                      style={{
+                        padding: '1.25rem',
+                        background: isReceived && !ownerMessage.is_read ? '#e8f5e9' : '#f8fafc',
+                        border: '1px solid #d1d5db',
+                        borderLeft: `4px solid ${isReceived && !ownerMessage.is_read ? '#2E7D32' : '#c8e6c9'}`,
+                        borderRadius: '8px',
+                        cursor: isReceived && !ownerMessage.is_read ? 'pointer' : 'default'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.5rem' }}>
+                        <strong style={{ color: '#1B5E20' }}>
+                          {isReceived ? `From: ${ownerMessage.sender_name}` : `To: ${ownerMessage.receiver_name}`}
+                        </strong>
+                        <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>
+                          {new Date(ownerMessage.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <strong style={{ display: 'block', color: '#374151', marginBottom: '0.5rem' }}>
+                        {ownerMessage.subject || 'No Subject'}
+                      </strong>
+                      <p style={{ margin: 0, color: '#374151', whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                        {ownerMessage.message}
+                      </p>
+                      {isReceived && !ownerMessage.is_read && (
+                        <span style={{ display: 'inline-block', marginTop: '0.75rem', color: '#2E7D32', fontSize: '0.8rem', fontWeight: 700 }}>
+                          NEW - click to mark as read
+                        </span>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </div>
       </div>
