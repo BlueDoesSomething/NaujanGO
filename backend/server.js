@@ -114,7 +114,8 @@ app.use((req, res, next) => {
 });
 
 // Choose HTTP or HTTPS based on environment
-const USE_HTTPS = process.env.USE_HTTPS === 'true';
+// Railway terminates TLS at its proxy; HTTPS is only needed for local development.
+const USE_HTTPS = process.env.USE_HTTPS === 'true' && process.env.NODE_ENV !== 'production';
 
 // Session middleware for OAuth
 const sessionMiddleware = session({
