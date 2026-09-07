@@ -133,9 +133,9 @@ const sessionMiddleware = session({
   resave: false,
   saveUninitialized: false,
   cookie: { 
-    secure: USE_HTTPS,
+    secure: USE_HTTPS || process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'development' ? 'lax' : 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     maxAge: 24 * 60 * 60 * 1000
   }
 });

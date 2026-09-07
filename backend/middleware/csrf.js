@@ -19,7 +19,7 @@ export const csrfProtection = (req, res, next) => {
     res.cookie(CSRF_COOKIE, token, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 12 * 60 * 60 * 1000,
       path: '/'
     });

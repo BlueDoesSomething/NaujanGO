@@ -19,6 +19,12 @@ import { FRONTEND_URL } from '../config/publicUrls.js';
 
 const router = express.Router();
 
+// Frontend and backend live on different *.up.railway.app subdomains (cross-site),
+// so the auth cookie needs SameSite=None + Secure in production or browsers will
+// never send it. In development keep 'lax' for the localhost flow.
+const AUTH_COOKIE_SAME_SITE = process.env.NODE_ENV === 'production' ? 'none' : 'lax';
+const AUTH_COOKIE_SAME_SITE_LABEL = AUTH_COOKIE_SAME_SITE === 'none' ? 'None' : 'Lax';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadDir = path.join(__dirname, '..', 'uploads', 'profiles');
@@ -216,7 +222,7 @@ router.get('/google/callback', (req, res, next) => {
     res.cookie('auth_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: AUTH_COOKIE_SAME_SITE,
       maxAge: 12 * 60 * 60 * 1000,
       path: '/'
     });
@@ -257,7 +263,7 @@ router.post('/oauth-login', async (req, res) => {
     res.cookie('auth_token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: AUTH_COOKIE_SAME_SITE,
       maxAge: 12 * 60 * 60 * 1000,
       path: '/'
       // NOTE: Don't set domain - let Express use the request's current domain
@@ -857,7 +863,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     res.cookie('auth_token', token, {
       httpOnly: true,  // Inaccessible to JavaScript/DevTools
       secure: process.env.NODE_ENV === 'production',  // HTTPS only in production
-      sameSite: 'lax',  // Changed from 'strict' to 'lax' - allows cross-site cookie in redirects
+      sameSite: AUTH_COOKIE_SAME_SITE,  // Changed from 'strict' to 'lax' - allows cross-site cookie in redirects
       maxAge: 12 * 60 * 60 * 1000,  // 12 hours
       path: '/'
       // NOTE: Don't set domain - let Express use the request's current domain
@@ -883,12 +889,12 @@ router.post('/logout', (req, res) => {
   res.clearCookie('auth_token', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',  // Match login endpoint
-    sameSite: 'lax',  // Match login endpoint
+    sameSite: AUTH_COOKIE_SAME_SITE,  // Match login endpoint
     path: '/'  // Match login endpoint
   });
   
   // Force browser to overwrite with expired cookie as backup
-  res.setHeader('Set-Cookie', `auth_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; HttpOnly; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+  res.setHeader('Set-Cookie', `auth_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 UTC; HttpOnly; SameSite=${AUTH_COOKIE_SAME_SITE_LABEL}${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
   
   console.log('[Auth] Cookie cleared - Set-Cookie headers:', res.getHeaders()['set-cookie']);
   res.json({ success: true, message: 'Logged out successfully' });
