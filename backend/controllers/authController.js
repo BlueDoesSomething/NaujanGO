@@ -227,8 +227,12 @@ router.get('/google/callback', (req, res, next) => {
       path: '/'
     });
     
-    // The browser already has the HttpOnly cookie; keep bearer tokens out of URLs and history.
-    const redirectUrl = `${FRONTEND_URL}/oauth-callback?provider=google`;
+    // Hand the token to the SPA so it can exchange it (POST /auth/oauth-login)
+    // on its own origin. The HttpOnly cookie above only works when frontend and
+    // backend share a host (dev); on production they are different *.up.railway.app
+    // sites, so the browser won't send that cookie to the frontend origin.
+    // Cache-Control no-store keeps the token out of browser/proxy caches.
+    const redirectUrl = `${FRONTEND_URL}/oauth-callback?provider=google&token=${encodeURIComponent(token)}`;
     res.set('Cache-Control', 'no-store');
     res.redirect(redirectUrl);
   } catch (err) {

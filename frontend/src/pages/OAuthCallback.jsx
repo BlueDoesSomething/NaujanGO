@@ -19,6 +19,7 @@ const OAuthCallback = () => {
     const handleCallback = async () => {
       const provider = searchParams.get('provider');
       const error = searchParams.get('error');
+      const token = searchParams.get('token');
 
       if (error) {
         console.error('OAuth error:', error);
@@ -35,9 +36,21 @@ const OAuthCallback = () => {
       }
 
       try {
-        // The backend callback set the HttpOnly cookie. Read the authenticated profile instead of accepting URL data.
-        const response = await api.get('/auth/profile');
-        const result = await loginWithOAuth(null, response.data.user, true);
+        let userData;
+
+        if (token && provider) {
+          // Production: backend and frontend are different *.up.railway.app sites,
+          // so the HttpOnly cookie set by the callback can't reach this origin.
+          // Exchange the token on THIS origin so /oauth-login sets the cookie here.
+          const res = await api.post('/auth/oauth-login', { token, provider });
+          userData = res.data.user;
+        } else {
+          // Dev / same-host setups already have the cookie; read the profile.
+          const response = await api.get('/auth/profile');
+          userData = response.data.user;
+        }
+
+        const result = await loginWithOAuth(null, userData, true);
         
         if (result.success) {
           console.log('OAuth login successful!');
