@@ -44,7 +44,7 @@ export default defineConfig({
   },
   preview: {
     host: '0.0.0.0',
-    port: Number(process.env.PORT) || 4000,
+    port: 4000,
     allowedHosts: ['frontend-production-8bfbf.up.railway.app']
   }
 })
