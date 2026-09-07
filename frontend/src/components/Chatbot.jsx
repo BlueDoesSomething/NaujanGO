@@ -8,6 +8,21 @@ import { getApiBaseUrl } from '../api';
 
 const API_BASE_URL = getApiBaseUrl();
 
+const getApiHeaders = (extra = {}) => {
+  let csrf = '';
+  try {
+    const cookie = document.cookie.split('; ').find((c) => c.startsWith('csrf_token='));
+    if (cookie) csrf = decodeURIComponent(cookie.split('=').slice(1).join('='));
+  } catch (err) {
+    csrf = '';
+  }
+  return {
+    'Content-Type': 'application/json',
+    ...(csrf ? { 'X-CSRF-Token': csrf } : {}),
+    ...extra
+  };
+};
+
 // Static map of chatbot language codes → Web Speech API BCP-47 tags
 const SPEECH_LANG_MAP = {
   tl: 'fil-PH',
@@ -106,6 +121,7 @@ const Chatbot = ({ language }) => {
   const { t } = useLanguage();
   const [chatbotLanguage, setChatbotLanguage] = useState(language || 'en');
   const { user, isLoggedIn } = useAuth();
+  const navigate = useNavigate();
   const [hasManualLanguage, setHasManualLanguage] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState(() => ([
@@ -875,7 +891,7 @@ const Chatbot = ({ language }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/chatbot/human`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getApiHeaders(),
         body: JSON.stringify({
           conversation_id: null,
           user_id: isLoggedIn && user ? user.user_id : null,
@@ -932,7 +948,7 @@ const Chatbot = ({ language }) => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/chatbot/agent`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getApiHeaders(),
           body: JSON.stringify({
             conversation_id: conversationId,
             user_id: isLoggedIn && user ? user.user_id : null,
@@ -980,7 +996,7 @@ const Chatbot = ({ language }) => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/chatbot`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getApiHeaders(),
         body: JSON.stringify({ 
           message: userMessage, 
           conversation_id: conversationId, 
@@ -1062,7 +1078,7 @@ const Chatbot = ({ language }) => {
       try {
         const resp = await fetch(`${API_BASE_URL}/api/chatbot/human`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: getApiHeaders(),
           body: JSON.stringify({ conversation_id: conversationId, user_id: isLoggedIn && user ? user.user_id : null, message: text, language: chatbotLanguage })
         });
         if (!resp.ok) throw new Error('Failed to save human message');
@@ -1315,7 +1331,7 @@ const Chatbot = ({ language }) => {
                     }}>Reply</button>
                     <button onClick={async () => {
                       try {
-                        const r = await fetch(`${API_BASE_URL}/api/chatbot/moderate`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ message_id: m.message_id, moderated_by: user.user_id }) });
+                        const r = await fetch(`${API_BASE_URL}/api/chatbot/moderate`, { method: 'POST', headers: getApiHeaders(), body: JSON.stringify({ message_id: m.message_id, moderated_by: user.user_id }) });
                         if (!r.ok) throw new Error('Failed');
                         await loadFlaggedMessages();
                       } catch (err) { console.error(err); alert('Failed to mark reviewed'); }
@@ -1341,13 +1357,13 @@ const Chatbot = ({ language }) => {
                             try {
                               const r = await fetch(`${API_BASE_URL}/api/chatbot/human`, {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: getApiHeaders(),
                                 body: JSON.stringify({ conversation_id: m.conversation_id, user_id: user.user_id, message: reply, language: m.language || chatbotLanguage })
                               });
                               if (!r.ok) throw new Error('Failed to send human reply');
                               await fetch(`${API_BASE_URL}/api/chatbot/moderate`, {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: getApiHeaders(),
                                 body: JSON.stringify({ message_id: m.message_id, moderated_by: user.user_id, conversation_id: m.conversation_id })
                               });
                               setModerationReplyDraft('');

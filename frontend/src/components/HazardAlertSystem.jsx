@@ -9,6 +9,17 @@ import { getApiBaseUrl } from '../api';
 
 const API_BASE_URL = getApiBaseUrl();
 
+const getApiHeaders = (extra = {}) => {
+  let csrf = '';
+  try {
+    const cookie = document.cookie.split('; ').find((c) => c.startsWith('csrf_token='));
+    if (cookie) csrf = decodeURIComponent(cookie.split('=').slice(1).join('='));
+  } catch (err) {
+    csrf = '';
+  }
+  return { 'Content-Type': 'application/json', ...(csrf ? { 'X-CSRF-Token': csrf } : {}), ...extra };
+};
+
 const HazardAlertSystem = ({ 
   attractions = [], 
   userId, 
@@ -218,7 +229,7 @@ const HazardAlertSystem = ({
     try {
       const response = await fetch(`${API_BASE_URL}/api/weather/preferences`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getApiHeaders(),
         body: JSON.stringify({
           userId,
           ...newPreferences
