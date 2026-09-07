@@ -41,6 +41,9 @@ import { FRONTEND_URL } from './config/publicUrls.js';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Trust the first proxy (Railway) so req.protocol / req.secure are correct
+app.set('trust proxy', 1);
+
 /* 
 import morgan from 'morgan';  // Commenting out morgan import to avoid ERR_MODULE_NOT_FOUND error
 */

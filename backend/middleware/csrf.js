@@ -13,9 +13,11 @@ const constantTimeEqual = (left, right) => {
 
 export const csrfProtection = (req, res, next) => {
   let token = req.cookies?.[CSRF_COOKIE];
+  let isNewToken = false;
 
   if (!token) {
     token = crypto.randomBytes(32).toString('hex');
+    isNewToken = true;
     res.cookie(CSRF_COOKIE, token, {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
@@ -25,7 +27,9 @@ export const csrfProtection = (req, res, next) => {
     });
   }
 
-  if (SAFE_METHODS.has(req.method) || !req.cookies?.auth_token) {
+  // Skip validation for safe methods, unauthenticated requests,
+  // or when the cookie was missing (browser will have the token for the next request).
+  if (SAFE_METHODS.has(req.method) || !req.cookies?.auth_token || isNewToken) {
     return next();
   }
 

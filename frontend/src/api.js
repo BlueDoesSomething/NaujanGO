@@ -4,20 +4,21 @@ import axios from 'axios';
 // Get backend URL from environment or auto-detect from current host
 // This allows the app to work on both localhost AND network access
 export const getApiBaseUrl = () => {
-  // If VITE_API_URL is set and not empty, use it
-  const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl && envUrl.trim()) {
-    return envUrl.trim();
-  }
   // Always use the same origin the browser is on (protocol + host + port).
   // The frontend server proxies /api, /auth, /socket.io and /uploads to the
   // backend (in production) and Vite proxies them (in development). Same-origin
   // calls avoid CORS errors AND cross-site cookie blocking, which is required
   // because *.up.railway.app deployments are on the Public Suffix List (cross-site).
+  // IMPORTANT: Do NOT honour VITE_API_URL in the browser — it causes
+  // cross-origin requests whose cookies JS cannot read, breaking CSRF.
   if (typeof window !== 'undefined' && window.location) {
     return window.location.origin;
   }
-  // Fallback for SSR or non-browser environments
+  // Fallback for SSR or non-browser environments only
+  const envUrl = import.meta.env.VITE_API_URL;
+  if (envUrl && envUrl.trim()) {
+    return envUrl.trim();
+  }
   return 'http://localhost:3000';
 };
 

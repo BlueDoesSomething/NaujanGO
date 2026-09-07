@@ -56,7 +56,14 @@ const PROXY_PREFIXES = ['/socket.io/', '/api/', '/auth/', '/uploads/', '/socket.
 const proxyToBackend = (req, res, pathname) => {
   const backendUrl = new URL(`${BACKEND_ORIGIN}${pathname}${req.url.slice(pathname.length)}`);
   const proxyReq = https.request(backendUrl, { method: req.method, headers: { ...req.headers, host: backendUrl.host } }, (proxyRes) => {
-    res.writeHead(proxyRes.statusCode, proxyRes.headers);
+    const { 'set-cookie': setCookies, ...otherHeaders } = proxyRes.headers;
+    res.writeHead(proxyRes.statusCode, otherHeaders);
+    if (setCookies) {
+      const cookies = Array.isArray(setCookies) ? setCookies : [setCookies];
+      for (const cookie of cookies) {
+        res.appendHeader('Set-Cookie', cookie);
+      }
+    }
     proxyRes.pipe(res);
   });
   proxyReq.on('error', (err) => {
