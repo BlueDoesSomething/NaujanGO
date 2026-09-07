@@ -15,6 +15,7 @@ import { buildFrontendUrl, sendAuthEmail } from '../services/authMailer.js';
 import { findSecurityToken, invalidateSecurityTokens, issueSecurityToken, markSecurityTokenUsed } from '../services/securityTokens.js';
 import { getUserColumns } from '../services/userSchema.js';
 import { JWT_SECRET } from '../config/security.js';
+import { FRONTEND_URL } from '../config/publicUrls.js';
 
 const router = express.Router();
 
@@ -203,7 +204,7 @@ router.get('/google', (req, res, next) => {
 
 router.get('/google/callback', (req, res, next) => {
   if (!isStrategyAvailable('google')) {
-    return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:4000'}/login?error=google_not_configured`);
+    return res.redirect(`${FRONTEND_URL}/login?error=google_not_configured`);
   }
   return passport.authenticate('google', { session: false })(req, res, next);
 }, async (req, res) => {
@@ -221,12 +222,12 @@ router.get('/google/callback', (req, res, next) => {
     });
     
     // The browser already has the HttpOnly cookie; keep bearer tokens out of URLs and history.
-    const redirectUrl = `${process.env.FRONTEND_URL || 'http://localhost:4000'}/oauth-callback?provider=google`;
+    const redirectUrl = `${FRONTEND_URL}/oauth-callback?provider=google`;
     res.set('Cache-Control', 'no-store');
     res.redirect(redirectUrl);
   } catch (err) {
     console.error('Google callback error:', err);
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/login?error=auth_failed`);
+    res.redirect(`${FRONTEND_URL}/login?error=auth_failed`);
   }
 });
 
@@ -1040,7 +1041,7 @@ router.get('/test-smtp', authenticateToken, async (req, res) => {
       smtpConnectionStatus,
       smtpError,
       nodeEnv: process.env.NODE_ENV || 'development',
-      frontendUrl: process.env.FRONTEND_URL || 'not set',
+      frontendUrl: FRONTEND_URL,
       tip: smtpConnectionStatus === 'failed' ? 'Check SMTP credentials in .env file. For Gmail, use an App Password, not your regular password.' : null
     });
   } catch (err) {

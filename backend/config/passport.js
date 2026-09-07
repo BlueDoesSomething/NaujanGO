@@ -5,6 +5,7 @@ import JWTStrategy from 'passport-jwt';
 import bcrypt from 'bcryptjs';
 import db from '../db.js';
 import { JWT_SECRET } from './security.js';
+import { GOOGLE_CALLBACK_URL } from './publicUrls.js';
 const extractJwt = JWTStrategy.ExtractJwt;
 
 // Detect column names to handle preferred_language vs language_preference and phone vs phone_number
@@ -126,19 +127,13 @@ passport.use(
 
 // Google Strategy - Only configure if credentials are provided
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-  // Determine callback URL: use GOOGLE_CALLBACK_HOST if set, otherwise localhost.
-  // Match the backend's actual protocol so the browser does not block the redirect.
-  const callbackHost = process.env.GOOGLE_CALLBACK_HOST?.trim() || 'localhost';
-  const protocol = process.env.USE_HTTPS === 'true' ? 'https' : 'http';
-  const googleCallbackUrl = `${protocol}://${callbackHost}:3000/auth/google/callback`;
-  
   passport.use(
     'google',
     new GoogleStrategy(
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: process.env.GOOGLE_CALLBACK_URL || googleCallbackUrl
+        callbackURL: GOOGLE_CALLBACK_URL
       },
       async (accessToken, refreshToken, profile, done) => {
         try {

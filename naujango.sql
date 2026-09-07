@@ -69,9 +69,9 @@ CREATE TABLE `about_media` (
 
 CREATE TABLE `about_settings` (
   `id` int(11) NOT NULL,
-  `overview_text` longtext NOT NULL DEFAULT 'Naujan is a first-class municipality in Oriental Mindoro, Philippines, known for its rich biodiversity and cultural heritage.',
-  `vision_text` longtext NOT NULL DEFAULT 'To be a premier sustainable tourism destination that showcases Naujan\'s natural beauty, rich culture, and vibrant local community.',
-  `mission_text` longtext NOT NULL DEFAULT '{\r\n    "points": [\r\n      "Showcase authentic tourism experiences that celebrate local culture and heritage",\r\n      "Promote sustainable practices that protect our environment and communities",\r\n      "Connect travelers with memorable experiences and genuine local interactions",\r\n      "Support local businesses and economic growth through tourism"\r\n    ]\r\n  }',
+  `overview_text` longtext NOT NULL,
+  `vision_text` longtext NOT NULL,
+  `mission_text` longtext NOT NULL,
   `population` int(11) DEFAULT 45000,
   `land_area_sq_km` decimal(10,2) DEFAULT 62.50,
   `density_per_sq_km` decimal(10,2) DEFAULT 720.00,

@@ -8,9 +8,9 @@ import { authenticateToken, requireAdmin, requireOwnerOrAdmin } from '../middlew
 
 const router = express.Router();
 import { JWT_SECRET } from '../config/security.js';
+import { FRONTEND_URL, WEBHOOK_BASE_URL } from '../config/publicUrls.js';
 // Treat 'sandbox' as real payments mode (uses provider test keys) so sandbox can exercise real provider flows
 const USE_REAL_PAYMENTS = process.env.PAYMENT_MODE === 'live' || process.env.PAYMENT_MODE === 'sandbox' || process.env.USE_REAL_PAYMENTS === 'true';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'https://localhost:4000';
 
 // 🟢 SMART FRONTEND ORIGIN DETECTION
 // Intelligently detects the frontend origin from multiple sources
@@ -316,8 +316,8 @@ const processRealPayment = async (paymentData) => {
   let result;
   const description = `Hotel Booking Payment - Booking #${bookingId}`;
   const originParam = frontendOrigin ? `?frontend_origin=${encodeURIComponent(frontendOrigin)}` : '';
-  const returnUrl = `${process.env.WEBHOOK_BASE_URL || 'https://localhost:3000'}/payments/success${originParam}`;
-  const cancelUrl = `${process.env.WEBHOOK_BASE_URL || 'https://localhost:3000'}/payments/cancel${originParam}`;
+  const returnUrl = `${WEBHOOK_BASE_URL}/payments/success${originParam}`;
+  const cancelUrl = `${WEBHOOK_BASE_URL}/payments/cancel${originParam}`;
   
   try {
     switch(method) {
@@ -678,7 +678,7 @@ router.post('/xendit/test', async (req, res) => {
 
 router.get('/xendit/sandbox', async (req, res) => {
   const { reference } = req.query;
-  const frontendUrl = (process.env.FRONTEND_URL || 'https://localhost:4000').replace(/\/$/, '');
+  const frontendUrl = FRONTEND_URL;
 
   const html = `
     <!DOCTYPE html>
@@ -1765,7 +1765,7 @@ router.get('/booking/:bookingId/latest', async (req, res) => {
       // if the request Origin or Referer matches FRONTEND_URL, or when in development.
       const origin = (req.get('Origin') || '').replace(/\/$/, '');
       const referer = (req.get('Referer') || req.get('Referrer') || '').replace(/\/$/, '');
-      const frontend = (process.env.FRONTEND_URL || 'http://localhost:4000').replace(/\/$/, '');
+      const frontend = FRONTEND_URL;
 
       const devAllowed = process.env.NODE_ENV === 'development' || process.env.ALLOW_GUEST_LOOKUP === 'true';
 
@@ -1870,7 +1870,7 @@ router.post('/:paymentId/submit-reference', async (req, res) => {
       );
 
       const ownerEmails = (owners || []).map(o => o.email).filter(Boolean);
-      const bookingLink = `${process.env.FRONTEND_URL || 'http://localhost:4000'}/owner/payments`;
+      const bookingLink = `${FRONTEND_URL}/owner/payments`;
 
       if (ownerEmails.length) {
         if (process.env.SMTP_HOST && process.env.SMTP_USER) {

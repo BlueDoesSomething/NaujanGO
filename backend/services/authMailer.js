@@ -1,4 +1,5 @@
 import nodemailer from 'nodemailer';
+import { FRONTEND_URL } from '../config/publicUrls.js';
 
 let cachedTransporter;
 
@@ -31,7 +32,7 @@ const getTransporter = () => {
 };
 
 export const buildFrontendUrl = (pathname, params = {}) => {
-  const baseUrl = (process.env.FRONTEND_URL || 'http://localhost:4000').replace(/\/$/, '');
+  const baseUrl = FRONTEND_URL;
   const url = new URL(pathname.startsWith('/') ? pathname : `/${pathname}`, `${baseUrl}/`);
 
   Object.entries(params).forEach(([key, value]) => {

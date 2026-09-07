@@ -36,6 +36,7 @@ import { trackVisitorCount } from './middleware/trackVisitor.js';
 import detectLanguage from './middleware/detectLanguage.js';
 import { SESSION_SECRET } from './config/security.js';
 import { csrfProtection } from './middleware/csrf.js';
+import { FRONTEND_URL } from './config/publicUrls.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -48,16 +49,13 @@ import morgan from 'morgan';  // Commenting out morgan import to avoid ERR_MODUL
 // Middleware
 // app.use(morgan('dev'));  // Commenting out morgan usage due to missing package error
 // CORS configuration - restrict origins properly
-const defaultAllowedOrigins = [
-  'http://localhost:4000',
-  'http://127.0.0.1:4000',
-  'https://localhost:4000',
-  'https://frontend-production-8bfbf.up.railway.app'
-];
+const defaultAllowedOrigins = process.env.NODE_ENV === 'production'
+  ? [FRONTEND_URL]
+  : ['http://localhost:4000', 'http://127.0.0.1:4000', 'https://localhost:4000'];
 const configuredOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
   : [];
-const frontendOrigin = process.env.FRONTEND_URL?.trim().replace(/\/$/, '');
+const frontendOrigin = FRONTEND_URL;
 const allowedOrigins = [...new Set([
   ...defaultAllowedOrigins,
   ...configuredOrigins,
@@ -358,7 +356,7 @@ app.get('/payment-success', (req, res) => {
   // the updated reference confirmation UI. Preserve all incoming
   // Redirect to the frontend payment success route which contains
   // query params (booking_id, provider, source_id, requires_reference, etc.).
-  const frontendUrl = (process.env.FRONTEND_URL || 'http://localhost:4000').replace(/\/$/, '');
+  const frontendUrl = FRONTEND_URL;
   const qs = new URLSearchParams(req.query).toString();
   const target = `${frontendUrl}/payment-success${qs ? `?${qs}` : ''}`;
   return res.redirect(307, target);

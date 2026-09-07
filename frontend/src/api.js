@@ -9,6 +9,11 @@ export const getApiBaseUrl = () => {
   if (envUrl && envUrl.trim()) {
     return envUrl.trim();
   }
+  // Production deployments use the public Railway backend unless overridden
+  // with VITE_API_URL at build time.
+  if (import.meta.env.PROD) {
+    return 'https://backend-production-03ea.up.railway.app';
+  }
   // Use the same origin the browser is on (protocol + host + port).
   // This routes all API calls through the Vite dev-server proxy (/api → localhost:3000),
   // which avoids mixed-content blocks when the dev server uses HTTPS.

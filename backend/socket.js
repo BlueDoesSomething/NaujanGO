@@ -1,5 +1,6 @@
 import db from './db.js';
 import passport from './config/passport.js';
+import { FRONTEND_URL } from './config/publicUrls.js';
 
 let io = null;
 
@@ -8,16 +9,13 @@ async function initSocket(server, opts = {}) {
   // dynamic import so server can start even if socket.io isn't installed yet
   const mod = await import('socket.io');
   const Server = mod.Server || mod.default;
-  const defaultAllowedOrigins = [
-    'http://localhost:4000',
-    'http://127.0.0.1:4000',
-    'https://localhost:4000',
-    'https://frontend-production-8bfbf.up.railway.app'
-  ];
+  const defaultAllowedOrigins = process.env.NODE_ENV === 'production'
+    ? []
+    : ['http://localhost:4000', 'http://127.0.0.1:4000', 'https://localhost:4000'];
   const configuredOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()).filter(Boolean)
     : [];
-  const frontendOrigin = process.env.FRONTEND_URL?.trim().replace(/\/$/, '');
+  const frontendOrigin = FRONTEND_URL;
   const fallbackOrigins = [...new Set([
     ...defaultAllowedOrigins,
     ...configuredOrigins,

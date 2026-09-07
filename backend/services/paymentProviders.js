@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import axios from 'axios';
 import crypto from 'crypto';
+import { WEBHOOK_BASE_URL } from '../config/publicUrls.js';
 
 // Initialize payment providers
 const stripe = process.env.STRIPE_SECRET_KEY 
@@ -161,8 +162,8 @@ export const processPayPalPayment = async (paymentData) => {
           email_address: customerEmail
         },
         application_context: {
-          return_url: returnUrl || `${process.env.WEBHOOK_BASE_URL}/payments/paypal/success`,
-          cancel_url: cancelUrl || `${process.env.WEBHOOK_BASE_URL}/payments/paypal/cancel`,
+          return_url: returnUrl || `${WEBHOOK_BASE_URL}/payments/paypal/success`,
+          cancel_url: cancelUrl || `${WEBHOOK_BASE_URL}/payments/paypal/cancel`,
           brand_name: 'Naujan Tourism',
           landing_page: 'BILLING',
           user_action: 'PAY_NOW'
@@ -266,8 +267,8 @@ export const processGCashPayment = async (paymentData) => {
             currency: currency || 'PHP',
             description: description || 'GCash Payment',
             redirect: {
-              success: `${process.env.WEBHOOK_BASE_URL || 'https://localhost:3000'}/payments/gcash/success`,
-              failed: `${process.env.WEBHOOK_BASE_URL || 'https://localhost:3000'}/payments/gcash/failed`
+              success: `${WEBHOOK_BASE_URL}/payments/gcash/success`,
+              failed: `${WEBHOOK_BASE_URL}/payments/gcash/failed`
             }
           }
         }
@@ -379,8 +380,8 @@ export const processGrabPayPayment = async (paymentData) => {
             currency: currency || 'PHP',
             description: description || 'GrabPay Payment',
             redirect: {
-              success: `${process.env.WEBHOOK_BASE_URL || 'https://localhost:3000'}/payments/grabpay/success`,
-              failed: `${process.env.WEBHOOK_BASE_URL || 'https://localhost:3000'}/payments/grabpay/failed`
+              success: `${WEBHOOK_BASE_URL}/payments/grabpay/success`,
+              failed: `${WEBHOOK_BASE_URL}/payments/grabpay/failed`
             }
           }
         }
@@ -451,8 +452,8 @@ export const processQRPHPayment = async (paymentData) => {
             currency: currency || 'PHP',
             description: description || 'QRPH Payment',
             redirect: {
-              success: `${process.env.WEBHOOK_BASE_URL || 'https://localhost:3000'}/payments/qrph/success`,
-              failed: `${process.env.WEBHOOK_BASE_URL || 'https://localhost:3000'}/payments/qrph/failed`
+              success: `${WEBHOOK_BASE_URL}/payments/qrph/success`,
+              failed: `${WEBHOOK_BASE_URL}/payments/qrph/failed`
             }
           }
         }
@@ -679,9 +680,9 @@ export const processXenditEWallet = async (paymentData) => {
       checkout_method: 'ONE_TIME_PAYMENT',
       channel_code: ewalletType, // PH_GCASH, PH_GRABPAY, etc.
       channel_properties: {
-        success_redirect_url: `${process.env.WEBHOOK_BASE_URL || 'https://localhost:3000'}/payments/xendit/success?reference_id=${referenceId}`,
-        failure_redirect_url: `${process.env.WEBHOOK_BASE_URL || 'https://localhost:3000'}/payments/xendit/failed?reference_id=${referenceId}`,
-        cancel_redirect_url: `${process.env.WEBHOOK_BASE_URL || 'https://localhost:3000'}/payments/xendit/cancel?reference_id=${referenceId}`
+        success_redirect_url: `${WEBHOOK_BASE_URL}/payments/xendit/success?reference_id=${referenceId}`,
+        failure_redirect_url: `${WEBHOOK_BASE_URL}/payments/xendit/failed?reference_id=${referenceId}`,
+        cancel_redirect_url: `${WEBHOOK_BASE_URL}/payments/xendit/cancel?reference_id=${referenceId}`
       },
       customer: {
         given_names: customerName,
