@@ -229,6 +229,11 @@ function startPythonWorker() {
     }
   });
 
+  pythonWorker.on('error', (error) => {
+    console.error('Python worker failed to start:', error.message);
+    resetPythonWorker(error);
+  });
+
   pythonWorker.stdout.on('data', (data) => {
     pythonBuffer += data.toString();
     const lines = pythonBuffer.split('\n');
