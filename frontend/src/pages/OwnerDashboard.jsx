@@ -23,7 +23,6 @@ import { useLanguage } from '../context/LanguageContext';
 import naujanGoLogo from '../assets/552820828_1195483019268738_3720769628710779316_n.png';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import './Dashboard.css';
 import './OwnerDashboard.css';
 
 const getHotelPaymentMethodOptions = (t) => [

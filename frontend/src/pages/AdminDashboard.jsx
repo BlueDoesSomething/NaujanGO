@@ -21,7 +21,6 @@ import { useLanguage } from '../context/LanguageContext';
 import LeafletMap from '../components/LeafletMap';
 import naujanGoLogo from '../assets/552820828_1195483019268738_3720769628710779316_n.png';
 
-import './Dashboard.css';
 import './AdminDashboard.css';
 import { saveCachedSetting } from '../utils/siteSettingsCache';
 import Icons from '../components/Icons';
