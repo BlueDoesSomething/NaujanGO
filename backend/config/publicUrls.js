@@ -5,9 +5,13 @@ const productionDefaults = {
 };
 
 const readUrl = (name, developmentFallback, productionFallback = productionDefaults[name]) => {
-  const value = process.env[name]?.trim().replace(/\/$/, '');
-  if (value) return value;
-  return isProduction ? productionFallback : developmentFallback;
+  const raw = process.env[name]?.trim().replace(/\/$/, '');
+  const value = raw || (isProduction ? productionFallback : developmentFallback);
+  if (!value) return value;
+  // Guarantee an absolute URL: a bare host (e.g. "naujan-go.up.railway.app") would
+  // otherwise turn res.redirect() into a RELATIVE redirect, which the browser
+  // resolves against the current URL and breaks OAuth/payment flows.
+  return /^https?:\/\//i.test(value) ? value : `https://${value}`;
 };
 
 export const FRONTEND_URL = readUrl('FRONTEND_URL', 'https://localhost:4000');
