@@ -10,8 +10,8 @@ async function initSocket(server, opts = {}) {
   const mod = await import('socket.io');
   const Server = mod.Server || mod.default;
   const defaultAllowedOrigins = process.env.NODE_ENV === 'production'
-    ? []
-    : ['http://localhost:4000', 'http://127.0.0.1:4000', 'https://localhost:4000'];
+    ? ['https://frontend-production-8bfbf.up.railway.app']
+    : ['http://localhost:4000', 'http://127.0.0.1:4000', 'https://localhost:4000', 'https://frontend-production-8bfbf.up.railway.app'];
   const configuredOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()).filter(Boolean)
     : [];
