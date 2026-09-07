@@ -50,8 +50,8 @@ import morgan from 'morgan';  // Commenting out morgan import to avoid ERR_MODUL
 // app.use(morgan('dev'));  // Commenting out morgan usage due to missing package error
 // CORS configuration - restrict origins properly
 const defaultAllowedOrigins = process.env.NODE_ENV === 'production'
-  ? [FRONTEND_URL, 'https://frontend-production-8bfbf.up.railway.app']
-  : ['http://localhost:4000', 'http://127.0.0.1:4000', 'https://localhost:4000', 'https://frontend-production-8bfbf.up.railway.app'];
+  ? [FRONTEND_URL, 'https://frontend-production-8bfbf.up.railway.app', 'https://naujan-go.up.railway.app']
+  : ['http://localhost:4000', 'http://127.0.0.1:4000', 'https://localhost:4000', 'https://frontend-production-8bfbf.up.railway.app', 'https://naujan-go.up.railway.app'];
 const configuredOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
   : [];

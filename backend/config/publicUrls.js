@@ -1,6 +1,6 @@
 const isProduction = process.env.NODE_ENV === 'production';
 const productionDefaults = {
-  FRONTEND_URL: 'https://frontend-production-8bfbf.up.railway.app',
+  FRONTEND_URL: 'https://naujan-go.up.railway.app',
   BACKEND_PUBLIC_URL: 'https://backend-production-03ea.up.railway.app'
 };
 
