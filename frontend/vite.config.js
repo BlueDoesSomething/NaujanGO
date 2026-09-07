@@ -17,7 +17,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',  // Listen on all network interfaces
     port: 4000,
-    allowedHosts: ['frontend-production-8bfbf.up.railway.app'],
+    allowedHosts: ['frontend-production-8bfbf.up.railway.app', 'naujan-go.up.railway.app'],
     ...(useHttps ? { https: {
       key: fs.readFileSync(sslKeyPath),
       cert: fs.readFileSync(sslCertPath)
@@ -45,6 +45,6 @@ export default defineConfig({
   preview: {
     host: '0.0.0.0',
     port: 4000,
-    allowedHosts: ['frontend-production-8bfbf.up.railway.app']
+    allowedHosts: ['frontend-production-8bfbf.up.railway.app', 'naujan-go.up.railway.app']
   }
 })

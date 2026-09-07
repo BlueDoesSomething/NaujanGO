@@ -51,6 +51,8 @@ const serveFile = (res, filePath, useCache) => {
   fs.createReadStream(filePath).pipe(res);
 };
 
+const PROXY_PREFIXES = ['/socket.io/', '/api/', '/auth/', '/uploads/', '/socket.io', '/api', '/auth', '/uploads'];
+
 const proxyToBackend = (req, res, pathname) => {
   const backendUrl = new URL(`${BACKEND_ORIGIN}${pathname}${req.url.slice(pathname.length)}`);
   const proxyReq = https.request(backendUrl, { method: req.method, headers: { ...req.headers, host: backendUrl.host } }, (proxyRes) => {
@@ -67,11 +69,54 @@ const proxyToBackend = (req, res, pathname) => {
   req.pipe(proxyReq);
 };
 
+// Forward Socket.IO WebSocket upgrades to the backend (same-origin transport).
+const proxyUpgrade = (req, socket, head) => {
+  const urlPath = req.url.split('?')[0];
+  if (!urlPath.startsWith('/socket.io')) {
+    socket.destroy();
+    return;
+  }
+
+  const backendUrl = new URL(`${BACKEND_ORIGIN}${req.url}`);
+  const proxyReq = https.request(backendUrl, {
+    method: 'GET',
+    headers: { ...req.headers, host: backendUrl.host }
+  });
+
+  proxyReq.on('upgrade', (proxyRes, proxySocket, proxyHead) => {
+    socket.write(`HTTP/1.1 101 ${proxyRes.statusMessage || 'Switching Protocols'}\r\n`);
+    Object.entries(proxyRes.headers).forEach(([key, value]) => {
+      if (Array.isArray(value)) value.forEach((v) => socket.write(`${key}: ${v}\r\n`));
+      else socket.write(`${key}: ${value}\r\n`);
+    });
+    socket.write('\r\n');
+    proxySocket.write(proxyHead);
+    proxySocket.pipe(socket);
+    socket.pipe(proxySocket);
+    proxySocket.on('error', () => socket.destroy());
+    socket.on('error', () => proxySocket.destroy());
+  });
+
+  proxyReq.on('response', (proxyRes) => {
+    socket.write(`HTTP/1.1 ${proxyRes.statusCode} ${proxyRes.statusMessage || ''}\r\n`);
+    Object.entries(proxyRes.headers).forEach(([key, value]) => {
+      if (Array.isArray(value)) value.forEach((v) => socket.write(`${key}: ${v}\r\n`));
+      else socket.write(`${key}: ${value}\r\n`);
+    });
+    socket.write('\r\n');
+    proxyRes.pipe(socket);
+  });
+
+  proxyReq.on('error', () => socket.destroy());
+  proxyReq.end();
+};
+
 const server = http.createServer((req, res) => {
   const urlPath = req.url.split('?')[0];
 
-  if (urlPath.startsWith('/uploads/')) {
-    return proxyToBackend(req, res, '/uploads');
+  const proxyPrefix = PROXY_PREFIXES.find((prefix) => urlPath.startsWith(prefix));
+  if (proxyPrefix) {
+    return proxyToBackend(req, res, proxyPrefix);
   }
 
   const isStaticAsset = urlPath.startsWith('/assets/');
@@ -94,6 +139,8 @@ const server = http.createServer((req, res) => {
   res.writeHead(500, { 'Content-Type': 'text/plain' });
   res.end('dist not found - run `npm run build` first');
 });
+
+server.on('upgrade', proxyUpgrade);
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`NaujanGO frontend server running on http://0.0.0.0:${PORT}`);
