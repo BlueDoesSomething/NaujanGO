@@ -18,7 +18,10 @@ import {
 
 const router = express.Router();
 
-// Apply authentication to all itinerary routes
+// Public: itinerary templates (static inspiration content shown on the home page)
+router.get('/templates/list', getItineraryTemplates);
+
+// Apply authentication to all other itinerary routes
 router.use(authenticateToken);
 
 // Get user's itineraries
@@ -50,9 +53,6 @@ router.get('/weather/:attractionId', getItineraryWeather);
 
 // Save weather data
 router.post('/weather', createItineraryWeather);
-
-// Get itinerary templates
-router.get('/templates/list', getItineraryTemplates);
 
 // Get itinerary reviews
 router.get('/:id/reviews', getItineraryReviews);
