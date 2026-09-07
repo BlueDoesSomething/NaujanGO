@@ -86,7 +86,7 @@ app.use(cors({
   },
   credentials: true,  // Allow cookies/credentials
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token', 'X-Language', 'x-lookup-token'],
   maxAge: 600  // preflight cache 10 minutes
 }));
 app.use(cookieParser());
