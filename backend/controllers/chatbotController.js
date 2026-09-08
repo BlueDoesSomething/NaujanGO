@@ -1,4 +1,5 @@
 import express from 'express';
+import axios from 'axios';
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -18,6 +19,7 @@ const supportedLanguages = ['en', 'es', 'tl', 'zh', 'ja', 'ko', 'fr', 'de'];
 const pythonExecutable = process.env.PYTHON_PATH || 'python';
 const scriptPath = path.resolve(__dirname, '../../MULTILINGUAL_CHATBOT/scripts/chatbot_multilingual.py');
 const PYTHON_TIMEOUT_MS = 12000;
+const MODEL_API_URL = process.env.CHATBOT_MODEL_URL ? process.env.CHATBOT_MODEL_URL.trim().replace(/\/$/, '') : null;
 const STAFF_ROLES = ['admin', 'agent'];
 
 const humanAgentStartLimiter = createRateLimiter({
@@ -290,6 +292,21 @@ function sendToPython(payload) {
   });
 }
 
+async function queryModel(payload) {
+  if (MODEL_API_URL) {
+    const response = await axios.post(`${MODEL_API_URL}/predict`, payload, {
+      timeout: 8000,
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const text = response.data?.response;
+    if (text === undefined || text === null || text === '') {
+      throw new Error('Empty response from model API');
+    }
+    return text;
+  }
+  return sendToPython(payload);
+}
+
 function getIntentFallbackResponse(message, language = 'en') {
   const lang = supportedLanguages.includes(language) ? language : 'en';
 
@@ -489,7 +506,7 @@ router.post('/', async (req, res) => {
   
   try {
     botResponse = await Promise.race([
-      sendToPython(pythonInput),
+      queryModel(pythonInput),
       new Promise((_, reject) => 
         setTimeout(() => reject(new Error('Timeout')), 3000)
       )
