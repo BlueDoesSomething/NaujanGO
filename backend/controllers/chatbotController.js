@@ -13,11 +13,11 @@ const router = express.Router();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const INTENTS_DIR = path.resolve(__dirname, '../../MULTILINGUAL_CHATBOT/intents');
+const INTENTS_DIR = path.resolve(__dirname, '../MULTILINGUAL_CHATBOT/intents');
 const intentsCache = new Map();
 const supportedLanguages = ['en', 'es', 'tl', 'zh', 'ja', 'ko', 'fr', 'de'];
 const pythonExecutable = process.env.PYTHON_PATH || 'python';
-const scriptPath = path.resolve(__dirname, '../../MULTILINGUAL_CHATBOT/scripts/chatbot_multilingual.py');
+const scriptPath = path.resolve(__dirname, '../MULTILINGUAL_CHATBOT/scripts/chatbot_multilingual.py');
 const PYTHON_TIMEOUT_MS = 12000;
 const MODEL_API_URL = process.env.CHATBOT_MODEL_URL ? process.env.CHATBOT_MODEL_URL.trim().replace(/\/$/, '') : null;
 const STAFF_ROLES = ['admin', 'agent'];

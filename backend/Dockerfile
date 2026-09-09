@@ -19,10 +19,9 @@ COPY MULTILINGUAL_CHATBOT MULTILINGUAL_CHATBOT
 
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('distiluse-base-multilingual-cased-v2')"
 
-COPY backend/package.json backend/package-lock.json backend/
-RUN cd backend && npm install --omit=dev --no-audit --no-fund
+COPY package.json package-lock.json ./
+RUN npm install --omit=dev --no-audit --no-fund
 
-COPY backend backend
-RUN chmod +x backend/scripts/start.sh
+COPY . .
 
-CMD ["sh", "backend/scripts/start.sh"]
+CMD ["sh", "scripts/start.sh"]

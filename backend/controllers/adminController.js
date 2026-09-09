@@ -10,8 +10,8 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CHATBOT_TRAINING_SCRIPT = path.resolve(__dirname, '../../MULTILINGUAL_CHATBOT/enhanced_train_multilingual.py');
-const CHATBOT_WORKING_DIR = path.resolve(__dirname, '../../MULTILINGUAL_CHATBOT');
+const CHATBOT_TRAINING_SCRIPT = path.resolve(__dirname, '../MULTILINGUAL_CHATBOT/enhanced_train_multilingual.py');
+const CHATBOT_WORKING_DIR = path.resolve(__dirname, '../MULTILINGUAL_CHATBOT');
 const CHATBOT_TRAINING_LANGUAGES = ['all', 'en', 'es', 'tl', 'zh', 'ja', 'ko', 'fr', 'de'];
 const PYTHON_EXECUTABLE = process.env.PYTHON_PATH || 'python';
 

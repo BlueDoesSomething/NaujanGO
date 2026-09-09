@@ -1,0 +1,10 @@
+node_modules
+__pycache__
+*.pyc
+*.log
+.env
+.env.*
+!.env.example
+ssl
+.git
+*.swp

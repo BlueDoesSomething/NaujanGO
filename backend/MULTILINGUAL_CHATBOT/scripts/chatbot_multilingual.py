@@ -330,6 +330,8 @@ KEYWORD_INTENT_MAP = {
         "cuisine naujan", "delicacy naujan", "seafood lake",
         "kakanin", "binagoongan", "carinderia", "tilapia naujan",
         "maliputo fish", "fresh fish lake", "local dish naujan",
+        "local food", "local food and cuisine", "food", "cuisine",
+        "restaurants", "where to eat", "eatery", "dining",
     ],
     "Festivals_Events": [
         "festival naujan", "fiesta naujan", "town fiesta",
@@ -348,6 +350,9 @@ KEYWORD_INTENT_MAP = {
         "eco trail naujan", "trail naujan lake", "bird walk",
         "guided walk lake", "camping lake", "outdoor adventure naujan",
         "nature trail", "park trail naujan",
+        "hiking", "hiking available", "is there hiking", "trek",
+        "trekking", "trail", "camping", "outdoor activities",
+        "is there hiking available",
     ],
     "Mangyan_Culture": [
         "mangyan", "indigenous naujan", "tribe naujan", "hanunuo",
@@ -371,6 +376,7 @@ KEYWORD_INTENT_MAP = {
         "inn naujan", "pension house naujan", "accommodation naujan",
         "lodging naujan", "room naujan", "stay near lake",
         "resort naujan", "overnight naujan",
+        "where should i stay", "should i stay", "stay in naujan",
     ],
     "Booking_Help": [
         "book", "reserve", "reservation", "booking", "check in",
@@ -533,11 +539,11 @@ KEYWORD_INTENT_MAP = {
 }
 
 
-def keyword_fallback(normalized_text):
+def _keyword_score(normalized_text):
     """
     Score each intent by counting keyword hits in the user's message.
     Uses word boundary matching to avoid partial keyword matches.
-    Returns the best matching intent tag or None.
+    Returns (best_tag, best_score). best_tag is None when no keyword matched.
     """
     import re
     
@@ -546,11 +552,9 @@ def keyword_fallback(normalized_text):
     
     best_tag = None
     best_score = 0
-    best_matches = []
     
     for tag, keywords in KEYWORD_INTENT_MAP.items():
         score = 0
-        match_details = []
         
         for kw in keywords:
             kw_lower = kw.lower()
@@ -558,24 +562,25 @@ def keyword_fallback(normalized_text):
             # Check if full keyword phrase is in text (for multi-word keywords)
             if kw_lower in normalized_text:
                 score += 2  # Multi-word phrase match gets higher weight
-                match_details.append((kw, 2))
             else:
                 # Check if all words in the keyword are in the text
                 kw_words = set(re.findall(r'\b\w+\b', kw_lower))
                 if kw_words and kw_words.issubset(text_words):
                     score += 1  # Single words in keyword match
-                    match_details.append((kw, 1))
         
         if score > best_score:
             best_score = score
             best_tag = tag
-            best_matches = match_details
     
-    # Debug logging (can be disabled)
-    # if best_tag and best_score > 0:
-    #     print(f"DEBUG keyword_fallback: '{normalized_text[:50]}...' -> {best_tag} (score={best_score})", file=sys.stderr)
-    
-    return best_tag if best_score > 0 else None
+    return (best_tag, best_score) if best_score > 0 else (None, 0)
+
+def keyword_fallback(normalized_text):
+    """
+    Score each intent by counting keyword hits in the user's message.
+    Returns the best matching intent tag or None.
+    """
+    tag, _ = _keyword_score(normalized_text)
+    return tag
 
 def get_response(user_input, language='en', use_cache=True):
     """
@@ -610,6 +615,18 @@ def get_response(user_input, language='en', use_cache=True):
         loaded_models[language] = (clf, label_encoder, intent_responses)
     else:
         clf, label_encoder, intent_responses = loaded_models[language]
+    
+    # Keyword-first accuracy: solid curated phrase matches beat the unreliable SVM
+    # (score >= 2 means the exact phrase was present verbatim in the message)
+    kw_tag, kw_score = _keyword_score(normalized)
+    if kw_tag and kw_score >= 2:
+        kw_responses = intent_responses.get(kw_tag, [])
+        if kw_responses:
+            import random
+            response = random.choice(kw_responses)
+            if use_cache:
+                response_cache[cache_key] = response
+            return response
     
     # Encode input
     if embedder is None:
