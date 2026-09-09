@@ -20,7 +20,7 @@ COPY MULTILINGUAL_CHATBOT MULTILINGUAL_CHATBOT
 RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('distiluse-base-multilingual-cased-v2')"
 
 COPY package.json package-lock.json ./
-RUN npm install --omit=dev --no-audit --no-fund
+RUN npm install --no-audit --no-fund
 
 COPY . .
 
