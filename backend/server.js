@@ -5,7 +5,6 @@ import https from 'https';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import selfsigned from 'selfsigned';
 import cors from 'cors';
 import session from 'express-session';
 import cookieParser from 'cookie-parser';
@@ -373,6 +372,10 @@ app.get('/', (req, res) => {
 import { initSocket } from './socket.js';
 
 if (USE_HTTPS) {
+  // selfsigned is a dev-only dependency, imported lazily so production builds
+  // (which install dependencies with --omit=dev) do not need it.
+  const selfsigned = (await import('selfsigned')).default;
+
   // Load or generate SSL certificates (dev)
   const sslDir = path.join(__dirname, 'ssl');
   const keyPath = path.join(sslDir, 'key.pem');
