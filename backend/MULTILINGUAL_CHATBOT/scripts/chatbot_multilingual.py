@@ -10,6 +10,7 @@ import hashlib
 import os
 import re
 import sys
+import threading
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(BASE_DIR, "..", "models")
 
@@ -170,15 +171,22 @@ def load_language_models(language):
         print(f"Error loading {language} models: {e}", file=sys.stderr)
         return None, None, None
 
-# Preload all language models at startup for faster responses
+# Models are loaded lazily per language (keeps boot fast and memory low)
 loaded_models = {}
-print("Preloading language models...", file=sys.stderr)
-for lang in LANGUAGES:
-    clf, label_encoder, intent_responses = load_language_models(lang)
-    if clf is not None:
-        loaded_models[lang] = (clf, label_encoder, intent_responses)
-        print(f"Loaded {lang} model", file=sys.stderr)
-print("All models loaded", file=sys.stderr)
+_models_lock = threading.Lock()
+
+def get_models(language):
+    """Return (clf, label_encoder, intent_responses) for a language, loading it on first use."""
+    if language in loaded_models:
+        return loaded_models[language]
+    with _models_lock:
+        if language in loaded_models:
+            return loaded_models[language]
+        clf, label_encoder, intent_responses = load_language_models(language)
+        if clf is not None:
+            loaded_models[language] = (clf, label_encoder, intent_responses)
+            print(f"Loaded {language} model", file=sys.stderr)
+        return loaded_models.get(language, (None, None, None))
 
 def fix_typos(text):
     """Fix common typos"""
@@ -607,14 +615,10 @@ def get_response(user_input, language='en', use_cache=True):
     # Normalize input (language-aware — avoids mangling non-English text)
     normalized = normalize_input(user_input, language)
     
-    # Load language-specific models
-    if language not in loaded_models:
-        clf, label_encoder, intent_responses = load_language_models(language)
-        if clf is None:
-            return get_low_confidence_response(language)
-        loaded_models[language] = (clf, label_encoder, intent_responses)
-    else:
-        clf, label_encoder, intent_responses = loaded_models[language]
+    # Load language-specific models (lazy, cached)
+    clf, label_encoder, intent_responses = get_models(language)
+    if clf is None:
+        return get_low_confidence_response(language)
     
     # Keyword-first accuracy: solid curated phrase matches beat the unreliable SVM
     # (score >= 2 means the exact phrase was present verbatim in the message)
