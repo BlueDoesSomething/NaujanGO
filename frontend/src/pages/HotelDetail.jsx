@@ -396,13 +396,12 @@ export default function HotelDetail() {
     }
     
     try {
-      const token = localStorage.getItem('token');
       await axios.post(`${API_BASE_URL}/messages/contact-owner`, {
         hotel_id: hotel.id,
         subject: contactForm.subject || 'Hotel Inquiry',
         message: contactForm.message
       }, {
-        headers: { Authorization: `Bearer ${token}` }
+        withCredentials: true
       });
       
       setContactMessage('Message sent successfully!');
@@ -428,8 +427,7 @@ export default function HotelDetail() {
   const handleSubmitBooking = async () => {
     if (!hotel) return;
 
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-    if (!token) {
+    if (!isLoggedIn) {
       setBookingError('Authentication required. Please log in again.');
       setTimeout(() => navigate('/login'), 2000);
       return;
