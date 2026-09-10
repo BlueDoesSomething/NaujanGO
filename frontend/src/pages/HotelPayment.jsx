@@ -47,7 +47,7 @@ const getPaymentMethods = (t) => [
     badge: t('payment_badge_popular') || 'Popular'
   },
   { 
-    value: 'grab_pay', 
+    value: 'grabpay', 
     label: t('payment_provider_grabpay'),
     description: t('payment_desc_grabpay'),
     icon: '🚗',
@@ -367,7 +367,7 @@ const HotelPayment = () => {
                   </div>
 
                   {/* Xendit Security Info */}
-                  {(['card', 'gcash', 'grab_pay', 'qrph'].includes(paymentMethod)) && (paymentMethod === 'card' || paymentMethod === 'grab_pay' || paymentMethod === 'qrph') ? (
+                  {(['card', 'gcash', 'grabpay', 'qrph'].includes(paymentMethod)) && (paymentMethod === 'card' || paymentMethod === 'grabpay' || paymentMethod === 'qrph') ? (
                     <div style={paymongoSecurityBannerStyle}>
                       <span style={paymongoSecurityIconStyle}>🔐</span>
                       <span>

@@ -331,6 +331,14 @@ app.get('/payments/paypal/cancel', (req, res) => {
   res.redirect(307, `/api/payments/paypal/cancel?${new URLSearchParams(req.query).toString()}`);
 });
 
+// QRPH Payment Redirects
+app.get('/payments/qrph/success', (req, res) => {
+  res.redirect(307, `/api/payments/qrph/success?${new URLSearchParams(req.query).toString()}`);
+});
+app.get('/payments/qrph/failed', (req, res) => {
+  res.redirect(307, `/api/payments/qrph/failed?${new URLSearchParams(req.query).toString()}`);
+});
+
 // Xendit Sandbox Payment Page - shows test checkout UI
 app.get('/payments/xendit/sandbox', (req, res) => {
   const query = new URLSearchParams(req.query).toString();

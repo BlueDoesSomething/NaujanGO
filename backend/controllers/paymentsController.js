@@ -260,6 +260,10 @@ const processPayment = async (paymentData) => {
       // Even in simulated mode, use real Xendit sandbox for GCash so user sees actual flow
       return await processRealPayment(paymentData);
       
+    case 'qrph':
+      // Even in simulated mode, use real PayMongo for QRPH so user sees actual flow
+      return await processRealPayment(paymentData);
+      
     case 'paypal':
       provider = 'paypal';
       providerResponse = {
@@ -423,7 +427,6 @@ const processRealPayment = async (paymentData) => {
         });
         console.log('📥 QRPH response:', result);
         break;
-        break;
         
       case 'bank_transfer':
         // Bank transfer is manual - return pending status
@@ -516,7 +519,7 @@ router.post('/checkout', async (req, res) => {
 
   if (!isExternalCheckoutMethod(payment_method)) {
     console.error('🔴 Invalid checkout payment method:', payment_method);
-    return res.status(400).json({ error: 'Checkout is only supported for PayPal/GCash/GrabPay' });
+    return res.status(400).json({ error: 'Checkout is only supported for PayPal/GCash/GrabPay/QRPH' });
   }
 
   try {
