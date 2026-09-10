@@ -436,24 +436,35 @@ export const processQRPHPayment = async (paymentData) => {
     throw new Error('PayMongo is not configured. Please add PAYMONGO_SECRET_KEY to .env');
   }
 
-  const { amount, currency, customerEmail, customerName, description } = paymentData;
+  const { amount, currency, customerEmail, customerName, description, bookingId } = paymentData;
 
   try {
     const auth = Buffer.from(process.env.PAYMONGO_SECRET_KEY).toString('base64');
 
-    // 🟢 PayMongo QRPH API structure
+    // 🟢 QRPH requires the Checkout Session API (QR PH is NOT a /sources type).
+    // Hosted Checkout supports payment_method_types ['qrph'] and returns a checkout_url.
     const response = await axios.post(
-      `${PAYMONGO_API_BASE}/sources`,
+      'https://api.paymongo.com/v2/checkout_sessions',
       {
         data: {
           attributes: {
-            type: 'qrph',  // QRPH is PayMongo's QR code payment
-            amount: Math.round(amount * 100), // PayMongo uses cents
-            currency: currency || 'PHP',
-            description: description || 'QRPH Payment',
-            redirect: {
-              success: `${WEBHOOK_BASE_URL}/payments/qrph/success`,
-              failed: `${WEBHOOK_BASE_URL}/payments/qrph/failed`
+            line_items: [
+              {
+                name: (description || 'QRPH Payment').slice(0, 80),
+                amount: Math.round(amount * 100),
+                currency: currency || 'PHP',
+                quantity: 1
+              }
+            ],
+            payment_method_types: ['qrph'],
+            success_url: `${WEBHOOK_BASE_URL}/payments/qrph/success`,
+            cancel_url: `${WEBHOOK_BASE_URL}/payments/qrph/failed`,
+            reference_number: `BOOK-${bookingId || 'QRPH'}-${Date.now()}`,
+            metadata: {
+              booking_id: bookingId || null,
+              provider: 'qrph',
+              customer_email: customerEmail || '',
+              customer_name: customerName || ''
             }
           }
         }
@@ -468,34 +479,34 @@ export const processQRPHPayment = async (paymentData) => {
 
     console.log('✅ QRPH PayMongo API Response:', JSON.stringify(response.data, null, 2));
 
-    const source = response.data.data;
+    const session = response.data.data;
 
-    if (!source || !source.attributes) {
-      console.error('🔴 Invalid PayMongo response structure - no source.attributes');
+    if (!session || !session.attributes) {
+      console.error('🔴 Invalid PayMongo response structure - no checkout_session.attributes');
       return {
         success: false,
         provider: 'qrph',
         status: 'failed',
         error: 'Invalid response from PayMongo API',
         provider_response: {
-          error: 'Missing source attributes in PayMongo response',
+          error: 'Missing checkout_session attributes in PayMongo response',
           received: response.data
         }
       };
     }
 
-    const checkout_url = source.attributes.redirect?.checkout_url;
+    const checkout_url = session.attributes.checkout_url;
     if (!checkout_url) {
       console.error('🔴 No checkout URL in PayMongo QRPH response');
-      console.error('Response attributes:', source.attributes);
+      console.error('Response attributes:', session.attributes);
       return {
         success: false,
         provider: 'qrph',
         status: 'failed',
         error: 'No checkout URL from PayMongo',
         provider_response: {
-          error: 'Missing checkout_url in redirect',
-          attributes: source.attributes
+          error: 'Missing checkout_url in checkout_session',
+          attributes: session.attributes
         }
       };
     }
@@ -503,15 +514,19 @@ export const processQRPHPayment = async (paymentData) => {
     return {
       success: true,
       provider: 'qrph',
-      transaction_reference: source.id,
+      transaction_reference: session.id,
       status: 'pending',
       checkout_url: checkout_url,
       provider_response: {
-        source_id: source.id,
-        type: source.attributes.type,
-        status: source.attributes.status,
-        amount: source.attributes.amount,
-        currency: source.attributes.currency
+        id: session.id,
+        type: session.type || 'checkout_session',
+        checkout_url: checkout_url,
+        reference_number: session.attributes.reference_number,
+        payment_method_types: session.attributes.payment_method_types,
+        metadata: session.attributes.metadata,
+        status: session.attributes.status || 'pending',
+        amount: Math.round(amount * 100),
+        currency: currency || 'PHP'
       }
     };
   } catch (error) {

@@ -423,7 +423,8 @@ const processRealPayment = async (paymentData) => {
           currency,
           customerEmail: email,
           customerName,
-          description
+          description,
+          bookingId
         });
         console.log('📥 QRPH response:', result);
         break;
@@ -1412,21 +1413,22 @@ router.get('/grabpay/failed', async (req, res) => {
 
 // 🟢 NEW: QRPH payment success handler
 router.get('/qrph/success', async (req, res) => {
-  const { source_id } = req.query;
+  const { source_id, session_id } = req.query;
+  const ref = session_id || source_id;
   
   let bookingId = null;
   let payment = null;
 
-  if (source_id) {
+  if (ref) {
     try {
       // 🟢 OPTIMIZED: Only await the SELECT query to get booking ID
       const [payments] = await db.promise().query(
         `SELECT p.*, b.booking_id, b.rooms, b.hotel_id 
          FROM hotel_payments p
          JOIN hotel_bookings b ON p.booking_id = b.booking_id
-         WHERE p.provider_response LIKE ? AND p.status = 'pending'
+         WHERE (p.provider_response LIKE ? OR p.transaction_reference = ?) AND p.status = 'pending'
          ORDER BY p.created_at DESC LIMIT 1`,
-        [`%${source_id}%`]
+        [`%${ref}%`, ref]
       );
 
       if (payments.length > 0) {
@@ -1447,7 +1449,8 @@ router.get('/qrph/success', async (req, res) => {
   const redirectUrl = buildRedirectUrl('/payment-success', {
     booking_id: bookingId,
     provider: 'qrph',
-    source_id: source_id,
+    session_id: ref || undefined,
+    source_id: source_id || ref || undefined,
     lookup_token: lookupToken,
     ...qrphSuccessQuery
   }, frontendOrigin);  // 🟢 Use smart detected origin instead of query param
@@ -1484,21 +1487,22 @@ router.get('/qrph/success', async (req, res) => {
 
 // 🟢 NEW: QRPH payment failed handler
 router.get('/qrph/failed', async (req, res) => {
-  const { source_id } = req.query;
+  const { source_id, session_id } = req.query;
+  const ref = session_id || source_id;
   
   let bookingId = null;
   let payment = null;
   
-  if (source_id) {
+  if (ref) {
     try {
       // 🟢 OPTIMIZED: Only await the SELECT query to get booking ID
       const [payments] = await db.promise().query(
         `SELECT p.*, b.booking_id 
          FROM hotel_payments p
          JOIN hotel_bookings b ON p.booking_id = b.booking_id
-         WHERE p.provider_response LIKE ? AND p.status = 'pending'
+         WHERE (p.provider_response LIKE ? OR p.transaction_reference = ?) AND p.status = 'pending'
          ORDER BY p.created_at DESC LIMIT 1`,
-        [`%${source_id}%`]
+        [`%${ref}%`, ref]
       );
 
       if (payments.length > 0) {
@@ -1519,7 +1523,8 @@ router.get('/qrph/failed', async (req, res) => {
     payment: 'failed',
     provider: 'qrph',
     booking_id: bookingId,
-    source_id: source_id,
+    session_id: ref || undefined,
+    source_id: source_id || ref || undefined,
     ...qrphFailedQuery
   }, frontendOrigin);  // 🟢 Use smart detected origin
   res.redirect(redirectUrl);
@@ -2519,6 +2524,39 @@ router.post('/webhook/paymongo', express.raw({ type: 'application/json' }), asyn
         } catch (err) {
           console.error('Error attempting auto-verify from PayMongo webhook:', err);
         }
+      }
+    }
+
+    // 🟢 QRPH uses Checkout Session API - handle payment confirmation events
+    if (event.attributes && event.attributes.type === 'checkout_session.payment.paid') {
+      const sessionData = event.attributes.data;
+      const sessionId = sessionData?.id;
+      const sessionAttrs = sessionData?.attributes || {};
+      const referenceNumber = sessionAttrs.reference_number || null;
+      const paymentObj = (sessionAttrs.payments || [])[0] || null;
+
+      console.log('✅ checkout_session.payment.paid received:', {
+        session_id: sessionId,
+        reference_number: referenceNumber
+      });
+
+      if (sessionId) {
+        // updatePaymentStatus also flips the booking to paid when status is 'succeeded'
+        await updatePaymentStatus(sessionId, 'succeeded', sessionData);
+        await updatePaymentStatusByProvider(sessionId, 'succeeded', sessionData);
+      }
+      if (paymentObj?.id) {
+        await updatePaymentStatusByProvider(paymentObj.id, 'succeeded', paymentObj);
+      }
+    } else if (event.attributes && event.attributes.type === 'checkout_session.payment.failed') {
+      const sessionData = event.attributes.data;
+      const sessionId = sessionData?.id;
+
+      console.log('❌ checkout_session.payment.failed received:', { session_id: sessionId });
+
+      if (sessionId) {
+        await updatePaymentStatus(sessionId, 'failed', sessionData);
+        await updatePaymentStatusByProvider(sessionId, 'failed', sessionData);
       }
     }
 
