@@ -29,11 +29,28 @@ const getHotelPaymentMethodOptions = (t) => [
   { value: 'card', label: t('payment_provider_card') },
   { value: 'gcash', label: t('payment_provider_gcash') },
   { value: 'grabpay', label: t('payment_provider_grabpay') },
-  { value: 'qrph', label: t('payment_provider_qrph') || 'QR Phone' },
+  { value: 'qrph', label: t('payment_provider_qrph') || 'QR PH' },
   { value: 'paypal', label: t('payment_provider_paypal') },
   { value: 'bank_transfer', label: t('payment_provider_bank_transfer') },
   { value: 'pay_at_property', label: t('payment_method_pay_at_property') }
 ];
+
+const PAYMENT_METHOD_LABELS = {
+  card: 'Credit/Debit Card',
+  gcash: 'GCash',
+  grabpay: 'GrabPay',
+  qrph: 'QR PH',
+  paypal: 'PayPal',
+  bank_transfer: 'Bank Transfer',
+  pay_at_property: 'Pay at Property'
+};
+
+const getPaymentMethodLabel = (method, t) => {
+  if (!method) return 'N/A';
+  const key = PAYMENT_METHOD_LABELS[String(method).toLowerCase()];
+  if (key) return t(`payment_provider_${String(method).toLowerCase()}`) || PAYMENT_METHOD_LABELS[String(method).toLowerCase()];
+  return method;
+};
 
 ChartJS.register(
   CategoryScale,
@@ -1900,7 +1917,7 @@ const OwnerDashboard = () => {
                           ₱{parseFloat(payment.amount || 0).toLocaleString()}
                         </td>
                         <td>
-                          {payment.method}
+                          {getPaymentMethodLabel(payment.method, t)}
                         </td>
                         <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {payment.customer_reference_number ? (
@@ -2054,7 +2071,7 @@ const OwnerDashboard = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                       <div style={{ padding: '1rem', background: '#f8fdf7', borderRadius: '8px' }}>
                         <div style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '0.25rem' }}>Method</div>
-                        <div style={{ fontWeight: 700, color: '#1B5E20' }}>{selectedPayment.method}</div>
+                        <div style={{ fontWeight: 700, color: '#1B5E20' }}>{getPaymentMethodLabel(selectedPayment.method, t)}</div>
                       </div>
                       <div style={{ padding: '1rem', background: '#f8fdf7', borderRadius: '8px' }}>
                         <div style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '0.25rem' }}>Provider</div>

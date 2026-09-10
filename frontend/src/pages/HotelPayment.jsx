@@ -56,7 +56,7 @@ const getPaymentMethods = (t) => [
   },
   { 
     value: 'qrph', 
-    label: t('payment_provider_qrph') || 'QR Phone',
+    label: t('payment_provider_qrph') || 'QR PH',
     description: t('payment_desc_qrph') || 'Pay using QR code',
     icon: '📲',
     provider: 'PayMongo',

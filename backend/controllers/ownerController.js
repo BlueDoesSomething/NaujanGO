@@ -91,7 +91,7 @@ const parseImageUrlsInput = (imageUrls) => {
   return JSON.stringify([String(imageUrls)]);
 };
 
-const DEFAULT_PAYMENT_METHODS = ['card', 'gcash', 'paypal', 'bank_transfer', 'pay_at_property'];
+const DEFAULT_PAYMENT_METHODS = ['card', 'gcash', 'grabpay', 'qrph', 'paypal', 'bank_transfer', 'pay_at_property'];
 const PAYMENT_METHOD_SET = new Set(DEFAULT_PAYMENT_METHODS);
 
 const parsePaymentMethodsInput = (methods) => {

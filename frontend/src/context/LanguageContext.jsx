@@ -739,6 +739,7 @@ const translations = {
     // Payment Provider Labels
     payment_provider_gcash: 'GCash',
     payment_provider_grabpay: 'GrabPay',
+    payment_provider_qrph: 'QR PH',
     payment_provider_paypal: 'PayPal',
     payment_provider_card: 'Credit/Debit Card',
     payment_provider_bank_transfer: 'Bank Transfer',

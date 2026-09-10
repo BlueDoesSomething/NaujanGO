@@ -18,7 +18,7 @@ const getPaymentMethodOptions = (t) => [
   { value: 'card', label: t('payment_method_card') },
   { value: 'gcash', label: t('payment_provider_gcash') },
   { value: 'grabpay', label: t('payment_provider_grabpay') },
-  { value: 'qrph', label: t('payment_provider_qrph') || 'QR Phone' },
+  { value: 'qrph', label: t('payment_provider_qrph') || 'QR PH' },
   { value: 'paypal', label: t('payment_provider_paypal') },
   { value: 'bank_transfer', label: t('payment_provider_bank_transfer') },
   { value: 'pay_at_property', label: t('payment_method_pay_at_property') }
