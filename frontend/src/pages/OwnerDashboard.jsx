@@ -1762,6 +1762,7 @@ const OwnerDashboard = () => {
                     <option value="paypal">PayPal</option>
                     <option value="gcash">GCash</option>
                     <option value="grabpay">GrabPay</option>
+                    <option value="qrph">QR PH</option>
                     <option value="bank_transfer">Bank Transfer</option>
                     <option value="pay_at_property">Pay at Property</option>
                   </select>
