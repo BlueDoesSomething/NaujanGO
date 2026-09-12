@@ -85,12 +85,12 @@
         "NAU JAN WO",
         "NAUJAN PROVINZ",
         "NAUJAN WO",
-        "Nau Jan Auf Der Insel Mindoro",
+        "Nau Jan Philippines",
         "Nau Jan Genaue Lage",
         "Nau Jan In Mindoro Island",
-        "Nauj an auf der insel mindoro",
+        "Naujan Philippines",
         "Naujan In Welcher Provinz",
-        "Naujan auf der insel mindoro",
+        "Naujan Philippines",
         "Naujan kartenlage",
         "WIE FINDE ICH naujan",
         "WO BEFINDET SICH nau jan",
@@ -109,19 +109,18 @@
         "gps koordinaten",
         "grenzen zu",
         "in welcher provinz liegt naujan",
-        "mindoro naujan",
+        "naujan philippines",
         "nachbarort",
         "nau jan IN WELCHER PROVINZ",
         "nau jan PROVINZ",
-        "nau jan im nordosten von mindoro",
-        "naujan Im Nordosten Von Mindoro",
+        "naujan philippines",
+        "Naujan Philippines",
         "naujan LOCATION",
         "naujan auf der karte finden",
         "naujan in den philippinen",
         "naujan karte",
         "naujan lokalisieren",
-        "naujan mindoro",
-        "naujan oriental mindoro",
+        "naujan philippines",
         "naujan ort",
         "naujan philippinen",
         "provinz naujan",
@@ -132,14 +131,14 @@
         "verwaltungsbezirk",
         "wie komme ich nach naujan",
         "wie man naujan findet",
-        "wo auf mindoro liegt naujan",
+        "wo liegt naujan",
         "wo genau liegt naujan",
         "wo ist naujan"
       ],
       "responses": [
-        "Naujan liegt in der Provinz Naujan an der Nordostküste der Insel Mindoro (Philippinen).",
+        "Naujan liegt in der Provinz Naujan an der Nordostküste der Philippinen (Philippinen).",
         "Naujan befindet sich in der Provinz Naujan, Region MIMAROPA, Philippinen.",
-        "Naujan finden Sie an der Nordostküste der Insel Mindoro in der Provinz Naujan."
+        "Naujan finden Sie an der Nordostküste der Philippinen in der Provinz Naujan."
       ]
     },
     {
@@ -517,7 +516,7 @@
       "tag": "History_Heritage",
       "patterns": [
         "grundung naujan",
-        "kolonialzeit mindoro",
+        "kolonialzeit philippines",
         "saint-johannis-kirche naujan",
         "historisches erbe",
         "historische statten naujan",
@@ -842,7 +841,7 @@
       "tag": "Best_Time_To_Visit",
       "patterns": [
         "beste reisezeit naujan",
-        "wann ist beste saison mindoro",
+        "wann ist beste saison naujan",
         "wann nach naujan fahren",
         "Any Info On Fahren",
         "tell me more about naujan",
@@ -872,32 +871,32 @@
     {
       "tag": "App_Capabilities",
       "patterns": [
-        "wie lakbay verwenden",
-        "funktionen von lakbay",
-        "lakbay funktionen",
+        "wie naujango verwenden",
+        "funktionen von naujango",
+        "naujango funktionen",
         "was kann diese app",
-        "reise app mindoro",
-        "yo, lakbay",
+        "reise app naujan",
+        "yo, naujango",
         "anything on diese",
         "yo, funktionen",
-        "INFO ZU LAKBAY",
+        "INFO ZU naujango",
         "INFO ZU FUNKTIONEN",
-        "lakbay",
-        "is there lakbay",
+        "naujango",
+        "is there naujango",
         "how about funktionen",
         "funktionen",
         "diese?",
         "diese yo",
-        "was ist lakbay",
+        "was ist naujango",
         "was ist diese",
         "funktionen?",
-        "tell me more about lakbay",
+        "tell me more about naujango",
         "erzähl mir über funktionen",
         "diese"
       ],
       "responses": [
-        "LAKBAY ist die Reiseplattform fur Naujan und Naujan. Inkl.: Hotels, Attraktionen, GPS-Karte, Reiserplaner und Wetter.",
-        "Auf LAKBAY konnen Sie: Hotels buchen, Attraktionen erkunden, Itinerarien erstellen, die Karte nutzen und mit diesem Chatbot chatten.",
+        "NaujanGO ist die Reiseplattform fur Naujan und Naujan. Inkl.: Hotels, Attraktionen, GPS-Karte, Reiserplaner und Wetter.",
+        "Auf NaujanGO konnen Sie: Hotels buchen, Attraktionen erkunden, Itinerarien erstellen, die Karte nutzen und mit diesem Chatbot chatten.",
         "Funktionen: Hotels (buchen), Attraktionen, Interaktive GPS-Karte, Reiseplaner und mehrsprachiger Chatbot in 8 Sprachen."
       ]
     },
@@ -905,21 +904,21 @@
       "tag": "Website_Hotels_Guide",
       "patterns": [
         "wie buche ich ein hotel in naujan",
-        "check in check out lakbay",
+        "check in check out naujango",
         "wie reserviere ich unterkunft",
         "hotel verfuegbar naujan",
-        "hotel reservierung lakbay",
+        "hotel reservierung naujango",
         "buchungsvorgang",
         "in?",
-        "auskunft über lakbay",
-        "anything on lakbay",
+        "auskunft über naujango",
+        "anything on naujango",
         "Gimme In",
-        "hey, lakbay",
+        "hey, naujango",
         "explain naujan",
         "is there naujan",
-        "i need lakbay",
-        "lakbay",
-        "is there lakbay",
+        "i need naujango",
+        "naujango",
+        "is there naujango",
         "More Info On Naujan",
         "Naujan Yo",
         "naujan",
@@ -929,7 +928,7 @@
         "anything on in"
       ],
       "responses": [
-        "So buchen Sie ein Hotel bei LAKBAY:\n1. Gehen Sie zum Bereich 'Hotels'.\n2. Durchsuchen Sie verfügbare Hotels in Naujan.\n3. Wählen Sie Ihre Check-in- und Check-out-Daten.\n4. Details prüfen und Buchung bestätigen.\nEin Konto ist erforderlich, um die Buchung abzuschließen."
+        "So buchen Sie ein Hotel bei NaujanGO:\n1. Gehen Sie zum Bereich 'Hotels'.\n2. Durchsuchen Sie verfügbare Hotels in Naujan.\n3. Wählen Sie Ihre Check-in- und Check-out-Daten.\n4. Details prüfen und Buchung bestätigen.\nEin Konto ist erforderlich, um die Buchung abzuschließen."
       ]
     },
     {
@@ -1104,7 +1103,7 @@
         "vogelbeobachtung naujan",
         "birdwatching naujan see",
         "natur in naujan",
-        "nature tours mindoro"
+        "nature tours naujan"
       ],
       "responses": [
         "Okotourismus am Naujan-See: Vogelbeobachtungstouren, Banca-Ausfluge, Besuche von Okofarms und Wanderungen im Feuchtgebiet.",
@@ -1236,7 +1235,7 @@
         "zimmer"
       ],
       "responses": [
-        "Unterkunftsmöglichkeiten in Naujan:\n• Einfache Pensionen und Gästehäuser im Poblacion (₱500–₱1.200/Nacht)\n• Lokale Herbergen in Stadtnähe (₱800–₱2.000/Nacht)\n• Ökolodge nahe dem Naujan-See (begrenzte Verfügbarkeit)\n• Homestays mit lokalem Gemeinschaftserlebnis\nSchauen Sie im Hotels-Bereich der LAKBAY-App für Verfügbarkeit und Buchung."
+        "Unterkunftsmöglichkeiten in Naujan:\n• Einfache Pensionen und Gästehäuser im Poblacion (₱500–₱1.200/Nacht)\n• Lokale Herbergen in Stadtnähe (₱800–₱2.000/Nacht)\n• Ökolodge nahe dem Naujan-See (begrenzte Verfügbarkeit)\n• Homestays mit lokalem Gemeinschaftserlebnis\nSchauen Sie im Hotels-Bereich der NaujanGO-App für Verfügbarkeit und Buchung."
       ]
     },
     {
@@ -1638,7 +1637,7 @@
     {
       "tag": "Booking_Help",
       "patterns": [
-        "buchung auf lakbay",
+        "buchung auf naujango",
         "wie buchen",
         "reservierungshilfe",
         "DETAILS ABOUT BUCHEN",
@@ -1770,11 +1769,11 @@
       "patterns": [
         "was kannst du tun",
         "app funktionen",
-        "lakbay services",
+        "naujango services",
         "wie funktioniert"
       ],
       "responses": [
-        "LAKBAY hilft: Hotelreservierung, Reiseplanung, Informationen zu Attraktionen, Restaurants, Verkehr, Wetter, Tipps, and Reisefuhrer."
+        "NaujanGO hilft: Hotelreservierung, Reiseplanung, Informationen zu Attraktionen, Restaurants, Verkehr, Wetter, Tipps, and Reisefuhrer."
       ]
     }
   ]

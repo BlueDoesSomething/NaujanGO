@@ -903,44 +903,44 @@
       "tag": "App_Capabilities",
       "patterns": [
         "这个应用能做什么",
-        "如何使用LAKBAY",
-        "LAKBAY旅游应用",
+        "如何使用naujango",
+        "naujango旅游应用",
         "聊天机器人功能",
-        "LAKBAY功能",
-        "lakbay旅游应用",
-        "lakbay旅游应用?",
+        "naujango功能",
+        "naujango旅游应用",
+        "naujango旅游应用?",
         "这个应用能做什么 yo",
-        "Lakbay旅游应用",
-        "hey, lakbay旅游应用",
-        "DETAILS ABOUT LAKBAY功能",
-        "描述LAKBAY功能",
-        "details about lakbay功能",
-        "描述lakbay功能",
-        "lakbay旅游应用是什么",
+        "naujango旅游应用",
+        "hey, naujango旅游应用",
+        "DETAILS ABOUT naujango功能",
+        "描述naujango功能",
+        "details about naujango功能",
+        "描述naujango功能",
+        "naujango旅游应用是什么",
         "EXPLAIN 这个应用能做什么",
-        "lakbay旅游应用 yo",
+        "naujango旅游应用 yo",
         "告诉我这个应用能做什么",
         "Explain 这个应用能做什么",
         "explain 这个应用能做什么",
-        "Hey, Lakbay旅游应用",
-        "Details About Lakbay功能",
-        "告诉我更多关于lakbay功能",
-        "Lakbay旅游应用是什么",
-        "告诉我lakbay旅游应用",
-        "how about lakbay旅游应用",
-        "Lakbay旅游应用?",
-        "LAKBAY旅游应用?",
-        "lakbay功能?",
-        "i need lakbay功能",
-        "lakbay功能的细节",
+        "Hey, naujango旅游应用",
+        "Details About naujango功能",
+        "告诉我更多关于naujango功能",
+        "naujango旅游应用是什么",
+        "告诉我naujango旅游应用",
+        "how about naujango旅游应用",
+        "naujango旅游应用?",
+        "naujango旅游应用?",
+        "naujango功能?",
+        "i need naujango功能",
+        "naujango功能的细节",
         "gimme 这个应用能做什么",
         "anything on 这个应用能做什么",
-        "Lakbay旅游应用 Yo",
-        "hey, lakbay功能"
+        "naujango旅游应用 Yo",
+        "hey, naujango功能"
       ],
       "responses": [
-        "LAKBAY是探索瑙汉和东方民都洛的旅游平台，功能包括:酒店预订、景点导览、GPS地图、行程规划和天气信息。",
-        "在LAKBAY可以:预订酒店、浏览景点、创建行程、查看互动地图，并与这个多语言聊天机器人交流。",
+        "NaujanGO是探索瑙汉和东方民都洛的旅游平台，功能包括:酒店预订、景点导览、GPS地图、行程规划和天气信息。",
+        "在NaujanGO可以:预订酒店、浏览景点、创建行程、查看互动地图，并与这个多语言聊天机器人交流。",
         "主要功能:酒店(预订)、景点浏览、互动GPS地图、行程规划器和8种语言聊天机器人。"
       ]
     },
@@ -951,7 +951,7 @@
         "预订流程",
         "如何预订住宿",
         "瑙汉可用酒店",
-        "lakbay酒店预订",
+        "naujango酒店预订",
         "hey, 预订流程",
         "YO, 如何在瑙汉预订酒店",
         "Yo, 如何在瑙汉预订酒店",
@@ -984,7 +984,7 @@
         "描述如何预订住宿"
       ],
       "responses": [
-        "如何在LAKBAY预订酒店：\n1. 前往'酒店'板块。\n2. 浏览瑙汉的可用酒店。\n3. 选择入住和退房日期。\n4. 核实详情并确认预订。\n完成预订需要账户。"
+        "如何在NaujanGO预订酒店：\n1. 前往'酒店'板块。\n2. 浏览瑙汉的可用酒店。\n3. 选择入住和退房日期。\n4. 核实详情并确认预订。\n完成预订需要账户。"
       ]
     },
     {
@@ -1491,7 +1491,7 @@
         "is there 瑙汉住宿"
       ],
       "responses": [
-        "瑙汉住宿选择：\n• 波布拉西翁基本民宿（₱500–₱1,200/晚）\n• 市中心附近当地客栈（₱800–₱2,000/晚）\n• 瑙汉湖附近生态小屋（供应有限）\n• 家庭寄宿——体验当地社区生活\n在LAKBAY应用的酒店板块查看可用住宿并在线预订。"
+        "瑙汉住宿选择：\n• 波布拉西翁基本民宿（₱500–₱1,200/晚）\n• 市中心附近当地客栈（₱800–₱2,000/晚）\n• 瑙汉湖附近生态小屋（供应有限）\n• 家庭寄宿——体验当地社区生活\n在NaujanGO应用的酒店板块查看可用住宿并在线预订。"
       ]
     },
     {

@@ -218,7 +218,7 @@ KEYWORD_INTENT_MAP = {
     "Naujan_Location": [
         # English
         "where is naujan", "location of naujan", "naujan located",
-        "where in mindoro", "find naujan", "naujan address",
+        "where is naujan", "find naujan", "naujan address",
         "naujan coordinates", "naujan map", "direction to naujan",
         # Spanish
         "donde esta naujan", "ubicacion de naujan", "como llegar naujan",
@@ -233,7 +233,7 @@ KEYWORD_INTENT_MAP = {
         # English
         "naujan lake", "lake naujan", "naujan lake info",
         "about the lake", "naujan lake facts", "ramsar naujan",
-        "biggest lake mindoro", "5th largest lake", "wetland naujan",
+        "biggest lake philippines", "5th largest lake", "wetland naujan",
         "naujan lake overview", "what is naujan lake",
         # Spanish
         "lago naujan", "lago de naujan", "informacion lago",
@@ -292,7 +292,7 @@ KEYWORD_INTENT_MAP = {
     "Agriculture_Crops": [
         "farming naujan", "crops naujan", "rice naujan", "coconut naujan",
         "copra", "rice farm", "coconut farm", "agri tour", "harvest",
-        "rice paddies", "agriculture mindoro", "farmers naujan",
+        "rice paddies", "what crops naujan", "farmers naujan",
     ],
     "Naujan_Agriculture": [
         "agricultural tourism naujan", "farm visit naujan",
@@ -388,11 +388,11 @@ KEYWORD_INTENT_MAP = {
     ],
     "Booking_Help": [
         "book", "reserve", "reservation", "booking", "check in",
-        "check out", "how to book", "book a room", "lakbay booking",
+        "check out", "how to book", "book a room", "naujango booking",
     ],
     "App_Capabilities": [
         "what can you do", "features", "capability", "help me with",
-        "what does lakbay", "about lakbay", "services", "what this app",
+        "what does naujango", "about naujango", "services", "what this app",
     ],
     "Shopping_Souvenirs": [
         "souvenir naujan", "pasalubong naujan", "shopping naujan",
@@ -402,9 +402,9 @@ KEYWORD_INTENT_MAP = {
     ],
     "History_Heritage": [
         "history naujan", "heritage naujan", "historical naujan",
-        "colonial naujan", "war mindoro", "naujan church",
-        "old church naujan", "ww2 mindoro", "founding naujan",
-        "heritage building", "batle of mindoro",
+        "colonial naujan", "war in naujan", "naujan church",
+        "old church naujan", "ww2 philippines", "founding naujan",
+        "heritage building", "battle of naujan",
     ],
     "Eco_Tourism": [
         "eco tourism naujan", "sustainable naujan", "responsible travel",

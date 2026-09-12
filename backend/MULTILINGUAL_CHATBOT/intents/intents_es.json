@@ -100,7 +100,7 @@
         "cómo llegar a naujan",
         "dentro de",
         "direcciones a naujan",
-        "dónde en mindoro está naujan",
+        "dónde está naujan",
         "dónde está naujan",
         "dónde exactamente está naujan",
         "dónde localizar",
@@ -120,13 +120,13 @@
         "localizar naujan",
         "límites municipales",
         "mapa naujan",
-        "mindoro naujan",
+        "naujan philippines",
         "municipio de primera clase naujan",
         "municipio naujan",
         "naujan en filipinas",
         "naujan filipinas",
-        "naujan mindoro",
-        "naujan oriental mindoro",
+        "naujan philippines",
+        "naujan philippines",
         "provincia naujan",
         "proximidad a",
         "pueblo naujan",
@@ -146,7 +146,7 @@
       ],
       "responses": [
         "Naujan es un Municipio de Primera Clase en la provincia de Naujan, Filipinas.",
-        "Naujan se encuentra en la costa noreste de la isla de Mindoro, en la provincia de Naujan.",
+        "Naujan se encuentra en la costa noreste de la isla de Filipinas, en la provincia de Naujan.",
         "Puedes encontrar Naujan en la región MIMAROPA, en la provincia de Naujan, Filipinas."
       ]
     },
@@ -805,7 +805,7 @@
         "artesania"
       ],
       "responses": [
-        "Los Mangyan son 8 grupos indigenas de Mindoro con tradiciones como la escritura Hanunuo-Mangyan, un sistema precolonial en bambu.",
+        "Los Mangyan son 8 grupos indigenas de Filipinas con tradiciones como la escritura Hanunuo-Mangyan, un sistema precolonial en bambu.",
         "Puedes visitar comunidades Mangyan con un guia cerca de Calapan. Son conocidos por sus tejidos, cestas y la poesia Ambahan.",
         "Apoya a los Mangyan comprando sus artesanias en cooperativas de comercio justo en Calapan. Pide permiso antes de fotografiar."
       ]
@@ -921,10 +921,10 @@
     {
       "tag": "App_Capabilities",
       "patterns": [
-        "lakbay funciones",
-        "como usar lakbay",
-        "funciones de lakbay",
-        "que tiene la aplicacion lakbay",
+        "naujango funciones",
+        "como usar naujango",
+        "funciones de naujango",
+        "que tiene la aplicacion naujango",
         "para que sirve esta app",
         "funciones del chatbot",
         "que puede hacer la aplicacion",
@@ -948,29 +948,29 @@
         "cuéntame sobre funciones"
       ],
       "responses": [
-        "LAKBAY es la plataforma de viaje para explorar Naujan y Naujan. Incluye: hotel, atracciones, mapa GPS, itinerarios y clima.",
-        "En LAKBAY puedes: reservar hoteles, explorar atracciones, crear itinerarios, ver el mapa interactivo y chatear con este asistente multilingue.",
+        "NaujanGO es la plataforma de viaje para explorar Naujan y Naujan. Incluye: hotel, atracciones, mapa GPS, itinerarios y clima.",
+        "En NaujanGO puedes: reservar hoteles, explorar atracciones, crear itinerarios, ver el mapa interactivo y chatear con este asistente multilingue.",
         "Funciones: Hoteles (reservar), Atracciones (explorar), Mapa Interactivo GPS, Planificador de Itinerarios y chatbot en 8 idiomas."
       ]
     },
     {
       "tag": "Website_Hotels_Guide",
       "patterns": [
-        "reserva de hotel lakbay",
-        "check in check out lakbay",
+        "reserva de hotel naujango",
+        "check in check out naujango",
         "proceso de reserva",
         "como reservar un hotel en naujan",
         "como se reserva alojamiento",
         "hotel disponible naujan",
         "is there naujan",
         "INFORMACIÓN SOBRE NAUJAN",
-        "lakbay",
-        "is there lakbay",
+        "naujango",
+        "is there naujango",
         "oye naujan",
         "dónde está de",
         "¿qué es alkbay",
         "naujan",
-        "¿cómo es lakbay",
+        "¿cómo es naujango",
         "Describe De",
         "¿cómo está de",
         "de",
@@ -979,7 +979,7 @@
         "necesito naujan"
       ],
       "responses": [
-        "Para reservar un hotel en LAKBAY:\n1. Ve a la sección 'Hoteles'.\n2. Explora los hoteles disponibles en Naujan.\n3. Selecciona tus fechas de entrada y salida.\n4. Verifica los detalles y confirma tu reserva.\nSe necesita cuenta para completar la reserva."
+        "Para reservar un hotel en NaujanGO:\n1. Ve a la sección 'Hoteles'.\n2. Explora los hoteles disponibles en Naujan.\n3. Selecciona tus fechas de entrada y salida.\n4. Verifica los detalles y confirma tu reserva.\nSe necesita cuenta para completar la reserva."
       ]
     },
     {
@@ -1288,7 +1288,7 @@
         "algún dato sobre alojamiento"
       ],
       "responses": [
-        "Opciones de alojamiento en Naujan:\n• Pensiones y posadas básicas en el Poblacion (₱500–₱1,200/noche)\n• Posadas locales cerca del centro (₱800–₱2,000/noche)\n• Eco-lodge cerca del Lago Naujan (disponibilidad limitada)\n• Homestays que ofrecen experiencia comunitaria local\nConsulta la sección Hoteles de la app LAKBAY para ver disponibilidad y reservar."
+        "Opciones de alojamiento en Naujan:\n• Pensiones y posadas básicas en el Poblacion (₱500–₱1,200/noche)\n• Posadas locales cerca del centro (₱800–₱2,000/noche)\n• Eco-lodge cerca del Lago Naujan (disponibilidad limitada)\n• Homestays que ofrecen experiencia comunitaria local\nConsulta la sección Hoteles de la app NaujanGO para ver disponibilidad y reservar."
       ]
     },
     {
@@ -1707,16 +1707,16 @@
       "patterns": [
         "hacer reservacion",
         "como reservar hotel",
-        "booking en lakbay",
+        "booking en naujango",
         "ayuda reserva",
         "detalles de reservacion",
         "Necesito Info De Reservar",
         "¿QUÉ HAY SOBRE ERSERVAR",
-        "sobre lakbay",
+        "sobre naujango",
         "dónde está reservacion",
         "¿cómo está reservar",
-        "lakbay",
-        "is there lakbay",
+        "naujango",
+        "is there naujango",
         "¿qué es reservar",
         "reservacion?",
         "Información Sobre Reservacion",
@@ -1724,7 +1724,7 @@
         "dame información de reservar",
         "algún dato sobre reservar",
         "¿y qué hay sobre reservacion",
-        "¿cómo está lakbay",
+        "¿cómo está naujango",
         "is there reservar",
         "¿cómo está reservacion"
       ],
@@ -1845,11 +1845,11 @@
       "patterns": [
         "que puedes hacer",
         "caracteristicas app",
-        "servicios lakbay",
-        "como funciona lakbay"
+        "servicios naujango",
+        "como funciona naujango"
       ],
       "responses": [
-        "LAKBAY ayuda con: Reserva de hoteles, planes de viaje, información de atracciones, restaurantes, transporte, clima, consejos culturales y guías de viaje para Naujan."
+        "NaujanGO ayuda con: Reserva de hoteles, planes de viaje, información de atracciones, restaurantes, transporte, clima, consejos culturales y guías de viaje para Naujan."
       ]
     }
   ]
