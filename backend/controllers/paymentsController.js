@@ -1413,8 +1413,8 @@ router.get('/grabpay/failed', async (req, res) => {
 
 // 🟢 NEW: QRPH payment success handler
 router.get('/qrph/success', async (req, res) => {
-  const { source_id, session_id } = req.query;
-  const ref = session_id || source_id;
+  const { source_id, session_id, id } = req.query;
+  const ref = id || session_id || source_id;
   
   let bookingId = null;
   let payment = null;
@@ -1487,8 +1487,8 @@ router.get('/qrph/success', async (req, res) => {
 
 // 🟢 NEW: QRPH payment failed handler
 router.get('/qrph/failed', async (req, res) => {
-  const { source_id, session_id } = req.query;
-  const ref = session_id || source_id;
+  const { source_id, session_id, id } = req.query;
+  const ref = id || session_id || source_id;
   
   let bookingId = null;
   let payment = null;

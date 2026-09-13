@@ -457,8 +457,8 @@ export const processQRPHPayment = async (paymentData) => {
               }
             ],
             payment_method_types: ['qrph'],
-            success_url: `${WEBHOOK_BASE_URL}/payments/qrph/success`,
-            cancel_url: `${WEBHOOK_BASE_URL}/payments/qrph/failed`,
+            success_url: `${WEBHOOK_BASE_URL}/payments/qrph/success?id={id}`,
+            cancel_url: `${WEBHOOK_BASE_URL}/payments/qrph/failed?id={id}`,
             reference_number: `BOOK-${bookingId || 'QRPH'}-${Date.now()}`,
             metadata: {
               booking_id: bookingId || null,
