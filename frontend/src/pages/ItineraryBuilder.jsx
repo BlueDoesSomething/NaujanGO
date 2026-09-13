@@ -91,6 +91,9 @@ const ItineraryBuilder = () => {
   const dateInputsStyle = responsiveStyle(isMobile, styles.dateInputs, { gridTemplateColumns: '1fr', gap: '0.75rem' });
   const statsBarStyle = responsiveStyle(isMobile, styles.statsBar, { gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' });
   const routeStatsRowStyle = responsiveStyle(isMobile, styles.routeStatsRow, { gridTemplateColumns: 'repeat(2, 1fr)' });
+  const fareEstimateGridStyle = responsiveStyle(isMobile, styles.fareEstimateGrid, { gridTemplateColumns: 'repeat(2, 1fr)' });
+  const routeStatCardStyle = responsiveStyle(isMobile, styles.routeStatCard, { padding: '0.8rem 0.7rem 1rem', gap: '0.5rem' });
+  const fareEstimateHeaderStyle = responsiveStyle(isMobile, styles.fareEstimateHeader, { flexWrap: 'wrap', gap: '0.4rem' });
   const actionButtonsStyle = responsiveStyle(isMobile, styles.actionButtons, { gridTemplateColumns: '1fr' });
   const dayBudgetBreakdownRowStyle = isMobile ? { gridTemplateColumns: '1fr 1fr', gap: '0.5rem' } : { gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' };
   const itineraryHeaderStyle = responsiveStyle(isMobile, styles.itineraryHeader, { padding: '1.25rem', borderRadius: '18px' });
@@ -1421,7 +1424,7 @@ const ItineraryBuilder = () => {
                       style={styles.budgetInlineInput}
                     />
                   </div>
-                  <div style={{ ...styles.dayBudgetBreakdownItem, gridColumn: 'span 3', backgroundColor: '#ecfdf3', borderColor: '#bbf7d0' }}>
+                  <div style={{ ...styles.dayBudgetBreakdownItem, gridColumn: isMobile ? 'span 2' : 'span 3', backgroundColor: '#ecfdf3', borderColor: '#bbf7d0' }}>
                     <span style={{ fontWeight: 700 }}>Total Estimated</span>
                     <strong style={{ color: '#15803d', fontSize: '1rem' }}>₱{currentDayBudget.estimatedNeed.toFixed(2)}</strong>
                   </div>
@@ -1534,12 +1537,12 @@ const ItineraryBuilder = () => {
                     { icon: <Icons.LocationIcon size={20} color="#d97706" />, bg:'#fef3c7', accent:'#d97706', label:'Time at Stops', value:`${Math.floor(totals.time/60)}h ${totals.time%60}m`, sub:`${allPlannedItems.length} destination${allPlannedItems.length!==1?'s':''}` },
                     { icon: <Icons.SparklesIcon size={20} color="#7c3aed" />, bg:'#ede9fe', accent:'#7c3aed', label:'Total Trip Time', value:(() => { const tt = totals.time+(routeInfo?routeInfo.duration:0); return tt>=60?`${Math.floor(tt/60)}h ${tt%60}m`:`${tt} min`; })(), sub:'drive + all stops' }
                   ].map((c, i) => (
-                    <div key={i} style={styles.routeStatCard}>
-                      <div style={{width:'40px',height:'40px',borderRadius:'10px',background:c.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{c.icon}</div>
+                    <div key={i} style={routeStatCardStyle}>
+                      <div style={{width: isMobile ? '32px' : '40px', height: isMobile ? '32px' : '40px', borderRadius:'10px',background:c.bg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>{c.icon}</div>
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:'0.68rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:THEME.textSecondary,marginBottom:'0.15rem'}}>{c.label}</div>
-                        <div style={{fontSize:'1.35rem',fontWeight:900,color:c.accent,lineHeight:1.1}}>{c.value}</div>
-                        <div style={{fontSize:'0.7rem',color:THEME.textSecondary,marginTop:'0.15rem'}}>{c.sub}</div>
+                        <div style={{fontSize: isMobile ? '0.6rem' : '0.68rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.05em',color:THEME.textSecondary,marginBottom:'0.15rem'}}>{c.label}</div>
+                        <div style={{fontSize: isMobile ? '1.05rem' : '1.35rem',fontWeight:900,color:c.accent,lineHeight:1.1}}>{c.value}</div>
+                        <div style={{fontSize: isMobile ? '0.6rem' : '0.7rem',color:THEME.textSecondary,marginTop:'0.15rem'}}>{c.sub}</div>
                       </div>
                       <div style={{position:'absolute',bottom:0,left:0,right:0,height:'3px',background:c.accent,borderRadius:'0 0 12px 12px'}} />
                     </div>
@@ -1559,12 +1562,12 @@ const ItineraryBuilder = () => {
                   ];
                   return (
                     <div style={styles.fareEstimateWrap}>
-                      <div style={styles.fareEstimateHeader}>
+                      <div style={fareEstimateHeaderStyle}>
                         <Icons.MoneyIcon size={14} color="#d97706" />
                         <span>Suggested Fare Estimate</span>
                         <span style={styles.fareEstimateNote}>Based on {safeDist.toFixed(1)} km · Actual fare may vary</span>
                       </div>
-                      <div style={styles.fareEstimateGrid}>
+                      <div style={fareEstimateGridStyle}>
                         {fareVehicles.map(v => {
                           const mode = TRANSPORT_MODES[v.key];
                           const low  = Math.ceil(mode.base + safeDist * mode.perKm);
