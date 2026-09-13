@@ -76,7 +76,7 @@ const HeroSlideshow = ({ title, subtitle, height = '500px', images: customImages
         />
       ))}
       
-      <div style={{ ...styles.overlay, background: overlayBg }} />
+      <div className="hero-overlay" style={{ ...styles.overlay, background: overlayBg }} />
       
       <div style={styles.content}>
         <h1 style={styles.title}>{effectiveTitle}</h1>

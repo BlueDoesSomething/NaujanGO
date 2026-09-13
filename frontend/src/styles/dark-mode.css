@@ -2024,10 +2024,11 @@
 }
 
 /* Hero overlay: darken the existing green tint for better text contrast */
+[data-theme="dark"] .hero-overlay,
 [data-theme="dark"] .hero-section .overlay,
 [data-theme="dark"] .slideshow-hero .overlay,
 [data-theme="dark"] .hero-slideshow .overlay {
-  background: linear-gradient(135deg, rgba(15,23,42,0.65) 0%, rgba(15,23,42,0.55) 100%) !important;
+  background: linear-gradient(135deg, rgba(15,23,42,0.45) 0%, rgba(15,23,42,0.35) 100%) !important;
 }
 
 /* Hero content text — bright white with shadow for contrast over images */
