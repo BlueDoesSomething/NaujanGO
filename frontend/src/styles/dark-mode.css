@@ -3131,8 +3131,8 @@
   background: #0f172a !important;
 }
 
-/* rgba(255,255,255,...) on ALL elements (catch glassmorphism) */
-[data-theme="dark"] *[style*="rgba(255, 255, 255"],
-[data-theme="dark"] *[style*="rgba(255,255,255"] {
+/* rgba(255,255,255,...) on ALL elements (catch glassmorphism) — exclude hero overlays */
+[data-theme="dark"] *[style*="rgba(255, 255, 255"]:not(.hero-overlay):not(.hero-section):not(.slideshow-hero),
+[data-theme="dark"] *[style*="rgba(255,255,255"]:not(.hero-overlay):not(.hero-section):not(.slideshow-hero) {
   background: #1e293b !important;
 }
