@@ -293,6 +293,7 @@ export default function Hotels() {
       <div style={pageStyle}>
         {/* Hero Header */}
         <HeroSlideshow 
+          className="slideshow-hero"
           title={t('accommodation')}
           subtitle={t('discover_stays_naujan')}
           height="400px"
@@ -371,6 +372,7 @@ export default function Hotels() {
     <div className="hotels-page" style={pageStyle}>
       {/* Hero Header */}
       <HeroSlideshow 
+        className="slideshow-hero"
         title={t('accommodation')}
         subtitle={t('discover_stays_naujan')}
         height="400px"
