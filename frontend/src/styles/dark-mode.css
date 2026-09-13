@@ -1233,3 +1233,734 @@
   background: #24334a !important;
   color: #f1f5f9 !important;
 }
+
+/* ════════════════════════════════════════════════
+   35. PUBLIC HOME PAGE - section backgrounds, cards, text
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .home-page,
+[data-theme="dark"] .home-page:not(.logged-in) {
+  background: #0f172a !important;
+}
+
+[data-theme="dark"] .home-page .section,
+[data-theme="dark"] .home-page section {
+  background: transparent !important;
+}
+
+[data-theme="dark"] .home-page .welcome-section {
+  background: #0f172a !important;
+}
+
+[data-theme="dark"] .home-page .section-title,
+[data-theme="dark"] .home-page h2,
+[data-theme="dark"] .home-page h3 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .home-page .section-subtitle,
+[data-theme="dark"] .home-page .section-description,
+[data-theme="dark"] .home-page p {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .home-page .destination-card,
+[data-theme="dark"] .home-page .attraction-card,
+[data-theme="dark"] .home-page .hotel-card,
+[data-theme="dark"] .home-page .restaurant-card,
+[data-theme="dark"] .home-page .accommodation-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .home-page .destination-card h3,
+[data-theme="dark"] .home-page .attraction-card h3,
+[data-theme="dark"] .home-page .hotel-card h3,
+[data-theme="dark"] .home-page .restaurant-card h3,
+[data-theme="dark"] .home-page .accommodation-card h3 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .home-page .destination-card p,
+[data-theme="dark"] .home-page .attraction-card p,
+[data-theme="dark"] .home-page .hotel-card p,
+[data-theme="dark"] .home-page .restaurant-card p,
+[data-theme="dark"] .home-page .accommodation-card p,
+[data-theme="dark"] .home-page .destination-card span,
+[data-theme="dark"] .home-page .attraction-card span {
+  color: #94a3b8 !important;
+}
+
+/* Home hero / slideshow sections */
+[data-theme="dark"] .home-page .hero-section {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+}
+
+[data-theme="dark"] .home-page .hero-content {
+  background: transparent !important;
+}
+
+[data-theme="dark"] .home-page .hero-title,
+[data-theme="dark"] .home-page .hero-subtitle {
+  color: #f1f5f9 !important;
+}
+
+/* Home search bar */
+[data-theme="dark"] .home-page .search-container,
+[data-theme="dark"] .home-page .search-bar,
+[data-theme="dark"] .home-page .simple-search-bar {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .home-page input[type="text"],
+[data-theme="dark"] .home-page input[type="search"] {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+/* Home stats / feature sections */
+[data-theme="dark"] .home-page .stats-section,
+[data-theme="dark"] .home-page .features-section,
+[data-theme="dark"] .home-page .destinations-section,
+[data-theme="dark"] .home-page .popular-section {
+  background: transparent !important;
+}
+
+[data-theme="dark"] .home-page .feature-card,
+[data-theme="dark"] .home-page .stats-card,
+[data-theme="dark"] .home-page .quick-action-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .home-page .feature-title,
+[data-theme="dark"] .home-page .card-title,
+[data-theme="dark"] .home-page .stats-number {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .home-page .feature-description,
+[data-theme="dark"] .home-page .stats-label {
+  color: #94a3b8 !important;
+}
+
+/* ════════════════════════════════════════════════
+   36. ATTRACTIONS PAGE - cards, filters, list view
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .attractions-page,
+[data-theme="dark"] .attractions-container {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .attractions-page .filter-bar,
+[data-theme="dark"] .attractions-page .search-filter,
+[data-theme="dark"] .attractions-page .sort-bar,
+[data-theme="dark"] .attractions-page .filter-section {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .attractions-page .filter-bar *,
+[data-theme="dark"] .attractions-page .search-filter *,
+[data-theme="dark"] .attractions-page .sort-bar * {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .attractions-page .attraction-card,
+[data-theme="dark"] .attractions-page .card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .attractions-page .attraction-card h3,
+[data-theme="dark"] .attractions-page .attraction-card h3 a {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .attractions-page .attraction-card p,
+[data-theme="dark"] .attractions-page .attraction-card .description {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .attractions-page .attraction-card span {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .attractions-page .category-badge,
+[data-theme="dark"] .attractions-page .tag {
+  background: #24334a !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .attractions-page .pagination,
+[data-theme="dark"] .attractions-page .pagination button {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .attractions-page .results-summary,
+[data-theme="dark"] .attractions-page .sort-label {
+  color: #94a3b8 !important;
+}
+
+/* Attraction detail page */
+[data-theme="dark"] .attraction-detail,
+[data-theme="dark"] .attraction-detail-page {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .attraction-detail .detail-card,
+[data-theme="dark"] .attraction-detail .info-card,
+[data-theme="dark"] .attraction-detail .review-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .attraction-detail h1,
+[data-theme="dark"] .attraction-detail h2,
+[data-theme="dark"] .attraction-detail h3 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .attraction-detail p,
+[data-theme="dark"] .attraction-detail span {
+  color: #94a3b8 !important;
+}
+
+/* ════════════════════════════════════════════════
+   37. HOTELS PAGE - cards, filters, grid
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .hotels-page,
+[data-theme="dark"] .hotels-container {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .hotels-page .filter-bar,
+[data-theme="dark"] .hotels-page .search-filter,
+[data-theme="dark"] .hotels-page .sort-bar {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .hotels-page .filter-bar *,
+[data-theme="dark"] .hotels-page .search-filter *,
+[data-theme="dark"] .hotels-page .sort-bar * {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .hotels-page .hotel-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .hotels-page .hotel-card:hover {
+  border-color: #475569 !important;
+}
+
+[data-theme="dark"] .hotels-page .hotel-card h3,
+[data-theme="dark"] .hotels-page .hotel-card h2 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .hotels-page .hotel-card p,
+[data-theme="dark"] .hotels-page .hotel-card span {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .hotels-page .hotel-price,
+[data-theme="dark"] .hotels-page .price {
+  color: #4ade80 !important;
+}
+
+/* Hotel detail page */
+[data-theme="dark"] .hotel-detail,
+[data-theme="dark"] .hotel-detail-page {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .hotel-detail .detail-card,
+[data-theme="dark"] .hotel-detail .info-card,
+[data-theme="dark"] .hotel-detail .room-card,
+[data-theme="dark"] .hotel-detail .review-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .hotel-detail h1,
+[data-theme="dark"] .hotel-detail h2,
+[data-theme="dark"] .hotel-detail h3,
+[data-theme="dark"] .hotel-detail h4 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .hotel-detail p,
+[data-theme="dark"] .hotel-detail span,
+[data-theme="dark"] .hotel-detail li {
+  color: #94a3b8 !important;
+}
+
+/* ════════════════════════════════════════════════
+   38. ITINERARY BUILDER - cards, day panels, form
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .itinerary-builder,
+[data-theme="dark"] .itinerary-page {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .itinerary-builder .itinerary-card,
+[data-theme="dark"] .itinerary-builder .day-card,
+[data-theme="dark"] .itinerary-builder .activity-card,
+[data-theme="dark"] .itinerary-page .itinerary-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .itinerary-builder h1,
+[data-theme="dark"] .itinerary-builder h2,
+[data-theme="dark"] .itinerary-builder h3,
+[data-theme="dark"] .itinerary-builder h4,
+[data-theme="dark"] .itinerary-page h1,
+[data-theme="dark"] .itinerary-page h2,
+[data-theme="dark"] .itinerary-page h3 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .itinerary-builder p,
+[data-theme="dark"] .itinerary-builder span,
+[data-theme="dark"] .itinerary-builder li,
+[data-theme="dark"] .itinerary-page p,
+[data-theme="dark"] .itinerary-page span {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .itinerary-builder .sidebar,
+[data-theme="dark"] .itinerary-builder .panel {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* ════════════════════════════════════════════════
+   39. INTERACTIVE MAP - panels, popups, controls
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .interactive-map-page,
+[data-theme="dark"] .map-container {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .map-sidebar,
+[data-theme="dark"] .map-panel,
+[data-theme="dark"] .map-controls {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .map-sidebar h3,
+[data-theme="dark"] .map-panel h3,
+[data-theme="dark"] .map-sidebar h4 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .map-sidebar p,
+[data-theme="dark"] .map-panel p,
+[data-theme="dark"] .map-sidebar span {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .map-popup,
+[data-theme="dark"] .leaflet-popup-content-wrapper {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .map-popup h4,
+[data-theme="dark"] .leaflet-popup-content h4 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .map-filter-bar {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .map-filter-bar * {
+  color: #e2e8f0 !important;
+}
+
+/* ════════════════════════════════════════════════
+   40. CHATBOT - comprehensive coverage
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .chatbot-container,
+[data-theme="dark"] .chatbot-popup {
+  background: #1e293b !important;
+}
+
+[data-theme="dark"] .chatbot-messages,
+[data-theme="dark"] .chat-messages,
+[data-theme="dark"] .chatbot-body {
+  background: #0f172a !important;
+}
+
+[data-theme="dark"] .chatbot-input-area,
+[data-theme="dark"] .chat-input-area,
+[data-theme="dark"] .chatbot-input-container {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .chatbot-input,
+[data-theme="dark"] .chat-input,
+[data-theme="dark"] .chatbot-input input,
+[data-theme="dark"] .chat-input input {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .user-message,
+[data-theme="dark"] .chat-user-message {
+  background: #16a34a !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .bot-message,
+[data-theme="dark"] .chat-bot-message {
+  background: #24334a !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .chatbot-typing,
+[data-theme="dark"] .typing-indicator {
+  background: #24334a !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .suggestion-chip,
+[data-theme="dark"] .quick-actions button,
+[data-theme="dark"] .chatbot-suggestions button {
+  background: #24334a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .suggestion-chip:hover,
+[data-theme="dark"] .quick-actions button:hover,
+[data-theme="dark"] .chatbot-suggestions button:hover {
+  background: #334155 !important;
+  border-color: #16a34a !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .chatbot-action-btn,
+[data-theme="dark"] .chatbot-send-btn {
+  background: #16a34a !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .chatbot-welcome,
+[data-theme="dark"] .welcome-message {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+/* ════════════════════════════════════════════════
+   41. USER DASHBOARD (logged-in home)
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .dashboard-page,
+[data-theme="dark"] .user-dashboard {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .dashboard-page .card,
+[data-theme="dark"] .dashboard-page .panel,
+[data-theme="dark"] .user-dashboard .card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .dashboard-page h1,
+[data-theme="dark"] .dashboard-page h2,
+[data-theme="dark"] .dashboard-page h3,
+[data-theme="dark"] .user-dashboard h1,
+[data-theme="dark"] .user-dashboard h2 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .dashboard-page p,
+[data-theme="dark"] .dashboard-page span,
+[data-theme="dark"] .user-dashboard p {
+  color: #94a3b8 !important;
+}
+
+/* ════════════════════════════════════════════════
+   42. CONTACT PAGE
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .contact-page,
+[data-theme="dark"] .contact-container {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .contact-page .contact-form,
+[data-theme="dark"] .contact-page .contact-card,
+[data-theme="dark"] .contact-form-wrapper {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .contact-page h1,
+[data-theme="dark"] .contact-page h2,
+[data-theme="dark"] .contact-page h3 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .contact-page p,
+[data-theme="dark"] .contact-page span,
+[data-theme="dark"] .contact-page label {
+  color: #94a3b8 !important;
+}
+
+/* ════════════════════════════════════════════════
+   43. MODERATION PAGE
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .moderation-page {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .moderation-page .moderation-card,
+[data-theme="dark"] .moderation-page .review-item,
+[data-theme="dark"] .moderation-page .report-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .moderation-page h1,
+[data-theme="dark"] .moderation-page h2,
+[data-theme="dark"] .moderation-page h3 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .moderation-page p,
+[data-theme="dark"] .moderation-page span {
+  color: #94a3b8 !important;
+}
+
+/* ════════════════════════════════════════════════
+   44. BOOKING HISTORY / BOOKING PAGES
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .booking-page,
+[data-theme="dark"] .booking-history-page {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .booking-page .booking-card,
+[data-theme="dark"] .booking-history-page .booking-item,
+[data-theme="dark"] .booking-history-page .booking-history-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .booking-page h1,
+[data-theme="dark"] .booking-page h2,
+[data-theme="dark"] .booking-page h3,
+[data-theme="dark"] .booking-history-page h1,
+[data-theme="dark"] .booking-history-page h2 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .booking-page p,
+[data-theme="dark"] .booking-page span,
+[data-theme="dark"] .booking-history-page p,
+[data-theme="dark"] .booking-history-page span,
+[data-theme="dark"] .booking-history-page td {
+  color: #94a3b8 !important;
+}
+
+/* ════════════════════════════════════════════════
+   45. NAVBAR - mobile menu, search, hamburger overlay
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .mobile-menu,
+[data-theme="dark"] .mobile-nav,
+[data-theme="dark"] .navbar-mobile {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .mobile-menu a,
+[data-theme="dark"] .mobile-nav a,
+[data-theme="dark"] .navbar-mobile a,
+[data-theme="dark"] .mobile-menu span,
+[data-theme="dark"] .mobile-nav span {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .mobile-menu a:hover,
+[data-theme="dark"] .mobile-nav a:hover {
+  background: #334155 !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .nav-search,
+[data-theme="dark"] .navbar-search,
+[data-theme="dark"] .search-input-wrapper {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .nav-search input,
+[data-theme="dark"] .navbar-search input {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+/* ════════════════════════════════════════════════
+   46. GENERIC CATCH-ALL - inline white backgrounds
+   Catches elements with hardcoded white that lack
+   a specific selector in the rules above.
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] div[style*="background: white"],
+[data-theme="dark"] div[style*="background: '#fff'"],
+[data-theme="dark"] div[style*="background:'#fff'"],
+[data-theme="dark"] div[style*="background: '#ffffff'"],
+[data-theme="dark"] div[style*="background:'#ffffff'"],
+[data-theme="dark"] div[style*="background-color: white"],
+[data-theme="dark"] div[style*="background-color: '#fff'"],
+[data-theme="dark"] div[style*="background-color: '#ffffff'"] {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] article[style*="background: white"],
+[data-theme="dark"] article[style*="background: '#fff'"],
+[data-theme="dark"] article[style*="background: '#ffffff'"],
+[data-theme="dark"] article[style*="rgba(255, 255, 255"] {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+/* Catch dark text colors on any element */
+[data-theme="dark"] [style*="color: '#374151'"],
+[data-theme="dark"] [style*="color:'#374151'"],
+[data-theme="dark"] [style*="color: '#111827'"],
+[data-theme="dark"] [style*="color:'#111827'"],
+[data-theme="dark"] [style*="color: '#1f2937'"],
+[data-theme="dark"] [style*="color:'#1f2937'"],
+[data-theme="dark"] [style*="color: '#333'"],
+[data-theme="dark"] [style*="color:'#333'"] {
+  color: #e2e8f0 !important;
+}
+
+/* Catch white backgrounds on buttons and inputs */
+[data-theme="dark"] button[style*="background: white"],
+[data-theme="dark"] button[style*="background: '#fff'"],
+[data-theme="dark"] button[style*="background: '#ffffff'"],
+[data-theme="dark"] input[style*="background: white"],
+[data-theme="dark"] input[style*="background: '#fff'"],
+[data-theme="dark"] textarea[style*="background: white"],
+[data-theme="dark"] select[style*="background: white"] {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+/* Catch rgba(255,255,255,...) backgrounds on any element */
+[data-theme="dark"] div[style*="rgba(255, 255, 255"],
+[data-theme="dark"] div[style*="rgba(255,255,255"],
+[data-theme="dark"] section[style*="rgba(255, 255, 255"],
+[data-theme="dark"] section[style*="rgba(255,255,255"],
+[data-theme="dark"] aside[style*="rgba(255, 255, 255"],
+[data-theme="dark"] aside[style*="rgba(255,255,255"],
+[data-theme="dark"] nav[style*="rgba(255, 255, 255"],
+[data-theme="dark"] nav[style*="rgba(255,255,255"],
+[data-theme="dark"] header[style*="rgba(255, 255, 255"],
+[data-theme="dark"] header[style*="rgba(255,255,255"],
+[data-theme="dark"] footer[style*="rgba(255, 255, 255"],
+[data-theme="dark"] footer[style*="rgba(255,255,255"] {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+/* ════════════════════════════════════════════════
+   47. LEGAL / PRIVACY / TERMS PAGES
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .legal-page,
+[data-theme="dark"] .privacy-page,
+[data-theme="dark"] .terms-page {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .legal-page .card,
+[data-theme="dark"] .privacy-page .card,
+[data-theme="dark"] .terms-page .card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .legal-page h1,
+[data-theme="dark"] .legal-page h2,
+[data-theme="dark"] .privacy-page h1,
+[data-theme="dark"] .terms-page h1 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .legal-page p,
+[data-theme="dark"] .legal-page li,
+[data-theme="dark"] .privacy-page p,
+[data-theme="dark"] .terms-page p {
+  color: #94a3b8 !important;
+}
+
+/* ════════════════════════════════════════════════
+   48. FUN FACTS / MISC COMPONENTS
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .fun-fact-card,
+[data-theme="dark"] .fun-facts {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .fun-fact-card h3,
+[data-theme="dark"] .fun-facts h3 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .fun-fact-card p,
+[data-theme="dark"] .fun-facts p {
+  color: #94a3b8 !important;
+}
+
+/* WeatherWidget inside any page */
+[data-theme="dark"] .weather-widget,
+[data-theme="dark"] .weather-panel,
+[data-theme="dark"] .hazard-panel {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .weather-widget h3,
+[data-theme="dark"] .weather-widget h4,
+[data-theme="dark"] .hazard-panel h3,
+[data-theme="dark"] .hazard-panel h4 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .weather-widget p,
+[data-theme="dark"] .hazard-panel p {
+  color: #94a3b8 !important;
+}
