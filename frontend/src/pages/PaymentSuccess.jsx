@@ -6,16 +6,30 @@ import axios from 'axios';
 
 const API_BASE_URL = getApiBaseUrl() + '/api';
 
+const REFERENCE_PROVIDERS = [
+  { value: 'gcash', label: 'GCash', example: '1234567890123', length: 13, pattern: /^\d{13}$/ },
+  { value: 'gotyme', label: 'GoTyme', example: '123456789012345678', length: 18, pattern: /^\d{18}$/ },
+  { value: 'maya', label: 'Maya', example: '123456789012', length: 12, pattern: /^\d{12}$/ },
+  { value: 'grabpay', label: 'GrabPay', example: '123456789012', length: 12, pattern: /^\d{12}$/ },
+  { value: 'instapay', label: 'InstaPay', example: '1234567890123', length: 13, pattern: /^\d{13}$/ },
+  { value: 'bank_transfer', label: 'Bank Transfer / Other', example: 'Any reference', length: null, pattern: null }
+];
+
+function getProviderValidation(providerValue) {
+  return REFERENCE_PROVIDERS.find(p => p.value === providerValue) || REFERENCE_PROVIDERS[5];
+}
+
 export default function PaymentSuccess() {
   const { t } = useLanguage();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
   const [bookingDetails, setBookingDetails] = useState(null);
-  const [loading, setLoading] = useState(false); // 🟢 Changed: Don't block on loading
+  const [loading, setLoading] = useState(false);
   const [redirectCountdown, setRedirectCountdown] = useState(5);
   const [latestPayment, setLatestPayment] = useState(null);
   const [referenceNumber, setReferenceNumber] = useState('');
+  const [referenceProvider, setReferenceProvider] = useState('gcash');
   const [submitState, setSubmitState] = useState('idle');
   const [submitMessage, setSubmitMessage] = useState('');
 
@@ -23,16 +37,13 @@ export default function PaymentSuccess() {
   const provider = searchParams.get('provider') || 'unknown';
   const sourceId = searchParams.get('source_id');
   const forceReference = searchParams.get('requires_reference') === '1' || searchParams.get('reference_required') === '1';
-  const requiresReference = provider === 'gcash' && (forceReference || latestPayment?.status !== 'succeeded');
+  const requiresReference = (provider === 'gcash' || provider === 'qrph') && (forceReference || latestPayment?.status !== 'succeeded');
 
   useEffect(() => {
     const fetchBookingDetails = async () => {
-      if (!bookingId) {
-        return;
-      }
+      if (!bookingId) return;
 
       try {
-        // 🟢 OPTIMIZATION: Add 5-second timeout to API call
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
 
@@ -45,37 +56,33 @@ export default function PaymentSuccess() {
         clearTimeout(timeoutId);
         setBookingDetails(response.data?.booking || response.data);
       } catch (error) {
-        // 🟢 Silently handle errors - don't block page rendering
         if (error.name !== 'AbortError') {
           console.error('Error fetching booking details:', error);
         }
       }
     };
 
-    // 🟢 OPTIMIZATION: Fetch asynchronously without blocking page render
     fetchBookingDetails();
   }, [bookingId]);
 
   useEffect(() => {
     const fetchLatestPayment = async () => {
       try {
-        if (bookingId && provider === 'gcash') {
+        if (bookingId && (provider === 'gcash' || provider === 'qrph')) {
           const response = await getLatestPaymentByBooking(bookingId);
           setLatestPayment(response.data);
           return;
         }
 
-        // Fallback: if the redirect lost booking_id, use the user's latest GCash payment
-        // from payment history so the reference form still works.
         const historyResponse = await getPaymentHistory();
         const history = Array.isArray(historyResponse.data) ? historyResponse.data : [];
-        const latestGcash = history.find((payment) => {
+        const latestMatch = history.find((payment) => {
           const method = String(payment?.method || '').toLowerCase();
-          return method === 'gcash';
+          return method === 'gcash' || method === 'qrph';
         });
 
-        if (latestGcash) {
-          setLatestPayment(latestGcash);
+        if (latestMatch) {
+          setLatestPayment(latestMatch);
         }
       } catch (error) {
         console.error('Error loading latest payment:', error);
@@ -85,13 +92,9 @@ export default function PaymentSuccess() {
     fetchLatestPayment();
   }, [bookingId, provider]);
 
-  // Auto-redirect to booking history after 5 seconds
   useEffect(() => {
-    if (requiresReference) {
-      return;
-    }
+    if (requiresReference) return;
 
-    // 🟢 Changed: Start redirect immediately (not waiting for loading)
     const timer = setInterval(() => {
       setRedirectCountdown((prev) => prev - 1);
     }, 1000);
@@ -116,24 +119,37 @@ export default function PaymentSuccess() {
     }
 
     const normalizedReference = referenceNumber.trim();
+    const validation = getProviderValidation(referenceProvider);
+
+    if (!normalizedReference) {
+      setSubmitState('error');
+      setSubmitMessage('Please enter your reference number.');
+      return;
+    }
+
+    if (validation.pattern && !validation.pattern.test(normalizedReference)) {
+      setSubmitState('error');
+      setSubmitMessage(`${validation.label} reference must be exactly ${validation.length} digits. You entered ${normalizedReference.length} characters.`);
+      return;
+    }
+
     if (normalizedReference.length < 6) {
       setSubmitState('error');
-      setSubmitMessage('Please enter a valid GCash/InstaPay reference number.');
+      setSubmitMessage('Reference number must be at least 6 characters.');
       return;
     }
 
     try {
       setSubmitState('loading');
       setSubmitMessage('');
-      const response = await submitPaymentReference(latestPayment.payment_id, normalizedReference);
+      const response = await submitPaymentReference(latestPayment.payment_id, normalizedReference, referenceProvider);
       setSubmitState('success');
       setSubmitMessage(response.data?.message || 'Reference submitted successfully.');
       setLatestPayment((prev) => ({
         ...prev,
-        customer_reference_number: normalizedReference,
+        customer_reference_number: `[${referenceProvider.toUpperCase()}] ${normalizedReference}`,
         reference_status: 'pending'
       }));
-      // Redirect customer to a confirmation page
       navigate(`/reference-submitted?booking_id=${bookingId}&payment_id=${latestPayment?.payment_id || ''}`);
     } catch (error) {
       setSubmitState('error');
@@ -144,6 +160,7 @@ export default function PaymentSuccess() {
   const getProviderLabel = () => {
     const labels = {
       gcash: t('payment_provider_gcash'),
+      qrph: 'QR PH',
       grabpay: t('payment_provider_grabpay'),
       paypal: t('payment_provider_paypal'),
       card: t('payment_provider_card'),
@@ -255,7 +272,7 @@ export default function PaymentSuccess() {
     background: '#fff7e6',
     border: '1px solid #f6d48f',
     borderRadius: '12px',
-    padding: '16px',
+    padding: '20px',
     marginTop: '20px',
     textAlign: 'left'
   };
@@ -270,6 +287,16 @@ export default function PaymentSuccess() {
     fontSize: '15px'
   };
 
+  const selectStyle = {
+    width: '100%',
+    padding: '12px',
+    borderRadius: '8px',
+    border: '1px solid #d1d5db',
+    fontSize: '15px',
+    background: 'white',
+    cursor: 'pointer'
+  };
+
   const countdownStyle = {
     fontSize: '14px',
     color: '#999',
@@ -277,18 +304,14 @@ export default function PaymentSuccess() {
     fontStyle: 'italic'
   };
 
+  const activeValidation = getProviderValidation(referenceProvider);
+
   return (
     <div style={pageStyle}>
       <style>{`
         @keyframes scaleIn {
-          from {
-            transform: scale(0);
-            opacity: 0;
-          }
-          to {
-            transform: scale(1);
-            opacity: 1;
-          }
+          from { transform: scale(0); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
         }
         @keyframes pulse {
           0%, 100% { opacity: 1; }
@@ -313,7 +336,7 @@ export default function PaymentSuccess() {
             <h1 style={titleStyle}>Payment Successful!</h1>
             <p style={subtitleStyle}>
               {requiresReference
-                ? 'Your GCash payment flow is complete. Enter your transaction reference number for confirmation.'
+                ? 'Your payment is complete. Please enter the reference number from your transaction receipt for verification.'
                 : 'Your payment has been received and your booking is confirmed.'}
             </p>
 
@@ -368,24 +391,62 @@ export default function PaymentSuccess() {
 
             <p style={subtitleStyle}>
               {requiresReference
-                ? 'After submitting the reference number, your booking will stay pending until merchant verification.'
+                ? 'Select the e-wallet or bank you used to pay, then paste the reference number from your receipt. The owner will verify it before confirming your booking.'
                 : 'A confirmation email has been sent. You can view your booking details in your booking history.'}
             </p>
 
             {requiresReference && (
               <form style={referenceCardStyle} onSubmit={handleReferenceSubmit}>
-                <strong>GCash/InstaPay Reference Confirmation</strong>
-                <p style={{ margin: '10px 0', color: '#6b7280' }}>
-                  Paste the exact reference number from your GCash receipt after QR payment.
-                </p>
+                <strong style={{ fontSize: '16px' }}>Reference Number Confirmation</strong>
+
+                <label style={{ display: 'block', marginTop: '14px', fontWeight: 600, color: '#374151', fontSize: '14px' }}>
+                  Where did you pay?
+                </label>
+                <select
+                  style={selectStyle}
+                  value={referenceProvider}
+                  onChange={(e) => {
+                    setReferenceProvider(e.target.value);
+                    setReferenceNumber('');
+                    setSubmitMessage('');
+                    setSubmitState('idle');
+                  }}
+                  disabled={submitState === 'loading' || submitState === 'success'}
+                >
+                  {REFERENCE_PROVIDERS.map(p => (
+                    <option key={p.value} value={p.value}>{p.label}</option>
+                  ))}
+                </select>
+
+                <label style={{ display: 'block', marginTop: '12px', fontWeight: 600, color: '#374151', fontSize: '14px' }}>
+                  Reference Number
+                  {activeValidation.length && (
+                    <span style={{ fontWeight: 400, color: '#6b7280', marginLeft: '6px' }}>
+                      ({activeValidation.length} digits)
+                    </span>
+                  )}
+                </label>
                 <input
                   type="text"
                   value={referenceNumber}
-                  onChange={(e) => setReferenceNumber(e.target.value)}
-                  placeholder="e.g. 123456789ABC"
+                  onChange={(e) => setReferenceNumber(e.target.value.replace(/\s/g, ''))}
+                  placeholder={activeValidation.example || 'Enter your reference number'}
                   style={referenceInputStyle}
                   disabled={submitState === 'loading' || submitState === 'success'}
+                  maxLength={64}
                 />
+                <p style={{ margin: '0 0 10px', fontSize: '13px', color: '#9ca3af' }}>
+                  {provider === 'qrph'
+                    ? 'You paid via QR PH. Select above which app you scanned with and enter the transaction reference.'
+                    : 'Paste the exact reference number from your receipt after payment.'}
+                </p>
+
+                {activeValidation.length && referenceNumber && referenceNumber.length !== activeValidation.length && (
+                  <p style={{ margin: '0 0 10px', fontSize: '13px', color: '#d97706' }}>
+                    Expected {activeValidation.length} digits — you entered {referenceNumber.length}.
+                  </p>
+                )}
+
                 <button
                   type="submit"
                   style={{ ...buttonStyle, marginTop: 0 }}

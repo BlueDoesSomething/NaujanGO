@@ -1806,13 +1806,14 @@ router.get('/booking/:bookingId/latest', async (req, res) => {
   }
 });
 
-// Customer submits GCash/InstaPay reference number for merchant confirmation
+// Customer submits reference number for merchant confirmation
 router.post('/:paymentId/submit-reference', async (req, res) => {
   const userId = getUserIdFromToken(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
   const paymentId = Number(req.params.paymentId);
   const referenceNumber = String(req.body?.reference_number || '').trim();
+  const referenceProvider = String(req.body?.reference_provider || '').trim();
 
   if (!Number.isFinite(paymentId) || paymentId <= 0) {
     return res.status(400).json({ error: 'Invalid payment id' });
@@ -1822,6 +1823,12 @@ router.post('/:paymentId/submit-reference', async (req, res) => {
     return res.status(400).json({
       error: 'Reference number must be 6-64 characters and contain only letters, numbers, underscore, or dash'
     });
+  }
+
+  const allowedProviders = ['gcash', 'gotyme', 'maya', 'grabpay', 'bank_transfer', 'instapay'];
+  const resolvedProvider = referenceProvider || 'gcash';
+  if (!allowedProviders.includes(resolvedProvider)) {
+    return res.status(400).json({ error: 'Invalid reference provider' });
   }
 
   try {
@@ -1839,13 +1846,11 @@ router.post('/:paymentId/submit-reference', async (req, res) => {
     }
 
     const payment = payments[0];
-    if (payment.method !== 'gcash') {
-      return res.status(400).json({ error: 'Reference confirmation is only supported for GCash payments' });
-    }
-
     if (payment.status === 'succeeded') {
       return res.status(400).json({ error: 'Payment already confirmed' });
     }
+
+    const referenceWithProvider = `[${resolvedProvider.toUpperCase()}] ${referenceNumber}`;
 
     await db.promise().query(
       `UPDATE hotel_payments
@@ -1855,7 +1860,7 @@ router.post('/:paymentId/submit-reference', async (req, res) => {
            status = CASE WHEN status = 'failed' THEN 'pending' ELSE status END,
            updated_at = NOW()
        WHERE payment_id = ?`,
-      [referenceNumber, paymentId]
+      [referenceWithProvider, paymentId]
     );
 
     await db.promise().query(

@@ -233,11 +233,12 @@ export const getLatestPaymentByBooking = (bookingId) => {
   return apiClient.get(`/payments/booking/${bookingId}/latest`, { headers });
 };
 
-export const submitPaymentReference = (paymentId, referenceNumber) => {
+export const submitPaymentReference = (paymentId, referenceNumber, referenceProvider) => {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
   return apiClient.post(`/payments/${paymentId}/submit-reference`, {
-    reference_number: referenceNumber
+    reference_number: referenceNumber,
+    reference_provider: referenceProvider || 'gcash'
   }, { headers });
 };
 
