@@ -143,7 +143,7 @@
 }
 
 [data-theme="dark"] .home-page.logged-in .slide-overlay {
-  background: linear-gradient(135deg, rgba(15,23,42,0.6) 0%, rgba(15,23,42,0.5) 100%) !important;
+  /* keep original */
 }
 
 [data-theme="dark"] .home-page.logged-in .slide-title {
@@ -2015,7 +2015,7 @@
 
 /* Hero sections: keep images visible, just darken overlay */
 [data-theme="dark"] .slideshow-hero {
-  background: #0f172a !important;
+  background: transparent !important;
 }
 
 [data-theme="dark"] .home-page .hero-section,
@@ -2023,13 +2023,7 @@
   background: transparent !important;
 }
 
-/* Hero overlay: very light dark tint so images show through clearly */
-[data-theme="dark"] .hero-overlay,
-[data-theme="dark"] .hero-section .overlay,
-[data-theme="dark"] .slideshow-hero .overlay,
-[data-theme="dark"] .hero-slideshow .overlay {
-  background: linear-gradient(135deg, rgba(15,23,42,0.30) 0%, rgba(15,23,42,0.20) 100%) !important;
-}
+/* Hero overlay: keep original, no dark mode override */
 
 /* Hero content text — bright white with shadow for contrast over images */
 [data-theme="dark"] .hero-section .hero-title,
@@ -2107,11 +2101,9 @@
 
 /* HeroSlideshow component (used in Attractions, Hotels, Itinerary) */
 [data-theme="dark"] .hero-slideshow {
-  background: #0f172a !important;
+  background: transparent !important;
 }
-[data-theme="dark"] .hero-slideshow .overlay {
-  background: linear-gradient(135deg, rgba(15,23,42,0.65) 0%, rgba(15,23,42,0.55) 100%) !important;
-}
+/* keep original overlay */
 [data-theme="dark"] .hero-slideshow .hero-content {
   background: transparent !important;
 }
@@ -2919,9 +2911,12 @@
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
 }
 
-/* HeroSlideshow inside any page */
+/* HeroSlideshow inside any page — keep original overlay, no dark tint */
+[data-theme="dark"] .slideshow-hero,
 [data-theme="dark"] .hero-slideshow,
+[data-theme="dark"] .slideshow-hero .hero-overlay,
 [data-theme="dark"] .hero-slideshow .hero-overlay,
+[data-theme="dark"] .slideshow-hero .hero-content,
 [data-theme="dark"] .hero-slideshow .hero-content {
   background: transparent !important;
   color: #f1f5f9 !important;
@@ -3132,7 +3127,7 @@
 }
 
 /* rgba(255,255,255,...) on ALL elements (catch glassmorphism) — exclude hero overlays */
-[data-theme="dark"] *[style*="rgba(255, 255, 255"]:not(.hero-overlay):not(.hero-section):not(.slideshow-hero),
-[data-theme="dark"] *[style*="rgba(255,255,255"]:not(.hero-overlay):not(.hero-section):not(.slideshow-hero) {
+[data-theme="dark"] *[style*="rgba(255, 255, 255"]:not(.hero-overlay):not(.hero-section):not(.slideshow-hero):not(.slideshow-hero *),
+[data-theme="dark"] *[style*="rgba(255,255,255"]:not(.hero-overlay):not(.hero-section):not(.slideshow-hero):not(.slideshow-hero *) {
   background: #1e293b !important;
 }
