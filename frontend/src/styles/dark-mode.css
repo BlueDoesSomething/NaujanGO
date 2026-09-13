@@ -872,7 +872,7 @@
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    28. Hotels (logged-out cards use anonymous DIVs) & misc
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-[data-theme="dark"] .hotels-page > div > div,
+[data-theme="dark"] .hotels-page > div > div:not(.slideshow-hero):not(.slideshow-hero *),
 [data-theme="dark"] .hotels-page .hotel-grid > div {
   background: #1e293b !important;
   border: 1px solid #334155 !important;
@@ -2536,7 +2536,7 @@
   background: #0f172a !important;
   color: #f1f5f9 !important;
 }
-[data-theme="dark"] .hotels-page > div > div,
+[data-theme="dark"] .hotels-page > div > div:not(.slideshow-hero):not(.slideshow-hero *),
 [data-theme="dark"] .hotels-page .hotel-grid > div {
   background: #1e293b !important;
   border: 1px solid #334155 !important;
