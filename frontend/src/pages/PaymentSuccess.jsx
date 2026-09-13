@@ -7,11 +7,11 @@ import axios from 'axios';
 const API_BASE_URL = getApiBaseUrl() + '/api';
 
 const REFERENCE_PROVIDERS = [
-  { value: 'gcash', label: 'GCash', example: '1234567890123', length: 13, pattern: /^\d{13}$/ },
-  { value: 'gotyme', label: 'GoTyme', example: '123456789012345678', length: 18, pattern: /^\d{18}$/ },
-  { value: 'maya', label: 'Maya', example: '123456789012', length: 12, pattern: /^\d{12}$/ },
-  { value: 'grabpay', label: 'GrabPay', example: '123456789012', length: 12, pattern: /^\d{12}$/ },
-  { value: 'instapay', label: 'InstaPay', example: '1234567890123', length: 13, pattern: /^\d{13}$/ },
+  { value: 'gcash', label: 'GCash', example: 'ABC1234567890', length: 13, pattern: /^[A-Za-z0-9]{13}$/ },
+  { value: 'gotyme', label: 'GoTyme', example: 'ABC123456789012345', length: 18, pattern: /^[A-Za-z0-9]{18}$/ },
+  { value: 'maya', label: 'Maya', example: 'ABC123456789', length: 12, pattern: /^[A-Za-z0-9]{12}$/ },
+  { value: 'grabpay', label: 'GrabPay', example: 'ABC123456789', length: 12, pattern: /^[A-Za-z0-9]{12}$/ },
+  { value: 'instapay', label: 'InstaPay', example: 'ABC1234567890', length: 13, pattern: /^[A-Za-z0-9]{13}$/ },
   { value: 'bank_transfer', label: 'Bank Transfer / Other', example: 'Any reference', length: null, pattern: null }
 ];
 
@@ -422,7 +422,7 @@ export default function PaymentSuccess() {
                   Reference Number
                   {activeValidation.length && (
                     <span style={{ fontWeight: 400, color: '#6b7280', marginLeft: '6px' }}>
-                      ({activeValidation.length} digits)
+                      ({activeValidation.length} characters)
                     </span>
                   )}
                 </label>
@@ -443,7 +443,7 @@ export default function PaymentSuccess() {
 
                 {activeValidation.length && referenceNumber && referenceNumber.length !== activeValidation.length && (
                   <p style={{ margin: '0 0 10px', fontSize: '13px', color: '#d97706' }}>
-                    Expected {activeValidation.length} digits — you entered {referenceNumber.length}.
+                    Expected {activeValidation.length} characters — you entered {referenceNumber.length}.
                   </p>
                 )}
 
