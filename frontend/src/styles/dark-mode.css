@@ -872,7 +872,7 @@
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    28. Hotels (logged-out cards use anonymous DIVs) & misc
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-[data-theme="dark"] .hotels-page > div > div:not(.slideshow-hero):not(.slideshow-hero *),
+[data-theme="dark"] .hotels-page > div:not(.hero-slideshow) > div,
 [data-theme="dark"] .hotels-page .hotel-grid > div {
   background: #1e293b !important;
   border: 1px solid #334155 !important;
@@ -2014,7 +2014,8 @@
    ════════════════════════════════════════════════ */
 
 /* Hero sections: keep images visible, just darken overlay */
-[data-theme="dark"] .slideshow-hero {
+[data-theme="dark"] .slideshow-hero,
+[data-theme="dark"] .hero-slideshow {
   background: transparent !important;
 }
 
@@ -2030,8 +2031,11 @@
 [data-theme="dark"] .hero-section h1,
 [data-theme="dark"] .hero-section h2,
 [data-theme="dark"] .slideshow-hero .hero-title,
+[data-theme="dark"] .hero-slideshow .hero-title,
 [data-theme="dark"] .slideshow-hero h1,
-[data-theme="dark"] .slideshow-hero h2 {
+[data-theme="dark"] .hero-slideshow h1,
+[data-theme="dark"] .slideshow-hero h2,
+[data-theme="dark"] .hero-slideshow h2 {
   color: #ffffff !important;
   text-shadow: 0 2px 12px rgba(0,0,0,0.7), 0 1px 3px rgba(0,0,0,0.5) !important;
 }
@@ -2040,15 +2044,19 @@
 [data-theme="dark"] .hero-section .hero-description,
 [data-theme="dark"] .hero-section p,
 [data-theme="dark"] .slideshow-hero .hero-subtitle,
+[data-theme="dark"] .hero-slideshow .hero-subtitle,
 [data-theme="dark"] .slideshow-hero .hero-description,
-[data-theme="dark"] .slideshow-hero p {
+[data-theme="dark"] .hero-slideshow .hero-description,
+[data-theme="dark"] .slideshow-hero p,
+[data-theme="dark"] .hero-slideshow p {
   color: #f1f5f9 !important;
   text-shadow: 0 1px 8px rgba(0,0,0,0.6), 0 1px 2px rgba(0,0,0,0.4) !important;
 }
 
 /* Hero overlay gradient — transparent in dark mode so images show */
 [data-theme="dark"] .hero-section::before,
-[data-theme="dark"] .slideshow-hero::before {
+[data-theme="dark"] .slideshow-hero::before,
+[data-theme="dark"] .hero-slideshow::before {
   background: transparent !important;
 }
 
@@ -2057,18 +2065,23 @@
 [data-theme="dark"] .hero-section .hero-primary-btn,
 [data-theme="dark"] .hero-section .hero-secondary-btn,
 [data-theme="dark"] .slideshow-hero .hero-btn,
+[data-theme="dark"] .hero-slideshow .hero-btn,
 [data-theme="dark"] .slideshow-hero .hero-primary-btn,
-[data-theme="dark"] .slideshow-hero .hero-secondary-btn {
+[data-theme="dark"] .hero-slideshow .hero-primary-btn,
+[data-theme="dark"] .slideshow-hero .hero-secondary-btn,
+[data-theme="dark"] .hero-slideshow .hero-secondary-btn {
   border-color: rgba(255,255,255,0.5) !important;
   color: #ffffff !important;
   text-shadow: none !important;
 }
 [data-theme="dark"] .hero-section .hero-primary-btn,
-[data-theme="dark"] .slideshow-hero .hero-primary-btn {
+[data-theme="dark"] .slideshow-hero .hero-primary-btn,
+[data-theme="dark"] .hero-slideshow .hero-primary-btn {
   background: rgba(22, 163, 74, 0.85) !important;
 }
 [data-theme="dark"] .hero-section .hero-secondary-btn,
-[data-theme="dark"] .slideshow-hero .hero-secondary-btn {
+[data-theme="dark"] .slideshow-hero .hero-secondary-btn,
+[data-theme="dark"] .hero-slideshow .hero-secondary-btn {
   background: rgba(255,255,255,0.15) !important;
   backdrop-filter: blur(4px) !important;
 }
@@ -2076,26 +2089,32 @@
 /* Hero navigation arrows */
 [data-theme="dark"] .hero-section .nav-arrow,
 [data-theme="dark"] .slideshow-hero .nav-arrow,
+[data-theme="dark"] .hero-slideshow .nav-arrow,
 [data-theme="dark"] .hero-section .carousel-arrow,
-[data-theme="dark"] .slideshow-hero .carousel-arrow {
+[data-theme="dark"] .slideshow-hero .carousel-arrow,
+[data-theme="dark"] .hero-slideshow .carousel-arrow {
   background: rgba(255,255,255,0.15) !important;
   color: #ffffff !important;
   border-color: rgba(255,255,255,0.3) !important;
 }
 [data-theme="dark"] .hero-section .nav-arrow:hover,
-[data-theme="dark"] .slideshow-hero .nav-arrow:hover {
+[data-theme="dark"] .slideshow-hero .nav-arrow:hover,
+[data-theme="dark"] .hero-slideshow .nav-arrow:hover {
   background: rgba(255,255,255,0.25) !important;
 }
 
 /* Hero dots/indicators */
 [data-theme="dark"] .hero-section .dot,
-[data-theme="dark"] .slideshow-hero .dot {
+[data-theme="dark"] .slideshow-hero .dot,
+[data-theme="dark"] .hero-slideshow .dot {
   background: rgba(255,255,255,0.35) !important;
 }
 [data-theme="dark"] .hero-section .dot.active,
 [data-theme="dark"] .slideshow-hero .dot.active,
+[data-theme="dark"] .hero-slideshow .dot.active,
 [data-theme="dark"] .hero-section .dot:hover,
-[data-theme="dark"] .slideshow-hero .dot:hover {
+[data-theme="dark"] .slideshow-hero .dot:hover,
+[data-theme="dark"] .hero-slideshow .dot:hover {
   background: #22c55e !important;
 }
 
@@ -2536,7 +2555,8 @@
   background: #0f172a !important;
   color: #f1f5f9 !important;
 }
-[data-theme="dark"] .hotels-page > div > div:not(.slideshow-hero):not(.slideshow-hero *),
+/* Section 28: Hotels — card grid only (HeroSlideshow gets base class 'hero-slideshow') */
+[data-theme="dark"] .hotels-page > div:not(.hero-slideshow) > div,
 [data-theme="dark"] .hotels-page .hotel-grid > div {
   background: #1e293b !important;
   border: 1px solid #334155 !important;
@@ -2912,7 +2932,7 @@
 }
 
 /* HeroSlideshow inside any page — keep original overlay, no dark tint */
-[data-theme="dark"] .slideshow-hero,
+[data-theme="dark"] .slideshow-hero,.hero-slideshow,
 [data-theme="dark"] .hero-slideshow,
 [data-theme="dark"] .slideshow-hero .hero-overlay,
 [data-theme="dark"] .hero-slideshow .hero-overlay,
@@ -3127,7 +3147,7 @@
 }
 
 /* rgba(255,255,255,...) on ALL elements (catch glassmorphism) — exclude hero overlays */
-[data-theme="dark"] *[style*="rgba(255, 255, 255"]:not(.hero-overlay):not(.hero-section):not(.slideshow-hero):not(.slideshow-hero *),
-[data-theme="dark"] *[style*="rgba(255,255,255"]:not(.hero-overlay):not(.hero-section):not(.slideshow-hero):not(.slideshow-hero *) {
+[data-theme="dark"] *[style*="rgba(255, 255, 255"]:not(.hero-overlay):not(.hero-section):not(.slideshow-hero):not(.hero-slideshow):not(.slideshow-hero *):not(.hero-slideshow *),
+[data-theme="dark"] *[style*="rgba(255,255,255"]:not(.hero-overlay):not(.hero-section):not(.slideshow-hero):not(.hero-slideshow):not(.slideshow-hero *):not(.hero-slideshow *) {
   background: #1e293b !important;
 }

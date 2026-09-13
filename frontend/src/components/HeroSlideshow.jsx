@@ -63,7 +63,7 @@ const HeroSlideshow = ({ title, subtitle, height = '500px', images: customImages
   const prevSlide = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
 
   return (
-    <div className={className} style={{ ...styles.heroContainer, height }}>
+    <div className={`hero-slideshow ${className}`.trim()} style={{ ...styles.heroContainer, height }}>
       {images.map((image, index) => (
         <div
           key={index}
