@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import axios from 'axios';
 import crypto from 'crypto';
-import { WEBHOOK_BASE_URL } from '../config/publicUrls.js';
+import { WEBHOOK_BASE_URL, FRONTEND_URL } from '../config/publicUrls.js';
 
 // Initialize payment providers
 const stripe = process.env.STRIPE_SECRET_KEY 
@@ -457,8 +457,8 @@ export const processQRPHPayment = async (paymentData) => {
               }
             ],
             payment_method_types: ['qrph'],
-            success_url: `${WEBHOOK_BASE_URL}/payments/qrph/success?id={id}`,
-            cancel_url: `${WEBHOOK_BASE_URL}/payments/qrph/failed?id={id}`,
+            success_url: `${FRONTEND_URL}/payment-success?provider=qrph&booking_id=${bookingId || ''}`,
+            cancel_url: `${FRONTEND_URL}/payment-success?provider=qrph&booking_id=${bookingId || ''}&status=cancelled`,
             reference_number: `BOOK-${bookingId || 'QRPH'}-${Date.now()}`,
             metadata: {
               booking_id: bookingId || null,
