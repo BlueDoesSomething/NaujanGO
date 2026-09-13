@@ -207,7 +207,7 @@ const Attractions = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#f0f9ff,#e0f2fe)', paddingBottom: 32 }}>
+    <div className="attractions-page" style={{ minHeight: '100vh', paddingBottom: 32 }}>
       <HeroSlideshow
         title={t('discover_naujan')}
         subtitle={`${Array.isArray(attractions) ? attractions.length : 0} ${t('attractions')} ${t('in_oriental_mindoro')}`}

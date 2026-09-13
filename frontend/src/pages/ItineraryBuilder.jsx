@@ -932,7 +932,7 @@ const ItineraryBuilder = () => {
   };
   
   return (
-    <div style={styles.page}>
+    <div className="itinerary-builder-page" style={styles.page}>
       <HeroSlideshow 
         title={t('smart_itinerary_planner')}
         subtitle={t('plan_perfect_trip')}

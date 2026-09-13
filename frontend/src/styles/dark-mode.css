@@ -1509,6 +1509,7 @@
    38. ITINERARY BUILDER - cards, day panels, form
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .itinerary-builder,
+[data-theme="dark"] .itinerary-builder-page,
 [data-theme="dark"] .itinerary-page {
   background: #0f172a !important;
   color: #f1f5f9 !important;
@@ -1550,7 +1551,8 @@
    39. INTERACTIVE MAP - panels, popups, controls
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .interactive-map-page,
-[data-theme="dark"] .map-container {
+[data-theme="dark"] .map-container,
+[data-theme="dark"] .imap-container {
   background: #0f172a !important;
   color: #f1f5f9 !important;
 }
@@ -2432,13 +2434,16 @@
 }
 
 /* ════════════════════════════════════════════════
-   53. ITINERARY BUILDER - inputs, chips, filter groups (with !important)
+   28. Hotels (logged-out cards use anonymous DIVs) & misc
    ════════════════════════════════════════════════ */
-[data-theme="dark"] .itinerary-search-input,
-[data-theme="dark"] .saved-search-input {
-  background: #1e293b !important;
-  border-color: #334155 !important;
+[data-theme="dark"] .hotels-page {
+  background: #0f172a !important;
   color: #f1f5f9 !important;
+}
+[data-theme="dark"] .hotels-page > div > div,
+[data-theme="dark"] .hotels-page .hotel-grid > div {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
 }
 
 [data-theme="dark"] .itinerary-search-dropdown,
@@ -2784,4 +2789,246 @@
 
 [data-theme="dark"] .chatbot-messages::-webkit-scrollbar-thumb:hover {
   background: #475569 !important;
+}
+
+/* ════════════════════════════════════════════════
+   56. REMAINING WHITE ELEMENTS - comprehensive sweep
+   ════════════════════════════════════════════════ */
+
+/* Page-level gradient backgrounds that resist overrides */
+[data-theme="dark"] .attractions-page[style*="linear-gradient"],
+[data-theme="dark"] .hotels-page[style*="linear-gradient"],
+[data-theme="dark"] .itinerary-builder-page[style*="linear-gradient"] {
+  background: #0f172a !important;
+}
+
+/* Modern cards (Attractions grid/list views) */
+[data-theme="dark"] .modern-card,
+[data-theme="dark"] .list-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .modern-card:hover,
+[data-theme="dark"] .list-card:hover {
+  border-color: #475569 !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* HeroSlideshow inside any page */
+[data-theme="dark"] .hero-slideshow,
+[data-theme="dark"] .hero-slideshow .hero-overlay,
+[data-theme="dark"] .hero-slideshow .hero-content {
+  background: transparent !important;
+  color: #f1f5f9 !important;
+}
+
+/* All buttons with white/light backgrounds */
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] .cta-button,
+[data-theme="dark"] .primary-button {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  border-color: #16a34a !important;
+}
+[data-theme="dark"] .btn-primary:hover,
+[data-theme="dark"] .cta-button:hover,
+[data-theme="dark"] .primary-button:hover {
+  background: #15803d !important;
+}
+
+[data-theme="dark"] .btn-white,
+[data-theme="dark"] .btn-light,
+[data-theme="dark"] button[style*="background: white"],
+[data-theme="dark"] button[style*="background: '#fff'"],
+[data-theme="dark"] a[style*="background: white"],
+[data-theme="dark"] a[style*="background: '#fff'"] {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+/* All form elements */
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .search-input,
+[data-theme="dark"] input.form-control,
+[data-theme="dark"] textarea.form-control,
+[data-theme="dark"] select.form-control {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+/* All panels / sections with white backgrounds */
+[data-theme="dark"] .panel-white,
+[data-theme="dark"] .section-white,
+[data-theme="dark"] .bg-white-section {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+/* Hero buttons inside slideshow */
+[data-theme="dark"] .hero-btn,
+[data-theme="dark"] .hero-primary-btn,
+[data-theme="dark"] .hero-secondary-btn {
+  background: transparent !important;
+  border-color: rgba(255,255,255,0.4) !important;
+  color: #ffffff !important;
+}
+[data-theme="dark"] .hero-primary-btn {
+  background: rgba(22, 163, 74, 0.8) !important;
+}
+
+/* Pagination */
+[data-theme="dark"] .pagination,
+[data-theme="dark"] .pagination button,
+[data-theme="dark"] .pag-btn {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .pagination button:hover,
+[data-theme="dark"] .pag-btn:hover {
+  background: #334155 !important;
+  color: #4ade80 !important;
+}
+[data-theme="dark"] .pagination button.active,
+[data-theme="dark"] .pag-btn.active {
+  background: #16a34a !important;
+  color: #ffffff !important;
+}
+
+/* Rating stars */
+[data-theme="dark"] .rating-star,
+[data-theme="dark"] .star {
+  color: #fbbf24 !important;
+}
+
+/* Tags / chips */
+[data-theme="dark"] .tag,
+[data-theme="dark"] .chip,
+[data-theme="dark"] .badge {
+  background: #24334a !important;
+  color: #4ade80 !important;
+  border-color: rgba(22, 163, 74, 0.3) !important;
+}
+
+/* Skeleton loaders */
+[data-theme="dark"] .skeleton,
+[data-theme="dark"] .skeleton-card,
+[data-theme="dark"] .skeleton-line,
+[data-theme="dark"] .skeleton-img {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* Empty states */
+[data-theme="dark"] .empty-state,
+[data-theme="dark"] .no-results {
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+}
+
+/* Alerts / notifications */
+[data-theme="dark"] .alert-info {
+  background: rgba(59, 130, 246, 0.15) !important;
+  color: #93c5fd !important;
+  border-color: rgba(59, 130, 246, 0.3) !important;
+}
+[data-theme="dark"] .alert-success {
+  background: rgba(34, 197, 94, 0.15) !important;
+  color: #4ade80 !important;
+  border-color: rgba(34, 197, 94, 0.3) !important;
+}
+[data-theme="dark"] .alert-warning {
+  background: rgba(234, 179, 8, 0.15) !important;
+  color: #fbbf24 !important;
+  border-color: rgba(234, 179, 8, 0.3) !important;
+}
+[data-theme="dark"] .alert-danger,
+[data-theme="dark"] .alert-error {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* Toast notifications */
+[data-theme="dark"] .toast,
+[data-theme="dark"] .notification-toast {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+/* Leaflet map overrides */
+[data-theme="dark"] .leaflet-container {
+  background: #0f172a !important;
+}
+[data-theme="dark"] .leaflet-popup-content-wrapper {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+[data-theme="dark"] .leaflet-popup-tip {
+  background: #1e293b !important;
+}
+[data-theme="dark"] .leaflet-control-zoom a {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+[data-theme="dark"] .leaflet-control-zoom a:hover {
+  background: #334155 !important;
+}
+
+/* Any remaining inline white backgrounds on ALL elements */
+[data-theme="dark"] *[style*="background: white"],
+[data-theme="dark"] *[style*="background: '#fff'"],
+[data-theme="dark"] *[style*="background: '#ffffff'"],
+[data-theme="dark"] *[style*="background-color: white"],
+[data-theme="dark"] *[style*="background-color: '#fff'"],
+[data-theme="dark"] *[style*="background-color: '#ffffff'"],
+[data-theme="dark"] *[style*="background: '#f8f9fa'"],
+[data-theme="dark"] *[style*="background: '#f9fafb'"],
+[data-theme="dark"] *[style*="background: '#f3f4f6'"] {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+/* Any remaining inline dark text on ALL elements */
+[data-theme="dark"] *[style*="color: '#111827'"],
+[data-theme="dark"] *[style*="color:'#111827'"],
+[data-theme="dark"] *[style*="color: '#1f2937'"],
+[data-theme="dark"] *[style*="color:'#1f2937'"],
+[data-theme="dark"] *[style*="color: '#374151'"],
+[data-theme="dark"] *[style*="color:'#374151'"],
+[data-theme="dark"] *[style*="color: '#333'"],
+[data-theme="dark"] *[style*="color:'#333'"],
+[data-theme="dark"] *[style*="color: '#4b5563'"],
+[data-theme="dark"] *[style*="color:'#4b5563'"],
+[data-theme="dark"] *[style*="color: '#6b7280'"],
+[data-theme="dark"] *[style*="color:'#6b7280'"] {
+  color: #e2e8f0 !important;
+}
+
+/* Linear gradient backgrounds with white */
+[data-theme="dark"] *[style*="linear-gradient(135deg,#f0f9ff"],
+[data-theme="dark"] *[style*="linear-gradient(135deg, #f0f9ff"],
+[data-theme="dark"] *[style*="linear-gradient(135deg,#f8f9fa"],
+[data-theme="dark"] *[style*="linear-gradient(135deg, #f8f9fa"],
+[data-theme="dark"] *[style*="linear-gradient(135deg, #f0f8f5"],
+[data-theme="dark"] *[style*="linear-gradient(135deg,#f0f8f5"],
+[data-theme="dark"] *[style*="linear-gradient(135deg, #e0f2fe"],
+[data-theme="dark"] *[style*="linear-gradient(135deg,#e0f2fe"],
+[data-theme="dark"] *[style*="linear-gradient(135deg, #f0f9ff 0%, #e0f2fe"],
+[data-theme="dark"] *[style*="linear-gradient(to bottom, #f0f4f8"],
+[data-theme="dark"] *[style*="linear-gradient(135deg, #ffffff"],
+[data-theme="dark"] *[style*="linear-gradient(135deg,#ffffff"] {
+  background: #0f172a !important;
+}
+
+/* rgba(255,255,255,...) on ALL elements (catch glassmorphism) */
+[data-theme="dark"] *[style*="rgba(255, 255, 255"],
+[data-theme="dark"] *[style*="rgba(255,255,255"] {
+  background: #1e293b !important;
 }

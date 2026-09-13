@@ -368,7 +368,7 @@ export default function Hotels() {
   }
 
   return (
-    <div style={pageStyle}>
+    <div className="hotels-page" style={pageStyle}>
       {/* Hero Header */}
       <HeroSlideshow 
         title={t('accommodation')}
