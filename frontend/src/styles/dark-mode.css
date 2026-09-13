@@ -1,8 +1,8 @@
-/* ==========================================
+﻿/* ==========================================
    NAUJANGO - DARK MODE DESIGN SYSTEM
    ========================================== */
 
-/* ── 1. CSS Variables Override ─────────────── */
+/* â”€â”€ 1. CSS Variables Override â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] {
   --bg: #0f172a;
   --surface: #1e293b;
@@ -60,7 +60,7 @@
   color-scheme: dark;
 }
 
-/* ── 2. Base ────────────────────────────────── */
+/* â”€â”€ 2. Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] body {
   background-color: #0f172a;
   color: #f1f5f9;
@@ -70,7 +70,7 @@
   background-color: #0f172a;
 }
 
-/* ── 3. Global Inputs & Forms ───────────────── */
+/* â”€â”€ 3. Global Inputs & Forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]),
 [data-theme="dark"] textarea,
 [data-theme="dark"] select {
@@ -95,7 +95,7 @@
   color: #cbd5e1;
 }
 
-/* ── 4. Cards & Surfaces ────────────────────── */
+/* â”€â”€ 4. Cards & Surfaces â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .modern-card,
 [data-theme="dark"] .card {
   background: #1e293b;
@@ -188,7 +188,7 @@
   background-color: #22c55e !important;
 }
 
-/* ── 5. Login & Register Forms ──────────────── */
+/* â”€â”€ 5. Login & Register Forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .login-container,
 [data-theme="dark"] .register-container {
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
@@ -239,7 +239,7 @@
   background-color: #334155;
 }
 
-/* ── 6. Navbar Dropdown ─────────────────────── */
+/* â”€â”€ 6. Navbar Dropdown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .dropdown-menu {
   background: #1e293b;
   border: 1px solid #334155;
@@ -280,7 +280,7 @@
   background: rgba(139, 92, 246, 0.15) !important;
 }
 
-/* ── 7. Chatbot ─────────────────────────────── */
+/* â”€â”€ 7. Chatbot â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .chatbot-container {
   background: #1e293b;
   border: 1px solid #334155;
@@ -328,7 +328,7 @@
   border-color: #16a34a;
 }
 
-/* ── 8. Admin Dashboard ─────────────────────── */
+/* â”€â”€ 8. Admin Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .gov-dashboard {
   background: #0f172a;
   color: #f1f5f9;
@@ -370,7 +370,7 @@
   background: rgba(51, 65, 85, 0.5);
 }
 
-/* ── 9. Global Tables ───────────────────────── */
+/* â”€â”€ 9. Global Tables â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] table {
   color: #f1f5f9;
 }
@@ -394,7 +394,7 @@
   background: rgba(51, 65, 85, 0.5);
 }
 
-/* ── 10. Hotels & Attractions Cards ─────────── */
+/* â”€â”€ 10. Hotels & Attractions Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .hotel-card,
 [data-theme="dark"] .attraction-card {
   background: #1e293b;
@@ -421,7 +421,7 @@
   color: #94a3b8;
 }
 
-/* ── 11. Modals & Overlays ──────────────────── */
+/* â”€â”€ 11. Modals & Overlays â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .modal-overlay {
   background: rgba(0, 0, 0, 0.75);
 }
@@ -440,7 +440,7 @@
   border-color: #334155;
 }
 
-/* ── 12. Profile & Booking Pages ─────────────── */
+/* â”€â”€ 12. Profile & Booking Pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .profile-container,
 [data-theme="dark"] .profile-card,
 [data-theme="dark"] .profile-section {
@@ -457,7 +457,7 @@
   color: #f1f5f9;
 }
 
-/* ── 13. Owner Dashboard ────────────────────── */
+/* â”€â”€ 13. Owner Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .owner-dashboard,
 [data-theme="dark"] .owner-panel,
 [data-theme="dark"] .owner-card {
@@ -465,7 +465,7 @@
   color: #f1f5f9;
 }
 
-/* ── 14. Secondary Buttons & Outline Buttons ── */
+/* â”€â”€ 14. Secondary Buttons & Outline Buttons â”€â”€ */
 [data-theme="dark"] .btn-secondary,
 [data-theme="dark"] .cta-button.secondary,
 [data-theme="dark"] .secondary-button {
@@ -495,7 +495,7 @@
   color: #f1f5f9;
 }
 
-/* ── 15. Section Backgrounds ────────────────── */
+/* â”€â”€ 15. Section Backgrounds â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .section-light,
 [data-theme="dark"] .bg-light,
 [data-theme="dark"] .bg-gray,
@@ -507,7 +507,7 @@
   background: #0f172a;
 }
 
-/* ── 16. Itinerary ──────────────────────────── */
+/* â”€â”€ 16. Itinerary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .itinerary-card,
 [data-theme="dark"] .itinerary-item,
 [data-theme="dark"] .itinerary-day {
@@ -516,7 +516,7 @@
   color: #f1f5f9;
 }
 
-/* ── 17. Contact Page ───────────────────────── */
+/* â”€â”€ 17. Contact Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .contact-container,
 [data-theme="dark"] .contact-card,
 [data-theme="dark"] .contact-form-wrapper {
@@ -524,7 +524,7 @@
   border: 1px solid #334155;
 }
 
-/* ── 18. Map / WeatherWidget ────────────────── */
+/* â”€â”€ 18. Map / WeatherWidget â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .weather-widget,
 [data-theme="dark"] .hazard-alert {
   background: #1e293b;
@@ -532,7 +532,7 @@
   color: #f1f5f9;
 }
 
-/* ── 19. Scrollbar (WebKit) ─────────────────── */
+/* â”€â”€ 19. Scrollbar (WebKit) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -551,12 +551,12 @@
   background: #475569;
 }
 
-/* ── 20. Announcement Bar (keep brand color) ── */
+/* â”€â”€ 20. Announcement Bar (keep brand color) â”€â”€ */
 [data-theme="dark"] .announcement-bar {
   filter: brightness(0.85);
 }
 
-/* ── 21. Typography helpers ─────────────────── */
+/* â”€â”€ 21. Typography helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .text-dark,
 [data-theme="dark"] .text-black {
   color: #f1f5f9 !important;
@@ -571,13 +571,13 @@
   color: #64748b !important;
 }
 
-/* ── 22. Borders ─────────────────────────────── */
+/* â”€â”€ 22. Borders â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] hr,
 [data-theme="dark"] .divider {
   border-color: #334155;
 }
 
-/* ── 23. Dark mode Google auth button ──────── */
+/* â”€â”€ 23. Dark mode Google auth button â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .google-auth-btn {
   background: #1e293b;
   border-color: #334155;
@@ -588,7 +588,7 @@
   background: #334155;
 }
 
-/* ── 24. DashboardLayout sidebar ────────────── */
+/* â”€â”€ 24. DashboardLayout sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 [data-theme="dark"] .dashboard-sidebar,
 [data-theme="dark"] .dashboard-nav {
   background: #1e293b;
@@ -600,12 +600,12 @@
   background: #0f172a;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    24. OVERRIDE global-buttons.css aggressive light rules
    These global !important rules set light colors on
    labels/inputs/cards and must be neutralized in dark mode.
    Higher specificity ([data-theme]) + !important wins.
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* Labels (global-buttons.css sets #374151 !important) */
 [data-theme="dark"] label {
@@ -706,9 +706,9 @@
   color: #4ade80 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    25. Theme color variables (usable in inline styles)
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 :root {
   --theme-title: #14532d;        /* card/brand titles (light default) */
   --theme-title-ink: #111827;    /* list-view titles */
@@ -727,9 +727,9 @@
   --theme-surface: #1e293b;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    26. Home page (public + logged-in) surfaces
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 /* Search bar */
 [data-theme="dark"] .simple-search-bar {
@@ -767,12 +767,12 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    26. Login / Register (classless inline-styled pages)
    The auth pages use only inline styles; global rules
    (auth.css / global-buttons.css) force light text on them.
    Target via their style-attribute signatures.
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] form[label=""] span,
 [data-theme="dark"] div[style*="textAlign: 'center'"] span,
 [data-theme="dark"] div[style*="text-align: center"] span {
@@ -785,8 +785,8 @@
   color: #4ade80 !important;
 }
 
-/* ── 27. Attractions page text color fixes
-   ════════════════════════════════════════════════ */[data-theme="dark"] .attraction-card h3,
+/* â”€â”€ 27. Attractions page text color fixes
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */[data-theme="dark"] .attraction-card h3,
 [data-theme="dark"] .attraction-card h3 a,
 [data-theme="dark"] .attraction-title,
 [data-theme="dark"] .attraction-name {
@@ -841,9 +841,9 @@
   color: #f1f5f9 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    27. About page surfaces
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .about-page {
   background: #0f172a !important;
   color: #e2e8f0 !important;
@@ -871,18 +871,18 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    28. Hotels (logged-out cards use anonymous DIVs) & misc
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .hotels-page > div > div,
 [data-theme="dark"] .hotels-page .hotel-grid > div {
   background: #1e293b !important;
   border: 1px solid #334155 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    29. About page (inline-styled classless cards)
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .about-leadership-grid > div,
 [data-theme="dark"] .about-section-leadership div[style*="background: 'white'"],
 [data-theme="dark"] .about-section-leadership div[style*="background: white"],
@@ -916,9 +916,9 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    30. Hotels page (inline-styled classless cards)
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] article[style*="rgba(255, 255, 255, 0.4)"],
 [data-theme="dark"] article[style*="rgba(255,255,255,0.4)"],
 [data-theme="dark"] .hotels-page div[style*="rgba(255, 255, 255, 0.4)"],
@@ -955,9 +955,9 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    31. About "field guide" sidebar / masthead / panels
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .about-masthead {
   background: #0b1220 !important;
   border-bottom-color: #c45f3c !important;
@@ -1027,10 +1027,10 @@
   color: #e2e8f0 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    32. Public home combined safety/weather/hazard panel
    + inline-styled WeatherWidget & HazardAwareness text/surfaces
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .combined-safety-weather-panel {
   background: #1e293b !important;
   border-color: #334155 !important;
@@ -1109,11 +1109,11 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    33. About: neutralize global `* { color: var(--text-primary) }`
    (About.css re-declares --text-primary on :root, shadowing the dark value)
    + remaining sage/tan cards, masthead/nav text, pageant ink text
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .about-page,
 [data-theme="dark"] .about-section {
   --text-primary: #e2e8f0;
@@ -1217,9 +1217,9 @@
   background: #1e293b !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    34. Home quick-action pills (dark text on darkened pill)
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .quick-action-pill {
   background: #1e293b !important;
   border-color: #334155 !important;
@@ -1234,9 +1234,9 @@
   color: #f1f5f9 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    35. PUBLIC HOME PAGE - section backgrounds, cards, text
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .home-page,
 [data-theme="dark"] .home-page:not(.logged-in) {
   background: #0f172a !important;
@@ -1345,9 +1345,9 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    36. ATTRACTIONS PAGE - cards, filters, list view
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .attractions-page,
 [data-theme="dark"] .attractions-container {
   background: #0f172a !important;
@@ -1431,9 +1431,9 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    37. HOTELS PAGE - cards, filters, grid
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .hotels-page,
 [data-theme="dark"] .hotels-container {
   background: #0f172a !important;
@@ -1505,9 +1505,9 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    38. ITINERARY BUILDER - cards, day panels, form
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .itinerary-builder,
 [data-theme="dark"] .itinerary-page {
   background: #0f172a !important;
@@ -1546,9 +1546,9 @@
   border-color: #334155 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    39. INTERACTIVE MAP - panels, popups, controls
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .interactive-map-page,
 [data-theme="dark"] .map-container {
   background: #0f172a !important;
@@ -1595,9 +1595,9 @@
   color: #e2e8f0 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    40. CHATBOT - comprehensive coverage
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .chatbot-container,
 [data-theme="dark"] .chatbot-popup {
   background: #1e293b !important;
@@ -1672,9 +1672,9 @@
   color: #e2e8f0 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    41. USER DASHBOARD (logged-in home)
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .dashboard-page,
 [data-theme="dark"] .user-dashboard {
   background: #0f172a !important;
@@ -1702,9 +1702,9 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    42. CONTACT PAGE
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .contact-page,
 [data-theme="dark"] .contact-container {
   background: #0f172a !important;
@@ -1730,9 +1730,9 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    43. MODERATION PAGE
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .moderation-page {
   background: #0f172a !important;
   color: #f1f5f9 !important;
@@ -1756,9 +1756,9 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    44. BOOKING HISTORY / BOOKING PAGES
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .booking-page,
 [data-theme="dark"] .booking-history-page {
   background: #0f172a !important;
@@ -1788,9 +1788,9 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    45. NAVBAR - mobile menu, search, hamburger overlay
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .mobile-menu,
 [data-theme="dark"] .mobile-nav,
 [data-theme="dark"] .navbar-mobile {
@@ -1826,11 +1826,11 @@
   border-color: #334155 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    46. GENERIC CATCH-ALL - inline white backgrounds
    Catches elements with hardcoded white that lack
    a specific selector in the rules above.
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] div[style*="background: white"],
 [data-theme="dark"] div[style*="background: '#fff'"],
 [data-theme="dark"] div[style*="background:'#fff'"],
@@ -1893,9 +1893,9 @@
   color: #e2e8f0 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    47. LEGAL / PRIVACY / TERMS PAGES
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .legal-page,
 [data-theme="dark"] .privacy-page,
 [data-theme="dark"] .terms-page {
@@ -1924,9 +1924,9 @@
   color: #94a3b8 !important;
 }
 
-/* ════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    48. FUN FACTS / MISC COMPONENTS
-   ════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .fun-fact-card,
 [data-theme="dark"] .fun-facts {
   background: #1e293b !important;
@@ -1963,4 +1963,825 @@
 [data-theme="dark"] .weather-widget p,
 [data-theme="dark"] .hazard-panel p {
   color: #94a3b8 !important;
+}
+
+
+/* ════════════════════════════════════════════════
+   49. NAVBAR - about dropdown, register, avatar
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .navbar-about-dropdown {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.55) !important;
+}
+
+[data-theme="dark"] .about-dropdown-link {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .about-dropdown-link:hover {
+  background: #334155 !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .register-btn {
+  background: transparent !important;
+  color: #4ade80 !important;
+  border-color: #16a34a !important;
+}
+
+[data-theme="dark"] .register-btn:hover {
+  background: rgba(22, 163, 74, 0.15) !important;
+}
+
+[data-theme="dark"] .account-avatar {
+  background: #334155 !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .account-avatar-img {
+  border-color: #334155 !important;
+}
+
+/* Mobile dropdown overrides */
+[data-theme="dark"] .account-dropdown .dropdown-menu {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* ════════════════════════════════════════════════
+   50. HOME PUBLIC - remaining section backgrounds
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .slideshow-hero {
+  background: #0f172a !important;
+}
+
+[data-theme="dark"] .home-page .hero-section,
+[data-theme="dark"] .hero-section {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
+}
+
+[data-theme="dark"] .home-page .featured-section,
+[data-theme="dark"] .home-page .hotels-section,
+[data-theme="dark"] .home-page .actions-section,
+[data-theme="dark"] .home-page .benefits-section,
+[data-theme="dark"] .home-page .discover-section,
+[data-theme="dark"] .home-page .featured-attractions-section,
+[data-theme="dark"] .home-page .featured-dining-section,
+[data-theme="dark"] .home-page .home-content-layout {
+  background: transparent !important;
+}
+
+[data-theme="dark"] .stat-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .stat-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .action-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .action-card:hover {
+  background: #24334a !important;
+}
+
+[data-theme="dark"] .action-title {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .action-description {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .benefit-item {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .benefit-item h3 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .benefit-item p {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .welcome-panel {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .weather-panel {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .weather-panel-subtext {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .discover-block {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .discover-block:hover {
+  background: #24334a !important;
+}
+
+[data-theme="dark"] .hotel-rating {
+  background: rgba(30, 41, 59, 0.95) !important;
+}
+
+[data-theme="dark"] .attraction-type {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .carousel-arrow {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .carousel-arrow:hover {
+  background: #334155 !important;
+}
+
+[data-theme="dark"] .featured-attractions-section .section-title,
+[data-theme="dark"] .featured-dining-section .section-title {
+  color: #f1f5f9 !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .featured-attractions-section .section-subtitle,
+[data-theme="dark"] .featured-dining-section .section-subtitle {
+  color: #94a3b8 !important;
+}
+
+/* ════════════════════════════════════════════════
+   51. HOME LOGGED-IN - remaining elements
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .hero-btn {
+  background: transparent !important;
+  color: #4ade80 !important;
+  border-color: #16a34a !important;
+}
+
+[data-theme="dark"] .hero-btn:hover {
+  background: rgba(22, 163, 74, 0.15) !important;
+}
+
+[data-theme="dark"] .hero-primary-btn {
+  background: rgba(22, 163, 74, 0.15) !important;
+  border-color: #16a34a !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .hero-primary-btn:hover {
+  background: rgba(22, 163, 74, 0.25) !important;
+}
+
+[data-theme="dark"] .nav-arrow {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .nav-arrow:hover {
+  background: #334155 !important;
+}
+
+[data-theme="dark"] .indicators-container {
+  background: rgba(30, 41, 59, 0.8) !important;
+}
+
+[data-theme="dark"] .slide-counter {
+  background: rgba(30, 41, 59, 0.8) !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .featured-section,
+[data-theme="dark"] .home-page.logged-in .hotels-section,
+[data-theme="dark"] .home-page.logged-in .actions-section,
+[data-theme="dark"] .home-page.logged-in .benefits-section,
+[data-theme="dark"] .home-page.logged-in .discover-section,
+[data-theme="dark"] .home-page.logged-in .featured-attractions-section,
+[data-theme="dark"] .home-page.logged-in .home-content-layout {
+  background: transparent !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .stat-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .action-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .attraction-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .hotel-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .welcome-panel,
+[data-theme="dark"] .home-page.logged-in .weather-panel,
+[data-theme="dark"] .home-page.logged-in .discover-block {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .hotel-rating {
+  background: rgba(30, 41, 59, 0.95) !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .attraction-type {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .carousel-arrow {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .featured-attractions-section .section-title {
+  color: #f1f5f9 !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .featured-attractions-section .section-subtitle {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .restaurant-card,
+[data-theme="dark"] .home-page.logged-in .accommodation-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .home-page.logged-in .restaurant-image-wrapper,
+[data-theme="dark"] .home-page.logged-in .accommodation-image-wrapper {
+  background: #1e293b !important;
+}
+
+/* Search bar inputs (public + logged-in) */
+[data-theme="dark"] .search-input-wrapper,
+[data-theme="dark"] .guests-input-wrapper {
+  background: #0f172a !important;
+}
+
+[data-theme="dark"] .search-input-wrapper:hover,
+[data-theme="dark"] .guests-input-wrapper:hover {
+  background: #1e293b !important;
+}
+
+[data-theme="dark"] .search-input,
+[data-theme="dark"] .search-filter-select {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .search-filter-select option {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+/* Weather widget (overrides hard-to-reach !important) */
+[data-theme="dark"] .weather-widget-container > div {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+/* ════════════════════════════════════════════════
+   52. ATTRACTIONS PAGE - filters, search, forecast, skeleton
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .filters-wrapper {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .search-bar-input {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .search-clear-btn {
+  background: #334155 !important;
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .suggestions-dropdown {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .suggestion-item {
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .suggestion-item:hover {
+  background: rgba(22, 163, 74, 0.1) !important;
+}
+
+[data-theme="dark"] .suggestion-location {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .filter-toggle-btn {
+  background: rgba(22, 163, 74, 0.15) !important;
+  color: #4ade80 !important;
+  border-color: #16a34a !important;
+}
+
+[data-theme="dark"] .sort-select {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .filter-panel {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .filter-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .filter-select {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .filter-select option {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .rating-star-btn {
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .clear-all-filters-btn {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: #fca5a5 !important;
+  border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+[data-theme="dark"] .filter-chip {
+  background: #24334a !important;
+  color: #4ade80 !important;
+  border-color: rgba(22, 163, 74, 0.4) !important;
+}
+
+[data-theme="dark"] .clear-chips-btn {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .results-filtered-tag {
+  background: rgba(22, 163, 74, 0.15) !important;
+  color: #4ade80 !important;
+}
+
+/* Hourly forecast */
+[data-theme="dark"] .hourly-forecast-section {
+  background: rgba(30, 41, 59, 0.85) !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .hourly-forecast-title {
+  color: #93c5fd !important;
+}
+
+[data-theme="dark"] .hourly-forecast-select {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .hourly-forecast-subtitle {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .hourly-forecast-card {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+}
+
+[data-theme="dark"] .hourly-forecast-time {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .hourly-forecast-temp {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .hourly-forecast-desc {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .hourly-forecast-loading {
+  color: #94a3b8 !important;
+}
+
+/* Pagination */
+[data-theme="dark"] .pag-btn {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .pag-btn:hover {
+  background: #334155 !important;
+  border-color: #16a34a !important;
+  color: #4ade80 !important;
+}
+
+/* Skeleton */
+[data-theme="dark"] .skeleton-card {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .skeleton-img,
+[data-theme="dark"] .skeleton-line {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 37%, #1e293b 63%) !important;
+}
+
+/* Empty state */
+[data-theme="dark"] .empty-state-icon {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* ════════════════════════════════════════════════
+   53. ITINERARY BUILDER - inputs, chips, filter groups (with !important)
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .itinerary-search-input,
+[data-theme="dark"] .saved-search-input {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .itinerary-search-dropdown,
+[data-theme="dark"] .saved-search-dropdown {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .itinerary-search-item,
+[data-theme="dark"] .saved-search-item {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .itinerary-search-item:hover,
+[data-theme="dark"] .saved-search-item:hover,
+[data-theme="dark"] .itinerary-search-item.is-active,
+[data-theme="dark"] .saved-search-item.is-active {
+  background: rgba(22, 163, 74, 0.15) !important;
+}
+
+[data-theme="dark"] .itinerary-search-loading,
+[data-theme="dark"] .saved-search-loading {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .itinerary-search-clear,
+[data-theme="dark"] .saved-search-clear {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .itinerary-filter-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .itinerary-chip-btn {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .itinerary-chip-btn:hover {
+  background: #334155 !important;
+  border-color: #16a34a !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .itinerary-chip-btn.is-active {
+  background: rgba(22, 163, 74, 0.15) !important;
+  color: #4ade80 !important;
+  border-color: #16a34a !important;
+}
+
+[data-theme="dark"] .itinerary-active-chip,
+[data-theme="dark"] .saved-active-chip {
+  background: rgba(22, 163, 74, 0.15) !important;
+  color: #4ade80 !important;
+  border-color: rgba(22, 163, 74, 0.4) !important;
+}
+
+[data-theme="dark"] .itinerary-active-chip > button {
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .itinerary-clear-all-btn,
+[data-theme="dark"] .saved-clear-all {
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .itinerary-clear-all-btn:hover,
+[data-theme="dark"] .saved-clear-all:hover {
+  color: #fca5a5 !important;
+}
+
+/* Filter groups with !important selects */
+[data-theme="dark"] .itinerary-filter-group select,
+[data-theme="dark"] .itinerary-filter-group input {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+/* ════════════════════════════════════════════════
+   54. INTERACTIVE MAP - imap-* selectors
+   ════════════════════════════════════════════════ */
+[data-theme="dark"] .imap-container {
+  background: #0f172a !important;
+}
+
+[data-theme="dark"] .imap-sidebar {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .imap-sidebar-header {
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .imap-sidebar-title {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .imap-stats-bar {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .imap-stat-divider {
+  background: #334155 !important;
+}
+
+[data-theme="dark"] .imap-stat-label {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .imap-map-container {
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .imap-map-container .leaflet-container {
+  background-color: #0f172a !important;
+}
+
+[data-theme="dark"] #interactive-map-container:fullscreen .leaflet-container {
+  background-color: #0f172a !important;
+}
+
+[data-theme="dark"] .imap-login-content {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .imap-modal-content {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+/* ════════════════════════════════════════════════
+   55. CHATBOT - remaining uncovered selectors
+   ════════════════════════════════════════════════ */
+
+/* Header icon */
+[data-theme="dark"] .header-icon {
+  background: #334155 !important;
+  border-color: #475569 !important;
+}
+
+/* Bot message bubbles (class .chatbot-message.bot vs .bot-message) */
+[data-theme="dark"] .chatbot-message.bot {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .chatbot-message.bot.fallback {
+  background: rgba(234, 179, 8, 0.12) !important;
+  border-color: rgba(234, 179, 8, 0.3) !important;
+  color: #fbbf24 !important;
+}
+
+[data-theme="dark"] .chatbot-message.bot.error {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  color: #fca5a5 !important;
+}
+
+/* Quick actions bar */
+[data-theme="dark"] .quick-actions-bar {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .quick-action-btn {
+  background: #24334a !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .quick-action-btn:hover {
+  background: #334155 !important;
+  border-color: #16a34a !important;
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .action-text {
+  color: #94a3b8 !important;
+}
+
+/* Textarea inside chatbot */
+[data-theme="dark"] .chatbot-input-area textarea {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .chatbot-input-area textarea:focus {
+  background: #1e293b !important;
+  border-color: #16a34a !important;
+}
+
+[data-theme="dark"] .chatbot-input-area textarea:disabled {
+  background: #1e293b !important;
+  color: #64748b !important;
+}
+
+/* Suggestions area */
+[data-theme="dark"] .chatbot-suggestions {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .suggestions-title {
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .suggestion-chip {
+  background: #1e293b !important;
+  color: #4ade80 !important;
+  border-color: rgba(22, 163, 74, 0.4) !important;
+}
+
+[data-theme="dark"] .suggestion-chip:hover {
+  background: #24334a !important;
+  border-color: #16a34a !important;
+}
+
+/* Language dropdown */
+[data-theme="dark"] .language-dropdown {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .language-option {
+  background: #1e293b !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .language-option:hover {
+  background: #334155 !important;
+}
+
+[data-theme="dark"] .language-option.active {
+  background: rgba(22, 163, 74, 0.15) !important;
+  color: #4ade80 !important;
+}
+
+/* History panel */
+[data-theme="dark"] .chatbot-history-panel {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .history-header {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .history-header h3 {
+  color: #4ade80 !important;
+}
+
+[data-theme="dark"] .history-item {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .history-item:hover {
+  background: #24334a !important;
+}
+
+[data-theme="dark"] .history-item--agent {
+  background: linear-gradient(180deg, rgba(22, 163, 74, 0.08) 0%, #1e293b 100%) !important;
+}
+
+[data-theme="dark"] .history-item--ai {
+  background: linear-gradient(180deg, rgba(59, 130, 246, 0.08) 0%, #1e293b 100%) !important;
+}
+
+[data-theme="dark"] .history-date {
+  color: #94a3b8 !important;
+}
+
+[data-theme="dark"] .history-count {
+  color: #64748b !important;
+}
+
+[data-theme="dark"] .history-loading,
+[data-theme="dark"] .history-empty {
+  color: #64748b !important;
+}
+
+/* Moderation panel */
+[data-theme="dark"] .chatbot-moderation-panel {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .moderation-header h3 {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .moderation-item {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .moderation-text {
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .moderation-reply-box {
+  background: #0f172a !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .moderation-reply-input {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #334155 !important;
+}
+
+[data-theme="dark"] .moderation-reply-cancel {
+  background: #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+[data-theme="dark"] .moderation-reply-cancel:hover {
+  background: #475569 !important;
+}
+
+/* Chatbot scrollbar */
+[data-theme="dark"] .chatbot-messages::-webkit-scrollbar-track {
+  background: #0f172a !important;
+}
+
+[data-theme="dark"] .chatbot-messages::-webkit-scrollbar-thumb {
+  background: #334155 !important;
+}
+
+[data-theme="dark"] .chatbot-messages::-webkit-scrollbar-thumb:hover {
+  background: #475569 !important;
 }
