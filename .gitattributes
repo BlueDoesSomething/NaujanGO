@@ -1,1 +1,2 @@
 *.pkl binary
+*.pkl -filter -diff -merge -text
