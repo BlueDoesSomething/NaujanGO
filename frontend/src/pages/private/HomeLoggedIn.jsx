@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
 import apiClient, { fetchAttractions, getApiBaseUrl } from '../../api';
 import Icons from '../../components/Icons';
 import WeatherWidget from '../../components/WeatherWidget';
@@ -24,6 +25,7 @@ const toRgba = (hex, alpha, fallback = `rgba(0,0,0,${alpha})`) => {
 
 const HomeLoggedIn = () => {
   const { t, language } = useLanguage();
+  const { user: authUser } = useAuth();
   const navigate = useNavigate();
   const [attractions, setAttractions] = useState([]);
   const [hotels, setHotels] = useState([]);
@@ -40,15 +42,7 @@ const HomeLoggedIn = () => {
   const [searchCheckOut, setSearchCheckOut] = useState('');
   const [searchGuests, setSearchGuests] = useState('2');
   const [searchTab, setSearchTab] = useState('hotels');
-  const [userId, setUserId] = useState(() => {
-    try {
-      const token = localStorage.getItem('token');
-      const user = localStorage.getItem('user');
-      return user ? JSON.parse(user)?.id : null;
-    } catch {
-      return null;
-    }
-  });
+  const [userId] = useState(() => authUser?.id || null);
   const [slideshowSettings, setSlideshowSettings] = useState(() => loadCachedSetting('home-slideshow', {
     overlayColor: '#000000',
     overlayOpacity: 0.4,

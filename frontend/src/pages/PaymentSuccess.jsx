@@ -47,9 +47,8 @@ export default function PaymentSuccess() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
         const response = await axios.get(`${API_BASE_URL}/bookings/${bookingId}`, {
-          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
           signal: controller.signal
         });
 

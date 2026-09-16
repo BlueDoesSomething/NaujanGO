@@ -214,8 +214,7 @@ export const getPaymentDetails = (paymentId) => {
 };
 
 export const getLatestPaymentByBooking = (bookingId) => {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  const headers = {};
 
   // If redirect included a lookup_token in the URL, forward it to the backend
   try {
@@ -234,12 +233,10 @@ export const getLatestPaymentByBooking = (bookingId) => {
 };
 
 export const submitPaymentReference = (paymentId, referenceNumber, referenceProvider) => {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
   return apiClient.post(`/payments/${paymentId}/submit-reference`, {
     reference_number: referenceNumber,
     reference_provider: referenceProvider || 'gcash'
-  }, { headers });
+  });
 };
 
 export const getPaymentHistory = () => {

@@ -445,13 +445,10 @@ const HotelPayment = () => {
                       setManualStatusError('');
                       setManualStatusSuccess('');
                       try {
-                        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
                         const resp = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/payments/${payment.payment_id}/status`, {
                           method: 'POST',
-                          headers: { 
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                          },
+                          headers: { 'Content-Type': 'application/json' },
+                          credentials: 'include',
                           body: JSON.stringify({ status: manualStatus })
                         });
                         const data = await resp.json();

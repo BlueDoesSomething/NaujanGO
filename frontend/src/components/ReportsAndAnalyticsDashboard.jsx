@@ -60,9 +60,7 @@ const ReportsAndAnalyticsDashboard = ({
     try {
       setAnalyticsLoading(true);
       const response = await fetch('/api/admin/visitor-analytics', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        credentials: 'include'
       });
       if (response.ok) {
         const data = await response.json();

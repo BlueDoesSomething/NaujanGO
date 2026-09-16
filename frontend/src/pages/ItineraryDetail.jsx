@@ -101,14 +101,8 @@ const ItineraryDetail = () => {
   
   const loadItinerary = async () => {
     try {
-      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-      if (!token) {
-        alert(t('please_login_view_itinerary'));
-        navigate('/login');
-        return;
-      }
       const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -141,10 +135,8 @@ const ItineraryDetail = () => {
   
   const loadStatistics = async () => {
     try {
-      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-      if (!token) return;
       const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}/statistics`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -158,17 +150,10 @@ const ItineraryDetail = () => {
   
   const updateItineraryStatus = async (newStatus) => {
     try {
-      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-      if (!token) {
-        alert(t('please_login_update_status'));
-        return;
-      }
       const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ status: newStatus })
       });
       
@@ -183,13 +168,10 @@ const ItineraryDetail = () => {
   
   const markItemComplete = async (itemId, completed) => {
     try {
-      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}/items/${itemId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ completed })
       });
       
@@ -209,14 +191,8 @@ const ItineraryDetail = () => {
   
   const shareItinerary = async () => {
     try {
-      // Get token from sessionStorage or localStorage
-      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-      if (!token) {
-        alert(t('please_login_share_itinerary'));
-        return;
-      }
       const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}/share`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -251,18 +227,10 @@ const ItineraryDetail = () => {
   
   const recalculateBudget = async () => {
     try {
-      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-      if (!token) {
-        alert(t('please_login_recalculate_budget'));
-        return;
-      }
-      
       const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}/recalculate-budget`, {
         method: 'POST',
-        headers: { 
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           farePerDay: farePerDay !== null ? farePerDay : 0,
           foodPerDay: parseFloat(budgetAssumptions.foodPerDay) || 0,
@@ -279,7 +247,7 @@ const ItineraryDetail = () => {
         // Fetch server-side per-day breakdown with current assumptions
         try {
           const breakdownResp = await fetch(`${API_BASE_URL}/api/itinerary/${id}/budget-breakdown?farePerDay=${encodeURIComponent(budgetAssumptions.farePerDay)}&foodPerDay=${encodeURIComponent(budgetAssumptions.foodPerDay)}&otherPerDay=${encodeURIComponent(budgetAssumptions.otherPerDay)}`, {
-            headers: { 'Authorization': `Bearer ${sessionStorage.getItem('token') || localStorage.getItem('token' )}` }
+            credentials: 'include'
           });
 
           if (breakdownResp.ok) {
@@ -307,10 +275,9 @@ const ItineraryDetail = () => {
     if (!confirmed) return;
     
     try {
-      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}`, {
         method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+        credentials: 'include'
       });
       
       if (response.ok) {
@@ -984,11 +951,10 @@ const ItineraryDetail = () => {
                 <button
                   onClick={async () => {
                     try {
-                      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-                      if (!token) { alert(t('please_login')); return; }
                       const resp = await fetch(`${API_BASE_URL}/api/itinerary/${id}/save-assumptions`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
                         body: JSON.stringify({
                           ...budgetAssumptions,
                           ...(farePerDay !== null && { farePerDay })

@@ -28,15 +28,12 @@ export default function PayMongoRedirect() {
 
   const checkPaymentStatus = async (sourceId, provider) => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(
         `/api/payments/check-status?source_id=${sourceId}&provider=${provider}`,
         {
           method: 'GET',
-          headers: { 
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' }
         }
       );
 
