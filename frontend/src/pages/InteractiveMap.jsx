@@ -782,37 +782,47 @@ const InteractiveMap = () => {
           <div id="interactive-map-container" className="imap-map-container">
             {/* Active Route Info Banner */}
             {routeInfo && (
-              <div style={{ position:'absolute', bottom:'70px', left:'50%', transform:'translateX(-50%)', zIndex:1000, background:'#fff', borderRadius:'14px', boxShadow:'0 6px 24px rgba(0,0,0,0.18)', padding:'0.85rem 1.25rem', display:'flex', flexDirection:'column', gap:'0.5rem', minWidth:'300px', maxWidth:'92%', maxHeight:'calc(100% - 90px)', overflowY:'auto', overscrollBehavior:'contain', border:'2px solid #2e7d32', pointerEvents:'all' }}>
+              <div style={{ position:'absolute', top:'4.5rem', right:'0.75rem', zIndex:990, background:'rgba(255,255,255,0.96)', backdropFilter:'blur(6px)', WebkitBackdropFilter:'blur(6px)', borderRadius:'14px', boxShadow:'0 10px 30px rgba(0,0,0,0.18)', padding:'0.7rem 0.8rem', display:'flex', flexDirection:'column', gap:'0.5rem', width:'min(350px, calc(100% - 1.5rem))', maxWidth:'92%', maxHeight:'calc(100% - 6rem)', overflowY:'auto', overscrollBehavior:'contain', border:'2px solid #2e7d32', pointerEvents:'all', animation:'imap-nav-in 0.25s ease' }}>
                 {/* Top row */}
-                  <div style={{ display:'flex', alignItems:'center', gap:'1rem' }}>
-                    <div style={{ fontSize:'1.5rem', flexShrink:0 }}>🧭</div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontWeight:800, color:'#1b5e20', fontSize:'0.88rem', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-                        {t('to_label')} {routeInfo.destination?.name || t('destination')}
-                      </div>
-                      <div style={{ color:'#2e7d32', fontSize:'0.82rem', marginTop:'3px', display:'flex', gap:'0.75rem', alignItems:'center' }}>
-                        <span>📏 <strong>{routeInfo.distance} km</strong></span>
-                        <span>⏱ <strong>{routeInfo.duration} min</strong></span>
-                        {isRerouting && (
-                          <span style={{ display:'inline-flex', alignItems:'center', gap:'0.25rem', color:'#d97706', fontWeight:700 }}>
-                            <span className="imap-reroute-spinner" style={{ width:'10px', height:'10px', borderRadius:'50%', border:'2px solid #fde68a', borderTopColor:'#d97706', display:'inline-block', animation:'imap-reroute-rotate 0.8s linear infinite' }} />
-                          Re-routing…
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        window.dispatchEvent(new CustomEvent('clearNavigation'));
-                        setRouteInfo(null);
-                        setNavTarget(null);
-                        setIsRerouting(false);
-                      }}
-                      style={{ background:'#ef4444', color:'#fff', border:'none', borderRadius:'8px', padding:'0.4rem 0.8rem', fontWeight:700, fontSize:'0.78rem', cursor:'pointer', whiteSpace:'nowrap', flexShrink:0 }}
-                    >
-                      ✕ {t('stop')}
-                    </button>
+                <div style={{ display:'flex', alignItems:'flex-start', gap:'0.6rem' }}>
+                  <div style={{ flexShrink:0, width:'2.1rem', height:'2.1rem', borderRadius:'10px', background:'linear-gradient(135deg, #2e7d32, #4caf50)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.05rem' }}>
+                    🧭
                   </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontSize:'0.6rem', fontWeight:800, letterSpacing:'0.08em', textTransform:'uppercase', color:'#16a34a' }}>
+                      {t('to_label')}
+                    </div>
+                    <div style={{ fontWeight:800, color:'#1b5e20', fontSize:'0.86rem', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                      {routeInfo.destination?.name || t('destination')}
+                    </div>
+                    <div style={{ display:'flex', gap:'0.4rem', marginTop:'0.35rem', flexWrap:'wrap' }}>
+                      <span style={{ background:'#eef2ff', color:'#3730a3', borderRadius:'999px', padding:'0.15rem 0.55rem', fontSize:'0.68rem', fontWeight:700 }}>
+                        📏 {routeInfo.distance} km
+                      </span>
+                      <span style={{ background:'#ecfdf5', color:'#065f46', borderRadius:'999px', padding:'0.15rem 0.55rem', fontSize:'0.68rem', fontWeight:700 }}>
+                        ⏱ {routeInfo.duration} min
+                      </span>
+                      {isRerouting && (
+                        <span style={{ display:'inline-flex', alignItems:'center', gap:'0.25rem', color:'#d97706', fontWeight:700, fontSize:'0.68rem' }}>
+                          <span className="imap-reroute-spinner" style={{ width:'10px', height:'10px', borderRadius:'50%', border:'2px solid #fde68a', borderTopColor:'#d97706', display:'inline-block', animation:'imap-reroute-rotate 0.8s linear infinite' }} />
+                          Re-routing…
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent('clearNavigation'));
+                      setRouteInfo(null);
+                      setNavTarget(null);
+                      setIsRerouting(false);
+                    }}
+                    title={t('stop')}
+                    style={{ flexShrink:0, background:'#ef4444', color:'#fff', border:'none', borderRadius:'8px', width:'1.9rem', height:'1.9rem', fontSize:'0.75rem', fontWeight:800, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 2px 6px rgba(239,68,68,0.4)' }}
+                  >
+                    ✕
+                  </button>
+                </div>
                 {/* Vehicle recommendations */}
                 <VehicleIndicator
                   distanceKm={routeInfo.distance}
@@ -988,6 +998,11 @@ const InteractiveMap = () => {
         @keyframes imap-reroute-rotate {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+
+        @keyframes imap-nav-in {
+          from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
         }
         
         /* Custom scrollbar for sidebar */

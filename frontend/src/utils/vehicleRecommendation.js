@@ -5,13 +5,13 @@
  */
 
 const VEHICLES = {
-  walk:       { id: 'walk',       label: 'Walking',         icon: '🚶', color: '#16a34a' },
-  bike:       { id: 'bike',       label: 'Bicycle / E-bike', icon: '🚲', color: '#2563eb' },
-  tricycle:   { id: 'tricycle',   label: 'Tricycle',         icon: '🛺', color: '#d97706' },
-  motorcycle: { id: 'motorcycle', label: 'Motorcycle / Habal-habal', icon: '🏍️', color: '#dc2626' },
-  car:        { id: 'car',        label: 'Car / Jeepney',    icon: '🚗', color: '#7c3aed' },
-  fourwd:     { id: '4x4',        label: '4×4 / ATV',        icon: '🚙', color: '#92400e' },
-  boat:       { id: 'boat',       label: 'Boat / Bangka',    icon: '⛵', color: '#0891b2' },
+  walk:       { id: 'walk',       label: 'Walking',         icon: '🚶', color: '#16a34a', speedKmh: 4.5 },
+  bike:       { id: 'bike',       label: 'Bicycle / E-bike', icon: '🚲', color: '#2563eb', speedKmh: 14 },
+  tricycle:   { id: 'tricycle',   label: 'Tricycle',         icon: '🛺', color: '#d97706', speedKmh: 20 },
+  motorcycle: { id: 'motorcycle', label: 'Motorcycle / Habal-habal', icon: '🏍️', color: '#dc2626', speedKmh: 28 },
+  car:        { id: 'car',        label: 'Car / Jeepney',    icon: '🚗', color: '#7c3aed', speedKmh: 30 },
+  fourwd:     { id: '4x4',        label: '4×4 / ATV',        icon: '🚙', color: '#92400e', speedKmh: 16 },
+  boat:       { id: 'boat',       label: 'Boat / Bangka',    icon: '⛵', color: '#0891b2', speedKmh: 15 },
 };
 
 const TERRAIN = {
@@ -121,9 +121,19 @@ export function getVehicleRecommendations(distanceKm, destination) {
     });
   }
 
-  // Sort: best → good → possible
+  // Sort: best → good → possible, keep original order within each status
   const order = { best: 0, good: 1, possible: 2 };
   recs.sort((a, b) => order[a.status] - order[b.status]);
+
+  // Estimate each vehicle's travel time based on the route distance
+  for (const rec of recs) {
+    if (dist > 0 && rec.speedKmh) {
+      const mins = (dist / rec.speedKmh) * 60;
+      rec.etaMinutes = mins < 1 ? 1 : Math.round(mins);
+    } else {
+      rec.etaMinutes = null;
+    }
+  }
 
   return recs;
 }
