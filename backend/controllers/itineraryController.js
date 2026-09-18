@@ -101,7 +101,10 @@ const ensureItineraryAttractionIdAutoIncrement = async () => {
 // Insert one itinerary item. Falls back to an explicit id when the table has no
 // AUTO_INCREMENT on id (e.g. a legacy database that could not be repaired).
 const insertItineraryAttraction = async ({ enhancedInsert, basicInsert, enhancedValues, basicValues }) => {
-  const withIdColumn = (sql) => sql.replace('(itinerary_id', '(id, itinerary_id');
+  const withIdColumn = (sql) =>
+    sql
+      .replace('(itinerary_id', '(id, itinerary_id')
+      .replace('VALUES (', 'VALUES (?,');
 
   const runInsert = async (useExplicitId) => {
     let enhancedSql = enhancedInsert;
