@@ -529,3 +529,62 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ════════════════════════════════════════
+   QUICK MAP FILTER CHIPS
+════════════════════════════════════════ */
+.imap-quick-filters {
+  position: absolute;
+  top: 0.75rem;
+  left: 3.5rem;
+  z-index: 985;
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  max-width: calc(100% - 25rem);
+  pointer-events: all;
+}
+
+.imap-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  color: #374151;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.imap-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.16);
+}
+
+.imap-chip.is-active {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  border-color: #16a34a;
+  color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .imap-quick-filters {
+    top: auto;
+    bottom: 0.75rem;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: calc(100% - 1.2rem);
+    justify-content: center;
+  }
+
+  .imap-chip-label { display: none; }
+}

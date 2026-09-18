@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
@@ -13,7 +16,8 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
-// Animated "marching ants" dashed overlay for the active route line
+// Animated "marching ants" dashed overlay for the active route line, plus
+// styling for clustered pins.
 if (typeof document !== 'undefined') {
   const routeStyleEl = document.createElement('style');
   routeStyleEl.textContent = `
@@ -24,6 +28,20 @@ if (typeof document !== 'undefined') {
       stroke-dasharray: 4 14 !important;
       animation: imap-route-dash 0.8s linear infinite;
     }
+    .imap-cluster {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(22, 163, 74, 0.92);
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 0.8rem;
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+      box-sizing: border-box;
+    }
+    .imap-cluster-wrap { background: transparent; border: none; }
   `;
   document.head.appendChild(routeStyleEl);
 }
@@ -49,15 +67,21 @@ const LeafletMap = ({
   autoRouteWaypoints = [],
   followUserLocation = true,
   rerouteDistanceThresholdM = 50,
-  rerouteIntervalMs = 5000
+  rerouteIntervalMs = 5000,
+  clusterMarkers = false,
+  selectedRouteIndex = 0
 }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const tileLayerRef = useRef(null);
+  const markerGroupRef = useRef(null);
   const routeLayersRef = useRef([]);
   const poiLayersRef = useRef([]);
   const routePolylineRef = useRef(null);
   const routeRequestIdRef = useRef(0);
+  const routeAlternativesRef = useRef([]);
+  const selectedRouteIndexRef = useRef(selectedRouteIndex || 0);
+  const lastRouteContextRef = useRef({ routeLabel: 'Route', destinationWaypoint: null });
   const userMarkerRef = useRef(null);
   const navTargetRef = useRef(navTarget);
   const lastRerouteOriginRef = useRef(null);
@@ -183,24 +207,66 @@ const LeafletMap = ({
   useEffect(() => {
     if (!mapInstanceRef.current) return;
 
-    // Clear existing markers except user location marker
-    mapInstanceRef.current.eachLayer((layer) => {
-      if (layer instanceof L.Marker && layer !== userMarkerRef.current) {
-        mapInstanceRef.current.removeLayer(layer);
-      }
-    });
+    const map = mapInstanceRef.current;
+
+    // Remove previously created marker layer/group
+    if (markerGroupRef.current) {
+      map.removeLayer(markerGroupRef.current);
+      markerGroupRef.current = null;
+    } else {
+      // Clear existing markers except user location marker
+      map.eachLayer((layer) => {
+        if (layer instanceof L.Marker && layer !== userMarkerRef.current) {
+          map.removeLayer(layer);
+        }
+      });
+    }
+
+    // When clustering is enabled, add markers to a cluster group so dense areas
+    // collapse into count bubbles that spiderfy / expand as you zoom in.
+    let addTarget = map;
+    if (clusterMarkers) {
+      addTarget = L.markerClusterGroup({
+        maxClusterRadius: 55,
+        showCoverageOnHover: false,
+        spiderfyOnMaxZoom: true,
+        disableClusteringAtZoom: 16,
+        chunkedLoading: true,
+        iconCreateFunction: (cluster) => {
+          const count = cluster.getChildCount();
+          const size = count < 10 ? 38 : count < 100 ? 46 : 54;
+          return L.divIcon({
+            html: `<div class="imap-cluster" style="width:${size}px;height:${size}px;">${count}</div>`,
+            className: 'imap-cluster-wrap',
+            iconSize: [size, size]
+          });
+        }
+      });
+      markerGroupRef.current = addTarget;
+      map.addLayer(addTarget);
+    }
 
     console.log('Adding markers:', markers.length);
 
     // Add new markers
     markers.forEach((marker, index) => {
       if (marker.lat && marker.lng && mapInstanceRef.current) {
-        console.log(`Creating marker ${index}:`, marker.type, marker.lat, marker.lng);
-        
+        let icon;
+        if (marker.iconHtml && !marker.draggable) {
+          icon = L.divIcon({
+            html: marker.iconHtml,
+            className: 'imap-pin-wrap',
+            iconSize: [34, 34],
+            iconAnchor: [17, 34],
+            popupAnchor: [0, -30]
+          });
+        }
+
         const leafletMarker = L.marker([marker.lat, marker.lng], {
-          draggable: !!marker.draggable
-        })
-          .addTo(mapInstanceRef.current);
+          draggable: !!marker.draggable,
+          ...(icon ? { icon } : {})
+        });
+        addTarget.addLayer(leafletMarker);
 
         if (marker.popup) {
           leafletMarker.bindPopup(marker.popup);
@@ -221,9 +287,7 @@ const LeafletMap = ({
         }
 
         if (onMarkerClick && marker.type !== 'user') {
-          console.log(`Adding click handler to marker ${index}`);
           leafletMarker.on('click', (e) => {
-            console.log('🎯 Leaflet marker clicked:', marker.type, marker.data?.name);
             L.DomEvent.stopPropagation(e);
             onMarkerClick(marker);
           });
@@ -244,7 +308,7 @@ const LeafletMap = ({
         }
       }
     });
-  }, [markers, onMarkerClick, onMarkerDrag]);
+  }, [markers, onMarkerClick, onMarkerDrag, clusterMarkers]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !onMapClick) return;
@@ -538,6 +602,37 @@ const LeafletMap = ({
     return { group, main, destMarker };
   };
 
+  const routeAlternativesForPayload = (alts) =>
+    alts.map((a) => ({ index: a.index, distance: a.distanceKm, duration: a.durationMin }));
+
+  const renderRouteAlternative = (alt, { routeLabel, keepView = true } = {}) => {
+    if (!mapInstanceRef.current || !alt?.latLngs?.length) return;
+
+    if (routePolylineRef.current) {
+      mapInstanceRef.current.removeLayer(routePolylineRef.current);
+      routePolylineRef.current = null;
+    }
+
+    const routeLayer = buildRouteLayer(alt.latLngs, { color: '#1976d2', animated: true });
+    routePolylineRef.current = routeLayer.group;
+    routeLayer.group.addTo(mapInstanceRef.current);
+
+    routeLayer.main.bindPopup(`
+      <div style="min-width: 200px;">
+        <strong>${routeLabel}</strong><br/>
+        <small>Distance: ${alt.distanceKm} km</small><br/>
+        <small>Duration: ${alt.durationMin} min</small>
+      </div>
+    `);
+
+    if (!keepView) {
+      mapInstanceRef.current.fitBounds(routeLayer.group.getBounds(), {
+        padding: [30, 30],
+        animate: true
+      });
+    }
+  };
+
   const drawRouteFromWaypoints = async (waypoints, routeLabel = 'Route', opts = {}) => {
     const { keepView = false, rerouting = false } = opts;
     if (!mapInstanceRef.current || !Array.isArray(waypoints) || waypoints.length < 2) {
@@ -567,11 +662,12 @@ const LeafletMap = ({
       ...normalizedWaypoints[normalizedWaypoints.length - 1],
       name: waypoints[waypoints.length - 1]?.name
     };
+    lastRouteContextRef.current = { routeLabel, destinationWaypoint };
 
     try {
       const coordinateString = normalizedWaypoints.map((point) => `${point.lng},${point.lat}`).join(';');
       const response = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${coordinateString}?overview=full&geometries=geojson&steps=false`
+        `https://router.project-osrm.org/route/v1/driving/${coordinateString}?overview=full&geometries=geojson&steps=true&alternatives=true`
       );
 
       if (!response.ok) {
@@ -581,40 +677,46 @@ const LeafletMap = ({
       const data = await response.json();
       if (currentRequestId !== routeRequestIdRef.current) return;
 
-      const route = data?.routes?.[0];
-      if (!route?.geometry?.coordinates?.length) {
+      const routes = Array.isArray(data?.routes) ? data.routes : [];
+      const alternatives = routes
+        .filter((r) => r?.geometry?.coordinates?.length)
+        .map((r, i) => ({
+          index: i,
+          distanceKm: Number((r.distance / 1000).toFixed(2)),
+          durationMin: Math.max(1, Math.round(r.duration / 60)),
+          latLngs: r.geometry.coordinates.map(([lng, lat]) => [lat, lng]),
+          steps: (r.legs || [])
+            .flatMap((leg) => leg.steps || [])
+            .map((s, si) => ({
+              index: si,
+              type: s.maneuver?.type || 'continue',
+              modifier: s.maneuver?.modifier || '',
+              name: s.name || '',
+              distanceKm: Number((s.distance / 1000).toFixed(2)),
+              durationMin: Math.round(s.duration / 60),
+              lat: s.maneuver?.location?.[1] ?? null,
+              lng: s.maneuver?.location?.[0] ?? null
+            }))
+        }));
+
+      if (alternatives.length === 0) {
         throw new Error('No route geometry returned');
       }
 
-      const latLngs = route.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
-      const routeLayer = buildRouteLayer(latLngs, { color: '#1976d2', animated: true });
-      routePolylineRef.current = routeLayer.group;
-      routeLayer.group.addTo(mapInstanceRef.current);
+      routeAlternativesRef.current = alternatives;
+      const selected = alternatives[Math.min(selectedRouteIndexRef.current, alternatives.length - 1)];
 
-      const distanceKm = Number((route.distance / 1000).toFixed(2));
-      const durationMin = Math.round(route.duration / 60);
-      routeLayer.main.bindPopup(`
-        <div style="min-width: 200px;">
-          <strong>${routeLabel}</strong><br/>
-          <small>Stops: ${normalizedWaypoints.length}</small><br/>
-          <small>Distance: ${distanceKm} km</small><br/>
-          <small>Duration: ${durationMin} min</small>
-        </div>
-      `);
-
-      if (!keepView) {
-        mapInstanceRef.current.fitBounds(routeLayer.group.getBounds(), {
-          padding: [30, 30],
-          animate: true
-        });
-      }
+      renderRouteAlternative(selected, { routeLabel, keepView });
 
       if (onRoutingChange) {
         onRoutingChange({
-          distance: distanceKm,
-          duration: durationMin,
+          distance: selected.distanceKm,
+          duration: selected.durationMin,
           destination: destinationWaypoint,
-          rerouting
+          rerouting,
+          steps: selected.steps,
+          alternatives: routeAlternativesForPayload(alternatives),
+          selectedIndex: selected.index
         });
       }
 
@@ -625,6 +727,7 @@ const LeafletMap = ({
 
       // Fallback: draw a direct line so the route is still visible, and report
       // estimated stats so the banner always updates.
+      routeAlternativesRef.current = [];
       const straightLine = normalizedWaypoints.map((point) => [point.lat, point.lng]);
       const straightDistanceKm = computeRouteDistanceKm(straightLine);
       const straightDurationMin = Math.max(1, Math.round((straightDistanceKm / 30) * 60));
@@ -652,7 +755,10 @@ const LeafletMap = ({
           distance: straightDistanceKm,
           duration: straightDurationMin,
           destination: destinationWaypoint,
-          rerouting
+          rerouting,
+          steps: [],
+          alternatives: [],
+          selectedIndex: 0
         });
       }
 
@@ -663,6 +769,29 @@ const LeafletMap = ({
       }
     }
   };
+
+  // Switch between route alternatives without refetching.
+  useEffect(() => {
+    selectedRouteIndexRef.current = selectedRouteIndex || 0;
+    const alts = routeAlternativesRef.current;
+    if (!alts || alts.length === 0) return;
+    const selected = alts[Math.min(selectedRouteIndex || 0, alts.length - 1)];
+    if (!selected) return;
+    const { routeLabel, destinationWaypoint } = lastRouteContextRef.current;
+    renderRouteAlternative(selected, { routeLabel, keepView: true });
+    if (onRoutingChange) {
+      onRoutingChange({
+        distance: selected.distanceKm,
+        duration: selected.durationMin,
+        destination: destinationWaypoint,
+        rerouting: false,
+        steps: selected.steps,
+        alternatives: routeAlternativesForPayload(alts),
+        selectedIndex: selected.index
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedRouteIndex]);
 
   // Cleanup on unmount
   useEffect(() => {

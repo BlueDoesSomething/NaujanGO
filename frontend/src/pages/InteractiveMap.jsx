@@ -21,6 +21,27 @@ const getCategoryIcon = (category) => {
   return icons[category?.toLowerCase()] || 'LocationIcon';
 };
 
+const getPoiEmoji = (category) => {
+  const emojis = {
+    attraction: '🏞️', beach: '🏖️', mountain: '⛰️', landmark: '🗿', park: '🌳',
+    market: '🛒', restaurant: '🍽️', hotel: '🏨', hospital: '🏥',
+    school: '🏫', church: '⛪'
+  };
+  return emojis[category?.toLowerCase()] || '📍';
+};
+
+const getManeuverIcon = (type, modifier) => {
+  if (type === 'arrive') return '🏁';
+  if (type === 'depart') return '🚦';
+  if (type === 'roundabout' || type === 'rotary') return '🔄';
+  if (type === 'merge' || type === 'fork') return '⤵️';
+  if (type === 'off ramp' || type === 'on ramp') return '↗️';
+  if (modifier?.includes('left')) return '⬅️';
+  if (modifier?.includes('right')) return '➡️';
+  if (modifier?.includes('uturn')) return '↩️';
+  return '⬆️';
+};
+
 const resolveImageUrl = (data) => {
   if (!data || typeof data !== 'object') {
     console.log('resolveImageUrl: invalid data', typeof data, data);
@@ -142,6 +163,8 @@ const InteractiveMap = () => {
   const [routeInfo, setRouteInfo] = useState(null);
   const [navTarget, setNavTarget] = useState(null);
   const [isRerouting, setIsRerouting] = useState(false);
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
+  const [directionsOpen, setDirectionsOpen] = useState(false);
   const [gpsLoading, setGpsLoading] = useState(false);
   const [gpsError, setGpsError] = useState('');
   const gpsWatchIdRef = useRef(null);
@@ -178,6 +201,12 @@ const InteractiveMap = () => {
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
+
+  // Reset route option / directions UI whenever a new navigation starts or stops
+  useEffect(() => {
+    setSelectedRouteIndex(0);
+    setDirectionsOpen(false);
+  }, [navTarget]);
 
   const loadData = async () => {
     try {
@@ -295,6 +324,12 @@ const InteractiveMap = () => {
     return '#ff5722';
   };
 
+  const markerPinHtml = (emoji, color) => `
+    <div style="position:relative;width:34px;height:34px;">
+      <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;">${emoji}</div>
+      <div style="position:absolute;left:50%;top:25px;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid ${color};"></div>
+    </div>`;
+
   const allMarkers = [
     // User location is handled separately in LeafletMap component
     ...(activeFilters.attractions ? validAttractions.map(a => {
@@ -313,6 +348,7 @@ const InteractiveMap = () => {
         data: a,
         type: 'attraction',
         icon: '🏞️',
+        iconHtml: markerPinHtml('🏞️', '#16a34a'),
         imageUrl
       };
     }) : []),
@@ -321,14 +357,16 @@ const InteractiveMap = () => {
       lng: parseFloat(h.longitude),
       data: h,
       type: 'hotel',
-      icon: '🏨'
+      icon: '🏨',
+      iconHtml: markerPinHtml('🏨', '#7c3aed')
     })) : []),
     ...(activeFilters.pois ? validPois.map(p => ({
       lat: parseFloat(p.latitude),
       lng: parseFloat(p.longitude),
       data: p,
       type: 'poi',
-      icon: getCategoryIcon(p.category)
+      icon: getCategoryIcon(p.category),
+      iconHtml: markerPinHtml(getPoiEmoji(p.category), '#ea580c')
     })) : [])
   ];
 
@@ -823,6 +861,60 @@ const InteractiveMap = () => {
                     ✕
                   </button>
                 </div>
+                {/* Route alternatives */}
+                {Array.isArray(routeInfo.alternatives) && routeInfo.alternatives.length > 1 && (
+                  <div style={{ display:'flex', gap:'0.35rem', flexWrap:'wrap' }}>
+                    {routeInfo.alternatives.map((alt) => {
+                      const isActive = alt.index === selectedRouteIndex;
+                      return (
+                        <button
+                          key={alt.index}
+                          onClick={() => setSelectedRouteIndex(alt.index)}
+                          style={{ flex:'1 1 0', minWidth:'86px', textAlign:'left', border: isActive ? '2px solid #16a34a' : '1px solid #e5e7eb', background: isActive ? '#f0fdf4' : '#fff', borderRadius:'10px', padding:'0.4rem 0.5rem', cursor:'pointer' }}
+                        >
+                          <div style={{ fontSize:'0.6rem', fontWeight:800, color: isActive ? '#15803d' : '#6b7280', textTransform:'uppercase', letterSpacing:'0.04em' }}>
+                            {alt.index === 0 ? t('fastest') : `${t('alternative')} ${alt.index}`}
+                          </div>
+                          <div style={{ fontSize:'0.74rem', fontWeight:700, color:'#1f2937' }}>{alt.distance} km · {alt.duration} min</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Turn-by-turn directions */}
+                {Array.isArray(routeInfo.steps) && routeInfo.steps.length > 0 && (
+                  <>
+                    <button
+                      onClick={() => setDirectionsOpen((v) => !v)}
+                      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'0.5rem', background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:'10px', padding:'0.45rem 0.6rem', cursor:'pointer', fontWeight:700, color:'#334155', fontSize:'0.78rem' }}
+                    >
+                      <span>🧭 {t('directions')} ({routeInfo.steps.length})</span>
+                      <span style={{ transform: directionsOpen ? 'rotate(180deg)' : 'none', transition:'transform 0.2s' }}>▾</span>
+                    </button>
+                    {directionsOpen && (
+                      <div style={{ display:'flex', flexDirection:'column', gap:'0.15rem', maxHeight:'13rem', overflowY:'auto' }}>
+                        {routeInfo.steps.map((step, idx) => (
+                          <div key={idx} style={{ display:'flex', alignItems:'center', gap:'0.55rem', padding:'0.4rem 0.35rem', borderBottom:'1px solid #f1f5f9' }}>
+                            <span style={{ fontSize:'1rem', width:'1.3rem', textAlign:'center', flexShrink:0 }}>{getManeuverIcon(step.type, step.modifier)}</span>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div style={{ fontSize:'0.76rem', fontWeight:600, color:'#1f2937', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
+                                {step.type === 'arrive' ? t('arrive_destination') : (step.name || t('continue_straight'))}
+                              </div>
+                              {step.distanceKm > 0 && (
+                                <div style={{ fontSize:'0.66rem', color:'#94a3b8' }}>
+                                  {step.distanceKm >= 1 ? `${step.distanceKm} km` : `${Math.round(step.distanceKm * 1000)} m`}
+                                  {step.durationMin > 0 ? ` · ${step.durationMin} min` : ''}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+
                 {/* Vehicle recommendations */}
                 <VehicleIndicator
                   distanceKm={routeInfo.distance}
@@ -882,6 +974,24 @@ const InteractiveMap = () => {
                 </svg>
               </button>
             )}
+            {/* Quick map filters */}
+            <div className="imap-quick-filters">
+              {[
+                { key: 'attractions', label: t('attractions'), icon: '🏞️' },
+                { key: 'hotels', label: t('hotels'), icon: '🏨' },
+                { key: 'pois', label: t('pois'), icon: '📍' },
+              ].map(({ key, label, icon }) => (
+                <button
+                  key={key}
+                  onClick={() => setActiveFilters(prev => ({ ...prev, [key]: !prev[key] }))}
+                  className={`imap-chip${activeFilters[key] ? ' is-active' : ''}`}
+                  title={label}
+                >
+                  <span>{icon}</span>
+                  <span className="imap-chip-label">{label}</span>
+                </button>
+              ))}
+            </div>
             <LeafletMap
               center={mapCenter}
               zoom={13}
@@ -891,18 +1001,16 @@ const InteractiveMap = () => {
               userLocation={userLocation}
               userHeading={userHeading}
               navTarget={navTarget}
+              selectedRouteIndex={selectedRouteIndex}
+              clusterMarkers
               tileLayerUrl={getTileLayerUrl()}
               style={styles.map}
               onMarkerClick={(marker) => {
-                console.log('Marker clicked:', marker);
                 if (marker.type === 'attraction') {
-                  console.log('Opening modal for attraction:', marker.data);
                   setSelectedLocation({ type: 'attraction', data: marker.data });
                 } else if (marker.type === 'hotel') {
-                  console.log('Opening modal for hotel:', marker.data);
                   setSelectedLocation({ type: 'hotel', data: marker.data });
                 } else if (marker.type === 'poi') {
-                  console.log('POI clicked:', marker.data);
                   setSelectedLocation({ type: 'poi', data: marker.data });
                 }
               }}
