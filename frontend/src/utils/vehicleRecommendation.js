@@ -5,13 +5,13 @@
  */
 
 const VEHICLES = {
-  walk:       { id: 'walk',       label: 'Walking',         icon: '🚶', color: '#16a34a', speedKmh: 4.5 },
-  bike:       { id: 'bike',       label: 'Bicycle / E-bike', icon: '🚲', color: '#2563eb', speedKmh: 14 },
-  tricycle:   { id: 'tricycle',   label: 'Tricycle',         icon: '🛺', color: '#d97706', speedKmh: 20 },
-  motorcycle: { id: 'motorcycle', label: 'Motorcycle / Habal-habal', icon: '🏍️', color: '#dc2626', speedKmh: 28 },
-  car:        { id: 'car',        label: 'Car / Jeepney',    icon: '🚗', color: '#7c3aed', speedKmh: 30 },
-  fourwd:     { id: '4x4',        label: '4×4 / ATV',        icon: '🚙', color: '#92400e', speedKmh: 16 },
-  boat:       { id: 'boat',       label: 'Boat / Bangka',    icon: '⛵', color: '#0891b2', speedKmh: 15 },
+  walk:       { id: 'walk',       label: 'Walking',         color: '#16a34a', speedKmh: 4.5 },
+  bike:       { id: 'bike',       label: 'Bicycle / E-bike', color: '#2563eb', speedKmh: 14 },
+  tricycle:   { id: 'tricycle',   label: 'Tricycle',         color: '#d97706', speedKmh: 20 },
+  motorcycle: { id: 'motorcycle', label: 'Motorcycle / Habal-habal', color: '#dc2626', speedKmh: 28 },
+  car:        { id: 'car',        label: 'Car / Jeepney',    color: '#7c3aed', speedKmh: 30 },
+  fourwd:     { id: '4x4',        label: '4×4 / ATV',        color: '#92400e', speedKmh: 16 },
+  boat:       { id: 'boat',       label: 'Boat / Bangka',    color: '#0891b2', speedKmh: 15 },
 };
 
 const TERRAIN = {

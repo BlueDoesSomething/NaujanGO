@@ -6,40 +6,75 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import LeafletMap from '../components/LeafletMap';
 import VehicleIndicator from '../components/VehicleIndicator';
-import { MapIcon, ShieldIcon, CheckIcon, UserIcon, SparklesIcon } from '../components/Icons';
+import {
+  MapIcon, ShieldIcon, CheckIcon, UserIcon, SparklesIcon, XIcon, RouteIcon,
+  ClockIcon, MenuIcon, AttractionIcon, HotelIcon, MapPinIcon, InfoIcon, DocumentIcon,
+  SunIcon, CloudIcon,
+} from '../components/Icons';
 import HeroSlideshow from '../components/HeroSlideshow';
 import naujanGoLogo from '../assets/552820828_1195483019268738_3720769628710779316_n.png';
 import 'leaflet/dist/leaflet.css';
 import './InteractiveMap.css';
 
-const getCategoryIcon = (category) => {
-  const icons = {
-    'attraction': 'AttractionIcon', 'market': 'HotelIcon', 'beach': 'AttractionIcon', 'mountain': 'AttractionIcon',
-    'landmark': 'AttractionIcon', 'restaurant': 'HotelIcon', 'hotel': 'HotelIcon', 'hospital': 'LocationIcon',
-    'school': 'LocationIcon', 'church': 'LocationIcon', 'park': 'AttractionIcon'
-  };
-  return icons[category?.toLowerCase()] || 'LocationIcon';
+// Inline SVG glyphs for custom Leaflet markers (divIcon needs an HTML string).
+const PIN_GLYPHS = {
+  attraction: '<path d="M3 16.5l5-5a2 2 0 012.83 0L14 14.67l2.59-2.59a2 2 0 012.83 0L21 13.67M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/>',
+  hotel: '<path d="M3 21h18M5 21V6a1 1 0 011-1h8a1 1 0 011 1v15M7 9h2M7 13h2M3 10h2m12 3h2m-2-4h2m-2 5h2"/>',
+  poi: '<path d="M12 21s-6-5.686-6-10a6 6 0 1112 0c0 4.314-6 10-6 10z"/><circle cx="12" cy="11" r="2.5"/>',
 };
 
-const getPoiEmoji = (category) => {
-  const emojis = {
-    attraction: '🏞️', beach: '🏖️', mountain: '⛰️', landmark: '🗿', park: '🌳',
-    market: '🛒', restaurant: '🍽️', hotel: '🏨', hospital: '🏥',
-    school: '🏫', church: '⛪'
-  };
-  return emojis[category?.toLowerCase()] || '📍';
+const markerPinHtml = (glyphKey, color) => {
+  const glyph = PIN_GLYPHS[glyphKey] || PIN_GLYPHS.poi;
+  return `
+    <div style="position:relative;width:36px;height:44px;">
+      <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:32px;height:32px;border-radius:50%;background:${color};border:2.5px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${glyph}</svg>
+      </div>
+      <div style="position:absolute;left:50%;top:28px;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid ${color};"></div>
+    </div>`;
 };
 
-const getManeuverIcon = (type, modifier) => {
-  if (type === 'arrive') return '🏁';
-  if (type === 'depart') return '🚦';
-  if (type === 'roundabout' || type === 'rotary') return '🔄';
-  if (type === 'merge' || type === 'fork') return '⤵️';
-  if (type === 'off ramp' || type === 'on ramp') return '↗️';
-  if (modifier?.includes('left')) return '⬅️';
-  if (modifier?.includes('right')) return '➡️';
-  if (modifier?.includes('uturn')) return '↩️';
-  return '⬆️';
+const ManeuverIcon = ({ type, modifier, size = 18 }) => {
+  const common = {
+    width: size,
+    height: size,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+  };
+  if (type === 'arrive') {
+    return (<svg {...common}><path d="M12 22s-7-5.8-7-11a7 7 0 0114 0c0 5.2-7 11-7 11z" /><circle cx="12" cy="11" r="2.4" /></svg>);
+  }
+  if (type === 'depart') {
+    return (<svg {...common}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></svg>);
+  }
+  if (type === 'roundabout' || type === 'rotary') {
+    return (<svg {...common}><path d="M12 3a9 9 0 109 9" /><path d="M12 3v6" /><path d="M10 7l2 2 2-2" /></svg>);
+  }
+  if (modifier?.includes('uturn')) {
+    return (<svg {...common}><path d="M17 17V9a5 5 0 00-10 0v4" /><path d="M4 11l3-3m-3 3l3 3" /></svg>);
+  }
+  if (modifier?.includes('left')) {
+    return (<svg {...common}><path d="M9 20V9a4 4 0 014-4h4" /><path d="M14 2l3 3-3 3" /></svg>);
+  }
+  if (modifier?.includes('right')) {
+    return (<svg {...common}><path d="M15 20V9a4 4 0 00-4-4H7" /><path d="M10 2L7 5l3 3" /></svg>);
+  }
+  if (type === 'merge' || type === 'fork' || type === 'on ramp' || type === 'off ramp') {
+    return (<svg {...common}><path d="M6 3v5a6 6 0 006 6h6" /><path d="M15 11l3 3-3 3" /></svg>);
+  }
+  return (<svg {...common}><path d="M12 21V5" /><path d="M6 11l6-6 6 6" /></svg>);
+};
+
+const WeatherGlyph = ({ condition, size = 28 }) => {
+  const c = (condition || '').toLowerCase();
+  if (c.includes('rain') || c.includes('drizzle') || c.includes('thunder') || c.includes('cloud')) {
+    return <CloudIcon size={size} />;
+  }
+  return <SunIcon size={size} />;
 };
 
 const resolveImageUrl = (data) => {
@@ -324,22 +359,9 @@ const InteractiveMap = () => {
     return '#ff5722';
   };
 
-  const markerPinHtml = (emoji, color) => `
-    <div style="position:relative;width:34px;height:34px;">
-      <div style="position:absolute;left:50%;top:0;transform:translateX(-50%);width:28px;height:28px;border-radius:50%;background:${color};border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;font-size:15px;line-height:1;">${emoji}</div>
-      <div style="position:absolute;left:50%;top:25px;transform:translateX(-50%);width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:8px solid ${color};"></div>
-    </div>`;
-
   const allMarkers = [
     // User location is handled separately in LeafletMap component
     ...(activeFilters.attractions ? validAttractions.map(a => {
-      const weatherInfo = attractionWeather[a.id];
-      const weatherBadge = weatherInfo && activeFilters.weather ? 
-        `<div style="background:${getWeatherColor(weatherInfo.safetyScore)};color:white;padding:6px 10px;border-radius:20px;display:inline-block;margin-bottom:8px;font-size:0.85em;font-weight:600">
-          <span style="margin-right:4px">${weatherInfo.weather.condition === 'Clear' ? '☀️' : weatherInfo.weather.condition === 'Rain' ? '🌧️' : weatherInfo.weather.condition === 'Clouds' ? '☁️' : '🌤️'}</span>
-          ${weatherInfo.weather.temperature}°C · Safety ${weatherInfo.safetyScore}/100
-        </div>` : '';
-
       const imageUrl = resolveImageUrl(a);
 
       return {
@@ -347,8 +369,8 @@ const InteractiveMap = () => {
         lng: parseFloat(a.longitude),
         data: a,
         type: 'attraction',
-        icon: '🏞️',
-        iconHtml: markerPinHtml('🏞️', '#16a34a'),
+        icon: 'attraction',
+        iconHtml: markerPinHtml('attraction', '#16a34a'),
         imageUrl
       };
     }) : []),
@@ -357,16 +379,16 @@ const InteractiveMap = () => {
       lng: parseFloat(h.longitude),
       data: h,
       type: 'hotel',
-      icon: '🏨',
-      iconHtml: markerPinHtml('🏨', '#7c3aed')
+      icon: 'hotel',
+      iconHtml: markerPinHtml('hotel', '#7c3aed')
     })) : []),
     ...(activeFilters.pois ? validPois.map(p => ({
       lat: parseFloat(p.latitude),
       lng: parseFloat(p.longitude),
       data: p,
       type: 'poi',
-      icon: getCategoryIcon(p.category),
-      iconHtml: markerPinHtml(getPoiEmoji(p.category), '#ea580c')
+      icon: 'poi',
+      iconHtml: markerPinHtml('poi', '#ea580c')
     })) : [])
   ];
 
@@ -411,9 +433,9 @@ const InteractiveMap = () => {
   }
   const selectedCategoryLabel = (() => {
     if (!selectedType) return '';
-    if (selectedType === 'hotel') return '🏨 Hotel';
+    if (selectedType === 'hotel') return 'Hotel';
     const categoryText = selectedData?.category || (selectedType === 'poi' ? 'POI' : 'Attraction');
-    return `${getCategoryIcon(categoryText)} ${categoryText}`;
+    return categoryText;
   })();
 
   if (loading) {
@@ -504,9 +526,9 @@ const InteractiveMap = () => {
                   <div style={styles.mapPreviewImageBlur}></div>
                   <div style={styles.mapPreviewCardBody}>
                     <div style={styles.mapPreviewCardTitle}>{t('map_feature')}</div>
-                    <div style={styles.mapPreviewCardLocation}>🗺️ {t('interactive_navigation')}</div>
-                    <div style={styles.mapPreviewCardFeature}>🏞️ {t('explore_locations')}</div>
-                    <div style={styles.mapPreviewCardFeature}>🧭 {t('route_planning')}</div>
+                    <div style={{ ...styles.mapPreviewCardLocation, display:'flex', alignItems:'center', gap:'0.4rem' }}><MapIcon size={15} /> {t('interactive_navigation')}</div>
+                    <div style={{ ...styles.mapPreviewCardFeature, display:'flex', alignItems:'center', gap:'0.4rem' }}><AttractionIcon size={15} /> {t('explore_locations')}</div>
+                    <div style={{ ...styles.mapPreviewCardFeature, display:'flex', alignItems:'center', gap:'0.4rem' }}><RouteIcon size={15} /> {t('route_planning')}</div>
                   </div>
                   <div style={styles.mapPreviewLock}><ShieldIcon size={64} /></div>
                 </div>
@@ -525,7 +547,7 @@ const InteractiveMap = () => {
           onClick={() => setShowSidebar(s => !s)}
           title={showSidebar ? t('hide_sidebar') : t('show_sidebar')}
         >
-          {showSidebar ? '✕' : '☰'}
+          {showSidebar ? <XIcon size={20} /> : <MenuIcon size={20} />}
         </button>
         {/* Sidebar */}
         <div className={`imap-sidebar sidebar-scroll${showSidebar ? '' : ' imap-sidebar--hidden'}`}>
@@ -739,8 +761,9 @@ const InteractiveMap = () => {
               </div>
             )}
             {gpsError && (
-              <div style={{ marginTop:'0.6rem', background:'#fef2f2', border:'1px solid #fca5a5', borderRadius:'8px', padding:'0.6rem 0.75rem', fontSize:'0.78rem', color:'#991b1b', lineHeight:'1.45' }}>
-                ⚠️ {gpsError}
+              <div style={{ marginTop:'0.6rem', background:'#fef2f2', border:'1px solid #fca5a5', borderRadius:'8px', padding:'0.6rem 0.75rem', fontSize:'0.78rem', color:'#991b1b', lineHeight:'1.45', display:'flex', alignItems:'flex-start', gap:'0.45rem' }}>
+                <InfoIcon size={16} />
+                <span>{gpsError}</span>
               </div>
             )}
           </div>
@@ -823,8 +846,8 @@ const InteractiveMap = () => {
               <div style={{ position:'absolute', top:'4.5rem', right:'0.75rem', zIndex:990, background:'rgba(255,255,255,0.96)', backdropFilter:'blur(6px)', WebkitBackdropFilter:'blur(6px)', borderRadius:'14px', boxShadow:'0 10px 30px rgba(0,0,0,0.18)', padding:'0.7rem 0.8rem', display:'flex', flexDirection:'column', gap:'0.5rem', width:'min(350px, calc(100% - 1.5rem))', maxWidth:'92%', maxHeight:'calc(100% - 6rem)', overflowY:'auto', overscrollBehavior:'contain', border:'2px solid #2e7d32', pointerEvents:'all', animation:'imap-nav-in 0.25s ease' }}>
                 {/* Top row */}
                 <div style={{ display:'flex', alignItems:'flex-start', gap:'0.6rem' }}>
-                  <div style={{ flexShrink:0, width:'2.1rem', height:'2.1rem', borderRadius:'10px', background:'linear-gradient(135deg, #2e7d32, #4caf50)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'1.05rem' }}>
-                    🧭
+                  <div style={{ flexShrink:0, width:'2.2rem', height:'2.2rem', borderRadius:'11px', background:'linear-gradient(135deg, #2e7d32, #4caf50)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', boxShadow:'0 3px 8px rgba(46,125,50,0.35)' }}>
+                    <RouteIcon size={18} />
                   </div>
                   <div style={{ flex:1, minWidth:0 }}>
                     <div style={{ fontSize:'0.6rem', fontWeight:800, letterSpacing:'0.08em', textTransform:'uppercase', color:'#16a34a' }}>
@@ -834,11 +857,11 @@ const InteractiveMap = () => {
                       {routeInfo.destination?.name || t('destination')}
                     </div>
                     <div style={{ display:'flex', gap:'0.4rem', marginTop:'0.35rem', flexWrap:'wrap' }}>
-                      <span style={{ background:'#eef2ff', color:'#3730a3', borderRadius:'999px', padding:'0.15rem 0.55rem', fontSize:'0.68rem', fontWeight:700 }}>
-                        📏 {routeInfo.distance} km
+                      <span style={{ display:'inline-flex', alignItems:'center', gap:'0.25rem', background:'#eef2ff', color:'#3730a3', borderRadius:'999px', padding:'0.15rem 0.55rem', fontSize:'0.68rem', fontWeight:700 }}>
+                        <RouteIcon size={12} /> {routeInfo.distance} km
                       </span>
-                      <span style={{ background:'#ecfdf5', color:'#065f46', borderRadius:'999px', padding:'0.15rem 0.55rem', fontSize:'0.68rem', fontWeight:700 }}>
-                        ⏱ {routeInfo.duration} min
+                      <span style={{ display:'inline-flex', alignItems:'center', gap:'0.25rem', background:'#ecfdf5', color:'#065f46', borderRadius:'999px', padding:'0.15rem 0.55rem', fontSize:'0.68rem', fontWeight:700 }}>
+                        <ClockIcon size={12} /> {routeInfo.duration} min
                       </span>
                       {isRerouting && (
                         <span style={{ display:'inline-flex', alignItems:'center', gap:'0.25rem', color:'#d97706', fontWeight:700, fontSize:'0.68rem' }}>
@@ -856,9 +879,9 @@ const InteractiveMap = () => {
                       setIsRerouting(false);
                     }}
                     title={t('stop')}
-                    style={{ flexShrink:0, background:'#ef4444', color:'#fff', border:'none', borderRadius:'8px', width:'1.9rem', height:'1.9rem', fontSize:'0.75rem', fontWeight:800, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 2px 6px rgba(239,68,68,0.4)' }}
+                    style={{ flexShrink:0, background:'#fef2f2', color:'#dc2626', border:'1px solid #fecaca', borderRadius:'9px', width:'2rem', height:'2rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 2px 6px rgba(239,68,68,0.18)' }}
                   >
-                    ✕
+                    <XIcon size={15} />
                   </button>
                 </div>
                 {/* Route alternatives */}
@@ -889,14 +912,21 @@ const InteractiveMap = () => {
                       onClick={() => setDirectionsOpen((v) => !v)}
                       style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'0.5rem', background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:'10px', padding:'0.45rem 0.6rem', cursor:'pointer', fontWeight:700, color:'#334155', fontSize:'0.78rem' }}
                     >
-                      <span>🧭 {t('directions')} ({routeInfo.steps.length})</span>
-                      <span style={{ transform: directionsOpen ? 'rotate(180deg)' : 'none', transition:'transform 0.2s' }}>▾</span>
+                      <span style={{ display:'inline-flex', alignItems:'center', gap:'0.4rem' }}>
+                        <RouteIcon size={14} /> {t('directions')}
+                        <span style={{ background:'#e2e8f0', borderRadius:'999px', padding:'0.05rem 0.4rem', fontSize:'0.62rem', fontWeight:800, color:'#475569' }}>{routeInfo.steps.length}</span>
+                      </span>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: directionsOpen ? 'rotate(180deg)' : 'none', transition:'transform 0.2s' }}>
+                        <path d="M6 9l6 6 6-6" />
+                      </svg>
                     </button>
                     {directionsOpen && (
                       <div style={{ display:'flex', flexDirection:'column', gap:'0.15rem', maxHeight:'13rem', overflowY:'auto' }}>
                         {routeInfo.steps.map((step, idx) => (
                           <div key={idx} style={{ display:'flex', alignItems:'center', gap:'0.55rem', padding:'0.4rem 0.35rem', borderBottom:'1px solid #f1f5f9' }}>
-                            <span style={{ fontSize:'1rem', width:'1.3rem', textAlign:'center', flexShrink:0 }}>{getManeuverIcon(step.type, step.modifier)}</span>
+                            <span style={{ color:'#475569', width:'1.3rem', display:'inline-flex', justifyContent:'center', flexShrink:0 }}>
+                              <ManeuverIcon type={step.type} modifier={step.modifier} size={17} />
+                            </span>
                             <div style={{ flex:1, minWidth:0 }}>
                               <div style={{ fontSize:'0.76rem', fontWeight:600, color:'#1f2937', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
                                 {step.type === 'arrive' ? t('arrive_destination') : (step.name || t('continue_straight'))}
@@ -977,17 +1007,19 @@ const InteractiveMap = () => {
             {/* Quick map filters */}
             <div className="imap-quick-filters">
               {[
-                { key: 'attractions', label: t('attractions'), icon: '🏞️' },
-                { key: 'hotels', label: t('hotels'), icon: '🏨' },
-                { key: 'pois', label: t('pois'), icon: '📍' },
-              ].map(({ key, label, icon }) => (
+                { key: 'attractions', label: t('attractions'), Icon: AttractionIcon },
+                { key: 'hotels', label: t('hotels'), Icon: HotelIcon },
+                { key: 'pois', label: t('pois'), Icon: MapPinIcon },
+              ].map(({ key, label, Icon }) => (
                 <button
                   key={key}
+                  type="button"
                   onClick={() => setActiveFilters(prev => ({ ...prev, [key]: !prev[key] }))}
                   className={`imap-chip${activeFilters[key] ? ' is-active' : ''}`}
                   title={label}
+                  aria-pressed={activeFilters[key]}
                 >
-                  <span>{icon}</span>
+                  <Icon size={15} />
                   <span className="imap-chip-label">{label}</span>
                 </button>
               ))}
@@ -1028,7 +1060,9 @@ const InteractiveMap = () => {
       {selectedLocation && (
         <div className="imap-modal-overlay" onClick={() => setSelectedLocation(null)}>
           <div className="imap-modal-content" onClick={(e) => e.stopPropagation()}>
-            <button style={styles.modalClose} onClick={() => setSelectedLocation(null)}>✕</button>
+            <button style={styles.modalClose} onClick={() => setSelectedLocation(null)} aria-label={t('close')}>
+              <XIcon size={18} />
+            </button>
             
             {/* Location Image */}
             <div className="imap-modal-image">
@@ -1042,8 +1076,8 @@ const InteractiveMap = () => {
                   }}
                 />
               ) : (
-                <div style={styles.modalImagePlaceholder}>
-                  <span style={{fontSize: '4rem'}}>{selectedType === 'hotel' ? '🏨' : '🏞️'}</span>
+                <div style={{ ...styles.modalImagePlaceholder, color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  {selectedType === 'hotel' ? <HotelIcon size={64} /> : <AttractionIcon size={64} />}
                   <p style={{margin: '1rem 0 0', color: 'rgba(255,255,255,0.9)'}}>{t('no_image_available')}</p>
                 </div>
               )}
@@ -1053,11 +1087,14 @@ const InteractiveMap = () => {
             <div className="imap-modal-body">
               <div style={styles.modalHeader}>
                 <h2 style={styles.modalTitle}>{selectedData?.name}</h2>
-                <span style={styles.modalCategory}>{selectedCategoryLabel}</span>
+                <span style={{ ...styles.modalCategory, display:'inline-flex', alignItems:'center', gap:'0.3rem' }}>
+                  {selectedType === 'hotel' ? <HotelIcon size={13} /> : selectedType === 'poi' ? <MapPinIcon size={13} /> : <AttractionIcon size={13} />}
+                  {selectedCategoryLabel}
+                </span>
               </div>
 
               <div style={styles.modalLocation}>
-                <span style={{fontSize: '1.1rem'}}>📍</span>
+                <MapPinIcon size={16} />
                 <span>{selectedData?.location}</span>
               </div>
 
@@ -1066,7 +1103,9 @@ const InteractiveMap = () => {
               {selectedType === 'attraction' && selectedData?.id && attractionWeather[selectedData.id] && (
                 <div style={styles.modalWeather}>
                   <div style={styles.weatherInfo}>
-                    <span style={{fontSize: '2rem'}}>{attractionWeather[selectedData.id].weather.icon}</span>
+                    <span style={{ color: '#2e7d32', display: 'inline-flex' }}>
+                      <WeatherGlyph condition={attractionWeather[selectedData.id].weather.condition || attractionWeather[selectedData.id].weather.description} size={30} />
+                    </span>
                     <div>
                       <div style={{fontSize: '1.5rem', fontWeight: '700', color: '#2e7d32'}}>
                         {attractionWeather[selectedData.id].weather.temp}°C
@@ -1077,9 +1116,13 @@ const InteractiveMap = () => {
                     </div>
                   </div>
                   <div style={styles.safetyBadge(attractionWeather[selectedData.id].safetyScore)}>
-                    {attractionWeather[selectedData.id].safetyScore >= 7 ? `✓ ${t('safe_visit')}` : 
-                     attractionWeather[selectedData.id].safetyScore >= 5 ? `⚠ ${t('check_weather')}` : 
-                     `✕ ${t('not_recommended')}`}
+                    {attractionWeather[selectedData.id].safetyScore >= 7 ? (
+                      <><CheckIcon size={14} /> {t('safe_visit')}</>
+                    ) : attractionWeather[selectedData.id].safetyScore >= 5 ? (
+                      <><InfoIcon size={14} /> {t('check_weather')}</>
+                    ) : (
+                      <><XIcon size={14} /> {t('not_recommended')}</>
+                    )}
                   </div>
                 </div>
               )}
@@ -1091,7 +1134,7 @@ const InteractiveMap = () => {
                     style={styles.viewDetailsBtn}
                     onClick={() => navigate(`/attractions/${selectedData.id}`)}
                   >
-                    📖 {t('view_full_details')}
+                    <span style={{ display:'inline-flex', alignItems:'center', gap:'0.4rem' }}><DocumentIcon size={16} /> {t('view_full_details')}</span>
                   </button>
                 )}
                 {selectedType === 'hotel' && selectedData?.id && (
@@ -1099,14 +1142,14 @@ const InteractiveMap = () => {
                     style={styles.viewDetailsBtn}
                     onClick={() => navigate(`/hotels/${selectedData.id}`)}
                   >
-                    🏨 {t('view_hotel_details')}
+                    <span style={{ display:'inline-flex', alignItems:'center', gap:'0.4rem' }}><HotelIcon size={16} /> {t('view_hotel_details')}</span>
                   </button>
                 )}
                 <button 
                   style={styles.navigateBtn}
                   onClick={() => {
                     if (!userLocation) {
-                      alert(`⚠️ ${t('enable_gps_first')}`);
+                      alert(t('enable_gps_first'));
                       return;
                     }
                     setNavTarget({
@@ -1119,7 +1162,7 @@ const InteractiveMap = () => {
                     setSelectedLocation(null);
                   }}
                 >
-                  🧭 {t('navigate_here')}
+                  <span style={{ display:'inline-flex', alignItems:'center', gap:'0.4rem' }}><RouteIcon size={16} /> {t('navigate_here')}</span>
                 </button>
               </div>
             </div>

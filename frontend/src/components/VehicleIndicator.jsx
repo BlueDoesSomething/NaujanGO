@@ -7,6 +7,33 @@ const STATUS = {
   possible: { bg: '#fef9c3', border: '#ca8a04', text: '#92400e', badge: '#ca8a04', label: 'Alt'  },
 };
 
+const VehicleIcon = ({ id, size = 18, color = 'currentColor' }) => {
+  const common = {
+    width: size, height: size, viewBox: '0 0 24 24', fill: 'none',
+    stroke: color, strokeWidth: 1.9, strokeLinecap: 'round', strokeLinejoin: 'round',
+  };
+  if (id === 'walk') {
+    return (<svg {...common}><circle cx="13" cy="4.5" r="1.6" /><path d="M13 7l-2 5 2 3v5" /><path d="M11 12l-3 1-1.5 4" /><path d="M13 9l3 2 2 4" /></svg>);
+  }
+  if (id === 'bike') {
+    return (<svg {...common}><circle cx="6" cy="17" r="3" /><circle cx="18" cy="17" r="3" /><path d="M6 17l4-7h4l4 7" /><path d="M9 10h4" /></svg>);
+  }
+  if (id === 'motorcycle') {
+    return (<svg {...common}><circle cx="6" cy="17" r="3" /><circle cx="18" cy="17" r="3" /><path d="M6 17l4-7h5l3 7" /><path d="M9 10l-1-2h3" /></svg>);
+  }
+  if (id === 'boat') {
+    return (<svg {...common}><path d="M4 15h16l-2 4H6z" /><path d="M12 3v10" /><path d="M8 13h8" /></svg>);
+  }
+  // tricycle, car, 4x4 → road vehicle
+  return (<svg {...common}><path d="M4 17h16" /><path d="M6 17v-4l2-4h8l2 4v4" /><path d="M7 17a1.4 1.4 0 102.8 0M14.2 17a1.4 1.4 0 102.8 0" /><path d="M5.5 13h13" /></svg>);
+};
+
+const ChevronIcon = ({ open }) => (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+);
+
 const formatEta = (minutes) => {
   if (minutes == null) return null;
   return minutes < 1 ? '< 1 min' : `${Math.round(minutes)} min`;
@@ -23,7 +50,7 @@ const VehicleIndicator = ({ distanceKm, destination }) => {
   const [open, setOpen] = useState(false);
   const recs = getVehicleRecommendations(distanceKm, destination);
   const bestCount = recs.filter(r => r.status === 'best').length;
-  const preview = recs.slice(0, 3).map(r => r.icon).join(' ');
+  const preview = recs.slice(0, 3);
 
   return (
     <div style={{ width: '100%' }}>
@@ -49,9 +76,13 @@ const VehicleIndicator = ({ distanceKm, destination }) => {
         }}
       >
         <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', minWidth: 0, overflow: 'hidden' }}>
-          <span style={{ fontSize: '0.85rem', flexShrink: 0 }}>🚗</span>
+          <span style={{ display: 'inline-flex', color: '#16a34a', flexShrink: 0 }}><VehicleIcon id="car" size={17} /></span>
           <span style={{ whiteSpace: 'nowrap' }}>Vehicle Suggestions</span>
-          <span style={{ letterSpacing: '0.08em', fontSize: '0.8rem', fontWeight: 600, opacity: 0.85, whiteSpace: 'nowrap' }}>{preview}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15rem', color: '#166534', opacity: 0.85 }}>
+            {preview.map(rec => (
+              <VehicleIcon key={rec.id} id={rec.id} size={14} color="#166534" />
+            ))}
+          </span>
           {bestCount > 0 && (
             <span
               style={{
@@ -69,7 +100,7 @@ const VehicleIndicator = ({ distanceKm, destination }) => {
             </span>
           )}
         </span>
-        <span style={{ fontSize: '0.6rem', opacity: 0.7, flexShrink: 0 }}>{open ? '▲' : '▼'}</span>
+        <span style={{ display: 'inline-flex', opacity: 0.7, flexShrink: 0 }}><ChevronIcon open={open} /></span>
       </button>
 
       {/* ── Expanded panel ──────────────────────────────────────────────── */}
@@ -109,7 +140,9 @@ const VehicleIndicator = ({ distanceKm, destination }) => {
                   padding: '0.4rem 0.55rem',
                 }}
               >
-                <span style={{ width: '1.6rem', fontSize: '1.05rem', textAlign: 'center', flexShrink: 0 }}>{rec.icon}</span>
+                <span style={{ width: '1.6rem', display: 'inline-flex', justifyContent: 'center', color: s.text, flexShrink: 0 }}>
+                  <VehicleIcon id={rec.id} size={19} color={s.text} />
+                </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
                     <span style={{ fontWeight: 800, fontSize: '0.72rem', color: s.text }}>{rec.label}</span>
