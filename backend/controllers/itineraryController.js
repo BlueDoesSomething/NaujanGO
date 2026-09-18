@@ -39,6 +39,104 @@ const hasItineraryAttractionColumn = async (columnName) => {
   return columns.has(columnName);
 };
 
+let itineraryAttractionIdRepairPromise;
+
+// Some databases were created without AUTO_INCREMENT on itinerary_attractions.id
+// (the column is NOT NULL with no default), which makes every insert fail with
+// "Field 'id' doesn't have a default value". Repair it once per process.
+const ensureItineraryAttractionIdAutoIncrement = async () => {
+  if (!itineraryAttractionIdRepairPromise) {
+    itineraryAttractionIdRepairPromise = (async () => {
+      try {
+        const [columns] = await db.promise().query(
+          `SELECT EXTRA
+           FROM information_schema.columns
+           WHERE table_schema = DATABASE()
+             AND table_name = 'itinerary_attractions'
+             AND column_name = 'id'`
+        );
+
+        // No id column at all: nothing to repair (and inserts don't need it).
+        if (columns.length === 0) return true;
+
+        if (String(columns[0].EXTRA || '').toLowerCase().includes('auto_increment')) {
+          return true;
+        }
+
+        // AUTO_INCREMENT requires the column to be a key. Add one when missing.
+        const [keys] = await db.promise().query(
+          `SELECT COUNT(*) AS key_count
+           FROM information_schema.statistics
+           WHERE table_schema = DATABASE()
+             AND table_name = 'itinerary_attractions'
+             AND column_name = 'id'
+             AND seq_in_index = 1`
+        );
+
+        if (Number(keys?.[0]?.key_count || 0) === 0) {
+          try {
+            await db.promise().query(
+              'ALTER TABLE itinerary_attractions ADD UNIQUE KEY uq_itinerary_attractions_id (id)'
+            );
+          } catch (keyError) {
+            console.warn('Could not add key on itinerary_attractions.id:', keyError.message);
+          }
+        }
+
+        await db.promise().query(
+          'ALTER TABLE itinerary_attractions MODIFY id INT(11) NOT NULL AUTO_INCREMENT'
+        );
+        console.log('Repaired itinerary_attractions.id to AUTO_INCREMENT');
+        return true;
+      } catch (err) {
+        console.warn('Failed to repair itinerary_attractions.id:', err.message);
+        return false;
+      }
+    })();
+  }
+
+  return itineraryAttractionIdRepairPromise;
+};
+
+// Insert one itinerary item. Falls back to an explicit id when the table has no
+// AUTO_INCREMENT on id (e.g. a legacy database that could not be repaired).
+const insertItineraryAttraction = async ({ enhancedInsert, basicInsert, enhancedValues, basicValues }) => {
+  const withIdColumn = (sql) => sql.replace('(itinerary_id', '(id, itinerary_id');
+
+  const runInsert = async (useExplicitId) => {
+    let enhancedSql = enhancedInsert;
+    let basicSql = basicInsert;
+    let enhancedVals = enhancedValues;
+    let basicVals = basicValues;
+
+    if (useExplicitId) {
+      const [[{ nextId }]] = await db.promise().query(
+        'SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM itinerary_attractions'
+      );
+      enhancedSql = withIdColumn(enhancedInsert);
+      basicSql = withIdColumn(basicInsert);
+      enhancedVals = [nextId, ...enhancedValues];
+      basicVals = [nextId, ...basicValues];
+    }
+
+    try {
+      return await db.promise().query(enhancedSql, enhancedVals);
+    } catch (insertError) {
+      console.log('Enhanced columns not available, using basic insert');
+      return await db.promise().query(basicSql, basicVals);
+    }
+  };
+
+  try {
+    return await runInsert(false);
+  } catch (error) {
+    if (error && error.code === 'ER_NO_DEFAULT_FOR_FIELD' && /['"`]?id['"`]?/i.test(error.message || '')) {
+      return runInsert(true);
+    }
+    throw error;
+  }
+};
+
 export const getItineraries = async (req, res) => {
   try {
     const [rows] = await db.promise().query(
@@ -75,55 +173,55 @@ export const createItinerary = async (req, res) => {
 
     const itineraryId = result.insertId;
 
+    await ensureItineraryAttractionIdAutoIncrement();
+
     if (items) {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
 
-        try {
-          await db.promise().query(
-            `INSERT INTO itinerary_attractions
+        await insertItineraryAttraction({
+          enhancedInsert: `INSERT INTO itinerary_attractions
             (itinerary_id, attraction_id, order_sequence, estimated_duration, estimated_cost,
              day_number, duration_minutes, item_type, custom_name, custom_location,
              latitude, longitude, priority, weather_dependent)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              itineraryId,
-              item.attraction_id || item.id,
-              item.order_in_day ?? item.order_sequence ?? i + 1,
-              item.estimated_duration || item.duration_minutes || 120,
-              item.estimated_cost || 0,
-              item.day_number || 1,
-              item.duration_minutes || 120,
-              item.item_type || 'attraction',
-              item.custom_name || null,
-              item.custom_location || null,
-              item.latitude || null,
-              item.longitude || null,
-              item.priority || 'medium',
-              item.weather_dependent || false
-            ]
-          );
-        } catch (insertError) {
-          console.log('Enhanced columns not available, using basic insert');
-          await db.promise().query(
-            `INSERT INTO itinerary_attractions
+          basicInsert: `INSERT INTO itinerary_attractions
             (itinerary_id, attraction_id, order_sequence, estimated_duration)
             VALUES (?, ?, ?, ?)`,
-            [
-              itineraryId,
-              item.attraction_id || item.id,
-              item.order_in_day ?? item.order_sequence ?? i + 1,
-              item.estimated_duration || item.duration_minutes || 120
-            ]
-          );
-        }
+          enhancedValues: [
+            itineraryId,
+            item.attraction_id || item.id,
+            item.order_in_day ?? item.order_sequence ?? i + 1,
+            item.estimated_duration || item.duration_minutes || 120,
+            item.estimated_cost || 0,
+            item.day_number || 1,
+            item.duration_minutes || 120,
+            item.item_type || 'attraction',
+            item.custom_name || null,
+            item.custom_location || null,
+            item.latitude || null,
+            item.longitude || null,
+            item.priority || 'medium',
+            item.weather_dependent || false
+          ],
+          basicValues: [
+            itineraryId,
+            item.attraction_id || item.id,
+            item.order_in_day ?? item.order_sequence ?? i + 1,
+            item.estimated_duration || item.duration_minutes || 120
+          ]
+        });
       }
     } else {
       for (let i = 0; i < attractions.length; i++) {
-        await db.promise().query(
-          'INSERT INTO itinerary_attractions (itinerary_id, attraction_id, order_sequence) VALUES (?, ?, ?)',
-          [itineraryId, attractions[i].id, i + 1]
-        );
+        await insertItineraryAttraction({
+          enhancedInsert:
+            'INSERT INTO itinerary_attractions (itinerary_id, attraction_id, order_sequence) VALUES (?, ?, ?)',
+          basicInsert:
+            'INSERT INTO itinerary_attractions (itinerary_id, attraction_id, order_sequence) VALUES (?, ?, ?)',
+          enhancedValues: [itineraryId, attractions[i].id, i + 1],
+          basicValues: [itineraryId, attractions[i].id, i + 1]
+        });
       }
     }
 
@@ -341,47 +439,43 @@ export const updateItinerary = async (req, res) => {
         [id]
       );
 
+      await ensureItineraryAttractionIdAutoIncrement();
+
       for (let i = 0; i < req.body.items.length; i++) {
         const item = req.body.items[i];
 
-        try {
-          await db.promise().query(
-            `INSERT INTO itinerary_attractions
+        await insertItineraryAttraction({
+          enhancedInsert: `INSERT INTO itinerary_attractions
             (itinerary_id, attraction_id, order_sequence, estimated_duration, estimated_cost,
              day_number, duration_minutes, item_type, custom_name, custom_location,
              latitude, longitude, priority, weather_dependent)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              id,
-              item.attraction_id || item.id,
-              item.order_in_day ?? item.order_sequence ?? i + 1,
-              item.estimated_duration || item.duration_minutes || 120,
-              item.estimated_cost || 0,
-              item.day_number || 1,
-              item.duration_minutes || 120,
-              item.item_type || 'attraction',
-              item.custom_name || null,
-              item.custom_location || null,
-              item.latitude || null,
-              item.longitude || null,
-              item.priority || 'medium',
-              item.weather_dependent || false
-            ]
-          );
-        } catch (insertError) {
-          console.log('Enhanced columns not available, using basic insert');
-          await db.promise().query(
-            `INSERT INTO itinerary_attractions
+          basicInsert: `INSERT INTO itinerary_attractions
             (itinerary_id, attraction_id, order_sequence, estimated_duration)
             VALUES (?, ?, ?, ?)`,
-            [
-              id,
-              item.attraction_id || item.id,
-              item.order_in_day ?? item.order_sequence ?? i + 1,
-              item.estimated_duration || item.duration_minutes || 120
-            ]
-          );
-        }
+          enhancedValues: [
+            id,
+            item.attraction_id || item.id,
+            item.order_in_day ?? item.order_sequence ?? i + 1,
+            item.estimated_duration || item.duration_minutes || 120,
+            item.estimated_cost || 0,
+            item.day_number || 1,
+            item.duration_minutes || 120,
+            item.item_type || 'attraction',
+            item.custom_name || null,
+            item.custom_location || null,
+            item.latitude || null,
+            item.longitude || null,
+            item.priority || 'medium',
+            item.weather_dependent || false
+          ],
+          basicValues: [
+            id,
+            item.attraction_id || item.id,
+            item.order_in_day ?? item.order_sequence ?? i + 1,
+            item.estimated_duration || item.duration_minutes || 120
+          ]
+        });
       }
     }
 
