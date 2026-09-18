@@ -25,7 +25,7 @@ const sectionHeading = {
 
 
 import { useNavigate, useParams } from 'react-router-dom';
-import { fetchHotelBookings, startPaymentCheckout, getPaymentHistory } from '../api';
+import { fetchHotelBookings, startPaymentCheckout, getPaymentHistory, getApiBaseUrl, getCsrfToken } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -445,9 +445,9 @@ const HotelPayment = () => {
                       setManualStatusError('');
                       setManualStatusSuccess('');
                       try {
-                        const resp = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/payments/${payment.payment_id}/status`, {
+                        const resp = await fetch(`${getApiBaseUrl()}/api/payments/${payment.payment_id}/status`, {
                           method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
+                          headers: { 'Content-Type': 'application/json', ...(getCsrfToken() ? { 'X-CSRF-Token': getCsrfToken() } : {}) },
                           credentials: 'include',
                           body: JSON.stringify({ status: manualStatus })
                         });

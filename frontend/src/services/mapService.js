@@ -1,6 +1,11 @@
-import { getApiBaseUrl } from '../api';
+import { getApiBaseUrl, getCsrfToken } from '../api';
 
 const API_BASE_URL = getApiBaseUrl() + '/api';
+
+const csrfHeaders = () => {
+  const token = getCsrfToken();
+  return token ? { 'X-CSRF-Token': token } : {};
+};
 
 export const mapService = {
   // Get all routes for a user
@@ -14,7 +19,8 @@ export const mapService = {
   async saveRoute(routeData) {
     const response = await fetch(`${API_BASE_URL}/routes`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
       body: JSON.stringify(routeData)
     });
     return response.json();

@@ -782,7 +782,7 @@ const InteractiveMap = () => {
           <div id="interactive-map-container" className="imap-map-container">
             {/* Active Route Info Banner */}
             {routeInfo && (
-              <div style={{ position:'absolute', bottom:'70px', left:'50%', transform:'translateX(-50%)', zIndex:1000, background:'#fff', borderRadius:'14px', boxShadow:'0 6px 24px rgba(0,0,0,0.18)', padding:'0.85rem 1.25rem', display:'flex', flexDirection:'column', gap:'0.5rem', minWidth:'300px', maxWidth:'92%', border:'2px solid #2e7d32', pointerEvents:'all' }}>
+              <div style={{ position:'absolute', bottom:'70px', left:'50%', transform:'translateX(-50%)', zIndex:1000, background:'#fff', borderRadius:'14px', boxShadow:'0 6px 24px rgba(0,0,0,0.18)', padding:'0.85rem 1.25rem', display:'flex', flexDirection:'column', gap:'0.5rem', minWidth:'300px', maxWidth:'92%', maxHeight:'calc(100% - 90px)', overflowY:'auto', overscrollBehavior:'contain', border:'2px solid #2e7d32', pointerEvents:'all' }}>
                 {/* Top row */}
                   <div style={{ display:'flex', alignItems:'center', gap:'1rem' }}>
                     <div style={{ fontSize:'1.5rem', flexShrink:0 }}>🧭</div>

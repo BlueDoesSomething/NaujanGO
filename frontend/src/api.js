@@ -28,6 +28,20 @@ const apiClient = axios.create({
   validateStatus: (status) => status >= 200 && status < 300  // Only 2xx is success
 });
 
+// Read the JS-readable CSRF cookie that the backend sets. Required for cookie
+// (HttpOnly auth_token) authenticated POST/PUT/DELETE requests.
+export const getCsrfToken = () => {
+  try {
+    const csrfCookie = document.cookie
+      .split('; ')
+      .find((cookie) => cookie.startsWith('csrf_token='));
+    if (!csrfCookie) return '';
+    return decodeURIComponent(csrfCookie.split('=').slice(1).join('='));
+  } catch (err) {
+    return '';
+  }
+};
+
 const getStoredToken = () => {
   // Tokens are now in HttpOnly cookies - automatically sent with requests
   // This function is deprecated but kept for backwards compatibility
@@ -63,11 +77,9 @@ apiClient.interceptors.request.use((config) => {
   config.headers['x-language'] = lang
 
   // Send the readable CSRF cookie back in a header for cookie-authenticated writes.
-  const csrfCookie = document.cookie
-    .split('; ')
-    .find((cookie) => cookie.startsWith('csrf_token='));
-  if (csrfCookie) {
-    config.headers['X-CSRF-Token'] = decodeURIComponent(csrfCookie.split('=').slice(1).join('='));
+  const csrfToken = getCsrfToken();
+  if (csrfToken) {
+    config.headers['X-CSRF-Token'] = csrfToken;
   }
 
   // Also add query param for backward compatibility if not present

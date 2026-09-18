@@ -6,9 +6,14 @@ import LeafletMap from '../components/LeafletMap';
 import WeatherWidget from '../components/WeatherWidget';
 import HeroSlideshow from '../components/HeroSlideshow';
 import CustomDropdown from '../components/CustomDropdown';
-import { getApiBaseUrl } from '../api';
+import { getApiBaseUrl, getCsrfToken } from '../api';
 
 const API_BASE_URL = getApiBaseUrl();
+
+const csrfHeaders = () => {
+  const token = getCsrfToken();
+  return token ? { 'X-CSRF-Token': token } : {};
+};
 
 export const TIME_OF_DAY_LABELS = {
   morning: 'Morning',
@@ -152,7 +157,7 @@ const ItineraryDetail = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         credentials: 'include',
         body: JSON.stringify({ status: newStatus })
       });
@@ -170,7 +175,7 @@ const ItineraryDetail = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}/items/${itemId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         credentials: 'include',
         body: JSON.stringify({ completed })
       });
@@ -229,7 +234,7 @@ const ItineraryDetail = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}/recalculate-budget`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         credentials: 'include',
         body: JSON.stringify({
           farePerDay: farePerDay !== null ? farePerDay : 0,
@@ -277,6 +282,7 @@ const ItineraryDetail = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}`, {
         method: 'DELETE',
+        headers: csrfHeaders(),
         credentials: 'include'
       });
       
@@ -953,7 +959,7 @@ const ItineraryDetail = () => {
                     try {
                       const resp = await fetch(`${API_BASE_URL}/api/itinerary/${id}/save-assumptions`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
                         credentials: 'include',
                         body: JSON.stringify({
                           ...budgetAssumptions,

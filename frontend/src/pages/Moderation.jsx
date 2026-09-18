@@ -1,10 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getApiBaseUrl } from '../api';
+import { getApiBaseUrl, getCsrfToken } from '../api';
 import { useAuth } from '../context/AuthContext';
 import './Moderation.css';
 
 const API_BASE_URL = getApiBaseUrl();
+
+const csrfHeaders = () => {
+  const token = getCsrfToken();
+  return token ? { 'X-CSRF-Token': token } : {};
+};
 
 export default function Moderation() {
   const { user, logout } = useAuth();
@@ -105,7 +110,7 @@ export default function Moderation() {
       const resp = await fetch(`${API_BASE_URL}/api/chatbot/moderation/claim`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ conversation_id: conversation.conversation_id })
       });
 
@@ -126,7 +131,7 @@ export default function Moderation() {
       const resp = await fetch(`${API_BASE_URL}/api/chatbot/moderation/release`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({ conversation_id: conversation.conversation_id })
       });
 
@@ -158,7 +163,7 @@ export default function Moderation() {
       const r = await fetch(`${API_BASE_URL}/api/chatbot/staff-reply`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         body: JSON.stringify({
           conversation_id: conversation.conversation_id,
           message: reply,
@@ -349,7 +354,7 @@ export default function Moderation() {
                           conversation.messages.map((message) => fetch(`${API_BASE_URL}/api/chatbot/moderate`, {
                             method: 'POST',
                             credentials: 'include',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
                             body: JSON.stringify({
                               message_id: message.message_id,
                               conversation_id: conversation.conversation_id

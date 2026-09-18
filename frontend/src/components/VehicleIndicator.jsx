@@ -61,6 +61,9 @@ const VehicleIndicator = ({ distanceKm, destination }) => {
             display: 'flex',
             flexDirection: 'column',
             gap: '0.4rem',
+            maxHeight: 'min(45vh, 320px)',
+            overflowY: 'auto',
+            overscrollBehavior: 'contain',
           }}
         >
           <p style={{ margin: 0, fontSize: '0.7rem', fontWeight: 700, color: '#166534' }}>

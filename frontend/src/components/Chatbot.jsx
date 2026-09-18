@@ -831,7 +831,8 @@ const Chatbot = ({ language }) => {
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/chatbot/conversation/${convId}?userId=${user.user_id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getApiHeaders()
       });
       
       if (response.ok) {
@@ -853,7 +854,8 @@ const Chatbot = ({ language }) => {
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/chatbot/history/${user.user_id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getApiHeaders()
       });
       
       if (response.ok) {
