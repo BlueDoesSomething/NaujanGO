@@ -1004,26 +1004,6 @@ const InteractiveMap = () => {
                 </svg>
               </button>
             )}
-            {/* Quick map filters */}
-            <div className="imap-quick-filters">
-              {[
-                { key: 'attractions', label: t('attractions'), Icon: AttractionIcon },
-                { key: 'hotels', label: t('hotels'), Icon: HotelIcon },
-                { key: 'pois', label: t('pois'), Icon: MapPinIcon },
-              ].map(({ key, label, Icon }) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setActiveFilters(prev => ({ ...prev, [key]: !prev[key] }))}
-                  className={`imap-chip${activeFilters[key] ? ' is-active' : ''}`}
-                  title={label}
-                  aria-pressed={activeFilters[key]}
-                >
-                  <Icon size={15} />
-                  <span className="imap-chip-label">{label}</span>
-                </button>
-              ))}
-            </div>
             <LeafletMap
               center={mapCenter}
               zoom={13}
