@@ -13,6 +13,21 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 });
 
+// Animated "marching ants" dashed overlay for the active route line
+if (typeof document !== 'undefined') {
+  const routeStyleEl = document.createElement('style');
+  routeStyleEl.textContent = `
+    @keyframes imap-route-dash {
+      to { stroke-dashoffset: -18; }
+    }
+    .imap-route-ants {
+      stroke-dasharray: 4 14 !important;
+      animation: imap-route-dash 0.8s linear infinite;
+    }
+  `;
+  document.head.appendChild(routeStyleEl);
+}
+
 const LeafletMap = ({
   center,
   zoom = 14,
@@ -454,6 +469,75 @@ const LeafletMap = ({
     return 2 * 6371000 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   };
 
+  const computeRouteDistanceKm = (latLngs) => {
+    let meters = 0;
+    for (let i = 1; i < latLngs.length; i++) {
+      meters += haversineMeters(latLngs[i - 1], latLngs[i]);
+    }
+    return Number((meters / 1000).toFixed(2));
+  };
+
+  const destIcon = L.divIcon({
+    html: `
+      <svg width="28" height="36" viewBox="0 0 24 30" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">
+        <path d="M12 1 C7 1 3 5 3 10 c0 8 9 19 9 19 s9 -11 9 -19 C21 5 17 1 12 1 z" fill="#1976d2" stroke="#ffffff" stroke-width="1.6"/>
+        <circle cx="12" cy="10" r="4.2" fill="#ffffff"/>
+      </svg>`,
+    className: 'imap-route-dest',
+    iconSize: [28, 36],
+    iconAnchor: [14, 34],
+  });
+
+  // Builds a layered, clearly visible route: dark glow + white casing + colored
+  // line + animated "marching ants" overlay, plus a destination pin.
+  const buildRouteLayer = (latLngs, { color = '#1976d2', animated = true } = {}) => {
+    const group = L.layerGroup();
+
+    // Outer glow
+    L.polyline(latLngs, {
+      color: '#065f46',
+      weight: 10,
+      opacity: 0.18,
+      lineJoin: 'round',
+      lineCap: 'round'
+    }).addTo(group);
+
+    // White casing so the line pops against any basemap
+    L.polyline(latLngs, {
+      color: '#ffffff',
+      weight: 6,
+      opacity: 0.95,
+      lineJoin: 'round',
+      lineCap: 'round'
+    }).addTo(group);
+
+    // Main colored line
+    const main = L.polyline(latLngs, {
+      color,
+      weight: 4.5,
+      opacity: 1,
+      lineJoin: 'round',
+      lineCap: 'round'
+    }).addTo(group);
+
+    // Directional marching-ants overlay
+    if (animated) {
+      L.polyline(latLngs, {
+        color: '#b3e5fc',
+        weight: 2.5,
+        opacity: 0.9,
+        dashArray: '4 14',
+        className: 'imap-route-ants',
+        lineJoin: 'round',
+        lineCap: 'round'
+      }).addTo(group);
+    }
+
+    const destMarker = L.marker(latLngs[latLngs.length - 1], { icon: destIcon }).addTo(group);
+
+    return { group, main, destMarker };
+  };
+
   const drawRouteFromWaypoints = async (waypoints, routeLabel = 'Route', opts = {}) => {
     const { keepView = false, rerouting = false } = opts;
     if (!mapInstanceRef.current || !Array.isArray(waypoints) || waypoints.length < 2) {
@@ -503,35 +587,32 @@ const LeafletMap = ({
       }
 
       const latLngs = route.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
-      routePolylineRef.current = L.polyline(latLngs, {
-        color: '#2e7d32',
-        weight: 5,
-        opacity: 0.85,
-        lineJoin: 'round',
-        lineCap: 'round'
-      }).addTo(mapInstanceRef.current);
+      const routeLayer = buildRouteLayer(latLngs, { color: '#1976d2', animated: true });
+      routePolylineRef.current = routeLayer.group;
+      routeLayer.group.addTo(mapInstanceRef.current);
 
-      routePolylineRef.current.bindPopup(`
+      const distanceKm = Number((route.distance / 1000).toFixed(2));
+      const durationMin = Math.round(route.duration / 60);
+      routeLayer.main.bindPopup(`
         <div style="min-width: 200px;">
           <strong>${routeLabel}</strong><br/>
           <small>Stops: ${normalizedWaypoints.length}</small><br/>
-          <small>Distance: ${(route.distance / 1000).toFixed(2)} km</small><br/>
-          <small>Duration: ${Math.round(route.duration / 60)} min</small>
+          <small>Distance: ${distanceKm} km</small><br/>
+          <small>Duration: ${durationMin} min</small>
         </div>
       `);
 
       if (!keepView) {
-        mapInstanceRef.current.fitBounds(routePolylineRef.current.getBounds(), {
+        mapInstanceRef.current.fitBounds(routeLayer.group.getBounds(), {
           padding: [30, 30],
           animate: true
         });
       }
 
       if (onRoutingChange) {
-        const distanceKm = Number((route.distance / 1000).toFixed(2));
         onRoutingChange({
           distance: distanceKm,
-          duration: Math.round(route.duration / 60),
+          duration: durationMin,
           destination: destinationWaypoint,
           rerouting
         });
@@ -542,21 +623,39 @@ const LeafletMap = ({
       if (currentRequestId !== routeRequestIdRef.current) return;
       console.error('Error drawing route:', error);
 
-      // Fallback: draw a simple line so the route map still shows directionality.
-      const fallbackPolyline = L.polyline(normalizedWaypoints.map((point) => [point.lat, point.lng]), {
-        color: '#2e7d32',
-        weight: 4,
-        opacity: 0.7,
-        dashArray: '6 6'
-      }).addTo(mapInstanceRef.current);
+      // Fallback: draw a direct line so the route is still visible, and report
+      // estimated stats so the banner always updates.
+      const straightLine = normalizedWaypoints.map((point) => [point.lat, point.lng]);
+      const straightDistanceKm = computeRouteDistanceKm(straightLine);
+      const straightDurationMin = Math.max(1, Math.round((straightDistanceKm / 30) * 60));
+      const routeLayer = buildRouteLayer(straightLine, { color: '#16a34a', animated: false });
+      routePolylineRef.current = routeLayer.group;
+      routeLayer.group.addTo(mapInstanceRef.current);
 
-      routePolylineRef.current = fallbackPolyline;
+      routeLayer.main.bindPopup(`
+        <div style="min-width: 200px;">
+          <strong>${routeLabel}</strong><br/>
+          <small>Direct route (road map unavailable): ${straightDistanceKm} km</small><br/>
+          <small>Estimated duration: ≈ ${straightDurationMin} min</small>
+        </div>
+      `);
+
       if (!keepView) {
-        mapInstanceRef.current.fitBounds(fallbackPolyline.getBounds(), {
+        mapInstanceRef.current.fitBounds(routeLayer.group.getBounds(), {
           padding: [30, 30],
           animate: true
         });
       }
+
+      if (onRoutingChange) {
+        onRoutingChange({
+          distance: straightDistanceKm,
+          duration: straightDurationMin,
+          destination: destinationWaypoint,
+          rerouting
+        });
+      }
+
       setRoutingActive(true);
     } finally {
       if (currentRequestId === routeRequestIdRef.current) {
