@@ -21,6 +21,47 @@ const PIN_GLYPHS = {
   attraction: '<path d="M3 16.5l5-5a2 2 0 012.83 0L14 14.67l2.59-2.59a2 2 0 012.83 0L21 13.67M5 21h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v14a2 2 0 002 2z"/>',
   hotel: '<path d="M3 21h18M5 21V6a1 1 0 011-1h8a1 1 0 011 1v15M7 9h2M7 13h2M3 10h2m12 3h2m-2-4h2m-2 5h2"/>',
   poi: '<path d="M12 21s-6-5.686-6-10a6 6 0 1112 0c0 4.314-6 10-6 10z"/><circle cx="12" cy="11" r="2.5"/>',
+  beach: '<path d="M12 3v9M12 3a7 7 0 017 7v1H5v-1a7 7 0 017-7z"/><path d="M12 17v4M6 21h12"/>',
+  mountain: '<path d="M3 20l6-9 4 6 3-4 5 7H3z"/>',
+  landmark: '<path d="M12 3l4 5H8l4-5z"/><rect x="9" y="8" width="6" height="11"/><path d="M6 21h12"/>',
+  park: '<path d="M12 3l4 5h-2l3 5H7l3-5H8l4-5z"/><path d="M12 13v8"/>',
+  market: '<path d="M6 7h12l-1.2 14H7.2L6 7z"/><path d="M9 7V6a3 3 0 016 0v1"/>',
+  restaurant: '<path d="M3 2v7a4 4 0 004 4h2a4 4 0 004-4V2M9 2v7m6-7v8a2 2 0 112 2m0 0h2m-4-6l2 2m0 0l2-2m-2 2v5"/>',
+  hospital: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 7v6M9 10h6"/>',
+  school: '<path d="M22 9L12 4 2 9l10 5 10-5z"/><path d="M6 11.5V17c0 1.2 2.7 2.2 6 2.2s6-1 6-2.2v-5.5"/><path d="M22 9v5"/>',
+  church: '<path d="M12 3v15M6 9.5h12"/>',
+  water: '<path d="M2 6.5c1.395-1.165 3.19-1.865 5-1.865s3.605.7 5 1.865c1.395-1.165 3.19-1.865 5-1.865s3.605.7 5 1.865M2 12c1.395-1.165 3.19-1.865 5-1.865s3.605.7 5 1.865c1.395-1.165 3.19-1.865 5-1.865s3.605.7 5 1.865M2 17.5c1.395-1.165 3.19-1.865 5-1.865s3.605.7 5 1.865c1.395-1.165 3.19-1.865 5-1.865s3.605.7 5 1.865"/>',
+};
+
+const PIN_STYLE_BY_CATEGORY = {
+  beach: { glyph: 'beach', color: '#ea580c' },
+  mountain: { glyph: 'mountain', color: '#92400e' },
+  landmark: { glyph: 'landmark', color: '#b45309' },
+  park: { glyph: 'park', color: '#059669' },
+  market: { glyph: 'market', color: '#d97706' },
+  restaurant: { glyph: 'restaurant', color: '#db2777' },
+  hospital: { glyph: 'hospital', color: '#dc2626' },
+  school: { glyph: 'school', color: '#2563eb' },
+  church: { glyph: 'church', color: '#4f46e5' },
+  water: { glyph: 'water', color: '#0891b2' },
+};
+
+const getPinStyles = (type, category = '') => {
+  const c = String(category || '').toLowerCase();
+  if (/(waterfall|fall|lake|river|sea|coast|island|bay|lagoon|mangrove|wetland|shore|marina)/.test(c)) {
+    return PIN_STYLE_BY_CATEGORY.water;
+  }
+  for (const key of Object.keys(PIN_STYLE_BY_CATEGORY)) {
+    if (key !== 'water' && c.includes(key)) return PIN_STYLE_BY_CATEGORY[key];
+  }
+  if (/(cafe|café|eatery|diner|food)/.test(c)) return PIN_STYLE_BY_CATEGORY.restaurant;
+  if (/(store|mall|shop|grocery|palengke|tetuan)/.test(c)) return PIN_STYLE_BY_CATEGORY.market;
+  if (/(museum|monument|heritage|fort|temple|shrine|history)/.test(c)) return PIN_STYLE_BY_CATEGORY.landmark;
+  if (/(clinic|medical)/.test(c)) return PIN_STYLE_BY_CATEGORY.hospital;
+  if (/(plaza|nature|green|garden)/.test(c)) return PIN_STYLE_BY_CATEGORY.park;
+  if (type === 'hotel') return { glyph: 'hotel', color: '#7c3aed' };
+  if (type === 'attraction') return { glyph: 'attraction', color: '#16a34a' };
+  return { glyph: 'poi', color: '#ea580c' };
 };
 
 const markerPinHtml = (glyphKey, color) => {
@@ -363,33 +404,42 @@ const InteractiveMap = () => {
     // User location is handled separately in LeafletMap component
     ...(activeFilters.attractions ? validAttractions.map(a => {
       const imageUrl = resolveImageUrl(a);
+      const pin = getPinStyles('attraction', a.category);
 
       return {
         lat: parseFloat(a.latitude),
         lng: parseFloat(a.longitude),
         data: a,
         type: 'attraction',
-        icon: 'attraction',
-        iconHtml: markerPinHtml('attraction', '#16a34a'),
+        icon: pin.glyph,
+        iconHtml: markerPinHtml(pin.glyph, pin.color),
         imageUrl
       };
     }) : []),
-    ...(activeFilters.hotels ? validHotels.map(h => ({
-      lat: parseFloat(h.latitude),
-      lng: parseFloat(h.longitude),
-      data: h,
-      type: 'hotel',
-      icon: 'hotel',
-      iconHtml: markerPinHtml('hotel', '#7c3aed')
-    })) : []),
-    ...(activeFilters.pois ? validPois.map(p => ({
-      lat: parseFloat(p.latitude),
-      lng: parseFloat(p.longitude),
-      data: p,
-      type: 'poi',
-      icon: 'poi',
-      iconHtml: markerPinHtml('poi', '#ea580c')
-    })) : [])
+    ...(activeFilters.hotels ? validHotels.map(h => {
+      const pin = getPinStyles('hotel', h.category);
+
+      return {
+        lat: parseFloat(h.latitude),
+        lng: parseFloat(h.longitude),
+        data: h,
+        type: 'hotel',
+        icon: pin.glyph,
+        iconHtml: markerPinHtml(pin.glyph, pin.color)
+      };
+    }) : []),
+    ...(activeFilters.pois ? validPois.map(p => {
+      const pin = getPinStyles('poi', p.category);
+
+      return {
+        lat: parseFloat(p.latitude),
+        lng: parseFloat(p.longitude),
+        data: p,
+        type: 'poi',
+        icon: pin.glyph,
+        iconHtml: markerPinHtml(pin.glyph, pin.color)
+      };
+    }) : [])
   ];
 
   console.log('Total markers created:', allMarkers.length);
