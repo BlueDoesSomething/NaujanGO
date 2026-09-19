@@ -424,6 +424,21 @@ a.navbar-link.active,
 
 .account-name {
   color: #ffffff;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
+}
+
+.account-avatar,
+.account-avatar-img {
+  flex-shrink: 0;
+}
+
+.dropdown-arrow {
+  flex-shrink: 0;
 }
 
 .account-button:hover {

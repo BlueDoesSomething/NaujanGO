@@ -393,6 +393,7 @@ const Navbar = () => {
                   aria-expanded={showDropdown}
                   aria-controls="account-menu"
                   role="menuitem"
+                  title={user?.username || t('myAccount')}
                 >
                   {!loading && user?.profile_picture ? (
                     <img 
