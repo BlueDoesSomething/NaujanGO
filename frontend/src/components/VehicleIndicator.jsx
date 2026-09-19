@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { getVehicleRecommendations } from '../utils/vehicleRecommendation';
 
 const STATUS = {
-  best:     { bg: '#dcfce7', border: '#16a34a', text: '#15803d', badge: '#16a34a', label: 'Best' },
-  good:     { bg: '#dbeafe', border: '#3b82f6', text: '#1d4ed8', badge: '#3b82f6', label: 'Good' },
-  possible: { bg: '#fef9c3', border: '#ca8a04', text: '#92400e', badge: '#ca8a04', label: 'Alt'  },
+  best:     { tintBg: '#dcfce7', chipBg: '#16a34a', border: '#bbf7d0', text: '#15803d', badgeBg: '#16a34a', label: 'Best' },
+  good:     { tintBg: '#dbeafe', chipBg: '#3b82f6', border: '#bfdbfe', text: '#1d4ed8', badgeBg: '#3b82f6', label: 'Good' },
+  possible: { tintBg: '#fef9c3', chipBg: '#ca8a04', border: '#fde68a', text: '#92400e', badgeBg: '#ca8a04', label: 'Alt'  },
 };
 
 const VehicleIcon = ({ id, size = 18, color = 'currentColor' }) => {
@@ -63,65 +63,63 @@ const VehicleIndicator = ({ distanceKm, destination }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: '0.4rem',
-          padding: '0.45rem 0.6rem',
-          border: '1px solid #bbf7d0',
-          borderRadius: '10px',
-          background: open ? 'linear-gradient(135deg, #f0fdf4, #ecfdf5)' : '#f8fafc',
+          gap: '0.5rem',
+          padding: '0.5rem 0.6rem',
+          border: `1px solid ${open ? '#a7f3d0' : '#e2e8f0'}`,
+          borderRadius: '12px',
+          background: open ? 'linear-gradient(135deg, #f0fdf4, #ecfdf5)' : '#ffffff',
+          boxShadow: open ? '0 4px 12px rgba(22, 163, 74, 0.12)' : 'none',
           cursor: 'pointer',
           color: '#065f46',
-          fontSize: '0.76rem',
-          fontWeight: 700,
+          fontSize: '0.78rem',
+          fontWeight: 800,
           transition: 'all 0.15s',
         }}
       >
-        <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', minWidth: 0, overflow: 'hidden' }}>
-          <span style={{ display: 'inline-flex', color: '#16a34a', flexShrink: 0 }}><VehicleIcon id="car" size={17} /></span>
-          <span style={{ whiteSpace: 'nowrap' }}>Vehicle Suggestions</span>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.15rem', color: '#166534', opacity: 0.85 }}>
-            {preview.map(rec => (
-              <VehicleIcon key={rec.id} id={rec.id} size={14} color="#166534" />
-            ))}
+        <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, overflow: 'hidden' }}>
+          <span style={{ width: '30px', height: '30px', flexShrink: 0, borderRadius: '9px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, #16a34a, #22c55e)', color: '#fff', boxShadow: '0 3px 8px rgba(22, 163, 74, 0.35)' }}>
+            <VehicleIcon id="car" size={17} />
           </span>
-          {bestCount > 0 && (
-            <span
-              style={{
-                background: '#16a34a',
-                color: '#fff',
-                borderRadius: '999px',
-                padding: '0 0.4rem',
-                fontSize: '0.58rem',
-                lineHeight: '1.5',
-                fontWeight: 800,
-                flexShrink: 0,
-              }}
-            >
-              {bestCount} best
+          <span style={{ minWidth: 0, textAlign: 'left' }}>
+            <span style={{ display: 'block', whiteSpace: 'nowrap' }}>Vehicle Suggestions</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700, fontSize: '0.66rem', color: '#64748b', whiteSpace: 'nowrap' }}>
+              {recs.length} {recs.length === 1 ? 'option' : 'options'}
+              {preview.map(rec => (
+                <span key={rec.id} style={{ display: 'inline-flex', alignItems: 'center' }}><VehicleIcon id={rec.id} size={13} color="#94a3b8" /></span>
+              ))}
+              {bestCount > 0 && (
+                <span style={{ background: '#16a34a', color: '#fff', borderRadius: '999px', padding: '0 0.4rem', fontSize: '0.58rem', lineHeight: '1.6', fontWeight: 800 }}>
+                  {bestCount} best
+                </span>
+              )}
             </span>
-          )}
+          </span>
         </span>
-        <span style={{ display: 'inline-flex', opacity: 0.7, flexShrink: 0 }}><ChevronIcon open={open} /></span>
+        <span style={{ width: '22px', height: '22px', flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', borderRadius: '7px', background: open ? '#dcfce7' : '#f1f5f9', color: open ? '#16a34a' : '#64748b', transition: 'background 0.15s, color 0.15s' }}>
+          <ChevronIcon open={open} />
+        </span>
       </button>
 
       {/* ── Expanded panel ──────────────────────────────────────────────── */}
       {open && (
         <div
           style={{
-            marginTop: '0.35rem',
-            background: 'rgba(240, 253, 244, 0.92)',
-            border: '1px solid #bbf7d0',
-            borderRadius: '10px',
-            padding: '0.55rem 0.6rem',
+            marginTop: '0.4rem',
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
+            borderRadius: '12px',
+            padding: '0.6rem 0.55rem',
             display: 'flex',
             flexDirection: 'column',
             gap: '0.4rem',
             maxHeight: 'min(42vh, 280px)',
             overflowY: 'auto',
             overscrollBehavior: 'contain',
+            boxShadow: '0 8px 20px rgba(15, 23, 42, 0.08)',
           }}
         >
-          <p style={{ margin: 0, fontSize: '0.62rem', fontWeight: 800, color: '#166534', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Recommended transport to this destination
+          <p style={{ margin: '0 0 0.15rem', padding: '0 0.15rem', fontSize: '0.62rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
+            Recommended transport
           </p>
 
           {recs.map(rec => {
@@ -134,39 +132,31 @@ const VehicleIndicator = ({ distanceKm, destination }) => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  background: s.bg,
+                  background: s.tintBg,
                   border: `1px solid ${s.border}`,
-                  borderRadius: '9px',
-                  padding: '0.4rem 0.55rem',
+                  borderRadius: '10px',
+                  padding: '0.45rem 0.55rem',
                 }}
               >
-                <span style={{ width: '1.6rem', display: 'inline-flex', justifyContent: 'center', color: s.text, flexShrink: 0 }}>
-                  <VehicleIcon id={rec.id} size={19} color={s.text} />
+                <span style={{ width: '30px', height: '30px', flexShrink: 0, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', background: s.chipBg, color: '#fff', boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)' }}>
+                  <VehicleIcon id={rec.id} size={16} />
                 </span>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
-                    <span style={{ fontWeight: 800, fontSize: '0.72rem', color: s.text }}>{rec.label}</span>
-                    <span
-                      style={{
-                        background: s.badge,
-                        color: '#fff',
-                        borderRadius: '4px',
-                        padding: '0 5px',
-                        fontSize: '0.55rem',
-                        fontWeight: 800,
-                        letterSpacing: '0.03em',
-                      }}
-                    >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.74rem', color: s.text }}>{rec.label}</span>
+                    <span style={{ background: s.badgeBg, color: '#fff', borderRadius: '4px', padding: '0 5px', fontSize: '0.55rem', fontWeight: 800, letterSpacing: '0.04em' }}>
                       {s.label}
                     </span>
-                    {eta && (
-                      <span style={{ fontSize: '0.62rem', color: '#374151', fontWeight: 700 }}>≈ {eta}</span>
-                    )}
                   </div>
-                  <p style={{ margin: 0, fontSize: '0.64rem', color: '#374151', marginTop: '1px', lineHeight: 1.35 }}>
+                  <p style={{ margin: '2px 0 0', fontSize: '0.64rem', color: '#475569', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {rec.reason}
                   </p>
                 </div>
+                {eta && (
+                  <span style={{ flexShrink: 0, background: '#ffffff', border: `1px solid ${s.border}`, color: s.text, borderRadius: '999px', padding: '0.15rem 0.5rem', fontSize: '0.62rem', fontWeight: 800, whiteSpace: 'nowrap' }}>
+                    ≈ {eta}
+                  </span>
+                )}
               </div>
             );
           })}
