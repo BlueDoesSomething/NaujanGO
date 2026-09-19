@@ -9,7 +9,7 @@ import VehicleIndicator from '../components/VehicleIndicator';
 import {
   MapIcon, ShieldIcon, CheckIcon, UserIcon, SparklesIcon, XIcon, RouteIcon,
   ClockIcon, MenuIcon, AttractionIcon, HotelIcon, MapPinIcon, InfoIcon, DocumentIcon,
-  SunIcon, CloudIcon,
+  SunIcon, CloudIcon, Edit2Icon,
 } from '../components/Icons';
 import HeroSlideshow from '../components/HeroSlideshow';
 import naujanGoLogo from '../assets/552820828_1195483019268738_3720769628710779316_n.png';
@@ -73,6 +73,17 @@ const markerPinHtml = (glyphKey, color) => {
       </div>
       <div style="position:absolute;left:50%;top:28px;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid ${color};"></div>
     </div>`;
+};
+
+const getAirDistanceKm = (lat1, lng1, lat2, lng2) => {
+  const R = 6371;
+  const toRad = (deg) => (deg * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
 const ManeuverIcon = ({ type, modifier, size = 18 }) => {
@@ -215,7 +226,7 @@ const getAttractionFallbackImage = (data) => {
 const InteractiveMap = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   
   // State management
   const [attractions, setAttractions] = useState([]);
@@ -487,6 +498,24 @@ const InteractiveMap = () => {
     const categoryText = selectedData?.category || (selectedType === 'poi' ? 'POI' : 'Attraction');
     return categoryText;
   })();
+
+  /* ── Derived values for the pin modal (Google Maps embed + transport) ── */
+  const modalLat = Number(canonicalSelectedData?.latitude ?? selectedData?.latitude);
+  const modalLng = Number(canonicalSelectedData?.longitude ?? selectedData?.longitude);
+  const hasModalCoords = Number.isFinite(modalLat) && Number.isFinite(modalLng) && modalLat !== 0 && modalLng !== 0;
+  const googleMapsEmbedSrc = hasModalCoords
+    ? `https://www.google.com/maps?q=${modalLat},${modalLng}&z=15&output=embed`
+    : '';
+  const googleMapsOpenUrl = hasModalCoords
+    ? `https://www.google.com/maps/search/?api=1&query=${modalLat},${modalLng}`
+    : '';
+  const modalAirDistanceKm = userLocation && hasModalCoords
+    ? getAirDistanceKm(userLocation[0], userLocation[1], modalLat, modalLng)
+    : null;
+  const isAdminUser = user?.role === 'admin';
+  const manageId = selectedType === 'hotel'
+    ? (selectedData?.hotel_id ?? selectedData?.id)
+    : selectedData?.id;
 
   if (loading) {
     return (
@@ -1131,6 +1160,41 @@ const InteractiveMap = () => {
 
               <p className="imap-modal-description">{selectedData?.description || t('no_description')}</p>
 
+              {hasModalCoords && (
+                <div className="imap-modal-map">
+                  <iframe
+                    title={`Google Maps — ${selectedData?.name || ''}`}
+                    src={googleMapsEmbedSrc}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                    allowFullScreen
+                    style={{ border: 0 }}
+                  />
+                  <a className="imap-modal-map-open" href={googleMapsOpenUrl} target="_blank" rel="noopener noreferrer">
+                    <MapPinIcon size={14} /> {t('Open in Google Maps')}
+                  </a>
+                </div>
+              )}
+
+              <div className="imap-modal-transport">
+                {modalAirDistanceKm == null ? (
+                  <div className="imap-modal-transport-idle">
+                    <span className="imap-modal-transport-icon"><RouteIcon size={16} /></span>
+                    <span>{t('Enable location for transport suggestions')}</span>
+                    <button onClick={startGpsTracking}>{t('enable_gps')}</button>
+                  </div>
+                ) : (
+                  <VehicleIndicator
+                    distanceKm={Math.max(0.1, modalAirDistanceKm)}
+                    destination={{
+                      name: selectedData?.name,
+                      type: selectedType,
+                      category: selectedData?.category || selectedData?.type,
+                    }}
+                  />
+                )}
+              </div>
+
               {selectedType === 'attraction' && selectedData?.id && attractionWeather[selectedData.id] && (
                 <div className="imap-modal-weather">
                   {(() => {
@@ -1193,6 +1257,24 @@ const InteractiveMap = () => {
                 >
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}><RouteIcon size={16} /> {t('navigate_here')}</span>
                 </button>
+                {isAdminUser && (selectedType === 'attraction' || selectedType === 'hotel') && manageId != null && (
+                  <button
+                    className="imap-btn-manage"
+                    onClick={() => {
+                      setSelectedLocation(null);
+                      navigate('/admin', {
+                        state: {
+                          setModule: 'maps',
+                          type: selectedType,
+                          id: String(manageId),
+                          name: selectedData?.name || ''
+                        }
+                      });
+                    }}
+                  >
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}><Edit2Icon size={16} /> {t('Manage in Admin')}</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

@@ -536,6 +536,92 @@
   box-shadow: 0 8px 20px rgba(25, 118, 210, 0.45);
 }
 
+.imap-modal-actions .imap-btn-manage {
+  background: #f8fafc;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+}
+
+.imap-modal-actions .imap-btn-manage:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #3730a3;
+  transform: translateY(-1px);
+}
+
+/* Google Maps embed in pin modal */
+.imap-modal-map {
+  margin-top: 0.9rem;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.imap-modal-map iframe {
+  width: 100%;
+  height: 180px;
+  display: block;
+}
+
+.imap-modal-map-open {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1976d2;
+  text-decoration: none;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.imap-modal-map-open:hover {
+  background: #eff6ff;
+}
+
+/* Transport suggestions in pin modal */
+.imap-modal-transport {
+  margin-top: 0.9rem;
+}
+
+.imap-modal-transport-idle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.6rem 0.75rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  color: #92400e;
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.imap-modal-transport-icon {
+  display: inline-flex;
+  color: #d97706;
+  flex-shrink: 0;
+}
+
+.imap-modal-transport-idle button {
+  margin-left: auto;
+  border: none;
+  background: #d97706;
+  color: #fff;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.imap-modal-transport-idle button:hover {
+  background: #b45309;
+}
+
 /* ── Login banner ── */
 .imap-login-banner {
   max-width: 860px;

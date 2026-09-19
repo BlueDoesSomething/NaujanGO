@@ -1690,6 +1690,41 @@ const AdminDashboard = () => {
   }, [location.pathname, activeModule]);
 
   useEffect(() => {
+    const nav = location.state;
+    if (!nav || nav.setModule !== 'maps') return;
+    const navType = nav.type === 'hotel' ? 'hotel' : nav.type === 'attraction' ? 'attraction' : null;
+    if (!navType || nav.id == null) return;
+
+    setActiveModule('maps');
+    setMapMode(navType === 'hotel' ? 'hotels' : 'attractions');
+
+    const apply = (list) => {
+      const target = (Array.isArray(list) ? list : []).find(
+        (item) => String(item.hotel_id ?? item.id) === String(nav.id)
+      );
+      if (target) {
+        startMapEdit(navType, target);
+      } else {
+        setMapSelection({ type: navType, id: nav.id });
+      }
+    };
+
+    const fresh = navType === 'hotel' ? hotels : attractions;
+    if (fresh.length) {
+      apply(fresh);
+    } else {
+      (async () => {
+        const response = await api.get(navType === 'hotel' ? '/admin/hotels' : '/admin/attractions');
+        const list = Array.isArray(response.data) ? response.data : [];
+        if (navType === 'hotel') setHotels(list); else setAttractions(list);
+        apply(list);
+      })();
+    }
+
+    window.history.replaceState({}, document.title);
+  }, [location.state]);
+
+  useEffect(() => {
     if (activeModule !== 'chatbot' || chatbotData) return;
     loadChatbotData();
   }, [activeModule, chatbotData]);
