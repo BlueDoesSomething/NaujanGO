@@ -95,7 +95,17 @@ const ItineraryBuilder = () => {
   const routeStatCardStyle = responsiveStyle(isMobile, styles.routeStatCard, { padding: '0.8rem 0.7rem 1rem', gap: '0.5rem' });
   const fareEstimateHeaderStyle = responsiveStyle(isMobile, styles.fareEstimateHeader, { flexWrap: 'wrap', gap: '0.4rem' });
   const actionButtonsStyle = responsiveStyle(isMobile, styles.actionButtons, { gridTemplateColumns: '1fr' });
-  const dayBudgetBreakdownRowStyle = isMobile ? { gridTemplateColumns: '1fr 1fr', gap: '0.5rem' } : { gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' };
+  const dayBudgetBreakdownRowStyle = isTiny
+    ? { gridTemplateColumns: '1fr', gap: '0.5rem' }
+    : isMobile
+      ? { gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }
+      : { gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' };
+  const budgetBreakdownItemResponsiveStyle = isTiny
+    ? { flexDirection: 'column', alignItems: 'stretch', gap: '0.35rem' }
+    : {};
+  const budgetBreakdownInputResponsiveStyle = isTiny
+    ? { width: '100%', maxWidth: 'none' }
+    : {};
   const itineraryHeaderStyle = responsiveStyle(isMobile, styles.itineraryHeader, { padding: '1.25rem', borderRadius: '18px' });
   const nameInputStyle = responsiveStyle(isTiny, styles.nameInput, { fontSize: '1.4rem', padding: '0.75rem' });
   const dayContentStyle = responsiveStyle(isMobile, styles.dayContent, { padding: '1rem' });
@@ -1383,7 +1393,7 @@ const ItineraryBuilder = () => {
                   <span style={styles.autoCalcBadge}>⚡ Auto-suggested</span>
                 </div>
                 <div style={dayBudgetBreakdownRowStyle}>
-                  <div style={{ ...styles.dayBudgetBreakdownItem, backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' }}>
+                  <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle, backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       <Icons.RouteIcon size={14} color={THEME.primary} /> Fare
                     </span>
@@ -1394,10 +1404,10 @@ const ItineraryBuilder = () => {
                         fareOverriddenRef.current[currentDay] = true;
                         setFarePerDay(prev => ({ ...prev, [currentDay]: parseFloat(e.target.value) || 0 }));
                       }}
-                      style={{ ...styles.budgetInlineInput, borderColor: '#bbf7d0', backgroundColor: '#f0fdf4', color: THEME.primary }}
+                      style={{ ...styles.budgetInlineInput, ...budgetBreakdownInputResponsiveStyle, borderColor: '#bbf7d0', backgroundColor: '#f0fdf4', color: THEME.primary }}
                     />
                   </div>
-                  <div style={styles.dayBudgetBreakdownItem}>
+                  <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       <Icons.UtensilsIcon size={14} color={THEME.textSecondary} /> Food
                     </span>
@@ -1405,10 +1415,10 @@ const ItineraryBuilder = () => {
                       type="number" min="0" step="1"
                       value={foodPerDay[currentDay] !== undefined ? foodPerDay[currentDay] : DEFAULT_FOOD}
                       onChange={(e) => setFoodPerDay(prev => ({ ...prev, [currentDay]: parseFloat(e.target.value) || 0 }))}
-                      style={styles.budgetInlineInput}
+                      style={{ ...styles.budgetInlineInput, ...budgetBreakdownInputResponsiveStyle }}
                     />
                   </div>
-                  <div style={styles.dayBudgetBreakdownItem}>
+                  <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       <Icons.SparklesIcon size={14} color={THEME.textSecondary} /> Other
                     </span>
@@ -1416,12 +1426,12 @@ const ItineraryBuilder = () => {
                       type="number" min="0" step="1"
                       value={otherPerDay[currentDay] !== undefined ? otherPerDay[currentDay] : DEFAULT_OTHER}
                       onChange={(e) => setOtherPerDay(prev => ({ ...prev, [currentDay]: parseFloat(e.target.value) || 0 }))}
-                      style={styles.budgetInlineInput}
+                      style={{ ...styles.budgetInlineInput, ...budgetBreakdownInputResponsiveStyle }}
                     />
                   </div>
-                  <div style={{ ...styles.dayBudgetBreakdownItem, gridColumn: isMobile ? 'span 2' : 'span 3', backgroundColor: '#ecfdf3', borderColor: '#bbf7d0' }}>
+                  <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle, gridColumn: isTiny ? '1' : isMobile ? 'span 2' : 'span 3', backgroundColor: '#ecfdf3', borderColor: '#bbf7d0' }}>
                     <span style={{ fontWeight: 700 }}>Total Estimated</span>
-                    <strong style={{ color: '#15803d', fontSize: '1rem' }}>₱{currentDayBudget.estimatedNeed.toFixed(2)}</strong>
+                    <strong style={{ color: '#15803d', fontSize: isTiny ? '1.3rem' : '1rem' }}>₱{currentDayBudget.estimatedNeed.toFixed(2)}</strong>
                   </div>
                 </div>
               </div>
@@ -1443,7 +1453,7 @@ const ItineraryBuilder = () => {
                           <Icons.LocationIcon size={14} color={THEME.textSecondary} />
                           <span>{item.custom_location || item.location}</span>
                         </p>
-                        <div style={styles.itemMeta}>
+                        <div style={{ ...styles.itemMeta, gap: isMobile ? '0.5rem' : '1rem' }}>
                           <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                             <Icons.ClockIcon size={14} color={THEME.textSecondary} />
                             <CustomDropdown
