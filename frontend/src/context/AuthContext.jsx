@@ -50,32 +50,42 @@ export const AuthProvider = ({ children }) => {
 
 
 
+  const refreshProfile = useCallback(async () => {
+    try {
+      const response = await api.get('/auth/profile');
+      setIsLoggedIn(true);
+      setUser(response.data.user);
+    } catch (error) {
+      // 401 = session expired/invalid (only clears state if we were logged in)
+      if (error.response?.status === 401 && isLoggedIn) {
+        setUser(null);
+        setIsLoggedIn(false);
+      }
+    }
+  }, [isLoggedIn]);
+
   useEffect(() => {
     // On mount, check if user is authenticated
     // HttpOnly cookie is automatically sent with this request
     // If cookie is valid → server returns user data
     // If cookie is invalid/expired → server returns 401
-    const initializeAuth = async () => {
-      console.log('[Auth] initializeAuth: Checking authentication...');
-      try {
-        const response = await api.get('/auth/profile');
-        console.log('[Auth] initializeAuth: Success, setting isLoggedIn=true');
-        setIsLoggedIn(true);
-        setUser(response.data.user);
-      } catch (error) {
-        console.log('[Auth] initializeAuth: Failed (', error.response?.status, '), setting isLoggedIn=false');
-        // 401 = not authenticated (cookie invalid/expired/missing)
-        // Network errors = can't verify, but mark as not logged in
-        setIsLoggedIn(false);
-        setUser(null);
-      } finally {
-        console.log('[Auth] initializeAuth: Complete, setting loading=false');
-        setLoading(false);
-      }
-    };
-
     initializeAuth();
-  }, []);
+  }, [initializeAuth]);
+
+  // Re-validate with the server when the tab regains focus so role changes
+  // (made by an admin) take effect in an already-open session immediately.
+  useEffect(() => {
+    const onFocus = () => {
+      if (isLoggedIn) refreshProfile();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [isLoggedIn, refreshProfile]);
+
+  const initializeAuth = useCallback(async () => {
+    await refreshProfile();
+    setLoading(false);
+  }, [refreshProfile]);
 
   const login = async (emailOrUsername, password, remember = false) => {
     try {
@@ -188,8 +198,9 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateUser,
-    updateLanguage
-  }), [isLoggedIn, user, loading, login, loginWithOAuth, register, logout, updateLanguage]);
+    updateLanguage,
+    refreshProfile
+  }), [isLoggedIn, user, loading, login, loginWithOAuth, register, logout, updateLanguage, refreshProfile]);
 
   return (
     <AuthContext.Provider value={value}>

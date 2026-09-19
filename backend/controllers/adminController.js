@@ -815,7 +815,7 @@ router.put('/users/:userId/role', async (req, res) => {
   try {
     // Get current role
     const [currentUser] = await db.promise().query(
-      'SELECT role FROM users WHERE user_id = ?',
+      'SELECT user_id, role FROM users WHERE user_id = ?',
       [userId]
     );
 
@@ -823,19 +823,29 @@ router.put('/users/:userId/role', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Update role
+    if (currentUser[0].role === role) {
+      return res.json({ success: true, message: 'User role is already set', role });
+    }
+
+    // Update role (this is the source of truth and must never be undone by
+    // a failure in the audit log insert below).
     await db.promise().query(
       'UPDATE users SET role = ? WHERE user_id = ?',
       [role, userId]
     );
 
-    // Log role change
-    await db.promise().query(
-      'INSERT INTO role_changes (user_id, old_role, new_role, changed_by) VALUES (?, ?, ?, ?)',
-      [userId, currentUser[0].role, role, adminId]
-    );
+    try {
+      // Log role change (best-effort audit trail - a failure here must not
+      // report the role change as failed when the role was actually updated).
+      await db.promise().query(
+        'INSERT INTO role_changes (user_id, old_role, new_role, changed_by) VALUES (?, ?, ?, ?)',
+        [userId, currentUser[0].role, role, adminId]
+      );
+    } catch (auditErr) {
+      console.error(`Role change applied for user ${userId} but audit log insert failed:`, auditErr);
+    }
 
-    res.json({ success: true, message: 'User role updated successfully' });
+    res.json({ success: true, message: 'User role updated successfully', role });
   } catch (error) {
     console.error('Update user role error:', error);
     res.status(500).json({ error: 'Failed to update user role' });

@@ -201,7 +201,7 @@ const toBooleanSetting = (value, fallback = false) => {
 };
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshProfile } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -1880,13 +1880,19 @@ const AdminDashboard = () => {
     const key = `${userId}:role`;
     try {
       setActionLoading(setUserActionLoading, key, true);
-      await api.put(`/admin/users/${userId}/role`, { role });
-      await loadUsers();
+      const response = await api.put(`/admin/users/${userId}/role`, { role });
+      // If the admin changed their own role, re-sync the authenticated session.
+      if (user && String(user.user_id) === String(userId)) {
+        await refreshProfile();
+      }
+      alert(response.data?.message || 'User role updated successfully.');
     } catch (error) {
       console.error('Error updating user role:', error);
       alert('Failed to update user role.');
     } finally {
       setActionLoading(setUserActionLoading, key, false);
+      // Always re-sync the list so the UI reflects the database truth.
+      await loadUsers();
     }
   };
 
