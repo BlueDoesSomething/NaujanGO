@@ -55,11 +55,11 @@ INTENTS_TO_REPLACE = {
         ],
         "responses": [
             "Naujan is a 1st Class Municipality in Oriental Mindoro, Philippines. "
-            "It is best known for Naujan Lake National Park — the 5th largest lake in the Philippines "
+            "It is best known for Naujan Lake — the 5th largest lake in the Philippines "
             "and a RAMSAR Wetland of International Importance. Naujan is also home to rich agriculture "
             "(rice and coconut), Mangyan indigenous communities, and warm, hospitable people.",
 
-            "Naujan, Oriental Mindoro offers: Naujan Lake National Park (birdwatching, eco-tours, boating), "
+            "Naujan, Oriental Mindoro offers: Naujan Lake (birdwatching, eco-tours, boating), "
             "heritage sites like the old Naujan Church, thriving rice and coconut farms, Mangyan cultural heritage, "
             "and serene river ecosystems like Sadya River. It is a peaceful and scenic destination away from "
             "crowded tourist areas.",
@@ -243,7 +243,7 @@ INTENTS_TO_REPLACE = {
             "• November–March — Birdwatching season at Naujan Lake (peak migration of Siberian birds)\n"
             "• November–December — Harvest season festivals in rice-farming barangays\n"
             "• Various months — Barangay-level patron saint fiestas with local food, games, and dances\n"
-            "• Eco-Tourism Fairs — occasionally organized by the LGU near Naujan Lake National Park",
+            "• Eco-Tourism Fairs — occasionally organized by the LGU near Naujan Lake",
 
             "Naujan's biggest celebration is the September 8 fiesta honoring its patron, Our Lady of the Nativity. "
             "During the fiesta week, the town plaza fills with food stalls, games, cultural presentations, "
@@ -281,7 +281,7 @@ INTENTS_TO_REPLACE = {
         ],
         "responses": [
             "Natural attractions in Naujan:\n"
-            "• Naujan Lake — the centerpiece: 20,000+ hectare freshwater lake, perfect for boating and birdwatching\n"
+            "• Naujan Lake — the centerpiece: a vast freshwater lake, perfect for boating and birdwatching\n"
             "• Sadya River — a river ecosystem feeding into the lake, ideal for a peaceful nature walk\n"
             "• Rice paddies and coconut plantations — scenic countryside views year-round\n"
             "• Coastal areas — Naujan has a stretch of coastline on the northeastern side of Mindoro\n"
@@ -329,10 +329,10 @@ INTENTS_TO_REPLACE = {
             "• Mangrove trail walks along the lake edges — great for photography and wildlife spotting\n"
             "• Guided eco-tours of the lake watershed managed by park rangers and the Naujan LGU\n"
             "• Countryside walks through rice paddies and coconut farms (arrange with local guides)\n"
-            "• Camping near the lake shore (coordinate with the Naujan Lake National Park rangers)\n"
+            "• Camping near the lake shore (coordinate with the Naujan Lake rangers)\n"
             "Contact the Naujan LGU at (043) 208-3382 to arrange guided nature tours.",
 
-            "Eco-trail tip: The Naujan Lake National Park surroundings have unguided and guided walking paths. "
+            "Eco-trail tip: The surroundings of Naujan Lake have unguided and guided walking paths. "
             "For safety and the best experience, hire a local ranger-guide — they know bird locations, "
             "safe water routes, and can take you to the best observation spots. "
             "Bring binoculars, a hat, and insect repellent. Best time: early morning (5–8 AM) for birdwatching."
@@ -511,7 +511,7 @@ INTENTS_TO_REPLACE = {
             "Staying in Naujan: Accommodation is simple but comfortable. "
             "Most guesthouses are in the poblacion area, close to the market and transport. "
             "If you want to be closer to the lake, ask the Naujan LGU (043) 208-3382 about homestay or "
-            "eco-lodge arrangements with local families near the Naujan Lake National Park."
+            "eco-lodge arrangements with local families near the Naujan Lake."
         ]
     },
 
@@ -597,7 +597,7 @@ INTENTS_TO_REPLACE = {
             "• Naujan Church (Our Lady of the Nativity Parish) — built during the Spanish colonial era, "
             "a cornerstone of the town's identity and still an active parish\n"
             "• Naujan Town Plaza — the historic center of the municipality\n"
-            "• Naujan Lake National Park — declared a national park and RAMSAR wetland site, "
+            "• Naujan Lake — a RAMSAR wetland site, "
             "protecting the lake's ecological and cultural significance\n"
             "• Mangyan cultural communities in the upland barangays — living heritage of pre-colonial culture",
 
@@ -684,10 +684,10 @@ INTENTS_TO_REPLACE = {
             "park ranger naujan lake", "national park tour naujan",
         ],
         "responses": [
-            "Eco-tourism in Naujan centers on Naujan Lake National Park:\n"
+            "Eco-tourism in Naujan centers on Naujan Lake:\n"
             "• Birdwatching tours — spot Philippine Ducks, Spotted Whistling Ducks, herons, egrets, "
             "and Siberian migratory birds (best November–March)\n"
-            "• Boat tours on Naujan Lake — explore the lake's 20,000+ hectares with a local boatman\n"
+            "• Boat tours on Naujan Lake — explore the lake with a local boatman\n"
             "• Kayaking and canoeing — rent from local operators near the lake\n"
             "• Mangrove walk tours along the lake's shorelands\n"
             "• Farm-to-table agri-tourism visits to rice and coconut farms\n"
@@ -797,7 +797,7 @@ NEW_INTENTS = [
             "Naujan's 39 barangays spread across lowland rice farming areas, coastal zones, and upland forests. "
             "The Poblacion (town center) is where the church, plaza, market, and LGU are located. "
             "Montelago and other upland barangays are where Mangyan communities are found. "
-            "Lakeside barangays border Naujan Lake National Park."
+            "Lakeside barangays border Naujan Lake."
         ]
     },
     {

@@ -37,7 +37,7 @@ WHAT NOW HAPPENS
 ✓ All queries about Naujan return Naujan-specific information
 ✓ No more unrelated regional tourism content
 ✓ All chatbot responses focus on:
-  - Naujan Lake National Park
+  - Naujan Lake
   - Naujan accommodations & attractions
   - Naujan barangays & agriculture
   - Naujan local culture & events

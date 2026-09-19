@@ -103,7 +103,7 @@ def improve_response_quality():
     improvements = {
         'en': {
             'Naujan_Lake_About': [
-                "Naujan Lake National Park covers about 20,000 hectares and is the 5th largest freshwater lake in the Philippines. It was designated as a Ramsar Wetland of International Importance in 1999, recognizing its critical importance for migratory birds.",
+                "Naujan Lake is the 5th largest freshwater lake in the Philippines. It was designated as a Ramsar Wetland of International Importance in 1999, recognizing its critical importance for migratory birds.",
                 "The lake hosts over 60 species of birds, including endangered species like the Philippine duck (Anas luzonica). During the migration season (November-March), thousands of Siberian birds visit the lake.",
                 "Eco-tourism activities at Naujan Lake include birdwatching, boat tours, photography, and nature walks. Best time to visit: November to March for birdwatching. Contact the Naujan LGU at (043) 208-3382 for guided tours."
             ],

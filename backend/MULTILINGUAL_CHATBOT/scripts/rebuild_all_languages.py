@@ -26,7 +26,7 @@ TL_INTENTS = {
             "Ramsar Wetland ng pandaigdigang kahalagahan. Ang bayan ay mayaman sa agrikultura "
             "(bigas, niyog), kultura ng Mangyan, at ekolohiya ng lawa. Lugar ito para sa "
             "bird-watching, pangingisda, at eco-tourism.",
-            "Ang Naujan, Oriental Mindoro ay tahanan ng Naujan Lake National Park, isa sa "
+            "Ang Naujan, Oriental Mindoro ay tahanan ng Naujan Lake, isa sa "
             "mga pinaka-biodiversity-rich na lugar sa Pilipinas. May 39 barangay ang bayan "
             "na may mahalagang koneksyon ng agrikultura at ekolohiya.",
         ]
@@ -245,7 +245,7 @@ TL_NEW_INTENTS = [
             "• Bangka tour — magsewa ng lokal na bangka para maglayag sa lawa\n"
             "• Pangingisda — ang mga lokal na mangingisda ay nagbibigay ng guided tours\n"
             "• Kayaking — mag-explore ng mga kuweba at mangrove edges ng lawa\n"
-            "• Lakad sa kalikasan — mag-lakad sa mga eco-trail sa paligid ng National Park\n"
+            "• Lakad sa kalikasan — mag-lakad sa eco-trail sa paligid ng lawa\n"
             "• Picnicking — mga itinakdang lugar sa pampang ng lawa\n"
             "Makipag-ugnayan sa Naujan LGU para sa impormasyon sa pahintulot at lokal na gabay.",
         ]
@@ -298,7 +298,7 @@ TL_NEW_INTENTS = [
             "• Bird-watching guided tours (pinakamainam: Nobyembre–Marso)\n"
             "• Bangka eco-tours sa lawa at mga mangrove\n"
             "• Bisita sa mga sustainable na farm at organic farming\n"
-            "• Lakad sa eco-trail sa paligid ng National Park\n"
+            "• Lakad sa eco-trail sa paligid ng lawa\n"
             "• Mga programang nagtataguyod ng konserbasyon ng Ramsar wetland\n"
             "Sumunod sa Leave No Trace principles at huwag magsaboy ng basura sa paligid ng lawa.",
         ]
@@ -368,7 +368,7 @@ TL_NEW_INTENTS = [
         ],
         "responses": [
             "Mga outdoor na aktibidad sa Naujan:\n"
-            "• Eco-trail sa paligid ng Naujan Lake National Park\n"
+            "• Eco-trail sa paligid ng Naujan Lake\n"
             "• Bird-watching walks na may gabay sa mga pampang ng lawa\n"
             "• Paglalakad sa kagubatan kasama ang mga lokal na gabay\n"
             "• Camping spot malapit sa lawa (kailangan ng pahintulot mula sa DENR)\n"
@@ -479,7 +479,7 @@ ES_REPLACEMENTS = {
             "• Paseo en barca — alquilar una barca local para navegar el lago\n"
             "• Pesca — los pescadores locales ofrecen tours guiados\n"
             "• Kayaking — explorar orillas y manglares del lago\n"
-            "• Senderismo por senderos eco del Parque Nacional\n"
+            "• Senderismo por senderos eco junto al lago\n"
             "• Picnic y relajación en las orillas del lago",
         ]
     },
@@ -511,7 +511,7 @@ ES_REPLACEMENTS = {
             "• Tours guiados de avistamiento de aves (mejor época: nov–mar)\n"
             "• Excursiones en barca por el lago y manglares\n"
             "• Visitas a granjas sostenibles y agricultura orgánica\n"
-            "• Caminatas por senderos eco del Parque Nacional\n"
+            "• Caminatas por senderos eco junto al lago\n"
             "• Programas de conservación del Sitio Ramsar\n"
             "Sigue los principios de Leave No Trace y respeta el hábitat natural.",
         ]
@@ -541,7 +541,7 @@ ES_REPLACEMENTS = {
         ],
         "responses": [
             "Actividades al aire libre en Naujan:\n"
-            "• Senderos eco alrededor del Parque Nacional Lago Naujan\n"
+            "• Senderos eco alrededor del Lago Naujan\n"
             "• Caminatas de avistamiento de aves con guías locales\n"
             "• Camping cerca del lago (requiere permiso DENR)\n"
             "• Visitas a comunidades Mangyan en las montañas\n"
@@ -637,7 +637,7 @@ FR_REPLACEMENTS = {
             "• Promenade en bateau — louer un bateau local pour naviguer sur le lac\n"
             "• Pêche — les pêcheurs locaux proposent des tours guidés\n"
             "• Kayaking — explorer les rives et les mangroves du lac\n"
-            "• Randonnée sur les sentiers éco du Parc National\n"
+            "• Randonnée sur les sentiers éco au bord du lac\n"
             "• Pique-nique et détente sur les rives du lac",
         ]
     },
@@ -669,7 +669,7 @@ FR_REPLACEMENTS = {
             "• Tours guidés d'observation des oiseaux (meilleure période : nov–mars)\n"
             "• Excursions en bateau sur le lac et les mangroves\n"
             "• Visites de fermes durables et agriculture biologique\n"
-            "• Randonnées sur les sentiers éco du Parc National\n"
+            "• Randonnées sur les sentiers éco au bord du lac\n"
             "• Programmes de conservation du Site Ramsar\n"
             "Respectez les principes Leave No Trace et le milieu naturel.",
         ]
@@ -699,7 +699,7 @@ FR_REPLACEMENTS = {
         ],
         "responses": [
             "Activités de plein air à Naujan :\n"
-            "• Sentiers éco autour du Parc National Lac Naujan\n"
+            "• Sentiers éco autour du Lac Naujan\n"
             "• Randonnées d'observation des oiseaux avec guides locaux\n"
             "• Camping près du lac (permis DENR requis)\n"
             "• Visites aux communautés Mangyan en montagne\n"
@@ -795,7 +795,7 @@ DE_REPLACEMENTS = {
             "• Bootsfahrt — lokales Boot mieten für Seetouren\n"
             "• Angeln — lokale Fischer bieten geführte Touren an\n"
             "• Kajakfahren — Ufer und Mangroven des Sees erkunden\n"
-            "• Wandern auf Ökopfaden des Nationalparks\n"
+            "• Wandern auf Ökopfaden am Seeufer\n"
             "• Picknick und Entspannung am Seeufer",
         ]
     },
@@ -827,7 +827,7 @@ DE_REPLACEMENTS = {
             "• Geführte Vogelbeobachtungstouren (beste Zeit: Nov–März)\n"
             "• Bootsausflüge auf dem See und in den Mangroven\n"
             "• Besuche nachhaltiger Farmen und ökologischer Landwirtschaft\n"
-            "• Wanderungen auf Ökopfaden des Nationalparks\n"
+            "• Wanderungen auf Ökopfaden am Seeufer\n"
             "• Naturschutzprogramme des Ramsar-Feuchtgebiets\n"
             "Bitte Leave No Trace-Grundsätze befolgen.",
         ]
@@ -857,7 +857,7 @@ DE_REPLACEMENTS = {
         ],
         "responses": [
             "Outdoor-Aktivitäten in Naujan:\n"
-            "• Ökopfade rund um den Nationalpark Naujan-See\n"
+            "• Ökopfade rund um den Naujan-See\n"
             "• Vogelbeobachtungswanderungen mit lokalen Guides\n"
             "• Camping nahe dem See (DENR-Genehmigung erforderlich)\n"
             "• Ausflüge zu Mangyan-Gemeinschaften in den Bergen\n"
@@ -947,7 +947,7 @@ ZH_REPLACEMENTS = {
             "• 游船——租一艘本地小船在湖上漫游\n"
             "• 钓鱼——当地渔民提供导游服务\n"
             "• 皮划艇——探索湖边和红树林\n"
-            "• 国家公园生态步道徒步\n"
+            "• 湖边生态步道徒步\n"
             "• 在湖边野餐休闲",
         ]
     },
@@ -976,7 +976,7 @@ ZH_REPLACEMENTS = {
             "• 导游观鸟游（最佳时间：11月–3月）\n"
             "• 湖上和红树林游船游\n"
             "• 参观可持续农场和有机农业\n"
-            "• 国家公园生态步道徒步\n"
+            "• 湖边生态步道徒步\n"
             "• 拉姆萨尔湿地保护项目\n"
             "请遵守无痕旅游原则，尊重自然栖息地。",
         ]
@@ -1003,7 +1003,7 @@ ZH_REPLACEMENTS = {
         ],
         "responses": [
             "瑙汉户外活动：\n"
-            "• 瑙汉湖国家公园周边生态步道\n"
+            "• 瑙汉湖周边生态步道\n"
             "• 本地向导带领的观鸟徒步\n"
             "• 湖边露营（需DENR许可）\n"
             "• 前往山区的芒颜社区参观\n"
@@ -1094,7 +1094,7 @@ JA_REPLACEMENTS = {
             "• ボートツアー — 地元のボートを借りて湖を巡る\n"
             "• 釣り — 地元の漁師によるガイドツアー\n"
             "• カヤック — 湖岸とマングローブを探索\n"
-            "• 国立公園のエコトレイルハイキング\n"
+            "• 湖のエコトレイルハイキング\n"
             "• 湖畔でのピクニックと休憩",
         ]
     },
@@ -1124,7 +1124,7 @@ JA_REPLACEMENTS = {
             "• ガイド付きバードウォッチングツアー（最適時期：11月〜3月）\n"
             "• 湖とマングローブのボートツアー\n"
             "• 持続可能農場と有機農業の見学\n"
-            "• 国立公園のエコトレイルハイキング\n"
+            "• 湖のエコトレイルハイキング\n"
             "• ラムサール湿地保護プログラム\n"
             "Leave No Traceの原則を守り、自然環境を尊重してください。",
         ]
@@ -1152,7 +1152,7 @@ JA_REPLACEMENTS = {
         ],
         "responses": [
             "ナウハンのアウトドアアクティビティ：\n"
-            "• ナウハン湖国立公園周辺のエコトレイル\n"
+            "• ナウジャン湖周辺のエコトレイル\n"
             "• 地元ガイドと行くバードウォッチングウォーク\n"
             "• 湖近くのキャンプ（DENR許可必要）\n"
             "• マンヤンコミュニティへの山の訪問\n"
@@ -1243,7 +1243,7 @@ KO_REPLACEMENTS = {
             "• 보트 투어 — 현지 보트를 빌려 호수 순항\n"
             "• 낚시 — 현지 어부들의 가이드 투어\n"
             "• 카약 — 호수 해안과 맹그로브 탐험\n"
-            "• 국립공원 생태 트레일 하이킹\n"
+            "• 호수 생태 트레일 하이킹\n"
             "• 호숫가 피크닉과 리락스",
         ]
     },
@@ -1273,7 +1273,7 @@ KO_REPLACEMENTS = {
             "• 가이드 조류 관찰 투어 (최적 시기: 11월–3월)\n"
             "• 호수와 맹그로브 보트 투어\n"
             "• 지속 가능한 농장 및 유기 농업 방문\n"
-            "• 국립공원 생태 트레일 하이킹\n"
+            "• 호수 생태 트레일 하이킹\n"
             "• 람사르 습지 보전 프로그램\n"
             "Leave No Trace 원칙을 지키고 자연 서식지를 존중하세요.",
         ]
@@ -1301,7 +1301,7 @@ KO_REPLACEMENTS = {
         ],
         "responses": [
             "나우한 야외 활동:\n"
-            "• 나우한 호수 국립공원 주변 생태 트레일\n"
+            "• 나우한 호수 주변 생태 트레일\n"
             "• 현지 가이드와 함께하는 조류 관찰 산책\n"
             "• 호수 근처 캠핑 (DENR 허가 필요)\n"
             "• 산간 망얀 커뮤니티 방문\n"

@@ -41,7 +41,7 @@ test_cases = [
     {
         "query": "Tell me about Naujan Lake",
         "expected_intent": "Naujan_Lake_About",
-        "should_contain": ["20,000 hectares", "5th largest", "Ramsar"]
+        "should_contain": ["5th largest", "Ramsar"]
     },
     {
         "query": "How to get to Naujan",
