@@ -1,0 +1,61 @@
+/* ============================================================
+   ItineraryDetail responsive overrides.
+   Inline styles on the page win by default, so these use
+   !important inside media queries to collapse fixed grids/tabs.
+   ============================================================ */
+@media (max-width: 900px) {
+  .itin-overview {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .itin-content {
+    padding: 1rem !important;
+  }
+
+  .itin-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 1rem !important;
+    padding: 0 1rem !important;
+  }
+
+  .itin-stats > div {
+    padding: 1rem !important;
+  }
+
+  /* Tabs scroll horizontally instead of overflowing */
+  .itin-tabs {
+    justify-content: flex-start !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .itin-tabs > div:first-child {
+    flex: 0 0 auto;
+  }
+
+  .itin-tabs > div:first-child button {
+    padding: 0.75rem 1rem;
+    white-space: nowrap;
+  }
+
+  .itin-day-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  .itin-day-row > div:last-child {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .itin-stats > div {
+    padding: 0.75rem !important;
+  }
+
+  .itin-stats > div > div:first-child {
+    display: none;
+  }
+}

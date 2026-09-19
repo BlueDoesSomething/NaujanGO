@@ -7,6 +7,7 @@ import WeatherWidget from '../components/WeatherWidget';
 import HeroSlideshow from '../components/HeroSlideshow';
 import CustomDropdown from '../components/CustomDropdown';
 import { getApiBaseUrl, getCsrfToken } from '../api';
+import './ItineraryDetail.css';
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -184,8 +185,8 @@ const ItineraryDetail = () => {
         // Update local state
         setItinerary(prev => ({
           ...prev,
-          items: prev.items.map(item =>
-            item.item_id === itemId ? { ...item, completed } : item
+          items: (prev.items || []).map(item =>
+            String(item.id) === String(itemId) ? { ...item, completed } : item
           )
         }));
       }
@@ -196,34 +197,25 @@ const ItineraryDetail = () => {
   
   const shareItinerary = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}/share`, {
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const shareUrl = data.share_url || `${window.location.origin}/itinerary/${id}`;
-        
-        // Try to use Web Share API if available
-        if (navigator.share) {
-          try {
-            await navigator.share({
-              title: itinerary.name || t('my_itinerary'),
-              text: `${t('check_out_my_travel_itinerary')}: ${itinerary.name}`,
-              url: shareUrl
-            });
-            return;
-          } catch (shareError) {
-            // User cancelled share or share failed, fall through to clipboard
-          }
+      const shareUrl = `${window.location.origin}/itinerary/${id}`;
+
+      // Try to use Web Share API if available
+      if (navigator.share) {
+        try {
+          await navigator.share({
+            title: itinerary.name || t('my_itinerary'),
+            text: `${t('check_out_my_travel_itinerary')}: ${itinerary.name}`,
+            url: shareUrl
+          });
+          return;
+        } catch (shareError) {
+          // User cancelled share or share failed, fall through to clipboard
         }
-        
-        // Fallback to clipboard
-        navigator.clipboard.writeText(shareUrl);
-        alert(`${t('share_link_copied')}\n${shareUrl}`);
-      } else {
-        alert(t('failed_generate_share_link'));
       }
+
+      // Fallback to clipboard
+      await navigator.clipboard.writeText(shareUrl);
+      alert(`${t('share_link_copied')}\n${shareUrl}`);
     } catch (error) {
       console.error('Error sharing itinerary:', error);
       alert(t('error_sharing_itinerary'));
@@ -251,7 +243,7 @@ const ItineraryDetail = () => {
 
         // Fetch server-side per-day breakdown with current assumptions
         try {
-          const breakdownResp = await fetch(`${API_BASE_URL}/api/itinerary/${id}/budget-breakdown?farePerDay=${encodeURIComponent(budgetAssumptions.farePerDay)}&foodPerDay=${encodeURIComponent(budgetAssumptions.foodPerDay)}&otherPerDay=${encodeURIComponent(budgetAssumptions.otherPerDay)}`, {
+          const breakdownResp = await fetch(`${API_BASE_URL}/api/itinerary/${id}/budget-breakdown?farePerDay=${encodeURIComponent(farePerDay !== null ? farePerDay : 0)}&foodPerDay=${encodeURIComponent(budgetAssumptions.foodPerDay || 0)}&otherPerDay=${encodeURIComponent(budgetAssumptions.otherPerDay || 0)}`, {
             credentials: 'include'
           });
 
@@ -560,7 +552,7 @@ const ItineraryDetail = () => {
       </div>
       
       {/* Stats Bar */}
-      <div style={styles.statsBar}>
+      <div style={styles.statsBar} className="itin-stats">
         <div style={styles.statCard}>
           <Icons.MapIcon size={18} color="#2e7d32" />
           <div>
@@ -594,7 +586,7 @@ const ItineraryDetail = () => {
       </div>
       
       {/* Tabs */}
-      <div style={{...styles.tabs, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+      <div style={{...styles.tabs, display: 'flex', justifyContent: 'space-between', alignItems: 'center'}} className="itin-tabs">
         <div style={{display: 'flex', gap: '0'}}>
           <button
             style={activeTab === 'overview' ? styles.tabActive : styles.tab}
@@ -652,9 +644,9 @@ const ItineraryDetail = () => {
       )}
 
       {/* Content */}
-      <div style={styles.content}>
+      <div style={styles.content} className="itin-content">
         {activeTab === 'overview' && (
-          <div style={styles.overviewContent}>
+          <div style={styles.overviewContent} className="itin-overview">
             <div style={styles.mainColumn}>
               <div style={styles.card}>
                 <h2>{t('day_by_day_itinerary')}</h2>
@@ -669,7 +661,7 @@ const ItineraryDetail = () => {
                     
                     <div style={styles.dayItems}>
                       {itemsByDay[day].map((item, index) => (
-                        <div key={item.item_id || item.id || `${day}-${index}`} style={styles.itemCard}>
+                        <div key={item.id || `${day}-${index}`} style={styles.itemCard}>
                           <div style={styles.itemNumber}>{index + 1}</div>
                           <div style={styles.itemBody}>
                             <div style={styles.itemHeader}>
@@ -678,7 +670,7 @@ const ItineraryDetail = () => {
                                 <input
                                   type="checkbox"
                                   checked={item.completed}
-                                  onChange={(e) => markItemComplete(item.item_id, e.target.checked)}
+                                  onChange={(e) => markItemComplete(item.id, e.target.checked)}
                                   style={styles.checkbox}
                                 />
                               )}
@@ -868,7 +860,7 @@ const ItineraryDetail = () => {
                         const isMatch = !activeCategoryFilter || activeCategoryFilter === itemCategory;
                         const highlight = activeCategoryFilter && activeCategoryFilter === itemCategory;
                         return (
-                          <div key={item.item_id || item.id || `${day}-${index}`} style={{...styles.timelineItem, ...(highlight ? styles.timelineItemHighlight : (!isMatch ? styles.timelineItemDim : {}))}}>
+                          <div key={item.id || `${day}-${index}`} style={{...styles.timelineItem, ...(highlight ? styles.timelineItemHighlight : (!isMatch ? styles.timelineItemDim : {}))}}>
                             <div style={styles.timelineDot}></div>
                             <div style={styles.timelineContent}>
                               <div style={styles.timelineTime}>
@@ -1026,7 +1018,7 @@ const ItineraryDetail = () => {
                   <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#d97706', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Icons.MoneyIcon size={13} color="#d97706" /> Suggested Fare Estimate · click a card to pre-fill
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem', marginBottom: '0.75rem' }}>
                     {[
                       { key: 'tricycle',   label: 'Tricycle',    color: '#d97706', bg: '#fef3c7', note: 'Negotiate fare' },
                       { key: 'jeepney',    label: 'Jeepney',     color: '#0891b2', bg: '#cffafe', note: 'Fixed route' },
@@ -1085,7 +1077,7 @@ const ItineraryDetail = () => {
                   </div>
 
                   {displayedBreakdown.map(d => (
-                    <div key={d.day} style={{...styles.perDayRow, marginBottom: '0.75rem'}}>
+                    <div key={d.day} style={{...styles.perDayRow, marginBottom: '0.75rem'}} className="itin-day-row">
                       <div style={{flex: 1}}>
                         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem'}}>
                           <strong style={{fontSize: '1rem', color: '#1f2937'}}>{L('day','Day')} {d.day}</strong>
@@ -1262,7 +1254,7 @@ const ItineraryDetail = () => {
                 <p>No stops with coordinates found.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))', gap: '1.5rem' }}>
                 {normalizedItems
                   .filter((item, idx, arr) => {
                     const lat = parseFloat(item.latitude ?? item.attraction_latitude);
@@ -1271,7 +1263,7 @@ const ItineraryDetail = () => {
                     return arr.findIndex(i => (i.attraction_id || i.item_id) === (item.attraction_id || item.item_id)) === idx;
                   })
                   .map((item, idx) => (
-                    <div key={item.item_id || idx}>
+                    <div key={item.id || idx}>
                       <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
                         Day {item.day_number} · Stop {idx + 1}
                       </div>
@@ -1931,7 +1923,7 @@ const styles = {
   },
   budgetCategories: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))',
     gap: '1.75rem',
     marginTop: '1rem',
     paddingTop: '0.75rem',

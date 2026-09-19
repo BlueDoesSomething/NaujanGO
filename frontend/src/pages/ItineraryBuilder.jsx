@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { fetchAttractions, fetchHotels, getApiBaseUrl, get as apiGet, post as apiPost, put as apiPut } from '../api';
+import { fetchAttractions, getApiBaseUrl, get as apiGet, post as apiPost, put as apiPut } from '../api';
 import CustomDropdown from '../components/CustomDropdown';
 import LeafletMap from '../components/LeafletMap';
 import Icons from '../components/Icons';
@@ -105,7 +105,6 @@ const ItineraryBuilder = () => {
   const savedItemCardStyle = responsiveStyle(isTiny, styles.savedItemCard, { flexDirection: 'column', padding: '1rem' });
   
   const [attractions, setAttractions] = useState([]);
-  const [hotels, setHotels] = useState([]);
   const [itinerary, setItinerary] = useState({
     name: '',
     description: '',
@@ -225,10 +224,6 @@ const ItineraryBuilder = () => {
       .then(res => setAttractions(Array.isArray(res.data?.data) ? res.data.data : []))
       .catch(err => console.error('Failed to fetch attractions:', err))
       .finally(() => setAttractionsLoading(false));
-
-    fetchHotels()
-      .then(res => setHotels(Array.isArray(res.data?.data) ? res.data.data : []))
-      .catch(() => setHotels([]));
     
     loadSavedItineraries();
     loadTemplates();
@@ -716,7 +711,7 @@ const ItineraryBuilder = () => {
       const lng = parseFloat(a.longitude);
       const valid = !Number.isNaN(lat) && !Number.isNaN(lng);
       const distance = valid
-        ? Math.sqrt(Math.pow(lat - 13.3333, 2) + Math.pow(lng - 121.3, 2))
+        ? calculateDistance(13.33, 121.3, lat, lng)
         : Number.MAX_SAFE_INTEGER;
       return { ...a, _distance: distance, _fee: parseFloat(a.entrance_fee || a.price || 0) };
     });
@@ -1623,7 +1618,7 @@ const ItineraryBuilder = () => {
                             {!isLast && <div style={{width:'2px',flex:1,minHeight:'20px',background:'linear-gradient(180deg,#bbf7d0,#d1fae5)',margin:'3px 0'}} />}
                           </div>
                           <div style={{paddingBottom: isLast ? 0 : '0.6rem', minWidth:0}}>
-                            <div style={{fontSize:'0.82rem',fontWeight:700,color:THEME.text,lineHeight:1.3,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'260px'}}>
+                            <div style={{fontSize:'0.82rem',fontWeight:700,color:THEME.text,lineHeight:1.3,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'100%'}}>
                               {isYou ? 'Your location' : (item.custom_name || item.name || '')}
                             </div>
                             {!isYou && <div style={{fontSize:'0.7rem',color:THEME.textSecondary,marginTop:'1px'}}>Day {item.day_number}</div>}

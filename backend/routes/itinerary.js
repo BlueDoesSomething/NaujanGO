@@ -13,7 +13,8 @@ import {
   getItineraryWeather,
   getItineraryReviews,
   recalculateItineraryBudget,
-  updateItinerary
+  updateItinerary,
+  updateItineraryItem
 } from '../controllers/itineraryController.js';
 
 const router = express.Router();
@@ -44,6 +45,9 @@ router.post('/:id/save-assumptions', saveItineraryAssumptions);
 
 // Update itinerary
 router.put('/:id', updateItinerary);
+
+// Toggle completed on a single itinerary item
+router.put('/:id/items/:itemId', updateItineraryItem);
 
 // Delete itinerary
 router.delete('/:id', deleteItinerary);

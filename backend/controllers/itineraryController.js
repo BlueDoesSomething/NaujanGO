@@ -413,6 +413,19 @@ export const updateItinerary = async (req, res) => {
       return res.status(404).json({ error: 'Itinerary not found' });
     }
 
+    // Accept camelCase totals sent by the builder (POST uses camelCase,
+    // while updateItinerary's allowedFields are snake_case).
+    const totalFieldAliases = {
+      totalDistance: 'total_distance',
+      totalTime: 'total_time',
+      totalBudget: 'total_budget'
+    };
+    Object.entries(totalFieldAliases).forEach(([camel, snake]) => {
+      if (req.body[camel] !== undefined && req.body[snake] === undefined) {
+        req.body[snake] = req.body[camel];
+      }
+    });
+
     const allowedFields = ['name', 'description', 'start_date', 'end_date', 'status', 'total_distance', 'total_time', 'total_budget'];
     const updates = [];
     const values = [];
@@ -486,6 +499,47 @@ export const updateItinerary = async (req, res) => {
   } catch (err) {
     console.error('Update itinerary error:', err);
     res.status(500).json({ error: 'Failed to update itinerary' });
+  }
+};
+
+export const updateItineraryItem = async (req, res) => {
+  const { id, itemId } = req.params;
+  const completed = req.body.completed ? 1 : 0;
+
+  try {
+    const [itineraries] = await db.promise().query(
+      'SELECT itinerary_id FROM itineraries WHERE itinerary_id = ? AND user_id = ?',
+      [id, req.user.user_id]
+    );
+
+    if (itineraries.length === 0) {
+      return res.status(404).json({ error: 'Itinerary not found' });
+    }
+
+    if (!(await hasItineraryAttractionColumn('completed'))) {
+      try {
+        await db.promise().query(
+          'ALTER TABLE itinerary_attractions ADD COLUMN completed TINYINT(1) NOT NULL DEFAULT 0'
+        );
+        itineraryAttractionColumnsPromise = null;
+      } catch (alterError) {
+        console.warn('Could not add completed column:', alterError.message);
+      }
+    }
+
+    const [result] = await db.promise().query(
+      'UPDATE itinerary_attractions SET completed = ? WHERE id = ? AND itinerary_id = ?',
+      [completed, itemId, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Itinerary item not found' });
+    }
+
+    res.json({ success: true, item: { id: Number(itemId), completed: completed === 1 } });
+  } catch (err) {
+    console.error('Update itinerary item error:', err);
+    res.status(500).json({ error: 'Failed to update itinerary item' });
   }
 };
 
