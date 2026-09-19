@@ -64,6 +64,11 @@ export const AuthProvider = ({ children }) => {
     }
   }, [isLoggedIn]);
 
+  const initializeAuth = useCallback(async () => {
+    await refreshProfile();
+    setLoading(false);
+  }, [refreshProfile]);
+
   useEffect(() => {
     // On mount, check if user is authenticated
     // HttpOnly cookie is automatically sent with this request
@@ -81,11 +86,6 @@ export const AuthProvider = ({ children }) => {
     window.addEventListener('focus', onFocus);
     return () => window.removeEventListener('focus', onFocus);
   }, [isLoggedIn, refreshProfile]);
-
-  const initializeAuth = useCallback(async () => {
-    await refreshProfile();
-    setLoading(false);
-  }, [refreshProfile]);
 
   const login = async (emailOrUsername, password, remember = false) => {
     try {
