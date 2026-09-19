@@ -1089,9 +1089,9 @@ const InteractiveMap = () => {
       {/* Location Detail Modal */}
       {selectedLocation && (
         <div className="imap-modal-overlay" onClick={() => setSelectedLocation(null)}>
-          <div className="imap-modal-content" onClick={(e) => e.stopPropagation()}>
-            <button style={styles.modalClose} onClick={() => setSelectedLocation(null)} aria-label={t('close')}>
-              <XIcon size={18} />
+          <div className="imap-modal-content" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={selectedData?.name}>
+            <button className="imap-modal-close" onClick={() => setSelectedLocation(null)} aria-label={t('close')}>
+              <XIcon size={16} />
             </button>
             
             {/* Location Image */}
@@ -1106,77 +1106,76 @@ const InteractiveMap = () => {
                   }}
                 />
               ) : (
-                <div style={{ ...styles.modalImagePlaceholder, color: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  {selectedType === 'hotel' ? <HotelIcon size={64} /> : <AttractionIcon size={64} />}
-                  <p style={{margin: '1rem 0 0', color: 'rgba(255,255,255,0.9)'}}>{t('no_image_available')}</p>
+                <div className="imap-modal-image-placeholder">
+                  {selectedType === 'hotel' ? <HotelIcon size={54} /> : <AttractionIcon size={54} />}
+                  <span>{t('no_image_available')}</span>
                 </div>
               )}
+
+              <span className="imap-modal-category-badge">
+                {selectedType === 'hotel' ? <HotelIcon size={12} /> : selectedType === 'poi' ? <MapPinIcon size={12} /> : <AttractionIcon size={12} />}
+                {selectedCategoryLabel}
+              </span>
             </div>
 
             {/* Location Info */}
             <div className="imap-modal-body">
-              <div style={styles.modalHeader}>
-                <h2 style={styles.modalTitle}>{selectedData?.name}</h2>
-                <span style={{ ...styles.modalCategory, display:'inline-flex', alignItems:'center', gap:'0.3rem' }}>
-                  {selectedType === 'hotel' ? <HotelIcon size={13} /> : selectedType === 'poi' ? <MapPinIcon size={13} /> : <AttractionIcon size={13} />}
-                  {selectedCategoryLabel}
-                </span>
-              </div>
+              <h2 className="imap-modal-title">{selectedData?.name}</h2>
 
-              <div style={styles.modalLocation}>
-                <MapPinIcon size={16} />
-                <span>{selectedData?.location}</span>
-              </div>
-
-              <p style={styles.modalDescription}>{selectedData?.description || t('no_description')}</p>
-
-              {selectedType === 'attraction' && selectedData?.id && attractionWeather[selectedData.id] && (
-                <div style={styles.modalWeather}>
-                  <div style={styles.weatherInfo}>
-                    <span style={{ color: '#2e7d32', display: 'inline-flex' }}>
-                      <WeatherGlyph condition={attractionWeather[selectedData.id].weather.condition || attractionWeather[selectedData.id].weather.description} size={30} />
-                    </span>
-                    <div>
-                      <div style={{fontSize: '1.5rem', fontWeight: '700', color: '#2e7d32'}}>
-                        {attractionWeather[selectedData.id].weather.temp}°C
-                      </div>
-                      <div style={{fontSize: '0.9rem', color: '#666', textTransform: 'capitalize'}}>
-                        {attractionWeather[selectedData.id].weather.description}
-                      </div>
-                    </div>
-                  </div>
-                  <div style={styles.safetyBadge(attractionWeather[selectedData.id].safetyScore)}>
-                    {attractionWeather[selectedData.id].safetyScore >= 7 ? (
-                      <><CheckIcon size={14} /> {t('safe_visit')}</>
-                    ) : attractionWeather[selectedData.id].safetyScore >= 5 ? (
-                      <><InfoIcon size={14} /> {t('check_weather')}</>
-                    ) : (
-                      <><XIcon size={14} /> {t('not_recommended')}</>
-                    )}
-                  </div>
+              {selectedData?.location && (
+                <div className="imap-modal-location">
+                  <MapPinIcon size={15} />
+                  <span>{selectedData.location}</span>
                 </div>
               )}
 
-              {/* Action Buttons */}
+              <p className="imap-modal-description">{selectedData?.description || t('no_description')}</p>
+
+              {selectedType === 'attraction' && selectedData?.id && attractionWeather[selectedData.id] && (
+                <div className="imap-modal-weather">
+                  {(() => {
+                    const weather = attractionWeather[selectedData.id];
+                    const score = weather.safetyScore;
+                    return (
+                      <>
+                        <div className="imap-modal-weather-main">
+                          <span className="imap-modal-weather-icon">
+                            <WeatherGlyph condition={weather.weather.condition || weather.weather.description} size={30} />
+                          </span>
+                          <div>
+                            <div className="imap-modal-weather-temp">{weather.weather.temp}°C</div>
+                            <div className="imap-modal-weather-desc">{weather.weather.description}</div>
+                          </div>
+                        </div>
+                        <span className={`imap-modal-safety ${score >= 7 ? 'is-safe' : score >= 5 ? 'is-caution' : 'is-danger'}`}>
+                          {score >= 7 ? (
+                            <><CheckIcon size={14} /> {t('safe_visit')}</>
+                          ) : score >= 5 ? (
+                            <><InfoIcon size={14} /> {t('check_weather')}</>
+                          ) : (
+                            <><XIcon size={14} /> {t('not_recommended')}</>
+                          )}
+                        </span>
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
+
+{/* Action Buttons */}
               <div className="imap-modal-actions">
                 {selectedType === 'attraction' && selectedData?.id && (
-                  <button 
-                    style={styles.viewDetailsBtn}
-                    onClick={() => navigate(`/attractions/${selectedData.id}`)}
-                  >
-                    <span style={{ display:'inline-flex', alignItems:'center', gap:'0.4rem' }}><DocumentIcon size={16} /> {t('view_full_details')}</span>
+                  <button className="imap-btn-details" onClick={() => navigate(`/attractions/${selectedData.id}`)}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}><DocumentIcon size={16} /> {t('view_full_details')}</span>
                   </button>
                 )}
                 {selectedType === 'hotel' && selectedData?.id && (
-                  <button 
-                    style={styles.viewDetailsBtn}
-                    onClick={() => navigate(`/hotels/${selectedData.id}`)}
-                  >
-                    <span style={{ display:'inline-flex', alignItems:'center', gap:'0.4rem' }}><HotelIcon size={16} /> {t('view_hotel_details')}</span>
+                  <button className="imap-btn-details" onClick={() => navigate(`/hotels/${selectedData.id}`)}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}><HotelIcon size={16} /> {t('view_hotel_details')}</span>
                   </button>
                 )}
-                <button 
-                  style={styles.navigateBtn}
+                <button
+                  className="imap-btn-navigate"
                   onClick={() => {
                     if (!userLocation) {
                       alert(t('enable_gps_first'));
@@ -1192,7 +1191,7 @@ const InteractiveMap = () => {
                     setSelectedLocation(null);
                   }}
                 >
-                  <span style={{ display:'inline-flex', alignItems:'center', gap:'0.4rem' }}><RouteIcon size={16} /> {t('navigate_here')}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}><RouteIcon size={16} /> {t('navigate_here')}</span>
                 </button>
               </div>
             </div>

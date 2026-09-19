@@ -559,7 +559,7 @@ const LeafletMap = ({
 
     // Outer glow
     L.polyline(latLngs, {
-      color: '#065f46',
+      color: '#1e3a5f',
       weight: 10,
       opacity: 0.18,
       lineJoin: 'round',
@@ -731,7 +731,7 @@ const LeafletMap = ({
       const straightLine = normalizedWaypoints.map((point) => [point.lat, point.lng]);
       const straightDistanceKm = computeRouteDistanceKm(straightLine);
       const straightDurationMin = Math.max(1, Math.round((straightDistanceKm / 30) * 60));
-      const routeLayer = buildRouteLayer(straightLine, { color: '#16a34a', animated: false });
+      const routeLayer = buildRouteLayer(straightLine, { color: '#1976d2', animated: false });
       routePolylineRef.current = routeLayer.group;
       routeLayer.group.addTo(mapInstanceRef.current);
 
