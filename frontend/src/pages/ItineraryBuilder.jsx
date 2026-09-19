@@ -2774,11 +2774,18 @@ const styles = {
     borderRadius: '50%',
     width: '20px',
     height: '20px',
+    minWidth: '20px',
+    minHeight: '20px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontSize: '0.75rem',
-    fontWeight: '600'
+    fontWeight: '600',
+    lineHeight: '1',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    flexShrink: 0,
+    flexBasis: '20px'
   },
   addDayBtn: {
     padding: '0.75rem 1.5rem',
@@ -2895,6 +2902,10 @@ const styles = {
   itemNumber: {
     width: '40px',
     height: '40px',
+    minWidth: '40px',
+    maxWidth: '40px',
+    minHeight: '40px',
+    maxHeight: '40px',
     borderRadius: '50%',
     backgroundColor: THEME.primary,
     color: 'white',
@@ -2902,7 +2913,11 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: '600',
-    flexShrink: 0
+    lineHeight: '1',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    flexShrink: 0,
+    flexBasis: '40px'
   },
   itemDetails: {
     flex: 1
@@ -3322,12 +3337,18 @@ const styles = {
     justifyContent: 'center',
     width: '36px',
     height: '36px',
+    minWidth: '36px',
+    minHeight: '36px',
     borderRadius: '50%',
     backgroundColor: THEME.primary,
     color: 'white',
     fontWeight: '700',
     fontSize: '0.95rem',
-    flexShrink: 0
+    lineHeight: '1',
+    whiteSpace: 'nowrap',
+    overflow: 'hidden',
+    flexShrink: 0,
+    flexBasis: '36px'
   },
   savedItemContent: {
     flex: 1,
