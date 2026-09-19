@@ -1272,7 +1272,7 @@ const InteractiveMap = () => {
                       });
                     }}
                   >
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}><Edit2Icon size={16} /> {t('Manage in Admin')}</span>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}><Edit2Icon size={16} /> {t('Interactive Map Management')}</span>
                   </button>
                 )}
               </div>
