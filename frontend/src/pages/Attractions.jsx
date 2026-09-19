@@ -308,7 +308,7 @@ const Attractions = () => {
           <p>{t('no_attractions_try_again')}</p>
         </div>
       ) : view === 'grid' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: 24, padding: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(300px,100%),1fr))', gap: 24, padding: 24 }}>
           {paged.map(a => (
             <div key={a.id} style={modernCardStyle} className="modern-card" onClick={() => navigate(`/attractions/${a.id}`, { state: { attraction: a } })}>
               <div style={cardImageContainer}>

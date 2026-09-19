@@ -672,7 +672,7 @@ export default function HotelDetail() {
         </div>
       </div>
 
-      <div style={contentGrid}>
+      <div style={contentGrid} className="hotel-detail-content">
         {/* Left Column */}
         <div style={leftColumn}>
           {/* Hotel Image */}
@@ -828,7 +828,7 @@ export default function HotelDetail() {
                       {/* Features Grid */}
                       <div style={{
                         display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
+                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                         gap: '0.75rem',
                         padding: '0.75rem 0',
                         borderTop: '1px solid #e0e0e0',
@@ -2174,7 +2174,7 @@ export default function HotelDetail() {
               {/* Details Grid - 3 Columns */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
+                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
                 gap: '2rem',
                 marginBottom: '2rem'
               }}>
@@ -2370,7 +2370,7 @@ export default function HotelDetail() {
                 </h3>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                   gap: '0.8rem'
                 }}>
                   {[
@@ -2423,7 +2423,7 @@ export default function HotelDetail() {
                 </h3>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                   gap: '1rem'
                 }}>
                   {[
@@ -2478,7 +2478,7 @@ export default function HotelDetail() {
                 </h3>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                   gap: '1rem'
                 }}>
                   {[
@@ -2554,11 +2554,11 @@ export default function HotelDetail() {
                   letterSpacing: '1px'
                 }}>
                   Room Rules & Policies
-                </h3>
+</h3>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
-                  gap: '1.5rem'
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                  gap: '0.8rem'
                 }}>
                   <div>
                     <div style={{
@@ -2683,7 +2683,7 @@ export default function HotelDetail() {
                 </h3>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                   gap: '1rem'
                 }}>
                   {[
@@ -2740,7 +2740,7 @@ export default function HotelDetail() {
                 </h3>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                   gap: '0.8rem'
                 }}>
                   {[
@@ -2788,7 +2788,7 @@ export default function HotelDetail() {
               {/* Pricing & Availability */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
+                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
                 gap: '2rem',
                 padding: '2rem',
                 background: '#f0fdf4',
@@ -3825,8 +3825,7 @@ const checkoutButton = {
   borderRadius: '10px',
   padding: '0.7rem 1rem',
   fontWeight: '700',
-  cursor: 'pointer',
-  whiteSpace: 'nowrap'
+  cursor: 'pointer'
 };
 
 const cancelBtnEnhanced = {

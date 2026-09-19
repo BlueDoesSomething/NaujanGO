@@ -7,6 +7,24 @@ import './Navbar.css';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSelector from './LanguageSelector';
 import { useTheme } from '../context/ThemeContext';
+import {
+  AttractionIcon, HotelIcon, CalendarIcon, MapIcon, InfoIcon,
+  UserIcon, BookingIcon, ShieldIcon, LogoutIcon, PlusIcon, GlobeIcon,
+} from './Icons';
+
+const HomeIcon = ({ size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 11.5L12 4l9 7.5" />
+    <path d="M5.5 10v10h13V10" />
+    <path d="M10 20v-5h4v5" />
+  </svg>
+);
+
+const ChevronIcon = ({ size = 14 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M6 9l6 6 6-6" />
+  </svg>
+);
 
 const Navbar = () => {
   const { isLoggedIn, user, logout, loading } = useAuth();
@@ -72,6 +90,15 @@ const Navbar = () => {
       window.removeEventListener('hashchange', handleScroll);
     };
   }, []);
+
+  // Lock body scroll while the mobile menu is open
+  useEffect(() => {
+    if (!menuOpen) return;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [menuOpen]);
 
   const handleLogout = async () => {
     console.log('[Navbar] handleLogout called, calling logout()...');
@@ -177,6 +204,7 @@ const Navbar = () => {
                 role="menuitem"
                 onClick={handleNavClick}
               >
+                <span className="nav-link-icon"><HomeIcon size={18} /></span>
                 <span className="link-text">{t('home')}</span>
               </NavLink>
             </li>
@@ -189,6 +217,7 @@ const Navbar = () => {
                 role="menuitem"
                 onClick={handleNavClick}
               >
+                <span className="nav-link-icon"><AttractionIcon size={18} /></span>
                 <span className="link-text">{t('attractions')}</span>
               </NavLink>
             </li>
@@ -201,6 +230,7 @@ const Navbar = () => {
                 role="menuitem"
                 onClick={handleNavClick}
               >
+                <span className="nav-link-icon"><HotelIcon size={18} /></span>
                 <span className="link-text">{t('accommodation')}</span>
               </NavLink>
             </li>
@@ -215,6 +245,7 @@ const Navbar = () => {
                   role="menuitem"
                   onClick={handleNavClick}
                 >
+                  <span className="nav-link-icon"><CalendarIcon size={18} /></span>
                   <span className="link-text">{t('create_itinerary')}</span>
                 </NavLink>
               </li>
@@ -228,6 +259,7 @@ const Navbar = () => {
                 role="menuitem"
                 onClick={handleNavClick}
               >
+                <span className="nav-link-icon"><MapIcon size={18} /></span>
                 <span className="link-text">{t('interactive_map')}</span>
               </NavLink>
             </li>
@@ -240,21 +272,22 @@ const Navbar = () => {
                 aria-haspopup="true"
                 aria-expanded={showAboutDropdown}
               >
+                <span className="nav-link-icon"><InfoIcon size={18} /></span>
                 <span className="link-text">{t('about')}</span>
-                <span className="dropdown-arrow">▼</span>
+                <span className="about-dropdown-chevron"><ChevronIcon size={14} /></span>
               </button>
               {showAboutDropdown && (
                 <ul className="navbar-about-dropdown" role="menu" aria-label="About Naujan sections">
                   {aboutSections.map((section) => (
                     <li key={section.id} role="none">
-                      <a
-                        href={section.path}
+                      <Link
+                        to={section.path}
                         className={`about-dropdown-link ${window.location.pathname === section.path ? 'active' : ''}`}
                         role="menuitem"
                         onClick={() => handleAboutSectionClick(section.id)}
                       >
                         {t(section.tKey)}
-                      </a>
+                      </Link>
                     </li>
                   ))}
                 </ul>
@@ -285,22 +318,27 @@ const Navbar = () => {
                 </div>
                 <div className="mobile-auth-links">
                   <Link to="/profile" className="mobile-auth-link" onClick={handleNavClick}>
+                    <span className="mobile-auth-icon"><UserIcon size={17} /></span>
                     {t('profile')}
                   </Link>
                   <Link to="/bookings" className="mobile-auth-link" onClick={handleNavClick}>
+                    <span className="mobile-auth-icon"><BookingIcon size={17} /></span>
                     {t('my_bookings')}
                   </Link>
                   {user?.role === 'admin' && (
                     <Link to="/admin" className="mobile-auth-link" onClick={handleNavClick}>
+                      <span className="mobile-auth-icon"><ShieldIcon size={17} /></span>
                       {t('admin_dashboard')}
                     </Link>
                   )}
                   {(user?.role === 'owner' || user?.role === 'admin') && (
                     <Link to="/owner" className="mobile-auth-link" onClick={handleNavClick}>
+                      <span className="mobile-auth-icon"><GlobeIcon size={17} /></span>
                       {t('owner_dashboard')}
                     </Link>
                   )}
                   <button type="button" className="mobile-auth-link mobile-auth-logout" onClick={handleLogout}>
+                    <span className="mobile-auth-icon"><LogoutIcon size={17} /></span>
                     {t('logout')}
                   </button>
                 </div>
@@ -308,9 +346,11 @@ const Navbar = () => {
             ) : (
               <div className="mobile-auth-buttons">
                 <NavLink to="/login" className="auth-btn login-btn mobile-auth-btn" onClick={handleNavClick}>
+                  <span className="mobile-auth-icon"><UserIcon size={17} /></span>
                   {t('login')}
                 </NavLink>
                 <NavLink to="/register" className="auth-btn register-btn mobile-auth-btn" onClick={handleNavClick}>
+                  <span className="mobile-auth-icon"><PlusIcon size={17} /></span>
                   {t('register')}
                 </NavLink>
               </div>

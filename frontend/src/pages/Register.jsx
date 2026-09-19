@@ -29,7 +29,7 @@ const cardStyle = {
   backdropFilter: 'blur(30px)',
   WebkitBackdropFilter: 'blur(30px)',
   borderRadius: '24px',
-  padding: '3rem',
+  padding: 'clamp(1.5rem, 5vw, 3rem)',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 0 20px rgba(255, 255, 255, 0.3)',
   width: '100%',
   maxWidth: '650px',
@@ -63,7 +63,16 @@ const formStyle = {
 
 const rowStyle = {
   display: 'flex',
-  gap: '1rem'
+  gap: '1rem',
+  flexWrap: 'wrap'
+};
+
+const rowFieldStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.5rem',
+  flex: '1 1 260px',
+  minWidth: 0
 };
 
 const inputGroupStyle = {
@@ -628,7 +637,7 @@ const Register = () => {
         {registrationStage === 'form' && !successMessage && (
         <form onSubmit={handleRegister} style={formStyle}>
           <div style={rowStyle}>
-            <div style={inputGroupStyle}>
+            <div style={rowFieldStyle}>
               <label style={labelStyle}>{t('first_name')}</label>
               <input
                 type="text"
@@ -640,7 +649,7 @@ const Register = () => {
                 style={inputStyle}
               />
             </div>
-            <div style={inputGroupStyle}>
+            <div style={rowFieldStyle}>
               <label style={labelStyle}>{t('last_name')}</label>
               <input
                 type="text"
@@ -681,7 +690,7 @@ const Register = () => {
           </div>
 
           <div style={rowStyle}>
-            <div style={inputGroupStyle}>
+            <div style={rowFieldStyle}>
               <label style={labelStyle}>{t('phone_number')}</label>
               <input
                 type="tel"
@@ -692,7 +701,7 @@ const Register = () => {
                 style={inputStyle}
               />
             </div>
-            <div style={inputGroupStyle}>
+            <div style={rowFieldStyle}>
               <label style={labelStyle}>{t('date_of_birth')}</label>
               <input
                 type="date"
@@ -705,7 +714,7 @@ const Register = () => {
           </div>
 
           <div style={rowStyle}>
-            <div style={inputGroupStyle}>
+            <div style={rowFieldStyle}>
               <label style={labelStyle}>Gender</label>
               <select
                 name="gender"
@@ -719,7 +728,7 @@ const Register = () => {
                 <option value="other">Other</option>
               </select>
             </div>
-            <div style={inputGroupStyle}>
+            <div style={rowFieldStyle}>
               <label style={labelStyle}>Visitor Type</label>
               <select
                 name="userType"

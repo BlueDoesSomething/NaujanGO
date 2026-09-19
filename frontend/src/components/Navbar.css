@@ -1450,3 +1450,197 @@ a.navbar-link.active,
     transform: none;
   }
 }
+
+/* ==========================================================
+   Icon tiles in the navbar (desktop: plain links, no tiles)
+   ========================================================== */
+.nav-link-icon {
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.about-dropdown-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.25s ease;
+}
+
+.mobile-auth-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ==========================================================
+   Unified burger-menu cards (≤767px) — placed last to win,
+   so Home/Attractions/Accommodation/Itinerary/Map/About all
+   share the exact same look and About matches the others.
+   ========================================================== */
+@media (max-width: 767px) {
+  .nav-link-icon {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+
+  .navbar-link,
+  .about-dropdown-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    width: 100%;
+    min-height: 56px;
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff !important;
+    text-align: left;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.13);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+
+  .navbar-link:hover,
+  .about-dropdown-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.12);
+  }
+
+  .navbar-link.active,
+  .about-dropdown-btn.active {
+    background: rgba(255, 255, 255, 0.26);
+    border-color: rgba(255, 255, 255, 0.5);
+    font-weight: 700;
+  }
+
+  .navbar-link .link-text,
+  .about-dropdown-btn .link-text {
+    flex: 1;
+    white-space: normal;
+  }
+
+  .navbar-link::before,
+  .about-dropdown-btn::before {
+    display: none;
+  }
+
+  .about-dropdown-chevron {
+    margin-left: auto;
+    color: rgba(255, 255, 255, 0.9);
+    flex-shrink: 0;
+  }
+
+  .about-dropdown-btn[aria-expanded='true'] .about-dropdown-chevron {
+    transform: rotate(180deg);
+  }
+
+  /* About sub-links become stacked rows inside the menu */
+  .navbar-about-dropdown {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    margin: 0.5rem 0 0;
+    padding: 0.45rem;
+    background: rgba(0, 0, 0, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 15px;
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    max-height: min(46vh, 320px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .about-dropdown-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.92);
+    border-radius: 10px;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .about-dropdown-link:hover {
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+    transform: none;
+  }
+
+  .about-dropdown-link.active {
+    background: rgba(255, 255, 255, 0.24);
+    color: #ffffff;
+    font-weight: 700;
+  }
+
+  .about-dropdown-link::after {
+    content: '›';
+    font-size: 1.05rem;
+    font-weight: 700;
+    opacity: 0.55;
+    color: #ffffff;
+  }
+
+  /* Account / auth rows in the burger menu */
+  .mobile-auth-link,
+  .mobile-auth-btn {
+    justify-content: flex-start;
+    gap: 0.7rem;
+  }
+
+  .mobile-auth-link .mobile-auth-icon,
+  .mobile-auth-btn .mobile-auth-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.16);
+    color: #ffffff;
+  }
+
+  .mobile-auth-btn.auth-btn {
+    color: #ffffff;
+  }
+
+  .register-btn.mobile-auth-btn {
+    color: #16a34a;
+  }
+}
+
+/* Small phones: reduce paddings slightly so the menu fits nicely */
+@media (max-width: 480px) {
+  .navbar-link,
+  .about-dropdown-btn {
+    min-height: 52px;
+    padding: 0.7rem 0.85rem;
+    gap: 0.65rem;
+  }
+
+  .nav-link-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  .navbar-about-dropdown .about-dropdown-link {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.88rem;
+  }
+}

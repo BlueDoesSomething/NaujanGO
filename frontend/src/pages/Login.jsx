@@ -30,7 +30,7 @@ const cardStyle = {
   backdropFilter: 'blur(30px)',
   WebkitBackdropFilter: 'blur(30px)',
   borderRadius: '24px',
-  padding: '3rem',
+  padding: 'clamp(1.5rem, 5vw, 3rem)',
   boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 0 20px rgba(255, 255, 255, 0.3)',
   width: '100%',
   maxWidth: '480px',

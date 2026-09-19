@@ -836,7 +836,7 @@ const resultsCount = {
 
 const cardsGrid = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))',
   gap: '2rem',
   padding: '2rem',
   maxWidth: '1600px',
@@ -1202,11 +1202,12 @@ const modernLoginBanner = {
 const modernLoginContent = {
   background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
   borderRadius: '24px',
-  padding: '3rem',
+  padding: 'clamp(1.25rem, 4vw, 3rem)',
   boxShadow: '0 20px 60px rgba(0,0,0,0.1)',
   border: '3px solid #16a34a',
   display: 'flex',
-  gap: '2rem',
+  flexWrap: 'wrap',
+  gap: '1.5rem',
   alignItems: 'flex-start',
   marginBottom: '2rem'
 }
@@ -1229,7 +1230,8 @@ const modernLoginIcon = {
 }
 
 const modernLoginText = {
-  flex: 1
+  flex: '1 1 320px',
+  minWidth: 0
 }
 
 const modernLoginTitle = {
@@ -1345,7 +1347,7 @@ const previewTitle = {
 
 const previewGrid = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fit, minmax(min(300px, 100%), 1fr))',
   gap: '2rem',
   opacity: 0.6
 }
@@ -1767,22 +1769,6 @@ if (typeof document !== 'undefined') {
       to {
         opacity: 1;
         transform: translateY(0);
-      }
-    }
-
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      div[style*="modernLoginContent"] {
-        flex-direction: column !important;
-        padding: 2rem !important;
-      }
-      
-      div[style*="loginHeroTitle"] h1 {
-        font-size: 2.5rem !important;
-      }
-      
-      div[style*="modernLoginTitle"] h2 {
-        font-size: 1.5rem !important;
       }
     }
   `;

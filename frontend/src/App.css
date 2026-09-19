@@ -40,6 +40,13 @@ code {
   main {
     margin-top: 72px !important;
   }
+
+  /* HotelDetail: collapse the fixed sidebar grid on phones */
+  .hotel-detail-content {
+    grid-template-columns: 1fr !important;
+    padding: 0 1rem !important;
+    gap: 1.75rem !important;
+  }
 }
 
 @media (max-width: 480px) {

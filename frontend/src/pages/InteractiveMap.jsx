@@ -1784,11 +1784,12 @@ const styles = {
   modernLoginContent: {
     background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
     borderRadius: '24px',
-    padding: '3rem',
+    padding: 'clamp(1.25rem, 4vw, 3rem)',
     boxShadow: '0 20px 60px rgba(0,0,0,0.1)',
     border: '3px solid #2e7d32',
     display: 'flex',
-    gap: '2rem',
+    flexWrap: 'wrap',
+    gap: '1.5rem',
     alignItems: 'flex-start',
     marginBottom: '2rem'
   },
@@ -1808,7 +1809,8 @@ const styles = {
     filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))'
   },
   modernLoginText: {
-    flex: 1
+    flex: '1 1 320px',
+    minWidth: 0
   },
   modernLoginTitle: {
     fontSize: '2rem',
@@ -2163,17 +2165,6 @@ styleSheet.textContent = `
 
   .map-back-home-link:hover {
     color: #2e7d32 !important;
-  }
-
-  @media (max-width: 768px) {
-    div[style*="modernLoginContent"] {
-      flex-direction: column;
-      padding: 2rem !important;
-    }
-    
-    div[style*="modernLoginTitle"] h2 {
-      font-size: 1.5rem !important;
-    }
   }
 `;
 if (!document.head.querySelector('style[data-interactive-map]')) {
