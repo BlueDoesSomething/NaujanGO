@@ -12,7 +12,9 @@
   "Naujan_Location": [
     "Ang Naujan ay isang 1st Class Municipality sa lalawigan ng Naujan, Pilipinas.",
     "Naujan ay matatagpuan sa probinsya ng Naujan, sa rehiyon ng MIMAROPA.",
-    "Ito ay isang munisipyo sa Naujan, Pilipinas."
+    "Ito ay isang munisipyo sa Naujan, Pilipinas.",
+    "Ang Naujan ay isang 1st Class Municipality sa lalawigan ng Naujan, sa hilagang-silangang bahagi ng Pilipinas Island.",
+    "Ito ay isang munisipyo sa Naujan, Pilipinas, sa hilaga-silangan ng Pilipinas Island."
   ],
   "Naujan_Lake_About": [
     "Ang Naujan Lake ay ang panlimang pinakamalaking lawa sa Pilipinas at isang Ramsar Wetland of International Importance (1999).",
@@ -46,40 +48,60 @@
     "Kung kailangan mo ng tulong ng pulis, tumawag agad sa (043) 208-3362."
   ],
   "Agriculture_Crops": [
-    "Pangunahing pananim: Palay at niyog (copra). Pati na rin mais, ugat, prutas, gulay. Magandang tanawin mula sa mga sakahan."
+    "Pangunahing pananim: Palay at niyog (copra). Pati na rin mais, ugat, prutas, gulay. Magandang tanawin mula sa mga sakahan.",
+    "Ang pangunahing pananim sa Naujan ay palay at niyog para sa copra. Mayroon ding mais, gulay, root crops, at prutas tulad ng mangga at saging.",
+    "Naujan ay kilala sa kanyang mga palayang-palay at mga puno ng niyog. Ang copra ay pangunahing produkto ng pag-export.",
+    "Ang agrikultura ay pundasyon ng ekonomiya ng Naujan, na may palay, niyog, at iba't ibang gulay."
   ],
   "Weather_Info": [
-    "Tropical climate. Dry season (Nov-May) ideal. Rainy (Jun-Oct): berdeng palay pero posibleng bagyo. Para sa weather, tingnan PAGASA forecast."
+    "Tropical climate. Dry season (Nov-May) ideal. Rainy (Jun-Oct): berdeng palay pero posibleng bagyo. Para sa weather, tingnan PAGASA forecast.",
+    "Wala akong live na datos sa panahon, pero tropikal ang klima ng Naujan. Tingnan ang PAGASA o weather app para sa pinakabagong ulat.",
+    "Ang Naujan ay may tropical climate, mainit buong taon. Tingnan ang weather forecast para sa detalye.",
+    "Para sa real-time weather updates, gamitin ang PAGASA website o any weather application."
   ],
   "Itinerary_Plan": [
-    "3-araw na trip: Araw 1 - Simbahan at plaza. Araw 2 - Naujan Lake at bird watching. Araw 3 - Sasakyan at merkado. O kumuha ng guided tour."
+    "3-araw na trip: Araw 1 - Simbahan at plaza. Araw 2 - Naujan Lake at bird watching. Araw 3 - Sasakyan at merkado. O kumuha ng guided tour.",
+    "Isang araw na itinerary: Simulan sa Naujan Church, pumunta sa Naujan Lake para sa birdwatching, tapos bisitahin ang lokal na niyugan o palayan at kumain sa plaza.",
+    "Popular na lugar: Naujan Church, Naujan Lake, local farms, at town market.",
+    "Araw 1: Bisitahin ang simbahan. Araw 2: Tuklasin ang Naujan Lake. Araw 3: Bisitahin ang mga sakahan at merkado."
   ],
   "Naujan_Overview": [
-    "Ang Naujan ay isang First Class Municipality sa Pilipinas. Kilala sa Naujan Lake National Park - ang 5th pinakamalaking lawa sa bansa at Ramsar Wetland."
+    "Ang Naujan ay isang First Class Municipality sa Pilipinas. Kilala sa Naujan Lake - ang 5th pinakamalaking lawa sa bansa at Ramsar Wetland.",
+    "Ang Naujan ay isang 1st Class Municipality sa Naujan, Pilipinas. Kilala ito sa Naujan Lake — ang ika-5 pinakamalaking lawa sa Pilipinas at Ramsar Wetland ng pandaigdigang kahalagahan. Ang bayan ay mayaman sa agrikultura (bigas, niyog), kultura ng Mangyan, at ekolohiya ng lawa. Lugar ito para sa bird-watching, pangingisda, at eco-tourism.",
+    "Ang Naujan, Naujan ay tahanan ng Naujan Lake, isa sa mga pinaka-biodiversity-rich na lugar sa Pilipinas. May 39 barangay ang bayan na may mahalagang koneksyon ng agrikultura at ekolohiya."
   ],
   "Transportation_How_To_Get_There": [
-    "Paano makarating: 1) Bus mula Manila hanggang Batangas Port (~2 oras) 2) Ferry papunta Calapan (~1-3 oras) 3) Jeepney papunta Naujan (~30-45 min). Kabuuan: 4-6 oras mula Manila."
+    "Paano makarating: 1) Bus mula Manila hanggang Batangas Port (~2 oras) 2) Ferry papunta Calapan (~1-3 oras) 3) Jeepney papunta Naujan (~30-45 min). Kabuuan: 4-6 oras mula Manila.",
+    "Paano pumunta sa Naujan:\n1. Mula Manila: sakay ng bus sa Buendia o EDSA terminal papunta sa Batangas Pier (~2 oras).\n2. Sakay ng RORO o FastCraft ferry papunta sa Calapan Port (~1.5–2 oras).\n3. Mula Calapan: sakay ng jeepney o van papunta sa Naujan (~30–45 minuto, ~₱40–₱60).\nRekomendasyon: Maaga pumunta sa pier para maiwasan ang mahabang pila."
   ],
   "Local_Food_Cuisine": [
-    "Lokal na pagkain: Sariwa isda mula sa lawa (tilapia, dalag), kanin, mga putaheng gawa sa niyog, binagoongan. Kakanin at mga kakanin. Abot-kayang presyo (₱80-150)."
+    "Lokal na pagkain: Sariwa isda mula sa lawa (tilapia, dalag), kanin, mga putaheng gawa sa niyog, binagoongan. Kakanin at mga kakanin. Abot-kayang presyo (₱80-150).",
+    "Dapat tikman sa Naujan:\n• Sariwang tilapia at maliputo mula sa Naujan Lake\n• Inihaw na isda at ulam na gawa sa sariwang catch mula sa lawa\n• Tinola at sinigang na manok o isda sa mga lokal na carinderia\n• Kakanin (puto, bibingka, sapin-sapin) sa mga lokal na palengke\n• Niyog-based na pagkain at lutuin mula sa sariwang niyog ng Naujan\nPinakamainam na kumain sa mga carinderia malapit sa pamilihan ng Naujan para maranasan ang tunay na lasa."
   ],
   "Festivals_Events": [
-    "Pangunahing pista: Setyembre 8 (Nativity ng Maria). May misa, pasada, putahe, palabas. Peak bird watching: Nov-Marso."
+    "Ang pangunahing pista ng Naujan ay ginaganap tuwing ika-8 ng Setyembre, bilang parangal sa Pagsilang ng Mahal na Birheng Maria (Our Lady of the Nativity), ang patrona ng Naujan. Kabilang dito ang banal na misa sa Naujan Church, parada sa lansangan, cultural shows, food fairs, at live performances sa town plaza.",
+    "Mga pangunahing okasyon sa Naujan:\n• Setyembre 8 – Town Fiesta (Pagsilang ng Mahal na Birhen)\n• Nobyembre–Marso – Panahon ng birdwatching sa Naujan Lake (peak ng migrasyon ng mga ibon mula sa Siberia)\n• Nobyembre–Disyembre – Harvest festivals sa mga rice-farming barangay\n• Iba't ibang buwan – Barangay-level fiestas\n• Eco-tourism fairs na inaorganisa ng LGU"
   ],
   "Mangyan_Culture": [
-    "Komunidad Mangyan (Iraya, Alangan): Nakatira sa taas ng Naujan. Kilala sa woven baskets, alahas at ambahan poetry. Bisitahin ng may paggalang at lokal na gabay."
+    "Komunidad Mangyan (Iraya, Alangan): Nakatira sa taas ng Naujan. Kilala sa woven baskets, alahas at ambahan poetry. Bisitahin ng may paggalang at lokal na gabay.",
+    "Ang mga Mangyan ay ang mga katutubo ng Pilipinas. May walong tribu: Hanunuo, Buhid, Iraya, Alangan, Tadyawan, Tau-buid, Bangon, at Ratagnon. Sila ay kilala sa kanilang:\n• Script ng Hanunuo-Mangyan — pre-kolonyal na sistema ng pagsulat na kinikilala ng UNESCO\n• Ambahan — tradisyonal na mga tula na ginupit sa kawayan\n• Paghahabi ng abaca at mga basket na rattan\nSa pagbisita sa Mangyan na komunidad, laging maging magalang at kumuha ng tamang gabay. Huwag kumuha ng larawan nang walang pahintulot."
   ],
   "Best_Time_To_Visit": [
-    "Pinakamahusay: Nobyembre hanggang Mayo (dry season). Nov-Mar ay perpekto para sa bird watching. Iwasan ang Hunyo-Oktubre (ulan at bagyo)."
+    "Pinakamahusay: Nobyembre hanggang Mayo (dry season). Nov-Mar ay perpekto para sa bird watching. Iwasan ang Hunyo-Oktubre (ulan at bagyo).",
+    "Panahon ng paglaNaujanGO sa Naujan:\n• Amihan (Nobyembre–Pebrero): malamig at tuyo, pinakamainam para sa bird-watching sa lawa\n• Tag-araw (Marso–Mayo): mainit, perpekto para sa pag-explore at picnicking\n• Habagat (Hunyo–Oktubre): maalon at maulap; maganda ang palayan ngunit posibleng bagyo\nPinakamagandang bumisita: Nobyembre–Abril para sa malinaw na kalangitan at migration ng mga ibon."
   ],
   "App_Capabilities": [
-    "Tumutulong ang NaujanGO sa: Pag-book ng hotel, pagplanong biyahe, impormasyon sa akit, restaurant, transportasyon, panahon, tips, at gabay."
+    "Tumutulong ang NaujanGO sa: Pag-book ng hotel, pagplanong biyahe, impormasyon sa akit, restaurant, transportasyon, panahon, tips, at gabay.",
+    "Ako ang iyong NaujanGO travel assistant para sa Naujan, Naujan! Makakatulong ako sa:\n• Impormasyon tungkol sa Naujan Lake at mga eco-attractions\n• Pag-book ng hotel at accommodation\n• Itinerary planning para sa iyong trip\n• GPS navigation at mapa ng Naujan\n• Impormasyon sa LGU, emergency contacts, at lokal na serbisyo\n• Panahon, transportasyon, pagkain, at kultura ng Naujan\nTanungin mo ako tungkol sa Naujan!"
   ],
   "Booking_Help": [
-    "Para mag-reserve: 1) Pumunta sa Hotels 2) Piliin ang petsa 3) Tingnan ang detalye 4) Bayaran. Makakatanggap ng confirmation kaagad."
+    "Para mag-reserve: 1) Pumunta sa Hotels 2) Piliin ang petsa 3) Tingnan ang detalye 4) Bayaran. Makakatanggap ng confirmation kaagad.",
+    "Para mag-book ng hotel sa NaujanGO:\n1. Pumunta sa 'Hotels' section ng app.\n2. I-browse ang mga available na hotel sa Naujan.\n3. Piliin ang iyong check-in at check-out dates.\n4. Beripikahin ang detalye at i-confirm ang iyong booking.\nKailangan ng account para makumpleto ang booking. Ang mga reserbasyong nakansela nang 24 oras bago ang check-in ay libre."
   ],
   "Naujan_Natural_Features": [
-    "Kalikasan: Naujan Lake (20,000+ hektarya), Sadya River, palay, mangrove, dalampasigan. Maganda para sa fotografia at paglalakbay."
+    "Kalikasan: Naujan Lake, Sadya River, palay, mangrove, dalampasigan. Maganda para sa fotografia at paglalakbay.",
+    "Mga likas na tampok ng Naujan:\n• Naujan Lake — ika-5 pinakamalaking lawa sa Pilipinas; tahanan ng daan-daang uri ng ibon\n• Sadya River — magandang ilog para sa swimming at pag-enjoy ng kalikasan\n• Malawak na Palayan — kilala ang Naujan sa masaganang pagtatanim ng bigas\n• Kagubatan ng Niyog — mga taniman na nagbibigay ng copra at niyog\n• Coastal Mangroves — nagpoprotekta ng baybayin at nagbibigay ng tirahan sa mga isda",
+    "Kalikasan: Naujan Lake, Sadya River, palay, mangrove, dalampasigan. Maganda para sa fotografia at paglaNaujanGO."
   ],
   "Safety_Emergency": [
     "Emergency contacts sa Naujan:\n• Naujan PNP (Pulis): (043) 208-3362\n• Municipal Hall: (043) 208-3382\n• Naujan District Hospital: (043) 208-3380\n• Bureau of Fire Protection: (043) 208-3385\n• National Emergency Hotline: 911\n\nAng Naujan ay isang mapayapang komunidad. Palaging sabihin sa iyong accommodation ang iyong itinerary kapag nagbibiyahe sa bundok o sa lawa."
@@ -88,7 +110,7 @@
     "Ang Naujan Lake ay tahanan ng mahigit 100 uri ng ibon, kabilang ang:\n• Philippine Duck (Anas luzonica) — endangered na endemic species\n• Migratory waterfowl mula Siberia at East Asia (Nobyembre–Marso)\n• Mga lawin, alon, at sarimanok na naninirahan sa paligid ng lawa\n• Freshwater crocodile (Crocodylus mindorensis) — critically endangered\nAng pinakamainam na panahon para sa bird-watching ay Nobyembre hanggang Marso ng maaga sa umaga."
   ],
   "Naujan_Lake_Activities": [
-    "Mga aktibidad sa Naujan Lake:\n• Bird-watching — ang pangunahing atraksyon; daan-daang uri ng ibon\n• Bangka tour — magsewa ng lokal na bangka para maglayag sa lawa\n• Pangingisda — ang mga lokal na mangingisda ay nagbibigay ng guided tours\n• Kayaking — mag-explore ng mga kuweba at mangrove edges ng lawa\n• Lakad sa kalikasan — mag-lakad sa mga eco-trail sa paligid ng National Park\n• Picnicking — mga itinakdang lugar sa pampang ng lawa\nMakipag-ugnayan sa Naujan LGU para sa impormasyon sa pahintulot at lokal na gabay."
+    "Mga aktibidad sa Naujan Lake:\n• Bird-watching — ang pangunahing atraksyon; daan-daang uri ng ibon\n• Bangka tour — magsewa ng lokal na bangka para maglayag sa lawa\n• Pangingisda — ang mga lokal na mangingisda ay nagbibigay ng guided tours\n• Kayaking — mag-explore ng mga kuweba at mangrove edges ng lawa\n• Lakad sa kalikasan — mag-lakad sa eco-trail sa paligid ng lawa\n• Picnicking — mga itinakdang lugar sa pampang ng lawa\nMakipag-ugnayan sa Naujan LGU para sa impormasyon sa pahintulot at lokal na gabay."
   ],
   "Naujan_Barangays": [
     "Ang Naujan ay may 39 barangay na nagkalat sa lowland farming areas, coastal zones, at upland forests. Ang Poblacion (town center) ang pinakamalaking barangay. Ilan sa mga kilalang barangay:\n• Poblacion — town center na may munisipal na tanggapan at pamilihan\n• Naujan Lake shore barangays — mga komunidad ng mangingisda\n• Upland barangays — malapit sa mga kagubatan at taniman ng Mangyan\nPara sa kumpletong listahan, makipag-ugnayan sa Naujan Municipal Hall: (043) 208-3382."
@@ -97,34 +119,39 @@
     "Ang Naujan ay isa sa mga pangunahing lungsod ng agrikultura sa Naujan:\n• Palay (bigas) — pangunahing pananim; kilala sa masaganang pag-aani\n• Niyog/Copra — pangalawang pangunahing produkto ng probinsya\n• Pangingisda sa lawa — tilapia, maliputo, at iba pang sariwang isda\n• Mais, saging, at gulay — suplementaryong mga pananim\n• Eco-agri tours — bisitahin ang mga lokal na farm at makita ang proseso ng pagtatanim ng bigas"
   ],
   "Eco_Tourism": [
-    "Eco-tourism sa Naujan Lake:\n• Bird-watching guided tours (pinakamainam: Nobyembre–Marso)\n• Bangka eco-tours sa lawa at mga mangrove\n• Bisita sa mga sustainable na farm at organic farming\n• Lakad sa eco-trail sa paligid ng National Park\n• Mga programang nagtataguyod ng konserbasyon ng Ramsar wetland\nSumunod sa Leave No Trace principles at huwag magsaboy ng basura sa paligid ng lawa."
+    "Eco-tourism sa Naujan Lake:\n• Bird-watching guided tours (pinakamainam: Nobyembre–Marso)\n• Bangka eco-tours sa lawa at mga mangrove\n• Bisita sa mga sustainable na farm at organic farming\n• Lakad sa eco-trail sa paligid ng lawa\n• Mga programang nagtataguyod ng konserbasyon ng Ramsar wetland\nSumunod sa Leave No Trace principles at huwag magsaboy ng basura sa paligid ng lawa."
   ],
   "Accommodation_Types": [
-    "Tulugan: Maliit na inn sa bayan (₱400-1,000/gabi), guesthouses, ilang ecolodges malapit sa lawa. Limitado pero komportable."
+    "Tulugan: Maliit na inn sa bayan (₱400-1,000/gabi), guesthouses, ilang ecolodges malapit sa lawa. Limitado pero komportable.",
+    "Mga opsyon sa pananatili sa Naujan:\n• Mga budget guesthouse at pension house sa Poblacion (₱500–₱1,200/gabi)\n• Mga lokal na inn malapit sa bayan (₱800–₱2,000/gabi)\n• Eco-lodge malapit sa Naujan Lake (limited availability)\n• Homestay na nag-aalok ng lokal na karanasan sa komunidad\nI-browse ang Hotels section ng NaujanGO app para makita ang kasalukuyang available na accommodation at mag-book online."
   ],
   "Budget_Travel": [
-    "3-araw na badyet: ₱2,500-4,500 bawat tao. Hotel: ₱400-1,000/gabi. Pagkain: ₱80-150/hapag. Local transport: ₱10-30."
+    "3-araw na badyet: ₱2,500-4,500 bawat tao. Hotel: ₱400-1,000/gabi. Pagkain: ₱80-150/hapag. Local transport: ₱10-30.",
+    "Budget guide para sa Naujan trip:\n• Ferry (Batangas → Calapan): ₱150–₱350 (RORO o FastCraft)\n• Bus (Manila → Batangas Pier): ₱150–₱250\n• Jeepney/Van (Calapan → Naujan): ₱40–₱60\n• Budget accommodation: ₱500–₱1,200 bawat gabi\n• Pagkain sa carinderia: ₱80–₱150 bawat kain\n• Boat tour sa lawa: ₱300–₱800 (depende sa grupo at tagal)\nTinatayang daily budget: ₱800–₱1,500 para sa budget traveler."
   ],
   "History_Heritage": [
-    "Kasaysayan at pamana ng Naujan:\n• Ang Naujan ay itinatag noong 1578 ng mga Espanyol na misyonero\n• Simbahan ng Our Lady of the Nativity — itinayo noong panahon ng kolonyal na Espanyol, makasaysayang landmark sa Poblacion\n• Ang mga katutubo (Mangyan) ay naninirahan sa rehiyon nang mahigit 2,000 taon\n• Noong Ikalawang Digmaang Pandaigdig, ang rehiyon ay naging lugar ng World War II liberation at mga labanan ng guerrilla laban sa mga Hapon\n• Ang Naujan Lake ay naging sentro ng pangingisda at kabuhayan ng mga komunidad sa loob ng maraming siglo"
+    "Kasaysayan at pamana ng Naujan:\n• Ang Naujan ay itinatag noong 1578 ng mga Espanyol na misyonero\n• Simbahan ng Our Lady of the Nativity — itinayo noong panahon ng kolonyal na Espanyol, makasaysayang landmark sa Poblacion\n• Ang mga katutubo (Mangyan) ay naninirahan sa rehiyon nang mahigit 2,000 taon\n• Noong Ikalawang Digmaang Pandaigdig, ang rehiyon ay naging lugar ng World War II liberation at mga labanan ng guerrilla laban sa mga Hapon\n• Ang Naujan Lake ay naging sentro ng pangingisda at kabuhayan ng mga komunidad sa loob ng maraming siglo",
+    "Kasaysayan at pamana ng Naujan:\n• Ang Naujan ay itinatag noong 1578 ng mga Espanyol na misyonero\n• Simbahan ng Our Lady of the Nativity — itinayo noong panahon ng kolonyal na Espanyol, makasaysayang landmark sa Poblacion\n• Ang mga katutubo (Mangyan) ay naninirahan sa Pilipinas nang mahigit 2,000 taon\n• Noong Ikalawang Digmaang Pandaigdig, ang Pilipinas ay naging kasasakayan ng mga labanan ng guerrilla laban sa mg Hapon\n• Ang Naujan Lake ay naging sentro ng pangingisda at kabuhayan ng mga komunidad sa loob ng maraming siglo"
   ],
   "Hiking_Trekking": [
-    "Gawain: Bird watching walks, mangrove trails, farm visits, camping. Pinakamahusay: 5-8 AM para sa mga ibon."
+    "Gawain: Bird watching walks, mangrove trails, farm visits, camping. Pinakamahusay: 5-8 AM para sa mga ibon.",
+    "Mga outdoor na aktibidad sa Naujan:\n• Eco-trail sa paligid ng Naujan Lake\n• Bird-watching walks na may gabay sa mga pampang ng lawa\n• Paglalakad sa kagubatan kasama ang mga lokal na gabay\n• Camping spot malapit sa lawa (kailangan ng pahintulot mula sa DENR)\n• PaglaNaujanGO sa mga upland barangay kasama ang komunidad ng Mangyan\nMakipag-ugnayan sa Naujan LGU o DENR para sa mga gabay at permit."
   ],
   "Local_Transport": [
-    "Local transport: Tricycle (₱10-30), habal-habal para barangays, van rental. Ang lawa ay 15-25 minuto mula sa lungsod."
+    "Local transport: Tricycle (₱10-30), habal-habal para barangays, van rental. Ang lawa ay 15-25 minuto mula sa lungsod.",
+    "Paggalaw sa loob ng Naujan:\n• Tricycle — pangunahing lokal na sasakyan; ₱10–₱30 para sa maiikling distansya\n• Jeepney — para sa mas mahahabang ruta papunta sa mga barangay\n• Habal-habal (motorsiklo) — para sa mga lugar na hindi maabot ng jeep\n• Van/Multicab for hire — para sa grupo o mas malaking grupo\nAng pagiging mapagpasensya ay mahalaga sa lokal na transportasyon."
   ],
   "Shopping_Souvenirs": [
     "Mga pasalubong at souvenir mula sa Naujan:\n• Mga basket at bag na gawa ng Mangyan (rattan/abaca)\n• Sariwang isda mula sa Naujan Lake (tilapia, maliputo)\n• Lokal na kakanin (puto, bibingka, sapin-sapin)\n• Organic na coconut products (virgin coconut oil, copra)\n• Lokal na pulot-pukyutan (honey) mula sa mga kabundukan\nBisitahin ang Naujan Public Market sa Poblacion para sa iba't ibang lokal na produkto."
   ],
   "Naujan_Lake_National_Park": [
-    "Ang Naujan Lake National Park ay ang ikalimang pinakamalaking lawa sa Pilipinas. Ito ay nakapaligid ng bundok at mayaman sa biodiversity. Maaari kang mag-enjoy ng boat rides, bird watching (mahigit 100 uri ng ibon), nature photography, at magsilang ng sunset sa tahimik na tubig. Perpekto para sa nature lovers!"
+    "Ang Naujan Lake ay ang ikalimang pinakamalaking lawa sa Pilipinas. Ito ay nakapaligid ng bundok at mayaman sa biodiversity. Maaari kang mag-enjoy ng boat rides, bird watching (mahigit 100 uri ng ibon), nature photography, at magsilang ng sunset sa tahimik na tubig. Perpekto para sa nature lovers!"
   ],
   "Simbahang_Bato": [
     "Ang Simbahang Bato (Bancuro Ruins) ay isang 17th-century na putol na simbahan na may natatanging disenyo ng 'simbahan sa loob ng simbahan'. Ang mga dingding ay nakabalot ng lumot at bukas ang istruktura. Maaari kang mag-explore, kumuha ng larawan, matuto tungkol sa Spanish heritage, at maramdaman ang katahimikan ng lugar na ito sa Brgy. Bancuro, Naujan."
   ],
   "Naujan_Attractions_Major": [
-    "Mga pangunahing atraksyon sa Naujan:\n• Naujan Lake National Park - malaking lawa na perpekto para sa ibon watching at boat rides\n• Simbahang Bato - lumang simbahan na may heritage appeal\n• Liwasang Bonifacio - pangunahing plaza ng bayan\n• Dao Waterlily Mini Park - eco-park na puno ng mga bulaklak\n• Montelago Hot Spring & Forest Falls - mainit na tubig at waterfalls\n• AgriGold Farm Learning Center - educational farm\n• Karacha Falls - magandang waterfall para sa hiking\n• ORIC sa Bathala Waterfalls - eco-tourism destination\n• Mga beach tulad ng Celeste Beach House at Nabul Beach Resort"
+    "Mga pangunahing atraksyon sa Naujan:\n• Naujan Lake - malaking lawa na perpekto para sa ibon watching at boat rides\n• Simbahang Bato - lumang simbahan na may heritage appeal\n• Liwasang Bonifacio - pangunahing plaza ng bayan\n• Dao Waterlily Mini Park - eco-park na puno ng mga bulaklak\n• Montelago Hot Spring & Forest Falls - mainit na tubig at waterfalls\n• AgriGold Farm Learning Center - educational farm\n• Karacha Falls - magandang waterfall para sa hiking\n• ORIC sa Bathala Waterfalls - eco-tourism destination\n• Mga beach tulad ng Celeste Beach House at Nabul Beach Resort"
   ],
   "Naujan_Accommodations_Budget": [
     "Murang Accommodations sa Naujan:\n• Darie Tambayan Hotel (Along Nautical Highway) - malinis at komportable. ₱500-800/gabi\n• El Caviteño Apartelle (Brgy. Estrella) - abot-kayang presyo, malapit sa town center. ₱600-900/gabi\n• Naujan Traveller's Inn and Resto Bar (Barcenaga) - may restaurant. ₱550-850/gabi\n• Bahay Tuklasan Dormitory (Brgy. Poblacion) - shared rooms para sa mga grupo. ₱300-400/gabi\nLahat ay may malinis na pasilidad at Filipino hospitality!"
@@ -139,6 +166,6 @@
     "Mga Beach at Beach Resorts sa Naujan:\n• Celeste Beach House (Brgy. Estrella) - malambot na buhangin at malinaw na tubig. Perpekto para sa pamilya.\n• Nabul Beach Resort (Brgy. Nabul) - simpleng beach na may kubo cottages\n• Emerald Resort (Brgy. Estrella) - malakas na dalampasigan\n• Hafa Adai (Brgy. Estrella) - pwedeng kumain habang nakatingin sa dagat\nMaaari kang lumangoy, mag-relax, at mag-picnic!"
   ],
   "Naujan_Best_Activities": [
-    "Mga Magagandang Aktividad sa Naujan:\n• Ibon watching sa Naujan Lake National Park\n• Boat rides sa maayos na lawa\n• Pag-explore ng lumang simbahan (Simbahang Bato)\n• Nature photography\n• Trekking sa waterfalls (Montelago, Karacha, Bathala)\n• Organic farming experience\n• Beach swimming at relaxation\n• Horseback riding\n• Pagkain ng local cuisine\n• Wellness at relaxation\nNaujan ay perpekto para sa nature lovers at culturally-interested travelers!"
+    "Mga Magagandang Aktividad sa Naujan:\n• Ibon watching sa Naujan Lake\n• Boat rides sa maayos na lawa\n• Pag-explore ng lumang simbahan (Simbahang Bato)\n• Nature photography\n• Trekking sa waterfalls (Montelago, Karacha, Bathala)\n• Organic farming experience\n• Beach swimming at relaxation\n• Horseback riding\n• Pagkain ng local cuisine\n• Wellness at relaxation\nNaujan ay perpekto para sa nature lovers at culturally-interested travelers!"
   ]
 }

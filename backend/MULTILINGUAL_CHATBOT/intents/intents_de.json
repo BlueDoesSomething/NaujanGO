@@ -90,7 +90,6 @@
         "Nau Jan In Mindoro Island",
         "Naujan Philippines",
         "Naujan In Welcher Provinz",
-        "Naujan Philippines",
         "Naujan kartenlage",
         "WIE FINDE ICH naujan",
         "WO BEFINDET SICH nau jan",
@@ -113,14 +112,11 @@
         "nachbarort",
         "nau jan IN WELCHER PROVINZ",
         "nau jan PROVINZ",
-        "naujan philippines",
-        "Naujan Philippines",
         "naujan LOCATION",
         "naujan auf der karte finden",
         "naujan in den philippinen",
         "naujan karte",
         "naujan lokalisieren",
-        "naujan philippines",
         "naujan ort",
         "naujan philippinen",
         "provinz naujan",
@@ -154,7 +150,7 @@
         "NAUJAN-SEE SCHUTZGEBIET",
         "Nau jan-see facts",
         "Nau jan-see ramsar",
-        "Naujan-See Nationalpark",
+        "Naujan-See",
         "Naujan-see biodiversität",
         "PHILIPPINISCHE ENTE IM nau jan-SEE",
         "WAS IST DER NAUJAN-SEE",
@@ -431,12 +427,17 @@
         "Kokosnuss",
         "reis",
         "BAUERN IN NAUJAN",
-        "BANANEN IN NAUJAN"
+        "BANANEN IN NAUJAN",
+        "landwirtschaft naujan",
+        "anbau naujan",
+        "reis naujan",
+        "kokosnuss"
       ],
       "responses": [
         "Die Hauptkulturen in Naujan sind Reis und Kokosnuss (Kopra). Es werden auch Mais, Gemüse und Wurzelfrüchte angebaut.",
         "Die landwirtschaftlichen Produkte sind Reis, Kopra, Mais, Bananen und verschiedene Wurzelfrüchte. Der Kokosanbau ist besonders wichtig.",
-        "Naujan ist für seine Reisfelder und Kokosplantagen bekannt. Kopra (getrockneter Kokoskern) ist ein wichtiges Exportprodukt."
+        "Naujan ist für seine Reisfelder und Kokosplantagen bekannt. Kopra (getrockneter Kokoskern) ist ein wichtiges Exportprodukt.",
+        "Hauptkulturen: Reis und Kokosnuss (Kopra). Auch Mais, Wurzeln, Obst, Gemuse. Plantagen bieten schone Aussichten."
       ]
     },
     {
@@ -467,12 +468,17 @@
         "Regnet es in nau jan",
         "ist es heiß in nauj an",
         "Klima In Nau Jan",
-        "WIE IST DAS WETTER"
+        "WIE IST DAS WETTER",
+        "klima naujan",
+        "temperatur",
+        "regenzeit",
+        "taifune"
       ],
       "responses": [
         "Ich habe keine Live-Wetterdaten. Naujan hat tropisches Klima. Bitte prüfen Sie PAGASA oder eine Wetter-App.",
         "Naujan hat ganzjährig tropisches Klima. Konsultieren Sie einen Wetterdienst für die aktuelle Vorhersage.",
-        "Das Klima in Naujan ist normalerweise tropisch. Für aktuelle Informationen nutzen Sie bitte eine Wetter-App."
+        "Das Klima in Naujan ist normalerweise tropisch. Für aktuelle Informationen nutzen Sie bitte eine Wetter-App.",
+        "Tropisches Klima. Trockenzeit (Nov-Mai) ideal. Regenzeit (Jun-Okt): grune Reisfelder aber mogliche Taifune. Fragen Sie lokale Wettervorhersage."
       ]
     },
     {
@@ -504,12 +510,17 @@
         "Reise Nach Nau Jan Planen",
         "reise nach naujan planen",
         "REISEVORSCHLAG",
-        "Reiseplan"
+        "Reiseplan",
+        "reiseroute naujan",
+        "reiseplan",
+        "3 tage naujan",
+        "was tun"
       ],
       "responses": [
         "Empfohlene Route: Naujan-Kirche, Naujan-See zur Vogelbeobachtung, lokale Farmen, Essen auf dem Marktplatz.",
-        "Beliebte Orte: Naujan-Kirche, Naujan-See Nationalpark, lokale Farmen, Stadtmarkt.",
-        "Tag 1: Kirche und historische Stätten. Tag 2: Naujan-See erkunden. Tag 3: Farmen und lokale Märkte besuchen."
+        "Beliebte Orte: Naujan-Kirche, Naujan-See, lokale Farmen, Stadtmarkt.",
+        "Tag 1: Kirche und historische Stätten. Tag 2: Naujan-See erkunden. Tag 3: Farmen und lokale Märkte besuchen.",
+        "3-Tage-Trip: Tag 1 - Kirche und Platz. Tag 2 - Naujan-See und Vogelbeobachtung. Tag 3 - Farmen und Markt. Oder gefuhrte Tour machen."
       ]
     },
     {
@@ -596,10 +607,14 @@
         "von calapan nach naujan",
         "wie komme ich nach naujan",
         "wie lange nach naujan",
-        "wie weit ist naujan von manila"
+        "wie weit ist naujan von manila",
+        "fahre nach naujan",
+        "route von manila",
+        "verkehr nach naujan"
       ],
       "responses": [
-        "So kommt man nach Naujan:\n1. Ab Manila: Bus von EDSA oder Buendia zum Batangas Terminal (~2 Std.).\n2. RORO oder FastCraft-Fähre von Batangas Pier nach Calapan Port (~1,5–2 Std.).\n3. Ab Calapan: Jeepney oder Van nach Süden bis Naujan (~30–45 Min., ~₱40–₱60).\nTipp: Früh aufbrechen, um lange Warteschlangen am Hafen zu vermeiden."
+        "So kommt man nach Naujan:\n1. Ab Manila: Bus von EDSA oder Buendia zum Batangas Terminal (~2 Std.).\n2. RORO oder FastCraft-Fähre von Batangas Pier nach Calapan Port (~1,5–2 Std.).\n3. Ab Calapan: Jeepney oder Van nach Süden bis Naujan (~30–45 Min., ~₱40–₱60).\nTipp: Früh aufbrechen, um lange Warteschlangen am Hafen zu vermeiden.",
+        "Anreise: 1) Bus von Manila nach Batangas Port (~2h) 2) Fähre nach Calapan (~1-3h) 3) Jeepney nach Naujan (~30-45 min). Gesamt: 4-6h von Manila."
       ]
     },
     {
@@ -628,10 +643,15 @@
         "any info on ist",
         "naujan",
         "anything on von",
-        "about ist"
+        "about ist",
+        "uber naujan",
+        "informationen naujan",
+        "erzahl mir von naujan",
+        "ubersicht naujan"
       ],
       "responses": [
-        "Naujan ist eine erstklassige Gemeinde in Naujan, Philippinen. Bekannt ist sie für den Naujan-See — den fünftgrößten See der Philippinen und Ramsar-Feuchtgebiet von internationaler Bedeutung. Die Gemeinde zeichnet sich durch Landwirtschaft (Reis, Kokos), Mangyan-Erbe und ein reiches Seeökosystem aus. Ideal für Vogelbeobachtung, Fischen und Ökotourismus."
+        "Naujan ist eine erstklassige Gemeinde in Naujan, Philippinen. Bekannt ist sie für den Naujan-See — den fünftgrößten See der Philippinen und Ramsar-Feuchtgebiet von internationaler Bedeutung. Die Gemeinde zeichnet sich durch Landwirtschaft (Reis, Kokos), Mangyan-Erbe und ein reiches Seeökosystem aus. Ideal für Vogelbeobachtung, Fischen und Ökotourismus.",
+        "Naujan ist eine First-Class-Gemeinde auf den Philippinen. Bekannt für den Naujan-See - der 5. größte See des Landes und Ramsar-Gebiet."
       ]
     },
     {
@@ -684,12 +704,17 @@
         "typische gerichte naujan",
         "was essen in naujan",
         "was man in naujan essen kann",
-        "wochenmarkt"
+        "wochenmarkt",
+        "fisch vom see",
+        "lokale kuche",
+        "spezialitaten",
+        "was essen naujan"
       ],
       "responses": [
         "In Naujan probieren: frischer Tilapia aus dem See, Huhn Tinola, Kare-Kare und Kakanin (traditionelle Reiskuchen).",
         "Lokale Spezialitaten: Binagol (Taro-Dessert), Palitaw, frische See- und Meeresfruechte und handwerkliche Kokoserzeugnisse.",
-        "Der Naujan-Markt hat frische Produkte und Seefruchte. Besuchen Sie ihn am Morgen fur die beste Auswahl."
+        "Der Naujan-Markt hat frische Produkte und Seefruchte. Besuchen Sie ihn am Morgen fur die beste Auswahl.",
+        "Lokale Speisen: Frischer Fisch aus dem See (Tilapia, Dalag), Reis, Kokosnussgerichte, Binagoongan. Kakanin und einheimisches Gebäck. Gunstige Restaurants (₱80-150)."
       ]
     },
     {
@@ -734,12 +759,16 @@
         "stadtfest",
         "volksfest",
         "wann ereignisse naujan besuchen",
-        "wann ist fest naujan"
+        "wann ist fest naujan",
+        "8 september",
+        "feiern",
+        "feste naujan",
+        "schutzheiliger fest",
+        "veranstaltungen"
       ],
       "responses": [
-        "Naujan feiert das Biniray-Festival im Januar zu Ehren des Santo Nino mit Strassenparden, Tanzen und religioesen Aktivitaten.",
-        "Das Tadyak-Festival in Nachbargemeinden feiert die indigene Mangyan-Kultur. Puerto Galera hat das Mardivina-Festival.",
-        "Wichtige Ereignisse: Biniray-Festival (Januar), Unabhangigkeitstag (Juni), Pasko sa Naujan (Dezember). LGU fur genaue Termine."
+        "Das Hauptfest von Naujan wird jedes Jahr am 8. September zu Ehren der Geburt der Seligen Jungfrau Maria (Unsere Liebe Frau von der Geburt), der Schutzpatronin von Naujan, gefeiert. Die Feier umfasst eine feierliche Messe in der Naujan-Kirche, Straßenumzüge, kulturelle Darbietungen, Essensmessen und Live-Auftritte auf dem Stadtplatz.",
+        "Wichtige Ereignisse in Naujan:\n• 8. September – Stadtfest (Geburt der Muttergottes)\n• November–März – Vogelbeobachtungssaison am Naujan-See (Höhepunkt der Zugvögel aus Sibirien)\n• November–Dezember – Erntefeste in den Reisanbau-Barangays\n• Verschiedene Monate – Barangay-Feste\n• Ökotourismus-Messen der LGU"
       ]
     },
     {
@@ -766,12 +795,15 @@
         "anything on gemeinschaften",
         "what about kultur",
         "where's kultur",
-        "schrift"
+        "schrift",
+        "ureinwohner",
+        "tradition"
       ],
       "responses": [
         "Die Mangyan sind 8 indigene Gruppen Mindoros mit der Hanunuo-Mangyan-Schrift, einem vorkolonialen auf Bambus geschriebenen System.",
         "Besuchen Sie Mangyan-Gemeinschaften mit einem Fuhrer bei Calapan. Bekannt fur Webarbeiten, Korbe und die Ambahan-Liebesgedichte.",
-        "Unterstutzen Sie die Mangyan, indem Sie ihr Kunsthandwerk in Fairtrade-Kooperativen in Calapan kaufen."
+        "Unterstutzen Sie die Mangyan, indem Sie ihr Kunsthandwerk in Fairtrade-Kooperativen in Calapan kaufen.",
+        "Mangyan-Gemeinden (Iraya, Alangan): Leben in hoher gelegenen Gebieten. Bekannt fur geflochtene Korbe, traditionellen Schmuck, Ambahan-Poesie. Mit Respekt und lokalem Fuhrer besuchen."
       ]
     },
     {
@@ -799,10 +831,15 @@
         "yo, reisfelder",
         "reisfelder?",
         "wie ist reisfelder",
-        "wie ist fluss"
+        "wie ist fluss",
+        "natur naujan",
+        "fluss naujan",
+        "landschaft naujan",
+        "flora fauna"
       ],
       "responses": [
-        "Natürliche Merkmale von Naujan:\n• Naujan-See — 5. größter See der Philippinen, Vogelzuflucht\n• Sadya-Fluss — ideal zum Schwimmen und Genießen der Natur\n• Weitläufige Reisfelder — Naujan ist berühmt für seinen Reisanbau\n• Kokosplantagen — Quelle von Kopra und Kokosprodukten\n• Küstenmangroven — schützen die Küste und beherbergen Fische"
+        "Natürliche Merkmale von Naujan:\n• Naujan-See — 5. größter See der Philippinen, Vogelzuflucht\n• Sadya-Fluss — ideal zum Schwimmen und Genießen der Natur\n• Weitläufige Reisfelder — Naujan ist berühmt für seinen Reisanbau\n• Kokosplantagen — Quelle von Kopra und Kokosprodukten\n• Küstenmangroven — schützen die Küste und beherbergen Fische",
+        "Natur: Naujan-See (20.000+ ha), Sadya-Fluss, Reisfelder, Mangrovensumpfe, Kuste. Hervorragend für Fotografie und Wanderungen."
       ]
     },
     {
@@ -834,7 +871,7 @@
         "what about bootstour"
       ],
       "responses": [
-        "Aktivitäten am Naujan-See:\n• Vogelbeobachtung — über 100 Arten, darunter die Philippinen-Ente\n• Bootsfahrt — lokales Boot mieten für Seetouren\n• Angeln — lokale Fischer bieten geführte Touren an\n• Kajakfahren — Ufer und Mangroven des Sees erkunden\n• Wandern auf Ökopfaden des Nationalparks\n• Picknick und Entspannung am Seeufer"
+        "Aktivitäten am Naujan-See:\n• Vogelbeobachtung — über 100 Arten, darunter die Philippinen-Ente\n• Bootsfahrt — lokales Boot mieten für Seetouren\n• Angeln — lokale Fischer bieten geführte Touren an\n• Kajakfahren — Ufer und Mangroven des Sees erkunden\n• Wandern auf Ökopfaden am Seeufer\n• Picknick und Entspannung am Seeufer"
       ]
     },
     {
@@ -860,12 +897,17 @@
         "how about naujan",
         "auskunft über saison",
         "saison?",
-        "fahren?"
+        "fahren?",
+        "beste zeit naujan",
+        "wann besuchen",
+        "saison naujan",
+        "vogelbeobachtung"
       ],
       "responses": [
         "Beste Reisezeit: November bis Mai in der Trockenzeit mit Sonnenschein und ruhigen Meeren.",
         "Hochsaison: Dezember-April. Vermeiden Sie Taifunsaison Juni-Oktober. Vogelbeobachtung am See am besten Oktober-Marz.",
-        "Marz-April ideal fur Strande. Januar fur Biniray-Festival. November-Februar fur Zugvogel am Naujan-See."
+        "Marz-April ideal fur Strande. Januar fur Biniray-Festival. November-Februar fur Zugvogel am Naujan-See.",
+        "Beste Zeit: November bis Mai (Trockenzeit). Nov-Mär perfekt für Vogelbeobachtung. Vermeiden Sie Juni-Oktober (Regen und Taifune)."
       ]
     },
     {
@@ -892,12 +934,17 @@
         "funktionen?",
         "tell me more about naujango",
         "erzähl mir über funktionen",
-        "diese"
+        "diese",
+        "was kannst du tun",
+        "app funktionen",
+        "naujango services",
+        "wie funktioniert"
       ],
       "responses": [
         "NaujanGO ist die Reiseplattform fur Naujan und Naujan. Inkl.: Hotels, Attraktionen, GPS-Karte, Reiserplaner und Wetter.",
         "Auf NaujanGO konnen Sie: Hotels buchen, Attraktionen erkunden, Itinerarien erstellen, die Karte nutzen und mit diesem Chatbot chatten.",
-        "Funktionen: Hotels (buchen), Attraktionen, Interaktive GPS-Karte, Reiseplaner und mehrsprachiger Chatbot in 8 Sprachen."
+        "Funktionen: Hotels (buchen), Attraktionen, Interaktive GPS-Karte, Reiseplaner und mehrsprachiger Chatbot in 8 Sprachen.",
+        "NaujanGO hilft: Hotelreservierung, Reiseplanung, Informationen zu Attraktionen, Restaurants, Verkehr, Wetter, Tipps, and Reisefuhrer."
       ]
     },
     {
@@ -955,10 +1002,18 @@
         "see?",
         "mangrovensafari",
         "erzählen sie mir von mangrovensafari",
-        "i need mangrovensafari"
+        "i need mangrovensafari",
+        "okotourismus naujan",
+        "nachhaltiger tourismus",
+        "birdwatching naujan see",
+        "natur in naujan",
+        "nature tours naujan"
       ],
       "responses": [
-        "Ökotourismus am Naujan-See:\n• Geführte Vogelbeobachtungstouren (beste Zeit: Nov–März)\n• Bootsausflüge auf dem See und in den Mangroven\n• Besuche nachhaltiger Farmen und ökologischer Landwirtschaft\n• Wanderungen auf Ökopfaden des Nationalparks\n• Naturschutzprogramme des Ramsar-Feuchtgebiets\nBitte Leave No Trace-Grundsätze befolgen."
+        "Ökotourismus am Naujan-See:\n• Geführte Vogelbeobachtungstouren (beste Zeit: Nov–März)\n• Bootsausflüge auf dem See und in den Mangroven\n• Besuche nachhaltiger Farmen und ökologischer Landwirtschaft\n• Wanderungen auf Ökopfaden am Seeufer\n• Naturschutzprogramme des Ramsar-Feuchtgebiets\nBitte Leave No Trace-Grundsätze befolgen.",
+        "Okotourismus am Naujan-See: Vogelbeobachtungstouren, Banca-Ausfluge, Besuche von Okofarms und Wanderungen im Feuchtgebiet.",
+        "Naujan: Vogelbeobachtung in Naujan, Kajak im Mangrovenwald in Gloria und Pola, Schnorcheln in Puerto Galera.",
+        "Nachhaltiges Reisen: LGU-akkreditierte Fuhrer beauftragen, Gemeinschaftsfarmen besuchen und Leave No Trace am See praktizieren."
       ]
     },
     {
@@ -989,10 +1044,15 @@
         "erzählen sie mir von jeepney",
         "tell me naujan",
         "wie ist in",
-        "yo, naujan"
+        "yo, naujan",
+        "lokale verkehrsmittel",
+        "wie umherfahren",
+        "tricycle preis",
+        "habal habal"
       ],
       "responses": [
-        "Fortbewegung in Naujan:\n• Tricycle — Haupttransportmittel; ₱10–₱30 für kurze Strecken\n• Jeepney — längere Strecken zu den Barangays\n• Habal-habal (Motorrad) — für schwer zugängliche Orte\n• Van/Multicab for hire — für Gruppen\nGeduld ist beim lokalen Transport gefragt."
+        "Fortbewegung in Naujan:\n• Tricycle — Haupttransportmittel; ₱10–₱30 für kurze Strecken\n• Jeepney — längere Strecken zu den Barangays\n• Habal-habal (Motorrad) — für schwer zugängliche Orte\n• Van/Multicab for hire — für Gruppen\nGeduld ist beim lokalen Transport gefragt.",
+        "Verkehrsmittel: Tricycle (₱10-30), habal-habal für Barangays, Mietwagen. See ist 15-25 min vom Stadtzentrum entfernt."
       ]
     },
     {
@@ -1024,10 +1084,13 @@
         "more info on naturspaziergang",
         "details zu naturspaziergang",
         "naturspaziergang?",
-        "was ist naujan"
+        "was ist naujan",
+        "trek naujan",
+        "wanderweg okotourismus"
       ],
       "responses": [
-        "Outdoor-Aktivitäten in Naujan:\n• Ökopfade rund um den Nationalpark Naujan-See\n• Vogelbeobachtungswanderungen mit lokalen Guides\n• Camping nahe dem See (DENR-Genehmigung erforderlich)\n• Ausflüge zu Mangyan-Gemeinschaften in den Bergen\n• Touren durch ländliche Barangays\nKontaktieren Sie das Naujan LGU oder DENR für Guides und Genehmigungen."
+        "Outdoor-Aktivitäten in Naujan:\n• Ökopfade rund um den Naujan-See\n• Vogelbeobachtungswanderungen mit lokalen Guides\n• Camping nahe dem See (DENR-Genehmigung erforderlich)\n• Ausflüge zu Mangyan-Gemeinschaften in den Bergen\n• Touren durch ländliche Barangays\nKontaktieren Sie das Naujan LGU oder DENR für Guides und Genehmigungen.",
+        "Aktivitaten: Vogelbeobachtungswanderungen, Mangrovegewade, Farmbesuche, Camping. Beste Zeit: 5-8 Uhr morgens fur Vogel."
       ]
     },
     {
@@ -1053,10 +1116,15 @@
         "naujan",
         "in",
         "reise",
-        "reise?"
+        "reise?",
+        "budget reise",
+        "kosten naujan",
+        "hotelpreis",
+        "gunstige touren"
       ],
       "responses": [
-        "Budgetführer für Naujan:\n• Fähre (Batangas → Calapan): ₱150–₱350 (RORO oder FastCraft)\n• Bus (Manila → Batangas): ₱150–₱250\n• Jeepney/Van (Calapan → Naujan): ₱40–₱60\n• Basiserkunft: ₱500–₱1.200 pro Nacht\n• Mahlzeit in der Carinderia: ₱80–₱150\n• Bootstour auf dem See: ₱300–₱800\nGeschätztes Tagesbudget: ₱800–₱1.500 für budgetbewusste Reisende."
+        "Budgetführer für Naujan:\n• Fähre (Batangas → Calapan): ₱150–₱350 (RORO oder FastCraft)\n• Bus (Manila → Batangas): ₱150–₱250\n• Jeepney/Van (Calapan → Naujan): ₱40–₱60\n• Basiserkunft: ₱500–₱1.200 pro Nacht\n• Mahlzeit in der Carinderia: ₱80–₱150\n• Bootstour auf dem See: ₱300–₱800\nGeschätztes Tagesbudget: ₱800–₱1.500 für budgetbewusste Reisende.",
+        "Budget 3T: ₱2,500-4,500 pro Person. Hotel: ₱400-1,000/Nacht. Essen: ₱80-150. Verkehr: ₱10-30."
       ]
     },
     {
@@ -1093,22 +1161,6 @@
         "Notfall Naujan: Polizei (043) 208-3362, Bürgermeisterbüro (043) 208-3382. Fur medizinische Notfalle: Naujan Bezirkskrankenhaus.",
         "Sicherheitstipps: bewahren Sie Wertsachen auf, nutzen Sie lizensierte Fuhrer fur Wanderungen, prufen Sie Wetter vor Wasseraktivitaten.",
         "Philippinen Notfall national: wahlen Sie 911. Kustenwarche: 5734-CGEA. Teilen Sie immer Ihr Itinerar vor Aktivitaten in abgelegenen Gebieten."
-      ]
-    },
-    {
-      "tag": "Eco_Tourism",
-      "patterns": [
-        "okotourismus naujan",
-        "nachhaltiger tourismus",
-        "vogelbeobachtung naujan",
-        "birdwatching naujan see",
-        "natur in naujan",
-        "nature tours naujan"
-      ],
-      "responses": [
-        "Okotourismus am Naujan-See: Vogelbeobachtungstouren, Banca-Ausfluge, Besuche von Okofarms und Wanderungen im Feuchtgebiet.",
-        "Naujan: Vogelbeobachtung in Naujan, Kajak im Mangrovenwald in Gloria und Pola, Schnorcheln in Puerto Galera.",
-        "Nachhaltiges Reisen: LGU-akkreditierte Fuhrer beauftragen, Gemeinschaftsfarmen besuchen und Leave No Trace am See praktizieren."
       ]
     },
     {
@@ -1232,10 +1284,13 @@
         "details zu zimmer",
         "details about zimmer",
         "details about naujan",
-        "zimmer"
+        "zimmer",
+        "hotel naujan",
+        "unterkunftsmoglichkeiten"
       ],
       "responses": [
-        "Unterkunftsmöglichkeiten in Naujan:\n• Einfache Pensionen und Gästehäuser im Poblacion (₱500–₱1.200/Nacht)\n• Lokale Herbergen in Stadtnähe (₱800–₱2.000/Nacht)\n• Ökolodge nahe dem Naujan-See (begrenzte Verfügbarkeit)\n• Homestays mit lokalem Gemeinschaftserlebnis\nSchauen Sie im Hotels-Bereich der NaujanGO-App für Verfügbarkeit und Buchung."
+        "Unterkunftsmöglichkeiten in Naujan:\n• Einfache Pensionen und Gästehäuser im Poblacion (₱500–₱1.200/Nacht)\n• Lokale Herbergen in Stadtnähe (₱800–₱2.000/Nacht)\n• Ökolodge nahe dem Naujan-See (begrenzte Verfügbarkeit)\n• Homestays mit lokalem Gemeinschaftserlebnis\nSchauen Sie im Hotels-Bereich der NaujanGO-App für Verfügbarkeit und Buchung.",
+        "Unterkunft: Kleine Gasthöfe in der Stadt (₱400-1,000/Nacht), Pensionen, einige Ökolodges. Begrenzt aber komfortabel."
       ]
     },
     {
@@ -1265,7 +1320,7 @@
         "tell me naujan"
       ],
       "responses": [
-        "Der Naujan-See Nationalpark ist der fünftgrößte See der Philippinen. Umgeben von üppigen Bergen und reicher Biodiversität. Aktivitäten: Bootsfahrten, Vogelbeobachtung (über 100 Arten), Naturfotografie, und wunderbare Sonnenuntergänge. Perfekt für Naturliebhaber!"
+        "Der Naujan-See ist der fünftgrößte See der Philippinen. Umgeben von üppigen Bergen und reicher Biodiversität. Aktivitäten: Bootsfahrten, Vogelbeobachtung (über 100 Arten), Naturfotografie, und wunderbare Sonnenuntergänge. Perfekt für Naturliebhaber!"
       ]
     },
     {
@@ -1326,7 +1381,7 @@
         "is there in"
       ],
       "responses": [
-        "Hauptattraktionen in Naujan:\n• Naujan-See Nationalpark - wunderschöner See für Bootsfahrten\n• Simbahang Bato - historische Kirchenruinen\n• Liwasang Bonifacio - Hauptplatz\n• Dao Waterlily Mini Park - Ökopark\n• Montelago Hot Spring & Forest Falls - heiße Quellen und Wasserfälle\n• AgriGold Farm - Lehrfarm\n• Karacha Falls - wunderschöner Wasserfall\n• ORIC sa Bathala Waterfalls - Ökotourismusziel\n• Strände wie Celeste Beach House und Nabul Beach Resort"
+        "Hauptattraktionen in Naujan:\n• Naujan-See - wunderschöner See für Bootsfahrten\n• Simbahang Bato - historische Kirchenruinen\n• Liwasang Bonifacio - Hauptplatz\n• Dao Waterlily Mini Park - Ökopark\n• Montelago Hot Spring & Forest Falls - heiße Quellen und Wasserfälle\n• AgriGold Farm - Lehrfarm\n• Karacha Falls - wunderschöner Wasserfall\n• ORIC sa Bathala Waterfalls - Ökotourismusziel\n• Strände wie Celeste Beach House und Nabul Beach Resort"
       ]
     },
     {
@@ -1500,141 +1555,6 @@
       ]
     },
     {
-      "tag": "Naujan_Overview",
-      "patterns": [
-        "uber naujan",
-        "informationen naujan",
-        "was ist naujan",
-        "erzahl mir von naujan",
-        "ubersicht naujan"
-      ],
-      "responses": [
-        "Naujan ist eine First-Class-Gemeinde auf den Philippinen. Bekannt für den Naujan-See - der 5. größte See des Landes und Ramsar-Gebiet."
-      ]
-    },
-    {
-      "tag": "Transportation_How_To_Get_There",
-      "patterns": [
-        "abfahrtszeiten",
-        "anreiseroute",
-        "arten nach naujan zu gehen",
-        "bahnhof",
-        "bus nach naujan",
-        "bushaltestelle",
-        "fahre nach naujan",
-        "fahren nach naujan",
-        "fahrkosten",
-        "fahrt nach naujan",
-        "fahrtdauer",
-        "flug nach naujan",
-        "flughafennähe",
-        "fähranlegestelle",
-        "fähre nach naujan",
-        "landfahrt naujan",
-        "reaches naujan",
-        "reisen nach naujan",
-        "reisezeit nach naujan",
-        "route von manila",
-        "routen nach naujan",
-        "seeroute naujan",
-        "straßenverbindung",
-        "transport nach naujan",
-        "transportmittel naujan",
-        "verkehr nach naujan",
-        "verkehrsmittel",
-        "wie komme ich nach naujan",
-        "wie lange nach naujan"
-      ],
-      "responses": [
-        "Anreise: 1) Bus von Manila nach Batangas Port (~2h) 2) Fähre nach Calapan (~1-3h) 3) Jeepney nach Naujan (~30-45 min). Gesamt: 4-6h von Manila."
-      ]
-    },
-    {
-      "tag": "Local_Transport",
-      "patterns": [
-        "lokale verkehrsmittel",
-        "wie umherfahren",
-        "tricycle preis",
-        "habal habal"
-      ],
-      "responses": [
-        "Verkehrsmittel: Tricycle (₱10-30), habal-habal für Barangays, Mietwagen. See ist 15-25 min vom Stadtzentrum entfernt."
-      ]
-    },
-    {
-      "tag": "Local_Food_Cuisine",
-      "patterns": [
-        "bestes essen naujan",
-        "essen in naujan",
-        "esskultur",
-        "fisch vom see",
-        "gastronomie naujan",
-        "gaststättenbetrieb",
-        "geschmackserlebnis",
-        "geschmackskombination",
-        "handwerkliche verarbeitung",
-        "landestypische küche",
-        "lokale kuche",
-        "lokale köstlichkeiten naujan",
-        "lokale küche naujan",
-        "naujan essen",
-        "naujan gemüse",
-        "naujan gerichte",
-        "naujan geschmack",
-        "naujan meeresfrüchte",
-        "naujan probieren",
-        "naujan restaurants",
-        "naujan rezepte",
-        "naujan spezialitäten",
-        "regionale küche",
-        "regionalprodukt",
-        "restaurantempfehlung",
-        "spezialitaten",
-        "traditionelle zubereitung",
-        "was essen naujan",
-        "was man in naujan essen kann",
-        "wochenmarkt"
-      ],
-      "responses": [
-        "Lokale Speisen: Frischer Fisch aus dem See (Tilapia, Dalag), Reis, Kokosnussgerichte, Binagoongan. Kakanin und einheimisches Gebäck. Gunstige Restaurants (₱80-150)."
-      ]
-    },
-    {
-      "tag": "Best_Time_To_Visit",
-      "patterns": [
-        "beste zeit naujan",
-        "wann besuchen",
-        "saison naujan",
-        "vogelbeobachtung"
-      ],
-      "responses": [
-        "Beste Zeit: November bis Mai (Trockenzeit). Nov-Mär perfekt für Vogelbeobachtung. Vermeiden Sie Juni-Oktober (Regen und Taifune)."
-      ]
-    },
-    {
-      "tag": "Budget_Travel",
-      "patterns": [
-        "budget reise",
-        "kosten naujan",
-        "hotelpreis",
-        "gunstige touren"
-      ],
-      "responses": [
-        "Budget 3T: ₱2,500-4,500 pro Person. Hotel: ₱400-1,000/Nacht. Essen: ₱80-150. Verkehr: ₱10-30."
-      ]
-    },
-    {
-      "tag": "Accommodation_Types",
-      "patterns": [
-        "unterkunft naujan",
-        "hotel naujan",
-        "unterkunftsmoglichkeiten"
-      ],
-      "responses": [
-        "Unterkunft: Kleine Gasthöfe in der Stadt (₱400-1,000/Nacht), Pensionen, einige Ökolodges. Begrenzt aber komfortabel."
-      ]
-    },
-    {
       "tag": "Booking_Help",
       "patterns": [
         "buchung auf naujango",
@@ -1658,122 +1578,6 @@
       ],
       "responses": [
         "Zum Buchen: 1) Gehen Sie zu Hotels 2) Wahlen Sie Daten 3) Details uberprüfen 4) Zahlen. Sofortige Bestatigung erhalten."
-      ]
-    },
-    {
-      "tag": "Festivals_Events",
-      "patterns": [
-        "8 september",
-        "ereignisse naujan",
-        "feier naujan",
-        "feiern",
-        "feiertage naujan",
-        "fest naujan",
-        "feste naujan",
-        "festlichkeiten naujan",
-        "festprogramm",
-        "festumzug",
-        "feuerwerk",
-        "freier eintritt",
-        "gemeindeveranstaltung",
-        "jährliche veranstaltungen naujan",
-        "kulturelle veranstaltung",
-        "kulturelle veranstaltungen naujan",
-        "livemusik",
-        "lokale feiern naujan",
-        "lokales fest",
-        "schutzheiliger fest",
-        "stadtfest",
-        "veranstaltungen",
-        "volksfest",
-        "wann ereignisse naujan besuchen",
-        "wann ist fest naujan"
-      ],
-      "responses": [
-        "Hauptfest: 8. September (Geburt Mariens). Messe, Umzug, Essen, Kulturprogramm. Vogelbeobachtungsspitzen: Nov-Marz."
-      ]
-    },
-    {
-      "tag": "Naujan_Natural_Features",
-      "patterns": [
-        "natur naujan",
-        "fluss naujan",
-        "landschaft naujan",
-        "flora fauna"
-      ],
-      "responses": [
-        "Natur: Naujan-See (20.000+ ha), Sadya-Fluss, Reisfelder, Mangrovensumpfe, Kuste. Hervorragend für Fotografie und Wanderungen."
-      ]
-    },
-    {
-      "tag": "Hiking_Trekking",
-      "patterns": [
-        "wandern naujan",
-        "trek naujan",
-        "wanderweg okotourismus"
-      ],
-      "responses": [
-        "Aktivitaten: Vogelbeobachtungswanderungen, Mangrovegewade, Farmbesuche, Camping. Beste Zeit: 5-8 Uhr morgens fur Vogel."
-      ]
-    },
-    {
-      "tag": "Mangyan_Culture",
-      "patterns": [
-        "mangyan kultur",
-        "ureinwohner",
-        "mangyan handwerk",
-        "tradition"
-      ],
-      "responses": [
-        "Mangyan-Gemeinden (Iraya, Alangan): Leben in hoher gelegenen Gebieten. Bekannt fur geflochtene Korbe, traditionellen Schmuck, Ambahan-Poesie. Mit Respekt und lokalem Fuhrer besuchen."
-      ]
-    },
-    {
-      "tag": "Agriculture_Crops",
-      "patterns": [
-        "landwirtschaft naujan",
-        "anbau naujan",
-        "reis naujan",
-        "kokosnuss"
-      ],
-      "responses": [
-        "Hauptkulturen: Reis und Kokosnuss (Kopra). Auch Mais, Wurzeln, Obst, Gemuse. Plantagen bieten schone Aussichten."
-      ]
-    },
-    {
-      "tag": "Weather_Info",
-      "patterns": [
-        "klima naujan",
-        "temperatur",
-        "regenzeit",
-        "taifune"
-      ],
-      "responses": [
-        "Tropisches Klima. Trockenzeit (Nov-Mai) ideal. Regenzeit (Jun-Okt): grune Reisfelder aber mogliche Taifune. Fragen Sie lokale Wettervorhersage."
-      ]
-    },
-    {
-      "tag": "Itinerary_Plan",
-      "patterns": [
-        "reiseroute naujan",
-        "reiseplan",
-        "3 tage naujan",
-        "was tun"
-      ],
-      "responses": [
-        "3-Tage-Trip: Tag 1 - Kirche und Platz. Tag 2 - Naujan-See und Vogelbeobachtung. Tag 3 - Farmen und Markt. Oder gefuhrte Tour machen."
-      ]
-    },
-    {
-      "tag": "App_Capabilities",
-      "patterns": [
-        "was kannst du tun",
-        "app funktionen",
-        "naujango services",
-        "wie funktioniert"
-      ],
-      "responses": [
-        "NaujanGO hilft: Hotelreservierung, Reiseplanung, Informationen zu Attraktionen, Restaurants, Verkehr, Wetter, Tipps, and Reisefuhrer."
       ]
     }
   ]

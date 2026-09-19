@@ -123,12 +123,8 @@
         "nau jan Est Où",
         "Naujan Philippines",
         "nau jan localisation",
-        "Naujan Philippines",
         "naujan LOCALISATION",
         "naujan aux philippines",
-        "naujan philippines",
-        "naujan philippines",
-        "naujan philippines",
         "ou se situe nau jan",
         "où est la ville de nau jan",
         "où est naujan",
@@ -446,12 +442,18 @@
         "CULTURES DE RACINES",
         "QU'EST-CE QU'ON CULTIVE",
         "Fermes À nau jan",
-        "Bananes à nau jan"
+        "Bananes à nau jan",
+        "agriculture naujan",
+        "cultures naujan",
+        "riz naujan",
+        "noix de coco",
+        "recolte"
       ],
       "responses": [
         "Les principales cultures à Naujan sont le riz et la noix de coco (coprah). On y cultive aussi du maïs, des légumes et des racines comestibles.",
         "Les produits agricoles incluent riz, coprah, maïs, bananes et diverses cultures de racines. La culture des noix de coco est particulièrement importante.",
-        "Naujan est connu pour ses rizières et plantations de coco. Le coprah (amande séchée) est un produit d'exportation majeur."
+        "Naujan est connu pour ses rizières et plantations de coco. Le coprah (amande séchée) est un produit d'exportation majeur.",
+        "Cultures principales: Riz et noix de coco (copra). Aussi maïs, racines, fruits, légumes. Les plantations offrent belles vues."
       ]
     },
     {
@@ -482,12 +484,17 @@
         "Météo de nauj an",
         "QUEL EST LE CLIMAT",
         "MÉTÉO DE NAU JAN",
-        "Climat Tropical"
+        "Climat Tropical",
+        "climat naujan",
+        "temperature",
+        "saison pluie",
+        "typhons naujan"
       ],
       "responses": [
         "Je n'ai pas les données météo en direct. Naujan a un climat tropical. Consultez PAGASA ou une appli météo pour les conditions actuelles.",
         "Naujan connaît un climat tropical chaud toute l'année. Consultez un service météorologique pour les prévisions.",
-        "Le climat à Naujan est généralement tropical. Pour les mises à jour en temps réel, consultez une appli météo."
+        "Le climat à Naujan est généralement tropical. Pour les mises à jour en temps réel, consultez une appli météo.",
+        "Climat tropical. Saison sèche (Nov-Mai) idéale. Saison pluie (Jun-Oct): rizières vertes mais typhons possibles. Consultez météo locale."
       ]
     },
     {
@@ -520,12 +527,18 @@
         "Plan de visite",
         "ITINÉRAIRE POUR UNE JOURNÉE À nau jan",
         "POINTS D'INTÉRÊT À naujan",
-        "QUE VOIR À NAU JAN"
+        "QUE VOIR À NAU JAN",
+        "itineraire naujan",
+        "plan voyage",
+        "3 jours naujan",
+        "quoi faire",
+        "tour guide"
       ],
       "responses": [
         "Itinéraire conseillé : église de Naujan, lac Naujan pour observer les oiseaux, fermes locales, repas à la place centrale.",
-        "Lieux populaires : église de Naujan, parc national du lac Naujan, fermes locales, marché de la ville.",
-        "Jour 1 : visiter l'église et les sites historiques. Jour 2 : explorer le lac Naujan. Jour 3 : visiter les fermes et marchés locaux."
+        "Lieux populaires : église de Naujan, lac de Naujan, fermes locales, marché de la ville.",
+        "Jour 1 : visiter l'église et les sites historiques. Jour 2 : explorer le lac Naujan. Jour 3 : visiter les fermes et marchés locaux.",
+        "Trip 3j: J1 - Église et place. J2 - Lac Naujan et observation oiseaux. J3 - Fermes et marché. Ou faites tour guidé."
       ]
     },
     {
@@ -616,10 +629,14 @@
         "vol vers naujan",
         "voyage terrestre naujan",
         "voyager à naujan",
-        "what about naujan"
+        "what about naujan",
+        "aller jusqu'a naujan",
+        "ferry naujan",
+        "route depuis manille"
       ],
       "responses": [
-        "Comment se rendre à Naujan :\n1. Depuis Manille : bus depuis EDSA ou Buendia jusqu'au Terminal de Batangas (~2h).\n2. Ferry RORO ou FastCraft de Batangas Pier à Calapan Port (~1,5–2h).\n3. Depuis Calapan : jeepney ou van vers le sud jusqu'à Naujan (~30–45 min, ~₱40–₱60).\nConseil : Partir tôt pour éviter les longues files au port."
+        "Comment se rendre à Naujan :\n1. Depuis Manille : bus depuis EDSA ou Buendia jusqu'au Terminal de Batangas (~2h).\n2. Ferry RORO ou FastCraft de Batangas Pier à Calapan Port (~1,5–2h).\n3. Depuis Calapan : jeepney ou van vers le sud jusqu'à Naujan (~30–45 min, ~₱40–₱60).\nConseil : Partir tôt pour éviter les longues files au port.",
+        "Comment arriver: 1) Bus depuis Manille vers Port Batangas (~2h) 2) Ferry vers Calapan (~1-3h) 3) Jeepney vers Naujan (~30-45 min). Total: 4-6h depuis Manille."
       ]
     },
     {
@@ -647,10 +664,16 @@
         "de",
         "is there de",
         "comment est sur",
-        "about sur"
+        "about sur",
+        "sur naujan",
+        "information naujan",
+        "c'est quoi naujan",
+        "parlez moi de naujan",
+        "apercu naujan"
       ],
       "responses": [
-        "Naujan est une municipalité de 1ère classe en Naujan, Philippines. Elle est célèbre pour le Lac Naujan — le 5ème plus grand lac des Philippines et Site Ramsar d'importance internationale. La ville se distingue par son agriculture (riz, noix de coco), son héritage Mangyan et son riche écosystème lacustre. C'est une destination idéale pour l'observation des oiseaux, la pêche et l'écotourisme."
+        "Naujan est une municipalité de 1ère classe en Naujan, Philippines. Elle est célèbre pour le Lac Naujan — le 5ème plus grand lac des Philippines et Site Ramsar d'importance internationale. La ville se distingue par son agriculture (riz, noix de coco), son héritage Mangyan et son riche écosystème lacustre. C'est une destination idéale pour l'observation des oiseaux, la pêche et l'écotourisme.",
+        "Naujan est une municipalité de première classe aux Philippines. C'est célèbre pour le Lac Naujan - le 5e plus grand lac du pays et site Ramsar."
       ]
     },
     {
@@ -703,12 +726,18 @@
         "spécialité régionale",
         "spécialités naujan",
         "tell me more about locale",
-        "établissement gastronomique"
+        "établissement gastronomique",
+        "cuisine locale",
+        "manger naujan",
+        "nourriture",
+        "poisson frais",
+        "specialites naujan"
       ],
       "responses": [
         "A Naujan, goutez le tilapia frais du lac, le tinola de poulet local, le kare-kare et les kakanin (gateaux de riz tradicionnels).",
         "Specialites locales: Binagol (dessert au taro), Palitaw, fruits de mer frais et produits artisanaux de noix de coco.",
-        "Le marche public de Naujan propose produits frais et poissons du lac. A visiter le matin pour le meilleur choix."
+        "Le marche public de Naujan propose produits frais et poissons du lac. A visiter le matin pour le meilleur choix.",
+        "Nourriture locale: Poisson frais du lac (tilapia, dalag), riz, plats à la noix de coco, binagoongan. Kakanin et gâteaux. Restos abordables (₱80-150)."
       ]
     },
     {
@@ -758,12 +787,15 @@
         "événement récurrent",
         "événements annuels naujan",
         "événements culturels naujan",
-        "événements naujan"
+        "événements naujan",
+        "8 septembre",
+        "celebrations",
+        "fete patronale",
+        "fetes naujan"
       ],
       "responses": [
-        "Naujan celebre le Festival Biniray en janvier, honore le Santo Nino avec des defiles, danses culturelles et activites religieuses.",
-        "Le Festival Tadyak dans les municipalites voisines celebre la culture indigene Mangyan. Puerto Galera a le Festival Mardivina.",
-        "Evenements cles: Festival Biniray (janvier), Fete de l'Independance (juin), Pasko sa Naujan (decembre)."
+        "La fête principale de Naujan est célébrée chaque 8 septembre en l'honneur de la Nativité de la Vierge Marie (Notre-Dame de la Nativité), la patronne de Naujan. La célébration comprend une messe solennelle à l'église de Naujan, des défilés dans les rues, des spectacles culturels, des foires gastronomiques et des représentations en direct sur la place de la ville.",
+        "Événements clés à Naujan :\n• 8 septembre – Fête patronale de la ville (Nativité de la Vierge Marie)\n• Novembre–mars – Saison d'observation des oiseaux au Lac Naujan (arrivée des oiseaux migrateurs de Sibérie)\n• Novembre–décembre – Fêtes des moissons dans les barangays rizicoles\n• Divers mois – Fêtes de barangay\n• Foires écotouristiques organisées par la LGU"
       ]
     },
     {
@@ -793,12 +825,16 @@
         "tell me more about de",
         "parlez-moi de de",
         "artisanat?",
-        "j'aimerais savoir sur culture"
+        "j'aimerais savoir sur culture",
+        "peuples indigenes",
+        "mangyan naujan",
+        "tradition"
       ],
       "responses": [
         "Les Mangyan sont 8 groupes indigenes de Filipinas avec l'ecriture Hanunuo-Mangyan, un systeme precolonial grave sur bambou.",
         "Visitez des communautes Mangyan avec un guide pres de Calapan. Connus pour leurs tissages, paniers et la poesie Ambahan.",
-        "Soutenez les Mangyan en achetant leurs artisanats dans des cooperatives equitables a Calapan. Demandez toujours la permission avant de photographier."
+        "Soutenez les Mangyan en achetant leurs artisanats dans des cooperatives equitables a Calapan. Demandez toujours la permission avant de photographier.",
+        "Communautés Mangyan (Iraya, Alangan): Habitent zones hautes. Connus pour paniers tissés, bijoux trad., poésie ambahan. Visitez avec respect et guide."
       ]
     },
     {
@@ -827,10 +863,15 @@
         "riviere?",
         "explain riviere",
         "de",
-        "is there de"
+        "is there de",
+        "nature naujan",
+        "fleuve naujan",
+        "paysage naujan",
+        "faune flore"
       ],
       "responses": [
-        "Caractéristiques naturelles de Naujan :\n• Lac Naujan — 5ème plus grand lac des Philippines, refuge pour les oiseaux\n• Rivière Sadya — idéale pour se baigner et profiter de la nature\n• Vastes rizières — Naujan est renommé pour sa production de riz\n• Plantations de noix de coco — source de copra et de produits à base de noix de coco\n• Mangroves côtières — protègent le littoral et abritent les poissons"
+        "Caractéristiques naturelles de Naujan :\n• Lac Naujan — 5ème plus grand lac des Philippines, refuge pour les oiseaux\n• Rivière Sadya — idéale pour se baigner et profiter de la nature\n• Vastes rizières — Naujan est renommé pour sa production de riz\n• Plantations de noix de coco — source de copra et de produits à base de noix de coco\n• Mangroves côtières — protègent le littoral et abritent les poissons",
+        "Nature: Lac Naujan, Rivière Sadya, rizières, mangroves, côte. Excellent pour photos et randonnée rurale."
       ]
     },
     {
@@ -861,7 +902,7 @@
         "is there lac"
       ],
       "responses": [
-        "Activités au Lac Naujan :\n• Observation des oiseaux — plus de 100 espèces dont le Canard des Philippines\n• Promenade en bateau — louer un bateau local pour naviguer sur le lac\n• Pêche — les pêcheurs locaux proposent des tours guidés\n• Kayaking — explorer les rives et les mangroves du lac\n• Randonnée sur les sentiers éco du Parc National\n• Pique-nique et détente sur les rives du lac"
+        "Activités au Lac Naujan :\n• Observation des oiseaux — plus de 100 espèces dont le Canard des Philippines\n• Promenade en bateau — louer un bateau local pour naviguer sur le lac\n• Pêche — les pêcheurs locaux proposent des tours guidés\n• Kayaking — explorer les rives et les mangroves du lac\n• Randonnée sur les sentiers éco au bord du lac\n• Pique-nique et détente sur les rives du lac"
       ]
     },
     {
@@ -887,12 +928,18 @@
         "is there pour",
         "pour?",
         "meilleure",
-        "c'est quoi meilleure"
+        "c'est quoi meilleure",
+        "meilleure epoque naujan",
+        "quand visiter naujan",
+        "saison naujan",
+        "migration oiseaux",
+        "climat"
       ],
       "responses": [
         "La meilleure periode: novembre a mai en saison seche avec beau temps et mers calmes.",
         "Haute saison: decembre-avril. Evitez la saison des typhons (juin-octobre). L'observation des oiseaux au lac est meilleure en octobre-mars.",
-        "Mars-avril: ideal pour les plages. Janvier pour le Festival Biniray. Novembre-fevrier pour les oiseaux migrateurs au lac."
+        "Mars-avril: ideal pour les plages. Janvier pour le Festival Biniray. Novembre-fevrier pour les oiseaux migrateurs au lac.",
+        "Meilleur: Novembre à mai (saison sèche). Nov-Mar excellent pour observer les oiseaux migrateurs. Évitez juin-octobre (pluie et typhons)."
       ]
     },
     {
@@ -923,12 +970,17 @@
         "what about application",
         "application yo",
         "gimme voyage",
-        "tell me more about de"
+        "tell me more about de",
+        "qu'est ce que tu fais",
+        "fonctionnalites app",
+        "services naujango",
+        "comment fonctionne"
       ],
       "responses": [
         "NaujanGO est la plateforme de voyage pour explorer Naujan et Naujan. Inclut: hotels, attractions, carte GPS, itineraires et meteo.",
         "Sur NaujanGO vous pouvez: reserver des hotels, explorer des attractions, creer des itineraires, naviguer sur la carte et discuter avec ce chatbot.",
-        "Fonctionnalites: Hotels (reserver), Attractions, Carte Interactive GPS, Constructeur d'Itineraires et chatbot multilingue en 8 langues."
+        "Fonctionnalites: Hotels (reserver), Attractions, Carte Interactive GPS, Constructeur d'Itineraires et chatbot multilingue en 8 langues.",
+        "NaujanGO aide: Réservation hôtels, plans voyages, infos attractions, restos, transport, météo, conseils culturels, guides voyage Naujan."
       ]
     },
     {
@@ -989,10 +1041,18 @@
         "is there ecotourisme",
         "details about naujan",
         "détails sur naujan",
-        "details about ecotourisme"
+        "details about ecotourisme",
+        "tourisme durable",
+        "observation des oiseaux naujan",
+        "birdwatching lac naujan",
+        "nature a naujan",
+        "tours nature naujan"
       ],
       "responses": [
-        "Écotourisme au Lac Naujan :\n• Tours guidés d'observation des oiseaux (meilleure période : nov–mars)\n• Excursions en bateau sur le lac et les mangroves\n• Visites de fermes durables et agriculture biologique\n• Randonnées sur les sentiers éco du Parc National\n• Programmes de conservation du Site Ramsar\nRespectez les principes Leave No Trace et le milieu naturel."
+        "Écotourisme au Lac Naujan :\n• Tours guidés d'observation des oiseaux (meilleure période : nov–mars)\n• Excursions en bateau sur le lac et les mangroves\n• Visites de fermes durables et agriculture biologique\n• Randonnées sur les sentiers éco au bord du lac\n• Programmes de conservation du Site Ramsar\nRespectez les principes Leave No Trace et le milieu naturel.",
+        "Ecotourisme au Lac Naujan: tours d'observation des oiseaux, excursions en banca, visites de fermes durables et randonnees en zone humide.",
+        "Naujan: observation des oiseaux a Naujan, kayak en mangroves a Gloria et Pola, snorkeling sur les recifs de Puerto Galera.",
+        "Voyage responsable: engagez des guides locaux agrees LGU, visitez des fermes communautaires et pratiquez les principes Leave No Trace."
       ]
     },
     {
@@ -1022,10 +1082,15 @@
         "how about jeepney",
         "détails sur naujan",
         "plus sur jeepney",
-        "circuler"
+        "circuler",
+        "transport local naujan",
+        "comment se deplacer",
+        "prix transport",
+        "habal habal"
       ],
       "responses": [
-        "Comment se déplacer à Naujan :\n• Tricycle — principal transport local ; ₱10–₱30 trajets courts\n• Jeepney — trajets plus longs vers les barangays\n• Habal-habal (moto) — pour les endroits difficiles d'accès\n• Van/Multicab for hire — pour les groupes\nLa patience est de mise avec les transports locaux."
+        "Comment se déplacer à Naujan :\n• Tricycle — principal transport local ; ₱10–₱30 trajets courts\n• Jeepney — trajets plus longs vers les barangays\n• Habal-habal (moto) — pour les endroits difficiles d'accès\n• Van/Multicab for hire — pour les groupes\nLa patience est de mise avec les transports locaux.",
+        "Transport: Tricycle (₱10-30), habal-habal pour barangays, vans. Le lac est à 15-25 min du centre-ville."
       ]
     },
     {
@@ -1055,10 +1120,12 @@
         "where's naujan",
         "parlez-moi de naujan",
         "tell me naujan",
-        "more on nature"
+        "more on nature",
+        "sentier ecoturisme"
       ],
       "responses": [
-        "Activités de plein air à Naujan :\n• Sentiers éco autour du Parc National Lac Naujan\n• Randonnées d'observation des oiseaux avec guides locaux\n• Camping près du lac (permis DENR requis)\n• Visites aux communautés Mangyan en montagne\n• Traversée des barangays ruraux\nContactez le LGU Naujan ou le DENR pour guides et permis."
+        "Activités de plein air à Naujan :\n• Sentiers éco autour du Lac Naujan\n• Randonnées d'observation des oiseaux avec guides locaux\n• Camping près du lac (permis DENR requis)\n• Visites aux communautés Mangyan en montagne\n• Traversée des barangays ruraux\nContactez le LGU Naujan ou le DENR pour guides et permis.",
+        "Activités: Randos observation oiseaux, sentiers mangrove, visites fermes, camping. Meilleur: 5-8h AM pour voir oiseaux."
       ]
     },
     {
@@ -1086,10 +1153,15 @@
         "Tell Me Pour",
         "C'Est Quoi Economique",
         "is there economique",
-        "Details About Pour"
+        "Details About Pour",
+        "budget naujan",
+        "cout voyage",
+        "prix hotel",
+        "tours economiques"
       ],
       "responses": [
-        "Guide de budget pour Naujan :\n• Ferry (Batangas → Calapan) : ₱150–₱350 (RORO ou FastCraft)\n• Bus (Manille → Batangas) : ₱150–₱250\n• Jeepney/Van (Calapan → Naujan) : ₱40–₱60\n• Hébergement basique : ₱500–₱1 200 par nuit\n• Repas en carinderia : ₱80–₱150\n• Tour en bateau sur le lac : ₱300–₱800\nBudget journalier estimé : ₱800–₱1 500 pour voyageur économique."
+        "Guide de budget pour Naujan :\n• Ferry (Batangas → Calapan) : ₱150–₱350 (RORO ou FastCraft)\n• Bus (Manille → Batangas) : ₱150–₱250\n• Jeepney/Van (Calapan → Naujan) : ₱40–₱60\n• Hébergement basique : ₱500–₱1 200 par nuit\n• Repas en carinderia : ₱80–₱150\n• Tour en bateau sur le lac : ₱300–₱800\nBudget journalier estimé : ₱800–₱1 500 pour voyageur économique.",
+        "Budget 3j: ₱2,500-4,500 par personne. Hotel: ₱400-1,000/nuit. Repas: ₱80-150. Transport: ₱10-30."
       ]
     },
     {
@@ -1122,22 +1194,6 @@
         "Urgences Naujan: Police (043) 208-3362, Mairie (043) 208-3382. Pour urgences medicales, Hospital de District de Naujan.",
         "Conseils de securite: gardez vos objets de valeur, utilisez des guides agrees pour les randonnees, verifiez la meteo avant activites nautiques.",
         "Philippines urgence nationale: appelez le 911. Garde Cotiere: 5734-CGEA. Partagez votre itineraire avec quelqu'un de confiance."
-      ]
-    },
-    {
-      "tag": "Eco_Tourism",
-      "patterns": [
-        "ecotourisme naujan",
-        "tourisme durable",
-        "observation des oiseaux naujan",
-        "birdwatching lac naujan",
-        "nature a naujan",
-        "tours nature naujan"
-      ],
-      "responses": [
-        "Ecotourisme au Lac Naujan: tours d'observation des oiseaux, excursions en banca, visites de fermes durables et randonnees en zone humide.",
-        "Naujan: observation des oiseaux a Naujan, kayak en mangroves a Gloria et Pola, snorkeling sur les recifs de Puerto Galera.",
-        "Voyage responsable: engagez des guides locaux agrees LGU, visitez des fermes communautaires et pratiquez les principes Leave No Trace."
       ]
     },
     {
@@ -1259,10 +1315,14 @@
         "détails sur naujan",
         "tell me more about chambre",
         "chambre",
-        "gimme pension"
+        "gimme pension",
+        "hotel naujan",
+        "hebergement",
+        "auberge naujan"
       ],
       "responses": [
-        "Options d'hébergement à Naujan :\n• Pensions de famille basiques au Poblacion (₱500–₱1 200/nuit)\n• Auberges locales près du centre (₱800–₱2 000/nuit)\n• Eco-lodge près du Lac Naujan (disponibilité limitée)\n• Homestays offrant une expérience communautaire locale\nConsultez la section Hôtels de l'app NaujanGO pour voir la disponibilité et réserver."
+        "Options d'hébergement à Naujan :\n• Pensions de famille basiques au Poblacion (₱500–₱1 200/nuit)\n• Auberges locales près du centre (₱800–₱2 000/nuit)\n• Eco-lodge près du Lac Naujan (disponibilité limitée)\n• Homestays offrant une expérience communautaire locale\nConsultez la section Hôtels de l'app NaujanGO pour voir la disponibilité et réserver.",
+        "Logement: Petites auberges en ville (₱400-1,000/nuit), pensions, quelques écolodges. Options limitées mais confortables."
       ]
     },
     {
@@ -1290,7 +1350,7 @@
         "what's up with oiseaux"
       ],
       "responses": [
-        "Le Parc National Lac Naujan est le cinquième plus grand lac des Philippines. Entouré de montagnes luxuriantes et de riche biodiversité. Activités : promenades en bateau, observation d'oiseaux (plus de 100 espèces), photographie nature, et magnifiques couchers de soleil. Parfait pour les amoureux de la nature!"
+        "Le Lac Naujan est le cinquième plus grand lac des Philippines. Entouré de montagnes luxuriantes et de riche biodiversité. Activités : promenades en bateau, observation d'oiseaux (plus de 100 espèces), photographie nature, et magnifiques couchers de soleil. Parfait pour les amoureux de la nature!"
       ]
     },
     {
@@ -1355,7 +1415,7 @@
         "populaires"
       ],
       "responses": [
-        "Principales attractions à Naujan :\n• Parc National Lac Naujan - beau lac pour promenades\n• Simbahang Bato - ruines historiques\n• Liwasang Bonifacio - place principale\n• Dao Waterlily Mini Park - parc eco\n• Montelago Hot Spring & Forest Falls - sources thermales et cascades\n• AgriGold Farm - ferme éducative\n• Karacha Falls - cascade magnifique\n• ORIC sa Bathala Waterfalls - destination écotourisme\n• Plages comme Celeste Beach House et Nabul Beach Resort"
+        "Principales attractions à Naujan :\n• Lac Naujan - beau lac pour promenades\n• Simbahang Bato - ruines historiques\n• Liwasang Bonifacio - place principale\n• Dao Waterlily Mini Park - parc eco\n• Montelago Hot Spring & Forest Falls - sources thermales et cascades\n• AgriGold Farm - ferme éducative\n• Karacha Falls - cascade magnifique\n• ORIC sa Bathala Waterfalls - destination écotourisme\n• Plages comme Celeste Beach House et Nabul Beach Resort"
       ]
     },
     {
@@ -1531,146 +1591,6 @@
       ]
     },
     {
-      "tag": "Naujan_Overview",
-      "patterns": [
-        "sur naujan",
-        "information naujan",
-        "c'est quoi naujan",
-        "parlez moi de naujan",
-        "apercu naujan"
-      ],
-      "responses": [
-        "Naujan est une municipalité de première classe aux Philippines. C'est célèbre pour le Lac Naujan - le 5e plus grand lac du pays et site Ramsar."
-      ]
-    },
-    {
-      "tag": "Transportation_How_To_Get_There",
-      "patterns": [
-        "aller jusqu'a naujan",
-        "aller à naujan",
-        "aéroport le plus proche",
-        "bus vers naujan",
-        "combien de temps à naujan",
-        "comment aller a naujan",
-        "comment aller à naujan",
-        "conduire à naujan",
-        "connexion multimodale",
-        "distance à parcourir",
-        "durée de parcours",
-        "durée du voyage à naujan",
-        "embarcadère portuaire",
-        "façons d'aller à naujan",
-        "ferry naujan",
-        "ferry vers naujan",
-        "gare d'accès",
-        "horaires de départ",
-        "itinéraire préconisé",
-        "itinéraires vers naujan",
-        "moyens de transport",
-        "options de transport naujan",
-        "route depuis manille",
-        "route maritime naujan",
-        "se rendre à naujan",
-        "tarif de voyage",
-        "transport vers naujan",
-        "vol vers naujan",
-        "voyage terrestre naujan",
-        "voyager à naujan"
-      ],
-      "responses": [
-        "Comment arriver: 1) Bus depuis Manille vers Port Batangas (~2h) 2) Ferry vers Calapan (~1-3h) 3) Jeepney vers Naujan (~30-45 min). Total: 4-6h depuis Manille."
-      ]
-    },
-    {
-      "tag": "Local_Transport",
-      "patterns": [
-        "transport local naujan",
-        "comment se deplacer",
-        "tricycle naujan",
-        "prix transport",
-        "habal habal"
-      ],
-      "responses": [
-        "Transport: Tricycle (₱10-30), habal-habal pour barangays, vans. Le lac est à 15-25 min du centre-ville."
-      ]
-    },
-    {
-      "tag": "Local_Food_Cuisine",
-      "patterns": [
-        "combinaison de saveurs",
-        "cuisine locale",
-        "cuisine locale naujan",
-        "cuisson traditionnelle",
-        "dégustation conseillée",
-        "délices culinaires naujan",
-        "essayer naujan",
-        "fruits de mer naujan",
-        "légumes naujan",
-        "manger naujan",
-        "manger à naujan",
-        "marché paysan",
-        "meilleure nourriture naujan",
-        "mets locaux naujan",
-        "nourriture",
-        "nourriture naujan",
-        "nourriture régionale",
-        "plats naujan",
-        "poisson frais",
-        "production locale",
-        "présentation gastronomique",
-        "que manger à naujan",
-        "recette ancestrale",
-        "recettes naujan",
-        "restaurants naujan",
-        "saveur naujan",
-        "saveurs authentiques",
-        "specialites naujan",
-        "spécialité régionale",
-        "spécialités naujan",
-        "établissement gastronomique"
-      ],
-      "responses": [
-        "Nourriture locale: Poisson frais du lac (tilapia, dalag), riz, plats à la noix de coco, binagoongan. Kakanin et gâteaux. Restos abordables (₱80-150)."
-      ]
-    },
-    {
-      "tag": "Best_Time_To_Visit",
-      "patterns": [
-        "meilleure epoque naujan",
-        "quand visiter naujan",
-        "saison naujan",
-        "migration oiseaux",
-        "climat"
-      ],
-      "responses": [
-        "Meilleur: Novembre à mai (saison sèche). Nov-Mar excellent pour observer les oiseaux migrateurs. Évitez juin-octobre (pluie et typhons)."
-      ]
-    },
-    {
-      "tag": "Budget_Travel",
-      "patterns": [
-        "budget naujan",
-        "cout voyage",
-        "prix hotel",
-        "tours economiques"
-      ],
-      "responses": [
-        "Budget 3j: ₱2,500-4,500 par personne. Hotel: ₱400-1,000/nuit. Repas: ₱80-150. Transport: ₱10-30."
-      ]
-    },
-    {
-      "tag": "Accommodation_Types",
-      "patterns": [
-        "logement naujan",
-        "hotel naujan",
-        "hebergement",
-        "auberge naujan"
-      ],
-      "responses": [
-        "Logement: Petites auberges en ville (₱400-1,000/nuit), pensions, quelques écolodges. Options limitées mais confortables."
-      ]
-    },
-    {
       "tag": "Booking_Help",
       "patterns": [
         "reservation sur naujango",
@@ -1700,125 +1620,6 @@
       ],
       "responses": [
         "Pour réserver: 1) Aller à Hôtels 2) Sélectionner dates 3) Vérifier détails 4) Payer. Confirmation immédiate reçue."
-      ]
-    },
-    {
-      "tag": "Festivals_Events",
-      "patterns": [
-        "8 septembre",
-        "accès gratuit",
-        "attribution de prix",
-        "celebrations",
-        "célébration naujan",
-        "célébration populaire",
-        "célébrations locales naujan",
-        "défilé processional",
-        "evenements",
-        "festival naujan",
-        "festivités naujan",
-        "fete patronale",
-        "fetes naujan",
-        "feu d'artifice",
-        "fêtes naujan",
-        "manifestation culturelle",
-        "programmation festive",
-        "quand festival naujan",
-        "quand visiter événements naujan",
-        "spectacle live",
-        "tradition municipale",
-        "événement récurrent",
-        "événements annuels naujan",
-        "événements culturels naujan",
-        "événements naujan"
-      ],
-      "responses": [
-        "Fête principale: 8 septembre (Nativité de Marie). Messe, défilé, repas, spectacles culturels. Pics observ. oiseaux: Nov-Mars."
-      ]
-    },
-    {
-      "tag": "Naujan_Natural_Features",
-      "patterns": [
-        "nature naujan",
-        "fleuve naujan",
-        "paysage naujan",
-        "faune flore"
-      ],
-      "responses": [
-        "Nature: Lac Naujan (20,000+ ha), Rivière Sadya, rizières, mangroves, côte. Excellent pour photos et randonnée rurale."
-      ]
-    },
-    {
-      "tag": "Hiking_Trekking",
-      "patterns": [
-        "randonnee naujan",
-        "trek naujan",
-        "sentier ecoturisme"
-      ],
-      "responses": [
-        "Activités: Randos observation oiseaux, sentiers mangrove, visites fermes, camping. Meilleur: 5-8h AM pour voir oiseaux."
-      ]
-    },
-    {
-      "tag": "Mangyan_Culture",
-      "patterns": [
-        "culture mangyan",
-        "peuples indigenes",
-        "mangyan naujan",
-        "artisanat mangyan",
-        "tradition"
-      ],
-      "responses": [
-        "Communautés Mangyan (Iraya, Alangan): Habitent zones hautes. Connus pour paniers tissés, bijoux trad., poésie ambahan. Visitez avec respect et guide."
-      ]
-    },
-    {
-      "tag": "Agriculture_Crops",
-      "patterns": [
-        "agriculture naujan",
-        "cultures naujan",
-        "riz naujan",
-        "noix de coco",
-        "recolte"
-      ],
-      "responses": [
-        "Cultures principales: Riz et noix de coco (copra). Aussi maïs, racines, fruits, légumes. Les plantations offrent belles vues."
-      ]
-    },
-    {
-      "tag": "Weather_Info",
-      "patterns": [
-        "climat naujan",
-        "temperature",
-        "saison pluie",
-        "typhons naujan"
-      ],
-      "responses": [
-        "Climat tropical. Saison sèche (Nov-Mai) idéale. Saison pluie (Jun-Oct): rizières vertes mais typhons possibles. Consultez météo locale."
-      ]
-    },
-    {
-      "tag": "Itinerary_Plan",
-      "patterns": [
-        "itineraire naujan",
-        "plan voyage",
-        "3 jours naujan",
-        "quoi faire",
-        "tour guide"
-      ],
-      "responses": [
-        "Trip 3j: J1 - Église et place. J2 - Lac Naujan et observation oiseaux. J3 - Fermes et marché. Ou faites tour guidé."
-      ]
-    },
-    {
-      "tag": "App_Capabilities",
-      "patterns": [
-        "qu'est ce que tu fais",
-        "fonctionnalites app",
-        "services naujango",
-        "comment fonctionne"
-      ],
-      "responses": [
-        "NaujanGO aide: Réservation hôtels, plans voyages, infos attractions, restos, transport, météo, conseils culturels, guides voyage Naujan."
       ]
     }
   ]
