@@ -2968,42 +2968,6 @@
   opacity: 0.7;
 }
 
-.search-filter-select {
-  min-height: 46px;
-  min-width: 140px;
-  border-radius: 999px;
-  border: var(--glass-border);
-  padding: 0.55rem 2.3rem 0.55rem 1rem;
-  background: var(--glass-bg-subtle);
-  backdrop-filter: var(--glass-blur-subtle);
-  -webkit-backdrop-filter: var(--glass-blur-subtle);
-  color: #1f2937;
-  font-weight: 600;
-  font-size: 1rem;
-  line-height: 1.2;
-  -webkit-appearance: none;
-  appearance: none;
-  box-sizing: border-box;
-  background-image: linear-gradient(45deg, transparent 50%, #6b7280 50%), linear-gradient(135deg, #6b7280 50%, transparent 50%);
-  background-position: calc(100% - 18px) 50%, calc(100% - 12px) 50%;
-  background-size: 6px 6px, 6px 6px;
-  background-repeat: no-repeat;
-  text-align: left;
-  flex-shrink: 0;
-  display: block;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.3);
-}
-
-.search-filter-select option {
-  color: #111827;
-}
-
-.search-filter-select:focus {
-  outline: none;
-  border-color: rgba(46, 125, 50, 0.45);
-  box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.12);
-}
-
 .search-input-simple {
   flex: 1;
   border: none;
@@ -3456,11 +3420,6 @@
     width: 100%;
     padding: 0.75rem 1.5rem;
     font-size: 0.9rem;
-  }
-
-  .search-filter-select {
-    width: 100%;
-    min-width: 0;
   }
 
   .search-tabs {
@@ -4582,11 +4541,6 @@
     gap: 0.5rem;
   }
 
-  .search-filter-select {
-    min-width: 100%;
-    order: 1;
-  }
-
   .search-input-simple {
     order: 2;
     width: 100%;
@@ -4884,4 +4838,177 @@
   background-clip: text;
   -webkit-text-fill-color: transparent;
   color: transparent !important;
+}
+
+/* ==================================================
+   SEARCH: SEGMENTED TABS + CLEAR BUTTON
+   ================================================== */
+.simple-search-bar .search-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-bottom: none;
+  padding: 0.25rem;
+  background: rgba(46, 125, 50, 0.08);
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.simple-search-bar .search-tab {
+  border: none;
+  background: transparent;
+  color: var(--text-light);
+  padding: 0.55rem 1.1rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border-radius: 999px;
+  margin: 0;
+  position: static;
+  overflow: visible;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.simple-search-bar .search-tab::before {
+  display: none;
+}
+
+.simple-search-bar .search-tab:hover {
+  color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.simple-search-bar .search-tab.active {
+  color: #fff;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.search-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  position: relative;
+  min-width: 0;
+}
+
+.search-input-wrap .search-input-simple {
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+}
+
+.search-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(46, 125, 50, 0.12);
+  color: var(--primary-dark, #1b5e20);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.25s ease;
+}
+
+.search-clear:hover {
+  background: rgba(46, 125, 50, 0.22);
+  transform: scale(1.08);
+}
+
+/* ==================================================
+   VIEW ALL - SOLID GRADIENT PILL
+   ================================================== */
+.view-all-btn {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  color: #fff;
+  border: none;
+  padding: 0.7rem 1.8rem;
+  border-radius: 50px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-size: 0.95rem;
+  align-self: center;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 4px 15px rgba(46, 125, 50, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.view-all-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(46, 125, 50, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+/* ==================================================
+   CARD ENTRANCE ANIMATION (staggered reveal)
+   ================================================== */
+@keyframes cardReveal {
+  from {
+    opacity: 0;
+    transform: translateY(22px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.featured-attractions-section .carousel-grid > .attraction-card,
+.featured-attractions-section .attraction-card,
+.featured-accommodation-section .accommodation-card {
+  animation: cardReveal 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.featured-attractions-section .attraction-card:nth-child(1) { animation-delay: 0.05s; }
+.featured-attractions-section .attraction-card:nth-child(2) { animation-delay: 0.12s; }
+.featured-attractions-section .attraction-card:nth-child(3) { animation-delay: 0.19s; }
+.featured-attractions-section .attraction-card:nth-child(4) { animation-delay: 0.26s; }
+.featured-accommodation-section .accommodation-card:nth-child(1) { animation-delay: 0.05s; }
+.featured-accommodation-section .accommodation-card:nth-child(2) { animation-delay: 0.12s; }
+.featured-accommodation-section .accommodation-card:nth-child(3) { animation-delay: 0.19s; }
+.featured-accommodation-section .accommodation-card:nth-child(4) { animation-delay: 0.26s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .featured-attractions-section .attraction-card,
+  .featured-accommodation-section .accommodation-card {
+    animation: none;
+  }
+}
+
+/* Icon chip beside section titles */
+.featured-attractions-section .section-title-row svg,
+.featured-accommodation-section .section-title-row svg {
+  width: 26px !important;
+  height: 26px !important;
+  padding: 6px;
+  box-sizing: content-box;
+  border-radius: 12px;
+  color: #fff !important;
+  background: linear-gradient(135deg, var(--primary-color) 0%, #16a34a 100%);
+  box-shadow: 0 4px 12px rgba(46, 125, 50, 0.3);
+}
+
+@media (max-width: 768px) {
+  .simple-search-bar .search-tabs {
+    flex-wrap: wrap;
+    border-radius: 16px;
+    width: 100%;
+  }
+
+  .simple-search-bar .search-tab {
+    flex: 1;
+    justify-content: center;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .search-input-wrap {
+    width: 100%;
+  }
 }

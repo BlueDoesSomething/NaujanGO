@@ -1,11 +1,10 @@
 /**
- * Home Stats Strip
- * Gradient stat band with glass cards and animated count-up numbers.
- * Shared by the public and logged-in homepages.
+ * Home Stats Strip - minimal one-line info bar
+ * Displays live counts (attractions, hotels, languages) in a clean,
+ * modern single line with subtle count-up numbers.
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import Icons from './Icons';
 import { useLanguage } from '../context/LanguageContext';
 import './HomeStatsStrip.css';
 
@@ -26,7 +25,7 @@ const useCountUp = (target) => {
       return undefined;
     }
     const start = performance.now();
-    const duration = 950;
+    const duration = 650;
     const tick = (now) => {
       const progress = Math.min((now - start) / duration, 1);
       setValue(Math.round(easeOutCubic(progress) * target));
@@ -45,60 +44,32 @@ const useCountUp = (target) => {
   return value;
 };
 
-const StatCard = ({ icon: Icon, count, label, accent }) => {
+const Stat = ({ count, label }) => {
   const display = useCountUp(count);
   return (
-    <div className="home-stat-card">
-      <span className={`stat-icon-chip ${accent}`}>
-        <Icon size={20} />
-      </span>
-      <div className="home-stat-meta">
-        <strong className="stat-count">{display.toLocaleString()}</strong>
-        <span className="stat-label">{label}</span>
-      </div>
-    </div>
+    <span className="home-stat-inline">
+      <strong>{display.toLocaleString()}</strong>
+      <span>{label}</span>
+    </span>
   );
 };
 
-const HomeStatsStrip = ({ attractions = 0, hotels = 0, restaurants = 0 }) => {
+const HomeStatsStrip = ({ attractions = 0, hotels = 0 }) => {
   const { t, supportedLanguages } = useLanguage();
 
-  if (attractions + hotels + restaurants <= 0) return null;
+  if (attractions + hotels <= 0) return null;
 
   return (
     <section className="home-stats-strip" aria-label={t('quick_stats')}>
-      <div className="home-stats-grid">
-        {attractions > 0 && (
-          <StatCard
-            icon={Icons.Attraction}
-            count={attractions}
-            label={t('attractions')}
-            accent="accent-green"
-          />
-        )}
-        {hotels > 0 && (
-          <StatCard
-            icon={Icons.Hotel}
-            count={hotels}
-            label={t('hotels')}
-            accent="accent-blue"
-          />
-        )}
-        {restaurants > 0 && (
-          <StatCard
-            icon={Icons.Utensils}
-            count={restaurants}
-            label={t('featured_dining')}
-            accent="accent-amber"
-          />
-        )}
-        <StatCard
-          icon={Icons.Globe}
-          count={supportedLanguages.length}
-          label={t('supported_languages')}
-          accent="accent-violet"
-        />
-      </div>
+      <Stat count={attractions} label={t('attractions').toLowerCase()} />
+      <span className="home-stat-sep" aria-hidden="true">
+        ·
+      </span>
+      <Stat count={hotels} label={t('hotels').toLowerCase()} />
+      <span className="home-stat-sep" aria-hidden="true">
+        ·
+      </span>
+      <Stat count={supportedLanguages.length} label={t('supported_languages').toLowerCase()} />
     </section>
   );
 };

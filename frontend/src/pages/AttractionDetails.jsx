@@ -7,7 +7,7 @@ import WeatherWidget from '../components/WeatherWidget';
 import { loadCachedSetting, saveCachedSetting } from '../utils/siteSettingsCache';
 import './AttractionDetails.css';
 
-const FALLBACK_IMAGE = '/placeholder.jpg';
+const FALLBACK_IMAGE = '/placeholder-attraction.svg';
 const DESCRIPTION_PREVIEW = 320;
 const DEFAULT_ATTRACTION_HERO = {
   backButtonLabel: 'back',

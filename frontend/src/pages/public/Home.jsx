@@ -38,16 +38,13 @@ const Home = () => {
   const navigate = useNavigate();
   const [attractions, setAttractions] = useState([]);
   const [hotels, setHotels] = useState([]);
-  const [restaurants, setRestaurants] = useState([]);
   const [inspirationItems, setInspirationItems] = useState([]);
   const [inspirationLoading, setInspirationLoading] = useState(true);
   const [attractionsLoading, setAttractionsLoading] = useState(true);
   const [hotelsLoading, setHotelsLoading] = useState(true);
-  const [restaurantsLoading, setRestaurantsLoading] = useState(true);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [attractionsStart, setAttractionsStart] = useState(0);
-  const [restaurantsStart, setRestaurantsStart] = useState(0);
   const [hotelsStart, setHotelsStart] = useState(0);
   const [visibleCarouselCount, setVisibleCarouselCount] = useState(4);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -160,9 +157,20 @@ const Home = () => {
     return null;
   };
 
+  const getAttractionArea = (attraction) => {
+    const location = attraction?.location ? String(attraction.location).trim() : '';
+    if (location) {
+      const first = location.split(',')[0].trim();
+      if (first) return first;
+    }
+    return attraction?.municipality || '';
+  };
+
   const getHeroTag = (attraction) => {
-    const tag = attraction?.municipality || attraction?.category || '';
-    return tag ? String(tag).trim() : t('featured_badge');
+    const area = getAttractionArea(attraction);
+    if (area) return area;
+    const category = attraction?.category ? String(attraction.category).trim() : '';
+    return category || t('featured_badge');
   };
 
   const getClampMax = (length) => Math.max(0, length - visibleCarouselCount);
@@ -290,7 +298,7 @@ const Home = () => {
 
     fetchAttractions()
       .then(res => {
-        setAttractions(Array.isArray(res.data?.data) ? res.data.data.slice(0, 5) : []);
+        setAttractions(Array.isArray(res.data?.data) ? res.data.data : []);
       })
       .catch(err => console.error('Failed to fetch attractions:', err))
       .finally(() => setAttractionsLoading(false));
@@ -323,22 +331,6 @@ const Home = () => {
         setHotels([]);
       })
       .finally(() => setHotelsLoading(false));
-    
-    // Fetch restaurants
-    fetch(`${API_BASE_URL}/api/restaurants/featured?limit=4`)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
-      .then(data => {
-        const restaurantsArray = Array.isArray(data) ? data : [];
-        setRestaurants(restaurantsArray.slice(0, 4));
-      })
-      .catch(err => {
-        console.error('Failed to fetch restaurants:', err);
-        setRestaurants([]);
-      })
-      .finally(() => setRestaurantsLoading(false));
   }, [language]);
 
   useEffect(() => {
@@ -373,7 +365,7 @@ const Home = () => {
               <div
                 key={attraction.id}
                 className={`hero-slide ${index === currentSlide ? 'active' : ''}`}
-                style={{ backgroundImage: `url(${attraction.image_url})` }}
+                style={{ backgroundImage: `url(${attraction.image_url || '/placeholder-attraction.svg'})` }}
               >
                 <div className="hero-overlay" style={{ position: 'absolute', inset: 0, background: toRgba(slideshowSettings.overlayColor, slideshowSettings.overlayOpacity, `rgba(0,0,0,${slideshowSettings.overlayOpacity})`), pointerEvents: 'none' }} />
                 <div className="hero-content">
@@ -417,24 +409,55 @@ const Home = () => {
         <div className="container">
           <div className="simple-search-bar">
             <Icons.Search size={20} className="search-icon" />
-            <select
-              className="search-filter-select"
-              value={searchTab}
-              onChange={(e) => setSearchTab(e.target.value)}
-              aria-label={t('search_filter_label')}
-            >
-              <option value="hotels">{t('accommodation')}</option>
-              <option value="attractions">{t('attractions')}</option>
-              <option value="itineraries">{t('itineraries_label')}</option>
-            </select>
-            <input
-              type="text"
-              placeholder={t('search_destinations_placeholder')}
-              value={searchDestination}
-              onChange={(e) => setSearchDestination(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="search-input-simple"
-            />
+            <div className="search-tabs" role="tablist" aria-label={t('search_filter_label')}>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={searchTab === 'hotels'}
+                className={`search-tab ${searchTab === 'hotels' ? 'active' : ''}`}
+                onClick={() => setSearchTab('hotels')}
+              >
+                {t('accommodation')}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={searchTab === 'attractions'}
+                className={`search-tab ${searchTab === 'attractions' ? 'active' : ''}`}
+                onClick={() => setSearchTab('attractions')}
+              >
+                {t('attractions')}
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={searchTab === 'itineraries'}
+                className={`search-tab ${searchTab === 'itineraries' ? 'active' : ''}`}
+                onClick={() => setSearchTab('itineraries')}
+              >
+                {t('itineraries_label')}
+              </button>
+            </div>
+            <div className="search-input-wrap">
+              <input
+                type="text"
+                placeholder={t('search_destinations_placeholder')}
+                value={searchDestination}
+                onChange={(e) => setSearchDestination(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="search-input-simple"
+              />
+              {searchDestination && (
+                <button
+                  type="button"
+                  className="search-clear"
+                  onClick={() => setSearchDestination('')}
+                  aria-label={t('clear')}
+                >
+                  <Icons.X size={16} />
+                </button>
+              )}
+            </div>
             <button className="explore-button" onClick={handleSearch}>
               {t('explore_button')}
             </button>
@@ -442,7 +465,7 @@ const Home = () => {
         </div>
       </section>
 
-      <HomeStatsStrip attractions={attractions.length} hotels={hotels.length} restaurants={restaurants.length} />
+      <HomeStatsStrip attractions={attractions.length} hotels={hotels.length} />
 
       <section className="home-content-layout">
         <div className="container">
@@ -575,7 +598,7 @@ const Home = () => {
                         onMouseLeave={() => setHoveredCard(null)}
                       >
                         <div className="attraction-image-wrapper">
-                          <img src={attraction.image_url} alt={attraction.name} className="attraction-image" loading="lazy" />
+                          <img src={attraction.image_url || '/placeholder-attraction.svg'} alt={attraction.name} className="attraction-image" loading="lazy" />
                           <div className="attraction-overlay"></div>
                           {hoveredCard === `attraction-${idx}` && (
                             <div className="card-quickview">
@@ -594,7 +617,7 @@ const Home = () => {
                           )}
                           <p className="attraction-location">
                             <Icons.MapPin size={14} />
-                            {attraction.municipality || attraction.location}
+                            {getAttractionArea(attraction) || attraction.municipality}
                           </p>
                         </div>
                       </div>
@@ -606,96 +629,6 @@ const Home = () => {
                 className="carousel-arrow carousel-arrow-right"
                 onClick={() => handleCarouselNav(setAttractionsStart, attractionsStart, getClampMax(attractions.length), 'next')}
                 disabled={attractionsStart >= getClampMax(attractions.length)}
-              >
-                <Icons.ChevronRight size={24} />
-              </button>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* Featured Dining Section */}
-      {pagesections.showDining === true && (restaurantsLoading || restaurants.length > 0) && (
-        <section className="featured-dining-section">
-          <div className="container">
-            <div className="section-header">
-              <div className="section-header-left">
-                    <div className="section-title-row">
-                      <Icons.Utensils size={24} />
-                      <h2 className="section-title">{t('featured_dining')}</h2>
-                    </div>
-                    <p className="section-subtitle">{t('featured_dining_subtitle')}</p>
-              </div>
-              <button className="view-all-btn" onClick={() => navigate('/restaurants')}>
-                {t('view_all')} →
-              </button>
-            </div>
-            <div className="carousel-container">
-              <button
-                className="carousel-arrow carousel-arrow-left"
-                onClick={() => handleCarouselNav(setRestaurantsStart, restaurantsStart, getClampMax(restaurants.length), 'prev')}
-                disabled={restaurantsStart === 0}
-              >
-                <Icons.ChevronLeft size={24} />
-              </button>
-              <div className="carousel-grid">
-                {restaurantsLoading ? (
-                  <div className="restaurants-grid">
-                    {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
-                  </div>
-                ) : restaurants.length === 0 ? (
-                  <div className="home-empty-state">
-                    <Icons.Info size={18} />
-                    <p>{t('home_no_results')}</p>
-                  </div>
-                ) : (
-                  <div className="restaurants-grid">
-                    {restaurants.slice(restaurantsStart, restaurantsStart + visibleCarouselCount).map((restaurant, idx) => (
-                      <div
-                        key={restaurant.restaurant_id}
-                        className={`restaurant-card ${hoveredCard === `restaurant-${idx}` ? 'card-hovered' : ''}`}
-                        onClick={() => navigate(`/restaurants/${restaurant.restaurant_id}`)}
-                        onMouseEnter={() => setHoveredCard(`restaurant-${idx}`)}
-                        onMouseLeave={() => setHoveredCard(null)}
-                      >
-                          {'featured' in restaurant && restaurant.featured && (
-                          <div className="featured-badge">
-                            <Icons.Star size={14} />
-                            {t('featured_short')}
-                          </div>
-                        )}
-                        <div className="restaurant-image-wrapper">
-                          <img src={restaurant.image_url || '/placeholder-restaurant.svg'} alt={restaurant.name} className="restaurant-image" loading="lazy" />
-                          <div className="restaurant-overlay"></div>
-                          {hoveredCard === `restaurant-${idx}` && (
-                            <div className="card-quickview">
-                              <Icons.Eye size={16} />
-                              <span>{t('view_details')}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="restaurant-info">
-                          <h3 className="restaurant-name">{restaurant.name}</h3>
-                          <p className="restaurant-cuisine">{restaurant.cuisine_type}</p>
-                          {restaurant.rating && (
-                            <div className="restaurant-rating">
-                              {renderStarRating(restaurant.rating)}
-                            </div>
-                          )}
-                          <p className="restaurant-location">
-                            <Icons.MapPin size={14} />
-                            {restaurant.municipality}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <button
-                className="carousel-arrow carousel-arrow-right"
-                onClick={() => handleCarouselNav(setRestaurantsStart, restaurantsStart, getClampMax(restaurants.length), 'next')}
-                disabled={restaurantsStart >= getClampMax(restaurants.length)}
               >
                 <Icons.ChevronRight size={24} />
               </button>

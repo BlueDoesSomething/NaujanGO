@@ -76,7 +76,7 @@ export const getAttractions = async (req, res) => {
        LEFT JOIN reviews r ON r.attraction_id = a.id AND r.moderated = 1
        WHERE (a.archived IS NULL OR a.archived = 0)
        GROUP BY a.id
-       ORDER BY a.id ASC`
+       ORDER BY review_count DESC, avg_rating DESC, a.id ASC`
     );
 
     if (language && language !== 'en' && rows && rows.length > 0) {
