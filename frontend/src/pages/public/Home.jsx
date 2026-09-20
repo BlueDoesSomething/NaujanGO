@@ -23,8 +23,16 @@ const toRgba = (hex, alpha, fallback = `rgba(0,0,0,${alpha})`) => {
   return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${alpha})`;
 };
 
+const SkeletonCard = () => (
+  <div className="card-skeleton" aria-hidden="true">
+    <div className="skeleton skeleton-image" />
+    <div className="skeleton skeleton-name" />
+    <div className="skeleton skeleton-line" />
+  </div>
+);
+
 const Home = () => {
-  const { t, language } = useLanguage();
+  const { t, language, supportedLanguages } = useLanguage();
   const { user: authUser } = useAuth();
   const navigate = useNavigate();
   const [attractions, setAttractions] = useState([]);
@@ -32,11 +40,16 @@ const Home = () => {
   const [restaurants, setRestaurants] = useState([]);
   const [inspirationItems, setInspirationItems] = useState([]);
   const [inspirationLoading, setInspirationLoading] = useState(true);
+  const [attractionsLoading, setAttractionsLoading] = useState(true);
+  const [hotelsLoading, setHotelsLoading] = useState(true);
+  const [restaurantsLoading, setRestaurantsLoading] = useState(true);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [attractionsStart, setAttractionsStart] = useState(0);
   const [restaurantsStart, setRestaurantsStart] = useState(0);
   const [hotelsStart, setHotelsStart] = useState(0);
+  const [visibleCarouselCount, setVisibleCarouselCount] = useState(4);
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const [searchDestination, setSearchDestination] = useState('');
   const [searchCheckIn, setSearchCheckIn] = useState('');
   const [searchCheckOut, setSearchCheckOut] = useState('');
@@ -85,6 +98,29 @@ const Home = () => {
     }, language));
   }, [language, t]);
 
+  const computeVisibleCarouselCount = () => {
+    if (typeof window === 'undefined') return 4;
+    const w = window.innerWidth;
+    if (w <= 767) return 1;
+    if (w <= 900) return 2;
+    if (w <= 1200) return 3;
+    return 4;
+  };
+
+  useEffect(() => {
+    const update = () => setVisibleCarouselCount(computeVisibleCarouselCount());
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
+  useEffect(() => {
+    const onScroll = () => setShowBackToTop((window.scrollY || document.documentElement.scrollTop) > 600);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const formatCurrency = (value, currency = 'PHP') => {
     try {
       const numValue = parseFloat(value);
@@ -122,6 +158,13 @@ const Home = () => {
     if (numericRating >= 4.8) return t('best_value');
     return null;
   };
+
+  const getHeroTag = (attraction) => {
+    const tag = attraction?.municipality || attraction?.category || '';
+    return tag ? String(tag).trim() : t('featured_badge');
+  };
+
+  const getClampMax = (length) => Math.max(0, length - visibleCarouselCount);
 
   const fallbackInspirationItems = [
     {
@@ -246,10 +289,10 @@ const Home = () => {
 
     fetchAttractions()
       .then(res => {
-        console.log('Attractions fetched:', res.data);
         setAttractions(Array.isArray(res.data?.data) ? res.data.data.slice(0, 5) : []);
       })
-      .catch(err => console.error('Failed to fetch attractions:', err));
+      .catch(err => console.error('Failed to fetch attractions:', err))
+      .finally(() => setAttractionsLoading(false));
 
     apiClient.get('/itinerary/templates/list')
       .then((response) => {
@@ -271,14 +314,14 @@ const Home = () => {
         return res.json();
       })
       .then(data => {
-        console.log('Hotels fetched:', data);
         const hotelsArray = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
         setHotels(hotelsArray.slice(0, 4));
       })
       .catch(err => {
         console.error('Failed to fetch hotels:', err);
         setHotels([]);
-      });
+      })
+      .finally(() => setHotelsLoading(false));
     
     // Fetch restaurants
     fetch(`${API_BASE_URL}/api/restaurants/featured?limit=4`)
@@ -287,14 +330,14 @@ const Home = () => {
         return res.json();
       })
       .then(data => {
-        console.log('Restaurants fetched:', data);
         const restaurantsArray = Array.isArray(data) ? data : [];
         setRestaurants(restaurantsArray.slice(0, 4));
       })
       .catch(err => {
         console.error('Failed to fetch restaurants:', err);
         setRestaurants([]);
-      });
+      })
+      .finally(() => setRestaurantsLoading(false));
   }, [language]);
 
   useEffect(() => {
@@ -333,7 +376,7 @@ const Home = () => {
               >
                 <div className="hero-overlay" style={{ position: 'absolute', inset: 0, background: toRgba(slideshowSettings.overlayColor, slideshowSettings.overlayOpacity, `rgba(0,0,0,${slideshowSettings.overlayOpacity})`), pointerEvents: 'none' }} />
                 <div className="hero-content">
-                  <span className="hero-tag" style={{ background: toRgba(slideshowSettings.tagBgColor, 0.24, 'rgba(255,255,255,0.24)'), color: slideshowSettings.tagTextColor || '#ffffff', border: `1px solid ${toRgba(slideshowSettings.tagBgColor, 0.62, 'rgba(255,255,255,0.62)')}` }}>{t('featured_badge')}</span>
+                  <span className="hero-tag" style={{ background: toRgba(slideshowSettings.tagBgColor, 0.24, 'rgba(255,255,255,0.24)'), color: slideshowSettings.tagTextColor || '#ffffff', border: `1px solid ${toRgba(slideshowSettings.tagBgColor, 0.62, 'rgba(255,255,255,0.62)')}` }}>{getHeroTag(attraction)}</span>
                   <h1 className="hero-title" style={{ color: slideshowSettings.titleColor || '#ffffff' }}>{attraction.name}</h1>
                   <p className="hero-description" style={{ color: slideshowSettings.descriptionColor || '#e5e7eb' }}>{attraction.description || t('experience_beauty')}</p>
                   <button
@@ -369,7 +412,7 @@ const Home = () => {
         </section>
       )}
 
-      <section className="hero-search-section">
+      <section className={`hero-search-section ${pagesections.showHeroSlideshow !== false && attractions.length > 0 ? 'hero-search-overlap' : ''}`}>
         <div className="container">
           <div className="simple-search-bar">
             <Icons.Search size={20} className="search-icon" />
@@ -397,6 +440,49 @@ const Home = () => {
           </div>
         </div>
       </section>
+
+      {(attractions.length > 0 || hotels.length > 0 || restaurants.length > 0) && (
+        <section className="home-stats-strip" aria-label={t('quick_stats')}>
+          <div className="container">
+            <div className="home-stats-grid">
+              {attractions.length > 0 && (
+                <div className="home-stat-item">
+                  <Icons.Attraction size={20} />
+                  <div className="home-stat-meta">
+                    <strong>{attractions.length}</strong>
+                    <span>{t('attractions')}</span>
+                  </div>
+                </div>
+              )}
+              {hotels.length > 0 && (
+                <div className="home-stat-item">
+                  <Icons.Hotel size={20} />
+                  <div className="home-stat-meta">
+                    <strong>{hotels.length}</strong>
+                    <span>{t('hotels')}</span>
+                  </div>
+                </div>
+              )}
+              {restaurants.length > 0 && (
+                <div className="home-stat-item">
+                  <Icons.Utensils size={20} />
+                  <div className="home-stat-meta">
+                    <strong>{restaurants.length}</strong>
+                    <span>{t('featured_dining')}</span>
+                  </div>
+                </div>
+              )}
+              <div className="home-stat-item">
+                <Icons.Globe size={20} />
+                <div className="home-stat-meta">
+                  <strong>{supportedLanguages.length}</strong>
+                  <span>{t('supported_languages')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="home-content-layout">
         <div className="container">
@@ -485,7 +571,7 @@ const Home = () => {
       </section>
 
       {/* Featured Attractions Section */}
-      {pagesections.showAttractions !== false && attractions.length > 0 && (
+      {(pagesections.showAttractions !== false) && (attractionsLoading || attractions.length > 0) && (
         <section className="featured-attractions-section">
           <div className="container">
             <div className="section-header">
@@ -503,37 +589,63 @@ const Home = () => {
             <div className="carousel-container">
               <button
                 className="carousel-arrow carousel-arrow-left"
-                onClick={() => handleCarouselNav(setAttractionsStart, attractionsStart, attractions.length - 4, 'prev')}
+                onClick={() => handleCarouselNav(setAttractionsStart, attractionsStart, getClampMax(attractions.length), 'prev')}
                 disabled={attractionsStart === 0}
               >
                 <Icons.ChevronLeft size={24} />
               </button>
               <div className="carousel-grid">
-                <div className="attractions-grid">
-                  {attractions.slice(attractionsStart, attractionsStart + 4).map((attraction, idx) => (
-                    <div
-                      key={attraction.id}
-                      className="attraction-card"
-                      onClick={() => navigate(`/attractions/${attraction.id}`, { state: { attraction } })}
-                      onMouseEnter={() => setHoveredCard(`attraction-${idx}`)}
-                      onMouseLeave={() => setHoveredCard(null)}
-                    >
-                      <div className="attraction-image-wrapper">
-                        <img src={attraction.image_url} alt={attraction.name} className="attraction-image" loading="lazy" />
-                        <div className="attraction-overlay"></div>
+                {attractionsLoading ? (
+                  <div className="attractions-grid">
+                    {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+                  </div>
+                ) : attractions.length === 0 ? (
+                  <div className="home-empty-state">
+                    <Icons.Info size={18} />
+                    <p>{t('home_no_results')}</p>
+                  </div>
+                ) : (
+                  <div className="attractions-grid">
+                    {attractions.slice(attractionsStart, attractionsStart + visibleCarouselCount).map((attraction, idx) => (
+                      <div
+                        key={attraction.id}
+                        className={`attraction-card ${hoveredCard === `attraction-${idx}` ? 'card-hovered' : ''}`}
+                        onClick={() => navigate(`/attractions/${attraction.id}`, { state: { attraction } })}
+                        onMouseEnter={() => setHoveredCard(`attraction-${idx}`)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                      >
+                        <div className="attraction-image-wrapper">
+                          <img src={attraction.image_url} alt={attraction.name} className="attraction-image" loading="lazy" />
+                          <div className="attraction-overlay"></div>
+                          {hoveredCard === `attraction-${idx}` && (
+                            <div className="card-quickview">
+                              <Icons.Eye size={16} />
+                              <span>{t('view_details')}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="attraction-info">
+                          <h3 className="attraction-name">{attraction.name}</h3>
+                          <p className="attraction-type">{attraction.category || t('tourist_destination')}</p>
+                          {attraction.avg_rating > 0 && (
+                            <div className="attraction-rating">
+                              {renderStarRating(attraction.avg_rating)}
+                            </div>
+                          )}
+                          <p className="attraction-location">
+                            <Icons.MapPin size={14} />
+                            {attraction.municipality || attraction.location}
+                          </p>
+                        </div>
                       </div>
-                      <div className="attraction-info">
-                        <h3 className="attraction-name">{attraction.name}</h3>
-                        <p className="attraction-type">{t('tourist_destination')}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <button
                 className="carousel-arrow carousel-arrow-right"
-                onClick={() => handleCarouselNav(setAttractionsStart, attractionsStart, attractions.length - 4, 'next')}
-                disabled={attractionsStart >= attractions.length - 4}
+                onClick={() => handleCarouselNav(setAttractionsStart, attractionsStart, getClampMax(attractions.length), 'next')}
+                disabled={attractionsStart >= getClampMax(attractions.length)}
               >
                 <Icons.ChevronRight size={24} />
               </button>
@@ -543,7 +655,7 @@ const Home = () => {
       )}
 
       {/* Featured Dining Section */}
-      {pagesections.showDining === true && restaurants.length > 0 && (
+      {pagesections.showDining === true && (restaurantsLoading || restaurants.length > 0) && (
         <section className="featured-dining-section">
           <div className="container">
             <div className="section-header">
@@ -561,52 +673,69 @@ const Home = () => {
             <div className="carousel-container">
               <button
                 className="carousel-arrow carousel-arrow-left"
-                onClick={() => handleCarouselNav(setRestaurantsStart, restaurantsStart, restaurants.length - 4, 'prev')}
+                onClick={() => handleCarouselNav(setRestaurantsStart, restaurantsStart, getClampMax(restaurants.length), 'prev')}
                 disabled={restaurantsStart === 0}
               >
                 <Icons.ChevronLeft size={24} />
               </button>
               <div className="carousel-grid">
-                <div className="restaurants-grid">
-                  {restaurants.slice(restaurantsStart, restaurantsStart + 4).map((restaurant, idx) => (
-                    <div
-                      key={restaurant.restaurant_id}
-                      className="restaurant-card"
-                      onClick={() => navigate(`/restaurants/${restaurant.restaurant_id}`)}
-                      onMouseEnter={() => setHoveredCard(`restaurant-${idx}`)}
-                      onMouseLeave={() => setHoveredCard(null)}
-                    >
-                        {'featured' in restaurant && restaurant.featured && (
-                        <div className="featured-badge">
-                          <Icons.Star size={14} />
-                          {t('featured_short')}
-                        </div>
-                      )}
-                      <div className="restaurant-image-wrapper">
-                        <img src={restaurant.image_url || '/placeholder-restaurant.svg'} alt={restaurant.name} className="restaurant-image" loading="lazy" />
-                        <div className="restaurant-overlay"></div>
-                      </div>
-                      <div className="restaurant-info">
-                        <h3 className="restaurant-name">{restaurant.name}</h3>
-                        <p className="restaurant-cuisine">{restaurant.cuisine_type}</p>
-                        {restaurant.rating && (
-                          <div className="restaurant-rating">
-                            {renderStarRating(restaurant.rating)}
+                {restaurantsLoading ? (
+                  <div className="restaurants-grid">
+                    {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+                  </div>
+                ) : restaurants.length === 0 ? (
+                  <div className="home-empty-state">
+                    <Icons.Info size={18} />
+                    <p>{t('home_no_results')}</p>
+                  </div>
+                ) : (
+                  <div className="restaurants-grid">
+                    {restaurants.slice(restaurantsStart, restaurantsStart + visibleCarouselCount).map((restaurant, idx) => (
+                      <div
+                        key={restaurant.restaurant_id}
+                        className={`restaurant-card ${hoveredCard === `restaurant-${idx}` ? 'card-hovered' : ''}`}
+                        onClick={() => navigate(`/restaurants/${restaurant.restaurant_id}`)}
+                        onMouseEnter={() => setHoveredCard(`restaurant-${idx}`)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                      >
+                          {'featured' in restaurant && restaurant.featured && (
+                          <div className="featured-badge">
+                            <Icons.Star size={14} />
+                            {t('featured_short')}
                           </div>
                         )}
-                        <p className="restaurant-location">
-                          <Icons.MapPin size={14} />
-                          {restaurant.municipality}
-                        </p>
+                        <div className="restaurant-image-wrapper">
+                          <img src={restaurant.image_url || '/placeholder-restaurant.svg'} alt={restaurant.name} className="restaurant-image" loading="lazy" />
+                          <div className="restaurant-overlay"></div>
+                          {hoveredCard === `restaurant-${idx}` && (
+                            <div className="card-quickview">
+                              <Icons.Eye size={16} />
+                              <span>{t('view_details')}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="restaurant-info">
+                          <h3 className="restaurant-name">{restaurant.name}</h3>
+                          <p className="restaurant-cuisine">{restaurant.cuisine_type}</p>
+                          {restaurant.rating && (
+                            <div className="restaurant-rating">
+                              {renderStarRating(restaurant.rating)}
+                            </div>
+                          )}
+                          <p className="restaurant-location">
+                            <Icons.MapPin size={14} />
+                            {restaurant.municipality}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <button
                 className="carousel-arrow carousel-arrow-right"
-                onClick={() => handleCarouselNav(setRestaurantsStart, restaurantsStart, restaurants.length - 4, 'next')}
-                disabled={restaurantsStart >= restaurants.length - 4}
+                onClick={() => handleCarouselNav(setRestaurantsStart, restaurantsStart, getClampMax(restaurants.length), 'next')}
+                disabled={restaurantsStart >= getClampMax(restaurants.length)}
               >
                 <Icons.ChevronRight size={24} />
               </button>
@@ -616,7 +745,7 @@ const Home = () => {
       )}
 
       {/* Featured Accommodation Section */}
-      {pagesections.showHotels !== false && hotels.length > 0 && (
+      {pagesections.showHotels !== false && (hotelsLoading || hotels.length > 0) && (
         <section className="featured-accommodation-section">
           <div className="container">
             <div className="section-header">
@@ -634,56 +763,83 @@ const Home = () => {
             <div className="carousel-container">
               <button
                 className="carousel-arrow carousel-arrow-left"
-                onClick={() => handleCarouselNav(setHotelsStart, hotelsStart, hotels.length - 4, 'prev')}
+                onClick={() => handleCarouselNav(setHotelsStart, hotelsStart, getClampMax(hotels.length), 'prev')}
                 disabled={hotelsStart === 0}
               >
                 <Icons.ChevronLeft size={24} />
               </button>
               <div className="carousel-grid">
-                <div className="accommodation-grid">
-                  {hotels.slice(hotelsStart, hotelsStart + 4).map((hotel, idx) => {
-                    const badge = getHotelBadge(idx, hotel.rating);
-                    return (
-                      <div
-                        key={hotel.id}
-                        className="accommodation-card"
-                        onClick={() => navigate(`/hotels/${hotel.id}`)}
-                        onMouseEnter={() => setHoveredCard(`accommodation-${idx}`)}
-                        onMouseLeave={() => setHoveredCard(null)}
-                      >
-                        {badge && <div className="accommodation-badge">{badge}</div>}
-                        <div className="accommodation-image-wrapper">
-                          <img src={hotel.image || '/placeholder-hotel.svg'} alt={hotel.name} className="accommodation-image" loading="lazy" />
-                          <div className="accommodation-overlay"></div>
+                {hotelsLoading ? (
+                  <div className="accommodation-grid">
+                    {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
+                  </div>
+                ) : hotels.length === 0 ? (
+                  <div className="home-empty-state">
+                    <Icons.Info size={18} />
+                    <p>{t('home_no_results')}</p>
+                  </div>
+                ) : (
+                  <div className="accommodation-grid">
+                    {hotels.slice(hotelsStart, hotelsStart + visibleCarouselCount).map((hotel, idx) => {
+                      const badge = getHotelBadge(idx, hotel.rating);
+                      return (
+                        <div
+                          key={hotel.id}
+                          className={`accommodation-card ${hoveredCard === `accommodation-${idx}` ? 'card-hovered' : ''}`}
+                          onClick={() => navigate(`/hotels/${hotel.id}`)}
+                          onMouseEnter={() => setHoveredCard(`accommodation-${idx}`)}
+                          onMouseLeave={() => setHoveredCard(null)}
+                        >
+                          {badge && <div className="accommodation-badge">{badge}</div>}
+                          <div className="accommodation-image-wrapper">
+                            <img src={hotel.image || '/placeholder-hotel.svg'} alt={hotel.name} className="accommodation-image" loading="lazy" />
+                            <div className="accommodation-overlay"></div>
+                            {hoveredCard === `accommodation-${idx}` && (
+                              <div className="card-quickview">
+                                <Icons.Eye size={16} />
+                                <span>{t('view_details')}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="accommodation-info">
+                            <h3 className="accommodation-name">{hotel.name}</h3>
+                            <p className="accommodation-location">
+                              <Icons.MapPin size={14} />
+                              {hotel.location}
+                            </p>
+                            {hotel.rating && (
+                              <div className="accommodation-rating">
+                                {renderStarRating(hotel.rating)}
+                              </div>
+                            )}
+                            <p className="accommodation-price">{t('from_label')} {formatCurrency(hotel.pricePerNight || 0, hotel.currency)}</p>
+                          </div>
                         </div>
-                        <div className="accommodation-info">
-                          <h3 className="accommodation-name">{hotel.name}</h3>
-                          <p className="accommodation-location">
-                            <Icons.MapPin size={14} />
-                            {hotel.location}
-                          </p>
-                          {hotel.rating && (
-                            <div className="accommodation-rating">
-                              {renderStarRating(hotel.rating)}
-                            </div>
-                          )}
-                          <p className="accommodation-price">{t('from_label')} {formatCurrency(hotel.pricePerNight || 0, hotel.currency)}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
               <button
                 className="carousel-arrow carousel-arrow-right"
-                onClick={() => handleCarouselNav(setHotelsStart, hotelsStart, hotels.length - 4, 'next')}
-                disabled={hotelsStart >= hotels.length - 4}
+                onClick={() => handleCarouselNav(setHotelsStart, hotelsStart, getClampMax(hotels.length), 'next')}
+                disabled={hotelsStart >= getClampMax(hotels.length)}
               >
                 <Icons.ChevronRight size={24} />
               </button>
             </div>
           </div>
         </section>
+      )}
+
+      {showBackToTop && (
+        <button
+          className="back-to-top"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          aria-label={t('back_to_top')}
+        >
+          <Icons.ChevronUp size={22} />
+        </button>
       )}
     </div>
   );

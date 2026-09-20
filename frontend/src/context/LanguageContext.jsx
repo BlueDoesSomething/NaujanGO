@@ -34,6 +34,9 @@ const translations = {
     total_attractions: 'Total Attractions',
     happy_visitors: 'Happy Visitors',
     local_guides: 'Local Guides',
+    supported_languages: 'Languages',
+    home_no_results: 'Nothing to show right now.',
+    back_to_top: 'Back to top',
     
     // New Home Page Sections
     welcome_to_naujan: 'Welcome to Naujan',
@@ -1299,6 +1302,9 @@ const translations = {
     total_attractions: 'Total de Atracciones',
     happy_visitors: 'Visitantes Felices',
     local_guides: 'Guías Locales',
+    supported_languages: 'Idiomas',
+    home_no_results: 'Nada que mostrar por ahora.',
+    back_to_top: 'Volver arriba',
     
     // Attractions Page
     all_attractions: 'Todas las Atracciones',
@@ -1832,6 +1838,9 @@ const translations = {
     total_attractions: 'Kabuuang Atraksyon',
     happy_visitors: 'Masayang mga Bisita',
     local_guides: 'Mga Lokal na Gabay',
+    supported_languages: 'Mga Wika',
+    home_no_results: 'Wala pang maipakita sa ngayon.',
+    back_to_top: 'Bumalik sa itaas',
     
     // New Home Page Sections
     welcome_to_naujan: 'Maligayang Pagdating sa Naujan',
@@ -2318,6 +2327,9 @@ const translations = {
     total_attractions: '总景点数',
     happy_visitors: '满意游客',
     local_guides: '本地导游',
+    supported_languages: '语言',
+    home_no_results: '暂时没有可显示的内容。',
+    back_to_top: '回到顶部',
     
     // New Home Page Sections
     welcome_to_naujan: '欢迎来到瑙汉',
@@ -2857,6 +2869,9 @@ const translations = {
     total_attractions: '総観光スポット数',
     happy_visitors: '満足した訪問者',
     local_guides: '地元ガイド',
+    supported_languages: '言語',
+    home_no_results: '現在表示できるものはありません。',
+    back_to_top: '先頭へ戻る',
     
     // New Home Page Sections
     welcome_to_naujan: 'ナウジャンへようこそ',
@@ -3241,6 +3256,9 @@ const translations = {
     total_attractions: '총 관광지 수',
     happy_visitors: '만족한 방문자',
     local_guides: '현지 가이드',
+    supported_languages: '언어',
+    home_no_results: '지금 표시할 항목이 없습니다.',
+    back_to_top: '맨 위로',
     
     // New Home Page Sections
     welcome_to_naujan: '나우한에 오신 것을 환영합니다',
@@ -3562,6 +3580,9 @@ const translations = {
     total_attractions: 'Total des attractions',
     happy_visitors: 'Visiteurs satisfaits',
     local_guides: 'Guides locaux',
+    supported_languages: 'Langues',
+    home_no_results: 'Rien à afficher pour le moment.',
+    back_to_top: 'Revenir en haut',
     
     // New Home Page Sections
     welcome_to_naujan: 'Bienvenue à Naujan',
@@ -3883,6 +3904,9 @@ const translations = {
     total_attractions: 'Gesamtzahl der Attraktionen',
     happy_visitors: 'Zufriedene Besucher',
     local_guides: 'Lokale Reiseführer',
+    supported_languages: 'Sprachen',
+    home_no_results: 'Derzeit nichts anzuzeigen.',
+    back_to_top: 'Nach oben',
     
     // New Home Page Sections
     welcome_to_naujan: 'Willkommen in Naujan',
