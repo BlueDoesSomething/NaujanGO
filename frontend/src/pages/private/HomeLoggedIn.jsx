@@ -7,6 +7,7 @@ import Icons from '../../components/Icons';
 import WeatherWidget from '../../components/WeatherWidget';
 import HazardAwareness from '../../components/HazardAwareness';
 import { loadCachedSetting, saveCachedSetting } from '../../utils/siteSettingsCache';
+import HomeStatsStrip from '../../components/HomeStatsStrip';
 import './HomeLoggedIn.css';
 
 const API_BASE_URL = getApiBaseUrl();
@@ -32,7 +33,7 @@ const SkeletonCard = () => (
 );
 
 const HomeLoggedIn = () => {
-  const { t, language, supportedLanguages } = useLanguage();
+  const { t, language } = useLanguage();
   const { user: authUser } = useAuth();
   const navigate = useNavigate();
   const [attractions, setAttractions] = useState([]);
@@ -412,7 +413,7 @@ const HomeLoggedIn = () => {
         </section>
       )}
 
-      <section className={`hero-search-section ${pagesections.showHeroSlideshow !== false && attractions.length > 0 ? 'hero-search-overlap' : ''}`}>
+      <section className="hero-search-section">
         <div className="container">
           <div className="simple-search-bar">
             <Icons.Search size={20} className="search-icon" />
@@ -441,48 +442,7 @@ const HomeLoggedIn = () => {
         </div>
       </section>
 
-      {(attractions.length > 0 || hotels.length > 0 || restaurants.length > 0) && (
-        <section className="home-stats-strip" aria-label={t('quick_stats')}>
-          <div className="container">
-            <div className="home-stats-grid">
-              {attractions.length > 0 && (
-                <div className="home-stat-item">
-                  <Icons.Attraction size={20} />
-                  <div className="home-stat-meta">
-                    <strong>{attractions.length}</strong>
-                    <span>{t('attractions')}</span>
-                  </div>
-                </div>
-              )}
-              {hotels.length > 0 && (
-                <div className="home-stat-item">
-                  <Icons.Hotel size={20} />
-                  <div className="home-stat-meta">
-                    <strong>{hotels.length}</strong>
-                    <span>{t('hotels')}</span>
-                  </div>
-                </div>
-              )}
-              {restaurants.length > 0 && (
-                <div className="home-stat-item">
-                  <Icons.Utensils size={20} />
-                  <div className="home-stat-meta">
-                    <strong>{restaurants.length}</strong>
-                    <span>{t('featured_dining')}</span>
-                  </div>
-                </div>
-              )}
-              <div className="home-stat-item">
-                <Icons.Globe size={20} />
-                <div className="home-stat-meta">
-                  <strong>{supportedLanguages.length}</strong>
-                  <span>{t('supported_languages')}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+      <HomeStatsStrip attractions={attractions.length} hotels={hotels.length} restaurants={restaurants.length} />
 
       <section className="home-content-layout">
         <div className="container">

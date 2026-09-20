@@ -2930,8 +2930,8 @@
   background: rgba(240, 247, 242, 0.4);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  padding: 1.5rem 0;
-  margin-top: -1rem;
+  padding: 1.6rem 0 1.9rem;
+  margin-top: 0;
   position: relative;
   z-index: 5;
 }
@@ -3518,8 +3518,8 @@
   }
 
   .hero-search-section {
-    padding: 1.5rem 0;
-    margin-top: -0.5rem;
+    padding: 1.6rem 0 1.9rem;
+    margin-top: 0;
   }
 
   .search-container {
@@ -3620,15 +3620,15 @@
   background: rgba(248, 249, 250, 0.3);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  padding: 3rem 0 2.5rem;
-  margin: 0.75rem 0;
+  padding: 2.4rem 0 2.1rem;
+  margin: 0.5rem 0;
 }
 
 .featured-attractions-section .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 1.5rem;
 }
@@ -3831,15 +3831,15 @@
   background: rgba(248, 249, 250, 0.3);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  padding: 3rem 0 2.5rem;
-  margin: 0.75rem 0;
+  padding: 2.4rem 0 2.1rem;
+  margin: 0.5rem 0;
 }
 
 .featured-dining-section .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 1.5rem;
 }
@@ -4189,15 +4189,15 @@
   background: rgba(248, 249, 250, 0.3);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  padding: 3rem 0 2.5rem;
-  margin: 0.75rem 0;
+  padding: 2.4rem 0 2.1rem;
+  margin: 0.5rem 0;
 }
 
 .featured-accommodation-section .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.5rem;
   flex-wrap: wrap;
   gap: 1.5rem;
 }
@@ -4663,114 +4663,30 @@
    HOMEPAGE DESIGN ENHANCEMENTS
    ================================================== */
 
-/* Search bar overlapping the hero slideshow */
-.hero-search-section.hero-search-overlap {
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  padding: 0;
-  margin-top: -2.6rem;
-  z-index: 8;
+/* Search bar sits directly below the hero slideshow (no overlap) */
+/* (overlap rules and the old stats strip removed: the stats band is now
+   rendered by the shared HomeStatsStrip component with its own sheet) */
+
+/* Hairline divider between the slideshow and the search band */
+.hero-search-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(46, 125, 50, 0.35), transparent);
 }
 
-.hero-search-section.hero-search-overlap .simple-search-bar {
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(18px) saturate(1.4);
-  -webkit-backdrop-filter: blur(18px) saturate(1.4);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.2), 0 4px 18px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.85);
-}
-
-@media (max-width: 768px) {
-  .hero-search-section.hero-search-overlap {
-    margin-top: -2rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .hero-search-section.hero-search-overlap {
-    margin-top: -1.5rem;
-  }
-}
-
-/* Lift slideshow indicators clear of the overlapping search bar */
-.home-page:has(.hero-search-overlap) .slideshow-indicators {
-  bottom: 4.2rem;
-}
-
-@media (max-width: 640px) {
-  .home-page:has(.hero-search-overlap) .slideshow-indicators {
-    bottom: 3.2rem;
-  }
-}
-
-/* Stats strip */
-.home-stats-strip {
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border-bottom: 1px solid rgba(46, 125, 50, 0.1);
-  padding: 1rem 0;
-}
-
-.home-stats-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-evenly;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.home-stat-item {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.5rem 1rem;
-}
-
-.home-stat-item > svg {
-  color: var(--primary-color);
-  flex-shrink: 0;
-}
-
-.home-stat-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-}
-
-.home-stat-meta strong {
-  font-size: 1.3rem;
-  font-weight: 900;
-  line-height: 1.1;
-  color: var(--text-dark);
-}
-
-.home-stat-meta span {
-  font-size: 0.78rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--text-light);
-}
-
-@media (max-width: 640px) {
-  .home-stats-grid {
-    justify-content: center;
-  }
-
-  .home-stat-item {
-    padding: 0.4rem 0.7rem;
-  }
-
-  .home-stat-meta strong {
-    font-size: 1.15rem;
-  }
+/* Search pill: soft glow ring on focus */
+.simple-search-bar:focus-within {
+  border-color: rgba(46, 125, 50, 0.45);
+  box-shadow: 0 0 0 4px rgba(46, 125, 50, 0.12), 0 18px 50px rgba(0, 0, 0, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 /* Content rhythm */
 .home-content-layout {
-  padding: 2.25rem 0 2rem;
+  padding: 1.5rem 0 1.75rem;
 }
 
 .featured-attractions-section {
@@ -4957,4 +4873,15 @@
     width: 42px;
     height: 42px;
   }
+}
+
+/* Gradient section titles (wow accent) */
+.featured-attractions-section .section-title,
+.featured-dining-section .section-title,
+.featured-accommodation-section .section-title {
+  background: linear-gradient(90deg, var(--primary-color) 0%, #16a34a 55%, var(--accent-color) 115%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent !important;
 }
