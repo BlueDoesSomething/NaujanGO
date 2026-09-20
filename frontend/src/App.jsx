@@ -356,6 +356,7 @@ const App = () => {
                   <Route path="/attractions" element={<AdminDashboard />} />
                   <Route path="/chatbot" element={<AdminDashboard />} />
                   <Route path="/reports" element={<AdminDashboard />} />
+                  <Route path="/tourist-arrivals" element={<AdminDashboard />} />
                   <Route path="/archive" element={<AdminDashboard />} />
                 </Routes>
               </RoleBasedRoute>

@@ -1950,4 +1950,204 @@ router.get('/visitor-analytics', authenticateToken, requireAdmin, async (req, re
   }
 });
 
+// ============ Tourist Arrival Tracker (monthly LGU log) ============
+
+const ensureTouristArrivalsTable = async () => {
+  await db.promise().query(`
+    CREATE TABLE IF NOT EXISTS tourist_arrivals (
+      arrival_id INT(11) PRIMARY KEY AUTO_INCREMENT,
+      arrival_month DATE NOT NULL,
+      foreign_count INT(11) NOT NULL DEFAULT 0,
+      local_count INT(11) NOT NULL DEFAULT 0,
+      male_count INT(11) NOT NULL DEFAULT 0,
+      female_count INT(11) NOT NULL DEFAULT 0,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uk_arrival_month (arrival_month)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+};
+
+const validateArrivalCounts = (body) => {
+  const rawMonth = body.arrival_month;
+  if (!rawMonth) return { error: 'arrival_month is required' };
+  if (!/^\d{4}-\d{2}(-\d{2})?$/.test(String(rawMonth))) {
+    return { error: 'arrival_month must be YYYY-MM or YYYY-MM-DD' };
+  }
+  const monthDate = String(rawMonth).slice(0, 7) + '-01';
+  const date = new Date(`${monthDate}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return { error: 'arrival_month is not a valid date' };
+
+  const toInt = (v, name) => {
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < 0) return { error: `${name} must be a non-negative integer` };
+    return { value: n };
+  };
+
+  const foreign = toInt(body.foreign_count, 'foreign_count');
+  if (foreign.error) return foreign;
+  const local = toInt(body.local_count, 'local_count');
+  if (local.error) return local;
+  const male = toInt(body.male_count, 'male_count');
+  if (male.error) return male;
+  const female = toInt(body.female_count, 'female_count');
+  if (female.error) return female;
+
+  if (male.value + female.value !== foreign.value + local.value) {
+    return { error: 'Counts do not match: male + female must equal foreign + local' };
+  }
+
+  return {
+    value: {
+      arrival_month: monthDate,
+      foreign_count: foreign.value,
+      local_count: local.value,
+      male_count: male.value,
+      female_count: female.value,
+      notes: body.notes != null ? String(body.notes) : null,
+    },
+  };
+};
+
+// GET /api/admin/tourist-arrivals?year=2025 — list monthly records
+router.get('/tourist-arrivals', async (req, res) => {
+  try {
+    await ensureTouristArrivalsTable();
+    const year = req.query.year ? String(req.query.year) : null;
+    let sql = `
+      SELECT arrival_id, DATE_FORMAT(arrival_month, '%Y-%m') AS month,
+             foreign_count, local_count, male_count, female_count, notes,
+             created_at, updated_at
+      FROM tourist_arrivals
+    `;
+    const params = [];
+    if (year && /^\d{4}$/.test(year)) {
+      sql += ' WHERE YEAR(arrival_month) = ?';
+      params.push(Number(year));
+    }
+    sql += ' ORDER BY arrival_month DESC';
+    const [rows] = await db.promise().query(sql, params);
+    res.json(rows);
+  } catch (error) {
+    console.error('Get tourist arrivals error:', error);
+    res.status(500).json({ error: 'Failed to fetch tourist arrivals', details: error.message });
+  }
+});
+
+// GET /api/admin/tourist-arrivals/summary — yearly totals for charts
+router.get('/tourist-arrivals/summary', async (req, res) => {
+  try {
+    await ensureTouristArrivalsTable();
+    const [[row]] = await db.promise().query(`
+      SELECT
+        COALESCE(SUM(foreign_count), 0) AS total_foreign,
+        COALESCE(SUM(local_count), 0) AS total_local,
+        COALESCE(SUM(male_count), 0) AS total_male,
+        COALESCE(SUM(female_count), 0) AS total_female,
+        COALESCE(SUM(foreign_count + local_count), 0) AS total_arrivals,
+        YEAR(MIN(arrival_month)) AS first_year,
+        YEAR(MAX(arrival_month)) AS last_year,
+        COUNT(*) AS months_logged
+      FROM tourist_arrivals
+    `);
+    const [byYear] = await db.promise().query(`
+      SELECT YEAR(arrival_month) AS year,
+             COALESCE(SUM(foreign_count), 0) AS foreign_count,
+             COALESCE(SUM(local_count), 0) AS local_count,
+             COALESCE(SUM(male_count), 0) AS male_count,
+             COALESCE(SUM(female_count), 0) AS female_count,
+             COALESCE(SUM(foreign_count + local_count), 0) AS total
+      FROM tourist_arrivals
+      GROUP BY YEAR(arrival_month)
+      ORDER BY year DESC
+    `);
+    res.json({ totals: row, byYear });
+  } catch (error) {
+    console.error('Get tourist arrivals summary error:', error);
+    res.status(500).json({ error: 'Failed to fetch tourist arrivals summary', details: error.message });
+  }
+});
+
+// POST /api/admin/tourist-arrivals — create or upsert a monthly record
+router.post('/tourist-arrivals', async (req, res) => {
+  try {
+    await ensureTouristArrivalsTable();
+    const parsed = validateArrivalCounts(req.body);
+    if (parsed.error) return res.status(400).json({ error: parsed.error });
+    const { arrival_month, foreign_count, local_count, male_count, female_count, notes } = parsed.value;
+
+    const [existing] = await db.promise().query(
+      'SELECT arrival_id FROM tourist_arrivals WHERE arrival_month = ?',
+      [arrival_month]
+    );
+
+    if (existing.length) {
+      await db.promise().query(
+        `UPDATE tourist_arrivals
+         SET foreign_count = ?, local_count = ?, male_count = ?, female_count = ?, notes = ?
+         WHERE arrival_id = ?`,
+        [foreign_count, local_count, male_count, female_count, notes, existing[0].arrival_id]
+      );
+      return res.json({ success: true, arrivalId: existing[0].arrival_id, updated: true });
+    }
+
+    const [result] = await db.promise().query(
+      `INSERT INTO tourist_arrivals (arrival_month, foreign_count, local_count, male_count, female_count, notes)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [arrival_month, foreign_count, local_count, male_count, female_count, notes]
+    );
+    res.json({ success: true, arrivalId: result.insertId, updated: false });
+  } catch (error) {
+    console.error('Create tourist arrival error:', error);
+    res.status(500).json({ error: 'Failed to save tourist arrival', details: error.message });
+  }
+});
+
+// PUT /api/admin/tourist-arrivals/:id — update an existing monthly record
+router.put('/tourist-arrivals/:id', async (req, res) => {
+  try {
+    await ensureTouristArrivalsTable();
+    const arrivalId = Number(req.params.id);
+    if (!Number.isInteger(arrivalId) || arrivalId <= 0) {
+      return res.status(400).json({ error: 'Invalid arrival id' });
+    }
+    const parsed = validateArrivalCounts(req.body);
+    if (parsed.error) return res.status(400).json({ error: parsed.error });
+    const { arrival_month, foreign_count, local_count, male_count, female_count, notes } = parsed.value;
+
+    const [result] = await db.promise().query(
+      `UPDATE tourist_arrivals
+       SET arrival_month = ?, foreign_count = ?, local_count = ?, male_count = ?, female_count = ?, notes = ?
+       WHERE arrival_id = ?`,
+      [arrival_month, foreign_count, local_count, male_count, female_count, notes, arrivalId]
+    );
+    if (!result.affectedRows) return res.status(404).json({ error: 'Tourist arrival record not found' });
+    res.json({ success: true, arrivalId });
+  } catch (error) {
+    console.error('Update tourist arrival error:', error);
+    res.status(500).json({ error: 'Failed to update tourist arrival', details: error.message });
+  }
+});
+
+// DELETE /api/admin/tourist-arrivals/:id — delete a monthly record
+router.delete('/tourist-arrivals/:id', async (req, res) => {
+  try {
+    await ensureTouristArrivalsTable();
+    const arrivalId = Number(req.params.id);
+    if (!Number.isInteger(arrivalId) || arrivalId <= 0) {
+      return res.status(400).json({ error: 'Invalid arrival id' });
+    }
+    const [result] = await db.promise().query(
+      'DELETE FROM tourist_arrivals WHERE arrival_id = ?',
+      [arrivalId]
+    );
+    if (!result.affectedRows) return res.status(404).json({ error: 'Tourist arrival record not found' });
+    res.json({ success: true, arrivalId });
+  } catch (error) {
+    console.error('Delete tourist arrival error:', error);
+    res.status(500).json({ error: 'Failed to delete tourist arrival', details: error.message });
+  }
+});
+
 export default router;
