@@ -58,7 +58,7 @@ const HomeLoggedIn = () => {
   }));
   const [slideshowExt, setSlideshowExt] = useState(() => loadCachedSetting('home-slideshow-extended', { intervalSeconds: 4, showArrows: true, transition: 'fade' }, language));
   const [pagesections, setPageSections] = useState(() => loadCachedSetting('homepage-sections', {
-    showWelcome: true, showWeather: true, showAttractions: true, showHotels: true,
+    showWelcome: true, showWeather: true, showAttractions: true, showHotels: true, showDining: false,
     welcomeTitle: '', welcomeSubtitle: '', attractionsTitle: '', attractionsSubtitle: '',
     hotelsTitle: '', hotelsSubtitle: '',
   }, language));
@@ -79,7 +79,7 @@ const HomeLoggedIn = () => {
     }, language));
     setSlideshowExt(loadCachedSetting('home-slideshow-extended', { intervalSeconds: 4, showArrows: true, transition: 'fade' }, language));
     setPageSections(loadCachedSetting('homepage-sections', {
-      showWelcome: true, showWeather: true, showAttractions: true, showHotels: true,
+      showWelcome: true, showWeather: true, showAttractions: true, showHotels: true, showDining: false,
       welcomeTitle: '', welcomeSubtitle: '', attractionsTitle: '', attractionsSubtitle: '',
       hotelsTitle: '', hotelsSubtitle: '',
     }, language));
@@ -544,7 +544,7 @@ const HomeLoggedIn = () => {
       )}
 
       {/* Featured Dining Section */}
-      {restaurants.length > 0 && (
+      {pagesections.showDining === true && restaurants.length > 0 && (
         <section className="featured-dining-section">
           <div className="container">
             <div className="section-header">
