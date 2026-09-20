@@ -8,6 +8,7 @@ import db from '../db.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rateLimit.js';
 import { redactPII, detectFlags } from '../utils/moderation.js';
+import { getNaujanLiveWeather } from './weatherController.js';
 import { getIo } from '../socket.js';
 const router = express.Router();
 
@@ -307,16 +308,12 @@ async function queryModel(payload) {
   return sendToPython(payload);
 }
 
-function getIntentFallbackResponse(message, language = 'en') {
+function findBestIntent(message, language = 'en') {
   const lang = supportedLanguages.includes(language) ? language : 'en';
-
-  if (isHumanAgentQuestion(message)) {
-    return getHumanAgentExplanation(lang);
-  }
 
   const intentsData = loadIntents(lang) || (lang !== 'en' ? loadIntents('en') : null);
   if (!intentsData?.intents) {
-    return fallbackDefaults[lang] || fallbackDefaults.en;
+    return null;
   }
 
   const normalizedMessage = normalizeText(message);
@@ -352,12 +349,182 @@ function getIntentFallbackResponse(message, language = 'en') {
     }
   }
 
+  return bestMatch;
+}
+
+function getIntentFallbackResponse(message, language = 'en') {
+  const lang = supportedLanguages.includes(language) ? language : 'en';
+
+  if (isHumanAgentQuestion(message)) {
+    return getHumanAgentExplanation(lang);
+  }
+
+  const bestMatch = findBestIntent(message, lang);
   if (bestMatch) {
     return bestMatch.responses[0];
   }
 
   return fallbackDefaults[lang] || fallbackDefaults.en;
 }
+
+function detectIntentTag(message, language = 'en') {
+  const bestMatch = findBestIntent(message, language);
+  return bestMatch ? bestMatch.tag : null;
+}
+
+const WEATHER_LANG_LOCALES = {
+  en: 'en-US', es: 'es-ES', tl: 'fil-PH', zh: 'zh-CN', ja: 'ja-JP', ko: 'ko-KR', fr: 'fr-FR', de: 'de-DE'
+};
+
+const WEATHER_LABELS = {
+  en: { header: 'Live weather in Naujan town', updated: 'Updated', temp: 'Temperature', feels: 'feels like', condition: 'Condition', humidity: 'Humidity', wind: 'Wind', forecast: 'Next days', live: 'Live forecast & map', pagasa: 'PAGASA', hazards: { heat: 'Extreme heat - stay hydrated', cool: 'Cool weather - bring layers', storm: 'Thunderstorm - seek shelter', rain: 'Rain expected - bring umbrella', wind_high: 'Strong winds - be cautious', wind_med: 'Moderate winds', visibility: 'Low visibility - drive carefully', humidity_high: 'High humidity' }, safe: 'No major weather hazards today' },
+  es: { header: 'Clima en vivo en el pueblo de Naujan', updated: 'Actualizado', temp: 'Temperatura', feels: 'sensación', condition: 'Condición', humidity: 'Humedad', wind: 'Viento', forecast: 'Próximos días', live: 'Pronóstico y mapa en vivo', pagasa: 'PAGASA', hazards: { heat: 'Calor extremo: hidrátate', cool: 'Clima fresco: lleva ropa de abrigo', storm: 'Tormenta eléctrica: busca refugio', rain: 'Lluvia esperada: lleva paraguas', wind_high: 'Vientos fuertes: ten precaución', wind_med: 'Vientos moderados', visibility: 'Baja visibilidad: conduce con cuidado', humidity_high: 'Alta humedad' }, safe: 'Sin riesgos climáticos importantes hoy' },
+  tl: { header: 'Live na panahon sa bayan ng Naujan', updated: 'Na-update', temp: 'Temperatura', feels: 'parang', condition: 'Kondisyon', humidity: 'Halumigmig', wind: 'Hangin', forecast: 'Susunod na mga araw', live: 'Live forecast at mapa', pagasa: 'PAGASA', hazards: { heat: 'Matinding init - uminom ng tubig', cool: 'Malamig - magdala ng damit panlabas', storm: 'Bagyo at kulog - humanap ng silungan', rain: 'Asahan ang ulan - magdala ng payong', wind_high: 'Malakas na hangin - mag-ingat', wind_med: 'Katamtamang hangin', visibility: 'Mahina ang visibility - mag-ingat sa pagmamaneho', humidity_high: 'Mataas na halumigmig' }, safe: 'Walang malaking panganib sa panahon ngayon' },
+  zh: { header: '瑙汉镇实时天气', updated: '更新于', temp: '温度', feels: '体感', condition: '天气状况', humidity: '湿度', wind: '风速', forecast: '未来几天', live: '实时预报与地图', pagasa: 'PAGASA 气象局', hazards: { heat: '极端高温 - 注意补水', cool: '天气凉爽 - 请带外套', storm: '雷暴 - 请寻找庇护所', rain: '预计有雨 - 请带伞', wind_high: '强风 - 请小心', wind_med: '中等风', visibility: '能见度低 - 小心驾驶', humidity_high: '高湿度' }, safe: '今天无重大天气风险' },
+  ja: { header: 'ナウハン町のライブ天気', updated: '更新', temp: '気温', feels: '体感', condition: '天気', humidity: '湿度', wind: '風速', forecast: '今後数日', live: 'ライブ予報と地図', pagasa: 'PAGASA', hazards: { heat: '猛暑 - 水分補給を', cool: '肌寒い - 上着を', storm: '雷雨 - 屋内待避を', rain: '雨の見込み - 傘を', wind_high: '強風 - ご注意', wind_med: '並の風', visibility: '視界不良 - 運転注意', humidity_high: '高湿度' }, safe: '今日は大きな天気リスクはありません' },
+  ko: { header: '나우한 읍 실시간 날씨', updated: '업데이트', temp: '기온', feels: '체감', condition: '날씨', humidity: '습도', wind: '바람', forecast: '향후 며칠', live: '라이브 예보 및 지도', pagasa: 'PAGASA', hazards: { heat: '폭염 - 수분 섭취하세요', cool: '서늘함 - 겉옷 챙기세요', storm: '뇌우 - 대피하세요', rain: '비 예상 - 우산 챙기세요', wind_high: '강풍 - 주의하세요', wind_med: '보통 바람', visibility: '시야 낮음 - 운전 주의', humidity_high: '높은 습도' }, safe: '오늘은 큰 날씨 위험이 없습니다' },
+  fr: { header: 'Météo en direct à Naujan', updated: 'Mis à jour', temp: 'Température', feels: 'ressenti', condition: 'Condition', humidity: 'Humidité', wind: 'Vent', forecast: 'Prochains jours', live: 'Prévisions et carte en direct', pagasa: 'PAGASA', hazards: { heat: 'Chaleur extrême - hydratez-vous', cool: 'Temps frais - prévoyez une couche', storm: 'Orage - mettez-vous à l’abri', rain: 'Pluie attendue - prenez un parapluie', wind_high: 'Vents forts - prudence', wind_med: 'Vents modérés', visibility: 'Faible visibilité - conduisez prudemment', humidity_high: 'Humidité élevée' }, safe: 'Aucun risque météo majeur aujourd’hui' },
+  de: { header: 'Live-Wetter in der Stadt Naujan', updated: 'Aktualisiert', temp: 'Temperatur', feels: 'gefühlt', condition: 'Bedingung', humidity: 'Luftfeuchtigkeit', wind: 'Wind', forecast: 'Nächste Tage', live: 'Live-Vorhersage & Karte', pagasa: 'PAGASA', hazards: { heat: 'Extreme Hitze - viel trinken', cool: 'Kühles Wetter - warm anziehen', storm: 'Gewitter - Schutz suchen', rain: 'Regen erwartet - Schirm mitnehmen', wind_high: 'Starker Wind - Vorsicht', wind_med: 'Mäßiger Wind', visibility: 'Schlechte Sicht - vorsichtig fahren', humidity_high: 'Hohe Luftfeuchtigkeit' }, safe: 'Heute keine größeren Wetterrisiken' }
+};
+
+const WEATHER_CONDITION_TRANSLATIONS = {
+  en: { Clear: 'Clear', Clouds: 'Cloudy', Rain: 'Rain', Thunderstorm: 'Thunderstorm', Drizzle: 'Drizzle', Snow: 'Snow', Mist: 'Mist', Smoke: 'Smoke', Haze: 'Haze', Fog: 'Fog', Dust: 'Dust', Sand: 'Sand', Squall: 'Squall', Tornado: 'Tornado' },
+  es: { Clear: 'Despejado', Clouds: 'Nublado', Rain: 'Lluvia', Thunderstorm: 'Tormenta', Drizzle: 'Llovizna', Snow: 'Nieve', Mist: 'Niebla', Smoke: 'Humo', Haze: 'Calima', Fog: 'Niebla espesa', Dust: 'Polvo', Sand: 'Arena', Squall: 'Chubasco', Tornado: 'Tornado' },
+  tl: { Clear: 'Maaliwalas', Clouds: 'Maulap', Rain: 'Ulan', Thunderstorm: 'Bagyo/ Kulog', Drizzle: 'Ambun', Snow: 'Niyebe', Mist: 'Ulap', Smoke: 'Usok', Haze: 'Alikabok', Fog: 'Makapal na ulap', Dust: 'Alikabok', Sand: 'Buhangin', Squall: 'Mahangin', Tornado: 'Ipuran' },
+  zh: { Clear: '晴朗', Clouds: '多云', Rain: '有雨', Thunderstorm: '雷暴', Drizzle: '毛毛雨', Snow: '下雪', Mist: '薄雾', Smoke: '烟雾', Haze: '霾', Fog: '雾', Dust: '沙尘', Sand: '沙', Squall: '狂风', Tornado: '龙卷风' },
+  ja: { Clear: '晴れ', Clouds: '曇り', Rain: '雨', Thunderstorm: '雷雨', Drizzle: '霧雨', Snow: '雪', Mist: 'もや', Smoke: '煙霧', Haze: '煙霧', Fog: '霧', Dust: '砂塵', Sand: '砂', Squall: '突風', Tornado: '竜巻' },
+  ko: { Clear: '맑음', Clouds: '흐림', Rain: '비', Thunderstorm: '천둥번개', Drizzle: '이슬비', Snow: '눈', Mist: '안개', Smoke: '연기', Haze: '실안개', Fog: '짙은 안개', Dust: '먼지', Sand: '모래', Squall: '돌풍', Tornado: '토네이도' },
+  fr: { Clear: 'Dégagé', Clouds: 'Nuageux', Rain: 'Pluie', Thunderstorm: 'Orage', Drizzle: 'Bruine', Snow: 'Neige', Mist: 'Brume', Smoke: 'Fumée', Haze: 'Brume sèche', Fog: 'Brouillard', Dust: 'Poussière', Sand: 'Sable', Squall: 'Rafales', Tornado: 'Tornade' },
+  de: { Clear: 'Klar', Clouds: 'Bewölkt', Rain: 'Regen', Thunderstorm: 'Gewitter', Drizzle: 'Nieselregen', Snow: 'Schnee', Mist: 'Nebel', Smoke: 'Rauch', Haze: 'Dunst', Fog: 'Nebelig', Dust: 'Staub', Sand: 'Sand', Squall: 'Böen', Tornado: 'Tornado' }
+};
+
+function translateCondition(condition, language) {
+  const lang = supportedLanguages.includes(language) ? language : 'en';
+  const map = WEATHER_CONDITION_TRANSLATIONS[lang] || WEATHER_CONDITION_TRANSLATIONS.en;
+  return map[condition] || condition || '';
+}
+
+function translateHazard(message, language) {
+  const lang = supportedLanguages.includes(language) ? language : 'en';
+  const labels = WEATHER_LABELS[lang] || WEATHER_LABELS.en;
+  const m = (message || '').toLowerCase();
+  let key = 'rain';
+  if (m.includes('heat')) key = 'heat';
+  else if (m.includes('cool')) key = 'cool';
+  else if (m.includes('thunder')) key = 'storm';
+  else if (m.includes('strong wind')) key = 'wind_high';
+  else if (m.includes('wind')) key = 'wind_med';
+  else if (m.includes('visibility')) key = 'visibility';
+  else if (m.includes('humidity')) key = 'humidity_high';
+  else key = 'rain';
+  return labels.hazards[key] || message;
+}
+
+function formatTimestamp(ts, language) {
+  const locale = WEATHER_LANG_LOCALES[language] || 'en-US';
+  const date = ts instanceof Date ? ts : new Date(ts);
+  try {
+    return date.toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch (e) {
+    return date.toLocaleString();
+  }
+}
+
+function buildLiveWeatherResponse(weatherPayload, language = 'en') {
+  if (!weatherPayload || !weatherPayload.current) return null;
+
+  const lang = supportedLanguages.includes(language) ? language : 'en';
+  const labels = WEATHER_LABELS[lang] || WEATHER_LABELS.en;
+  const { current, forecast, hazards } = weatherPayload;
+
+  const line = (emoji, rest) => `${emoji} ${rest}`;
+  const lines = [];
+
+  lines.push(line('🌤️', labels.header));
+  lines.push(line('🕒', `${labels.updated}: ${formatTimestamp(current.timestamp || new Date(), lang)}`));
+  lines.push(line('🌡️', `${labels.temp}: ${current.temperature}°C (${labels.feels} ${current.feelsLike}°C)`));
+  lines.push(line('☁️', `${labels.condition}: ${translateCondition(current.condition, lang)}${current.description ? ` (${current.description})` : ''}`));
+  lines.push(line('💧', `${labels.humidity}: ${current.humidity}%  ·  ${labels.wind}: ${current.windSpeed} km/h`));
+
+  if (Array.isArray(hazards) && hazards.length > 0) {
+    const hazardLines = hazards.slice(0, 2).map((h) => line('⚠️', translateHazard(h.message, lang)));
+    lines.push(...hazardLines);
+  } else {
+    lines.push(line('✅', labels.safe));
+  }
+
+  if (Array.isArray(forecast) && forecast.length > 0) {
+    const locale = WEATHER_LANG_LOCALES[lang] || 'en-US';
+    const fore = forecast.slice(0, 3).map((f) => {
+      let day;
+      const d = f.datetime instanceof Date ? f.datetime : new Date(f.datetime);
+      try { day = d.toLocaleDateString(locale, { weekday: 'short' }); } catch (e) { day = d.toLocaleDateString(); }
+      return `${day} ${f.temperature}°C ${translateCondition(f.condition, lang)}`;
+    });
+    lines.push(line('📅', `${labels.forecast}: ${fore.join(' · ')}`));
+  }
+
+  lines.push(line('🔗', `${labels.live}: https://www.windy.com/13.3333/121.3000`));
+  lines.push(`   ℹ️ ${labels.pagasa}: https://www.pagasa.dost.gov.ph/`);
+
+  return lines.join('\n');
+}
+
+const WEATHER_QUESTION_KEYWORDS = {
+  en: ['weather', 'forecast', 'rain', 'raining', 'rainy', 'temperature', 'typhoon', 'humidity', 'sunny', 'sun', 'storm', 'climate', 'degrees', 'hot today', 'cold today'],
+  es: ['clima', 'tiempo', 'pronostico', 'pronóstico', 'lluvia', 'lluvioso', 'temperatura', 'tifon', 'tifón', 'humedad', 'soleado', 'sol', 'tormenta', 'calor', 'frio', 'frío'],
+  tl: ['panahon', 'weather', 'ulan', 'umuulan', 'maulan', 'temperatura', 'bagyo', 'halumigmig', 'araw', 'sikat', 'init', 'lamig', 'clima', 'typhoon', 'sunny'],
+  zh: ['天气', '天气怎么样', '预报', '下雨', '温度', '台风', '湿度', '晴天', '阳光', '风暴', '气候', '热', '冷'],
+  ja: ['天気', '天気予報', '予報', '雨', '気温', '台風', '湿度', '晴れ', '晴', 'サン', '暴風', '気候', '暑い', '寒い'],
+  ko: ['날씨', '예보', '비', '비가', '기온', '태풍', '습도', '맑음', '태양', '폭풍', '기후', '덥', '춥'],
+  fr: ['météo', 'meteo', 'prévision', 'prevision', 'pluie', 'température', 'typhon', 'humidité', 'ensoleillé', 'soleil', 'orage', 'climat', 'chaud', 'froid'],
+  de: ['wetter', 'vorhersage', 'regen', 'regnerisch', 'temperatur', 'taifun', 'feuchtigkeit', 'sonnig', 'sonne', 'sturm', 'klima', 'heiß', 'kalt']
+};
+
+function isWeatherQuestion(message, language = 'en') {
+  const lang = supportedLanguages.includes(language) ? language : 'en';
+  const keywords = WEATHER_QUESTION_KEYWORDS[lang] || WEATHER_QUESTION_KEYWORDS.en;
+  const normalized = normalizeText(message);
+  return keywords.some((kw) => normalized.includes(normalizeText(kw)));
+}
+
+async function augmentWeatherResponse(message, response, language = 'en') {
+  const intentTag = (response && typeof response === 'object' && response.intent) ? response.intent : detectIntentTag(message, language);
+  const directWeatherQuery = intentTag === 'Weather_Info' || isWeatherQuestion(message, language);
+  if (!directWeatherQuery && intentTag !== 'Best_Time_To_Visit') {
+    return response;
+  }
+
+  let weatherPayload = null;
+  try {
+    weatherPayload = await Promise.race([
+      getNaujanLiveWeather(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('Weather timeout')), 4000))
+    ]);
+  } catch (e) {
+    weatherPayload = null;
+  }
+
+  let baseText = (response && typeof response === 'object') ? (response.text || '') : response;
+  const objects = (response && typeof response === 'object') ? response : null;
+
+  const liveBlock = buildLiveWeatherResponse(weatherPayload, language);
+  if (!liveBlock) {
+    return response;
+  }
+
+  if (directWeatherQuery) {
+    return { text: liveBlock, actions: objects?.actions || [], intent: 'Weather_Info' };
+  }
+
+  const joined = `${liveBlock}\n\n${baseText}`;
+  if (objects) {
+    return { ...objects, text: joined };
+  }
+  return joined;
+}
+
+export { detectIntentTag, buildLiveWeatherResponse, translateCondition, translateHazard, isWeatherQuestion, augmentWeatherResponse };
 
 // Helper function to save last conversation for logged-in users
 function saveLastConversationForUser(user_id, conversation_id, callback) {
@@ -521,7 +688,11 @@ router.post('/', async (req, res) => {
     botResponse = getIntentFallbackResponse(message, language);
   }
 
-  saveMessageToDB(conversation_id, user_id, message, botResponse, language, (convId) => {
+  botResponse = await augmentWeatherResponse(message, botResponse, language || 'en');
+
+  const botTextForDB = (botResponse && typeof botResponse === 'object') ? (botResponse.text || '') : botResponse;
+
+  saveMessageToDB(conversation_id, user_id, message, botTextForDB, language, (convId) => {
     return res.json({
       response: botResponse,
       conversation_id: convId,

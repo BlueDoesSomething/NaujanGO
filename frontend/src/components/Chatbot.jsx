@@ -401,7 +401,7 @@ const Chatbot = ({ language }) => {
     const actionMessages = {
       en: {
         show_map: "Show me the interactive map of Naujan with attractions, hotels, and routes",
-        weather: "What's the best time to visit Naujan?",
+        weather: "What's the current weather in Naujan right now?",
         attractions: "What are the top tourist attractions in Naujan?",
         plan_trip: "Help me plan a full day trip to Naujan with the map, attractions, food, and hotel options",
         hotels: "Show me budget-friendly hotels and accommodations in Naujan near the main attractions",
@@ -411,7 +411,7 @@ const Chatbot = ({ language }) => {
       },
       es: {
         show_map: "Muéstrame el mapa interactivo de Naujan con atracciones, hoteles y rutas",
-        weather: "¿Cuál es la mejor época para visitar Naujan?",
+        weather: "¿Cómo está el clima en Naujan en este momento?",
         attractions: "¿Cuáles son las principales atracciones turísticas de Naujan?",
         plan_trip: "Ayúdame a planificar un viaje completo de un día a Naujan con el mapa, atracciones, comida y hoteles",
         hotels: "Muéstrame hoteles y alojamientos económicos en Naujan cerca de las principales atracciones",
@@ -421,7 +421,7 @@ const Chatbot = ({ language }) => {
       },
       tl: {
         show_map: "Ipakita sa akin ang interactive na mapa ng Naujan na may attractions, hotel, at ruta",
-        weather: "Kailan ang pinakamainam na panahon para bumisita sa Naujan?",
+        weather: "Ano ang panahon sa Naujan ngayon?",
         attractions: "Ano ang mga nangungunang tourist attraction sa Naujan?",
         plan_trip: "Tulungan mo akong magplano ng kumpletong isang araw na biyahe sa Naujan kasama ang mapa, attractions, pagkain, at hotel",
         hotels: "Ipakita ang mga budget-friendly na hotel at accommodation sa Naujan malapit sa mga pangunahing attractions",
@@ -431,7 +431,7 @@ const Chatbot = ({ language }) => {
       },
       zh: {
         show_map: "给我看瑙汉的互动地图，包括景点、酒店和路线",
-        weather: "访问瑙詹最好的时间是什么时候？",
+        weather: "瑙詹现在的天气怎么样？",
         attractions: "瑙詹的主要旅游景点有哪些？",
         plan_trip: "帮我计划瑙詹完整的一日游，包含地图、景点、美食和酒店选项",
         hotels: "给我看瑙詹靠近主要景点的经济型酒店和住宿",
@@ -441,7 +441,7 @@ const Chatbot = ({ language }) => {
       },
       ja: {
         show_map: "ナウハンの観光地、ホテル、ルートが見えるインタラクティブマップを見せて",
-        weather: "ナウジャンを訪れるのに最適な時期は？",
+        weather: "今、ナウジャンの天気はどうですか？",
         attractions: "ナウジャンの主要観光地は？",
         plan_trip: "ナウジャンの地図、観光地、食事、ホテルを含む1日旅行の計画を手伝って",
         hotels: "主要観光地の近くにあるナウジャンの手頃なホテルや宿泊施設を見せて",
@@ -451,7 +451,7 @@ const Chatbot = ({ language }) => {
       },
       ko: {
         show_map: "나우한의 관광지, 호텔, 경로가 보이는 인터랙티브 지도를 보여주세요",
-        weather: "나우한을 방문하기 가장 좋은 시기는 언제인가요?",
+        weather: "지금 나우한의 날씨는 어떤가요?",
         attractions: "나우한의 주요 관광 명소는 무엇입니까?",
         plan_trip: "나우한의 지도, 관광지, 음식, 호텔 옵션을 포함한 하루 여행 계획을 도와주세요",
         hotels: "주요 관광지 근처의 저렴한 나우한 호텔과 숙박 시설을 보여주세요",
@@ -461,7 +461,7 @@ const Chatbot = ({ language }) => {
       },
       fr: {
         show_map: "Montrez-moi la carte interactive de Naujan avec les attractions, hôtels et itinéraires",
-        weather: "Quelle est la meilleure période pour visiter Naujan?",
+        weather: "Quel temps fait-il à Naujan en ce moment ?",
         attractions: "Quelles sont les principales attractions touristiques de Naujan?",
         plan_trip: "Aidez-moi à planifier une excursion complète d'une journée à Naujan avec la carte, les attractions, la nourriture et les hôtels",
         hotels: "Montrez-moi des hôtels et hébergements abordables à Naujan près des principales attractions",
@@ -471,7 +471,7 @@ const Chatbot = ({ language }) => {
       },
       de: {
         show_map: "Zeig mir die interaktive Karte von Naujan mit Sehenswürdigkeiten, Hotels und Routen",
-        weather: "Wann ist die beste Reisezeit für Naujan?",
+        weather: "Wie ist das Wetter in Naujan gerade?",
         attractions: "Was sind die wichtigsten Touristenattraktionen in Naujan?",
         plan_trip: "Hilf mir, einen kompletten Tagesausflug nach Naujan mit Karte, Sehenswürdigkeiten, Essen und Hoteloptionen zu planen",
         hotels: "Zeig mir günstige Hotels und Unterkünfte in Naujan in der Nähe der wichtigsten Sehenswürdigkeiten",

@@ -12,6 +12,13 @@ const router = express.Router();
 let weatherDataColumnsCache = null;
 let weatherAlertsTableCache = null;
 
+// Small in-memory cache for chatbot live weather (Naujan town defaults)
+let naujanLiveWeatherCache = null;
+let naujanLiveWeatherCacheAt = 0;
+const NAUJAN_DEFAULT_LAT = 13.3333;
+const NAUJAN_DEFAULT_LON = 121.3;
+const LIVE_WEATHER_CACHE_MS = 10 * 60 * 1000;
+
 const getWeatherDataColumns = async () => {
   if (weatherDataColumnsCache) return weatherDataColumnsCache;
   const [rows] = await db.promise().query('SHOW COLUMNS FROM weather_data');
@@ -943,6 +950,51 @@ function getRecommendationSummary(weatherData) {
     hazardLevel: getHazardLevelLocal(hazards),
     explanation: reasons.join(' | ')
   };
+}
+
+/**
+ * Helper for the chatbot: live weather for Naujan town (default coordinates)
+ * with a 10-minute in-memory cache so repeated chat messages don't hammer the API.
+ * @param {object} [options] - { forceRefresh: boolean }
+ * @returns {Promise<object|null>} { current, forecast, hazards, hazardLevel, safetyScore, source }
+ */
+export async function getNaujanLiveWeather({ forceRefresh = false } = {}) {
+  const now = Date.now();
+  if (!forceRefresh && naujanLiveWeatherCache && now - naujanLiveWeatherCacheAt < LIVE_WEATHER_CACHE_MS) {
+    return naujanLiveWeatherCache;
+  }
+
+  try {
+    const current = await fetchWeatherFromAPI(NAUJAN_DEFAULT_LAT, NAUJAN_DEFAULT_LON, 'Naujan town');
+    let forecast = [];
+    try {
+      const forecastData = await fetchForecastFromAPI(NAUJAN_DEFAULT_LAT, NAUJAN_DEFAULT_LON);
+      forecast = (forecastData && Array.isArray(forecastData.forecast)) ? forecastData.forecast.slice(0, 7) : [];
+    } catch (forecastError) {
+      console.warn('Naujan live forecast unavailable:', forecastError.message);
+    }
+
+    const hazards = analyzeHazardsLocal(current);
+    const summary = getRecommendationSummary(current);
+
+    const payload = {
+      current,
+      forecast,
+      hazards,
+      hazardLevel: summary ? summary.hazardLevel : getHazardLevelLocal(hazards),
+      safetyScore: summary ? summary.safetyScore : getTravelSafetyScoreLocal(current),
+      comfortScore: summary ? summary.comfortScore : computeComfortScoreLocal(current),
+      source: WEATHER_API_KEY ? 'live' : 'mock',
+      fetchedAt: new Date()
+    };
+
+    naujanLiveWeatherCache = payload;
+    naujanLiveWeatherCacheAt = now;
+    return payload;
+  } catch (error) {
+    console.error('getNaujanLiveWeather error:', error);
+    return null;
+  }
 }
 
 export default router;
