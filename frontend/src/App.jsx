@@ -20,6 +20,7 @@ import './App.css';
 import './styles/animations.css';
 import './styles/global.css';
 import './styles/global-buttons.css';
+import './styles/unified-selects.css';
 import { LanguageProvider } from './context/LanguageContext.jsx';
 import Chatbot from './components/Chatbot.jsx';
 import Profile from './pages/Profile.jsx';
