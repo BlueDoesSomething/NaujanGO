@@ -1147,49 +1147,51 @@ const ItineraryBuilder = () => {
                   <p style={{ margin: 0, color: THEME.textSecondary }}>{t('no_attractions_found')}</p>
                 </div>
               ) : (
-                visibleAttractions.map(attraction => (
-                  <div key={attraction.id} style={styles.attractionCard}>
-                    <img src={attraction.image_url} alt={attraction.name} style={styles.attractionImage} />
-                    <div style={styles.attractionInfo}>
-                      <h4>{highlightMatch(attraction.name, debouncedAttractionSearch)}</h4>
-                      <p style={styles.location}>
-                        <Icons.LocationIcon size={14} color={THEME.textSecondary} />
-                        <span>{highlightMatch(attraction.location || '', debouncedAttractionSearch)}</span>
-                      </p>
-                      <p style={styles.sidebarMetaText}>
-                        {(parseFloat(attraction.avg_rating) || 0) > 0 ? `${Number(attraction.avg_rating).toFixed(1)}★` : t('no_reviews_yet')}
-                        {' • '}
-                        {(parseInt(attraction.review_count) || 0)} {t('reviews')}
-                      </p>
+                <div style={styles.attractionGrid}>
+                  {visibleAttractions.map(attraction => (
+                    <div key={attraction.id} className="itinerary-attraction-card" style={styles.attractionCard}>
+                      <img src={attraction.image_url} alt={attraction.name} className="itinerary-attraction-image" style={styles.attractionImage} />
+                      <div style={styles.attractionInfo}>
+                        <h4>{highlightMatch(attraction.name, debouncedAttractionSearch)}</h4>
+                        <p style={styles.location}>
+                          <Icons.LocationIcon size={14} color={THEME.textSecondary} />
+                          <span>{highlightMatch(attraction.location || '', debouncedAttractionSearch)}</span>
+                        </p>
+                        <p style={styles.sidebarMetaText}>
+                          {(parseFloat(attraction.avg_rating) || 0) > 0 ? `${Number(attraction.avg_rating).toFixed(1)}★` : t('no_reviews_yet')}
+                          {' • '}
+                          {(parseInt(attraction.review_count) || 0)} {t('reviews')}
+                        </p>
 
-                      <div style={styles.dayActionWrap}>
-                        <div style={styles.dayActionHeader}>
-                          <span style={styles.dayActionLabel}>{t('add_to_day')}</span>
-                          <span style={styles.dayActionHint}>Tap a day to add this place instantly</span>
-                        </div>
-                        <div style={styles.dayActionButtons}>
-                          <button
-                            type="button"
-                            onClick={() => addToDay(attraction, currentDay)}
-                            style={styles.dayActionPrimaryButton}
-                          >
-                            + {t('day')} {currentDay}
-                          </button>
-                          {sortedDayNumbers.map((day) => (
+                        <div style={styles.dayActionWrap}>
+                          <div style={styles.dayActionHeader}>
+                            <span style={styles.dayActionLabel}>{t('add_to_day')}</span>
+                            <span style={styles.dayActionHint}>Tap a day to add this place instantly</span>
+                          </div>
+                          <div style={styles.dayActionButtons}>
                             <button
-                              key={day}
                               type="button"
-                              onClick={() => addToDay(attraction, day)}
-                              style={day === currentDay ? styles.dayActionButtonActive : styles.dayActionButton}
+                              onClick={() => addToDay(attraction, currentDay)}
+                              style={styles.dayActionPrimaryButton}
                             >
-                              {t('day')} {day}
+                              + {t('day')} {currentDay}
                             </button>
-                          ))}
+                            {sortedDayNumbers.map((day) => (
+                              <button
+                                key={day}
+                                type="button"
+                                onClick={() => addToDay(attraction, day)}
+                                style={day === currentDay ? styles.dayActionButtonActive : styles.dayActionButton}
+                              >
+                                {t('day')} {day}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  ))}
+                </div>
               )}
 
               {!attractionsLoading && filteredAttractions.length > ATTR_PER_PAGE && (
@@ -1928,14 +1930,14 @@ const styles = {
   },
   container: {
     display: 'grid',
-    gridTemplateColumns: '350px 1fr 300px',
+    gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr) 300px',
     gap: '1.5rem',
     padding: '2rem',
-    maxWidth: '1600px',
+    maxWidth: '1700px',
     margin: '0 auto'
   },
   plannerGuide: {
-    maxWidth: '1600px',
+    maxWidth: '1700px',
     margin: '1.25rem auto 0',
     padding: '0 2rem'
   },
@@ -2062,36 +2064,49 @@ const styles = {
     borderBottom: `3px solid ${THEME.primary}`
   },
   attractionsList: {
-    maxHeight: '70vh',
+    maxHeight: 'calc(100vh - 150px)',
     overflowY: 'auto',
-    padding: '1rem'
+    padding: '1.1rem'
+  },
+  attractionGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(248px, 1fr))',
+    gap: '1rem'
   },
   attractionCard: {
-    marginBottom: '1rem',
-    border: `1px solid ${THEME.border}`,
-    borderRadius: '8px',
+    display: 'flex',
+    flexDirection: 'column',
+    border: '1px solid rgba(148, 163, 184, 0.22)',
+    borderRadius: '14px',
     overflow: 'hidden',
-    boxShadow: THEME.shadow,
-    transition: 'transform 0.2s ease'
+    background: 'rgba(255, 255, 255, 0.92)',
+    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.06)',
+    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
   },
   attractionImage: {
     width: '100%',
-    height: '120px',
-    objectFit: 'cover'
+    height: '160px',
+    objectFit: 'cover',
+    display: 'block',
+    flexShrink: 0,
+    transition: 'transform 0.25s ease'
   },
   attractionInfo: {
-    padding: '0.75rem'
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '0.8rem 0.9rem 1rem'
   },
   location: {
-    fontSize: '0.85rem',
+    fontSize: '0.88rem',
     color: THEME.textSecondary,
-    margin: '0.25rem 0',
+    margin: '0.3rem 0',
     display: 'flex',
     alignItems: 'center',
     gap: '8px'
   },
   dayActionWrap: {
-    marginTop: '0.85rem',
+    marginTop: 'auto',
     padding: '0.9rem',
     borderRadius: '12px',
     backgroundColor: '#f8fafc',
@@ -2121,32 +2136,35 @@ const styles = {
     gap: '0.5rem'
   },
   dayActionPrimaryButton: {
-    padding: '0.55rem 0.85rem',
+    padding: '0.6rem 1rem',
     borderRadius: '999px',
     border: '1px solid transparent',
     backgroundColor: THEME.primary,
     color: '#fff',
     cursor: 'pointer',
     fontWeight: 700,
+    fontSize: '0.82rem',
     boxShadow: '0 6px 18px rgba(22, 163, 74, 0.16)'
   },
   dayActionButton: {
-    padding: '0.55rem 0.8rem',
+    padding: '0.6rem 0.9rem',
     borderRadius: '999px',
     border: `1px solid ${THEME.border}`,
     backgroundColor: '#fff',
     color: THEME.text,
     cursor: 'pointer',
-    fontWeight: 600
+    fontWeight: 600,
+    fontSize: '0.82rem'
   },
   dayActionButtonActive: {
-    padding: '0.55rem 0.8rem',
+    padding: '0.6rem 0.9rem',
     borderRadius: '999px',
     border: `1px solid ${THEME.primary}`,
     backgroundColor: '#ecfdf3',
     color: '#166534',
     cursor: 'pointer',
-    fontWeight: 700
+    fontWeight: 700,
+    fontSize: '0.82rem'
   },
   filterHeaderRow: {
     display: 'flex',
@@ -3201,8 +3219,8 @@ const styles = {
     fontWeight: '600'
   },
   sidebarMetaText: {
-    margin: '0.25rem 0 0.45rem',
-    fontSize: '0.78rem',
+    margin: '0.25rem 0 0.5rem',
+    fontSize: '0.82rem',
     color: THEME.textSecondary
   },
   sidebarPaginationWrap: {
