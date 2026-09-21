@@ -1,27 +1,37 @@
 <svg width="1200" height="800" viewBox="0 0 1200 800" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="800" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#14532d" />
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0d3b2e" />
+      <stop offset="0.6" stop-color="#1f7a4d" />
       <stop offset="1" stop-color="#2e9e57" />
     </linearGradient>
-    <linearGradient id="card" x1="0" y1="0" x2="700" y2="420" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffffff" stop-opacity="0.9" />
-      <stop offset="1" stop-color="#e8f5ef" stop-opacity="0.9" />
+    <linearGradient id="rangeBack" x1="0" y1="300" x2="0" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#123f30" />
+      <stop offset="1" stop-color="#0c2c22" />
+    </linearGradient>
+    <linearGradient id="rangeFront" x1="0" y1="400" x2="0" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1a5638" />
+      <stop offset="1" stop-color="#103624" />
     </linearGradient>
   </defs>
-  <rect width="1200" height="800" fill="url(#bg)" />
-  <circle cx="980" cy="160" r="120" fill="#ffffff" fill-opacity="0.12" />
-  <circle cx="1080" cy="260" r="80" fill="#ffffff" fill-opacity="0.08" />
-  <rect x="160" y="180" width="880" height="440" rx="28" fill="url(#card)" />
-  <rect x="220" y="240" width="320" height="240" rx="18" fill="#d9efe7" />
-  <path d="M250 480V360L310 300L370 360V480" stroke="#14532d" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
-  <path d="M318 480V400L354 360L390 400V480" stroke="#2e9e57" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
-  <circle cx="306" cy="330" r="14" fill="#f59e0b" />
-  <rect x="580" y="260" width="360" height="26" rx="13" fill="#14532d" fill-opacity="0.8" />
-  <rect x="580" y="306" width="260" height="18" rx="9" fill="#14532d" fill-opacity="0.45" />
-  <rect x="580" y="342" width="300" height="14" rx="7" fill="#14532d" fill-opacity="0.35" />
-  <rect x="580" y="372" width="220" height="14" rx="7" fill="#14532d" fill-opacity="0.35" />
-  <rect x="580" y="428" width="140" height="36" rx="18" fill="#14532d" fill-opacity="0.9" />
-  <text x="220" y="560" font-family="Arial, sans-serif" font-size="36" fill="#14532d" fill-opacity="0.85">Attraction image coming soon</text>
-  <text x="220" y="610" font-family="Arial, sans-serif" font-size="20" fill="#14532d" fill-opacity="0.65">Replace with a real photo when ready</text>
+
+  <rect width="1200" height="800" fill="url(#sky)" />
+
+  <circle cx="1010" cy="140" r="150" fill="#ffd166" fill-opacity="0.16" />
+  <circle cx="1010" cy="140" r="82" fill="#ffd166" fill-opacity="0.9" />
+
+  <ellipse cx="210" cy="200" rx="130" ry="34" fill="#ffffff" fill-opacity="0.14" />
+  <ellipse cx="300" cy="188" rx="90" ry="26" fill="#ffffff" fill-opacity="0.2" />
+  <ellipse cx="700" cy="120" rx="110" ry="28" fill="#ffffff" fill-opacity="0.1" />
+
+  <path d="M0 560 L160 320 L330 560 L520 360 L700 560 L900 340 L1080 560 L1200 470 L1200 800 L0 800 Z" fill="url(#rangeBack)" />
+  <path d="M0 660 L230 430 L450 660 L640 480 L850 660 L1040 470 L1200 640 L1200 800 L0 800 Z" fill="url(#rangeFront)" />
+
+  <rect x="0" y="720" width="1200" height="80" fill="#0a2f22" fill-opacity="0.85" />
+
+  <circle cx="600" cy="655" r="120" fill="#2e9e57" fill-opacity="0.35" />
+  <circle cx="940" cy="700" r="160" fill="#1f7a4d" fill-opacity="0.4" />
+
+  <text x="600" y="580" text-anchor="middle" font-family="Arial, sans-serif" font-size="44" font-weight="700" fill="#ffffff" fill-opacity="0.95">Attraction image coming soon</text>
+  <text x="600" y="630" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" fill="#ffffff" fill-opacity="0.75">Replace with a real photo when ready</text>
 </svg>
