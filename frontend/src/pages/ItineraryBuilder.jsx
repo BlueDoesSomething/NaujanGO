@@ -60,31 +60,35 @@ const ItineraryBuilder = () => {
   const isTiny = useMediaQuery('(max-width: 480px)');
   const isWide = useMediaQuery('(min-width: 1200px)');
   
-  // Responsive container / panels
-  const containerStyle = isWide
-    ? styles.container
-    : isMobile
-      ? { ...styles.container, gridTemplateColumns: '1fr', padding: '0.75rem', gap: '1rem', maxWidth: '100%' }
-      : { ...styles.container, gridTemplateColumns: '1fr', padding: '1.25rem', gap: '1.25rem', maxWidth: '100%' };
-  
-  // Sidebar: sticky positioning only applies in the 3-column desktop grid.
-  // On stacked tablet/mobile layouts it becomes a normal full-width block.
-  const sidebarStyle = isWide
-    ? styles.sidebar
-    : { ...styles.sidebar, position: 'static', top: 'auto', maxHeight: 'none' };
-  
-  const rightPanelStyle = isWide
-    ? styles.rightPanel
-    : { ...styles.rightPanel, position: 'static', height: 'auto' };
-  
-  // Right panel on tablets/mobile goes below the main content (visual order).
-  const rightPanelOrder = isWide ? {} : { order: 3 };
-  
-  const plannerGuideStyle = isMobile
-    ? { ...styles.plannerGuide, padding: '0 0.75rem' }
-    : isTiny
-      ? { ...styles.plannerGuide, padding: '0 0.5rem' }
-      : styles.plannerGuide;
+  // Page shell: single max-width column — attractions on top, Step-2 grid below.
+  const containerStyle = isMobile
+    ? { maxWidth: '1700px', margin: '0 auto', padding: '0 0.75rem', display: 'block' }
+    : { maxWidth: '1700px', margin: '0 auto', padding: '0 2rem', display: 'block' };
+
+  // Attractions panel is now a full-width card at the top (no longer a sticky sidebar).
+  const sidebarStyle = {
+    backgroundColor: 'rgba(255, 255, 255, 0.4)',
+    backdropFilter: 'blur(30px)',
+    WebkitBackdropFilter: 'blur(30px)',
+    borderRadius: '24px',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+    overflow: 'hidden',
+    border: '1px solid rgba(255, 255, 255, 0.18)'
+  };
+
+  // Step-2 right rail: sticky on wide screens, static when the grid stacks.
+  const rightPanelStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+    ...(isWide ? { position: 'sticky', top: '2rem', height: 'fit-content' } : {})
+  };
+
+  const lowerLayoutStyle = isMobile
+    ? { display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', paddingTop: '2.5rem' }
+    : { display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)', gap: '1.5rem', paddingTop: '2.5rem', alignItems: 'start' };
+
+  const leftColumnStyle = { display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 };
   
   // Inner responsive grids (mobile / tiny overrides of the fixed desktop grids)
   const responsiveStyle = (cond, base, mobileOverride) => (cond ? { ...base, ...mobileOverride } : base);
@@ -113,6 +117,7 @@ const ItineraryBuilder = () => {
   const summaryCardStyle = responsiveStyle(isMobile, styles.summaryCard, { padding: '1.25rem', borderRadius: '18px' });
   const savedListStyle = responsiveStyle(isMobile, styles.savedList, { padding: '1rem', borderRadius: '18px', maxHeight: 'none' });
   const savedItemCardStyle = responsiveStyle(isTiny, styles.savedItemCard, { flexDirection: 'column', padding: '1rem' });
+  const stepHeaderStyle = responsiveStyle(isMobile, styles.stepHeader, { padding: '1.25rem 0 1rem' });
   
   const [attractions, setAttractions] = useState([]);
   const [itinerary, setItinerary] = useState({
@@ -944,35 +949,19 @@ const ItineraryBuilder = () => {
       <HeroSlideshow 
         title={t('smart_itinerary_planner')}
         subtitle={t('plan_perfect_trip')}
-        height="400px"
+        height="300px"
         showControls={false}
       />
 
-      <div style={plannerGuideStyle}>
-        <div style={isMobile ? styles.plannerGuideCardMobile : styles.plannerGuideCard}>
-          <div style={styles.plannerGuideCopy}>
-            <div style={styles.plannerGuideLabel}>Quick start</div>
-            <h2 style={styles.plannerGuideTitle}>Trip planning at a glance</h2>
-            <p style={styles.plannerGuideText}>
-              Search an attraction, add it to the right day with one tap, and review the budget before saving.
-            </p>
-          </div>
-          <div style={styles.plannerGuideActions}>
-            <button type="button" style={styles.plannerGuideButton} onClick={() => scrollToSection(sidebarRef)}>
-              1. Find places
-            </button>
-            <button type="button" style={styles.plannerGuideButton} onClick={() => scrollToSection(dayPlannerRef)}>
-              2. Arrange days
-            </button>
-            <button type="button" style={styles.plannerGuideButtonPrimary} onClick={() => scrollToSection(budgetPanelRef)}>
-              3. Check budget
-            </button>
+      <div style={containerStyle}>
+        {/* Step 1 — Attractions (primary, full width) */}
+        <div style={stepHeaderStyle}>
+          <span style={styles.stepBadge}>Step 1</span>
+          <div>
+            <h2 style={styles.stepTitle}>Pick your spots</h2>
+            <p style={styles.stepSubtitle}>Browse Naujan's attractions and tap a day to add each place — your trip plan builds below.</p>
           </div>
         </div>
-      </div>
-      
-      <div style={containerStyle}>
-        {/* Sidebar */}
         <div ref={sidebarRef} style={sidebarStyle}>
           <div style={styles.tabs}>
             <button 
@@ -1276,9 +1265,18 @@ const ItineraryBuilder = () => {
             </div>
           )}
         </div>
-        
-        {/* Main Content */}
-        <div style={styles.mainContent}>
+
+        {/* Step 2 — Plan & save (below the attractions) */}
+        <div style={stepHeaderStyle}>
+          <span style={styles.stepBadge}>Step 2</span>
+          <div>
+            <h2 style={styles.stepTitle}>Fine-tune & save</h2>
+            <p style={styles.stepSubtitle}>Review your days, route, and budget — then save or share your trip.</p>
+          </div>
+        </div>
+
+        <div style={lowerLayoutStyle}>
+          <div style={leftColumnStyle}>
           <div style={itineraryHeaderStyle}>
             <input
               type="text"
@@ -1681,26 +1679,11 @@ const ItineraryBuilder = () => {
               </small>
             </div>
           )}
-          
-          {/* Actions */}
-          <div style={actionButtonsStyle}>
-            <button style={styles.saveBtn} onClick={saveItinerary}>
-              <Icons.BookingIcon size={20} color="white" />
-              Save Itinerary
-            </button>
-            <button style={styles.shareBtn} onClick={() => window.print()}>
-              <Icons.GlobeIcon size={20} color="white" />
-              Share
-            </button>
-            <button style={styles.exportBtn} onClick={() => window.print()}>
-              <Icons.BookingIcon size={20} color="white" />
-              Print/Export
-            </button>
-          </div>
+
         </div>
-        
-        {/* Right Panel */}
-        <div style={{...rightPanelStyle, ...rightPanelOrder}}>
+
+        {/* Step 2 right rail */}
+        <div style={rightPanelStyle}>
           <div style={summaryCardStyle}>
             <h3>Trip Summary</h3>
             <div style={styles.summaryItem}>
@@ -1739,7 +1722,22 @@ const ItineraryBuilder = () => {
               <strong>₱{totals.budget.toFixed(2)}</strong>
             </div>
           </div>
-          
+
+          <div style={actionButtonsStyle}>
+            <button style={styles.saveBtn} onClick={saveItinerary}>
+              <Icons.BookingIcon size={20} color="white" />
+              Save Itinerary
+            </button>
+            <button style={styles.shareBtn} onClick={() => window.print()}>
+              <Icons.GlobeIcon size={20} color="white" />
+              Share
+            </button>
+            <button style={styles.exportBtn} onClick={() => window.print()}>
+              <Icons.BookingIcon size={20} color="white" />
+              Print/Export
+            </button>
+          </div>
+
           <div style={savedListStyle}>
               <div className="saved-itinerary-header-row">
               <h3>Saved Itineraries ({activeItinerariesCount})</h3>
@@ -1896,6 +1894,7 @@ const ItineraryBuilder = () => {
             )}
           </div>
         </div>
+        </div>
       </div>
     </div>
   );
@@ -1935,6 +1934,41 @@ const styles = {
     padding: '2rem',
     maxWidth: '1700px',
     margin: '0 auto'
+  },
+  stepHeader: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '1rem',
+    padding: '1.75rem 0 1.25rem'
+  },
+  stepBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    minWidth: '72px',
+    padding: '0.35rem 0.9rem',
+    borderRadius: '999px',
+    background: 'linear-gradient(135deg, #16a34a 0%, #059669 100%)',
+    color: '#fff',
+    fontSize: '0.85rem',
+    fontWeight: 800,
+    letterSpacing: '0.06em',
+    textTransform: 'uppercase',
+    boxShadow: '0 6px 16px rgba(22, 163, 74, 0.28)'
+  },
+  stepTitle: {
+    margin: '0 0 0.2rem 0',
+    fontSize: '1.55rem',
+    fontWeight: '800',
+    color: THEME.text,
+    letterSpacing: '-0.01em'
+  },
+  stepSubtitle: {
+    margin: 0,
+    fontSize: '0.95rem',
+    color: THEME.textSecondary,
+    lineHeight: 1.5
   },
   plannerGuide: {
     maxWidth: '1700px',
@@ -2064,13 +2098,12 @@ const styles = {
     borderBottom: `3px solid ${THEME.primary}`
   },
   attractionsList: {
-    maxHeight: 'calc(100vh - 150px)',
-    overflowY: 'auto',
+    overflowY: 'visible',
     padding: '1.1rem'
   },
   attractionGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(248px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
     gap: '1rem'
   },
   attractionCard: {
