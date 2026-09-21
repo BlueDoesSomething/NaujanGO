@@ -609,16 +609,15 @@ const Home = () => {
                         </div>
                         <div className="attraction-info">
                           <h3 className="attraction-name">{attraction.name}</h3>
-                          <p className="attraction-type">{attraction.category || t('tourist_destination')}</p>
+                          <p className="attraction-location">
+                            <Icons.MapPin size={14} />
+                            {getAttractionArea(attraction) || attraction.municipality}
+                          </p>
                           {attraction.avg_rating > 0 && (
                             <div className="attraction-rating">
                               {renderStarRating(attraction.avg_rating)}
                             </div>
                           )}
-                          <p className="attraction-location">
-                            <Icons.MapPin size={14} />
-                            {getAttractionArea(attraction) || attraction.municipality}
-                          </p>
                         </div>
                       </div>
                     ))}

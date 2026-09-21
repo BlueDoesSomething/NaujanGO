@@ -5016,22 +5016,98 @@
 /* ==================================================
    VIEW ALL BUTTON - HARDENED (always solid green)
    ================================================== */
-.view-all-btn {
+#root .view-all-btn {
   background: #2e7d32 !important;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%) !important;
-  color: #fff !important;
+  background-image: linear-gradient(135deg, #2e7d32 0%, #1b5e20 100%) !important;
+  color: #ffffff !important;
   border: none !important;
+  border-radius: 50px !important;
 }
 
-.view-all-btn:hover {
-  background: linear-gradient(135deg, var(--primary-dark) 0%, #14532d 100%) !important;
-  color: #fff !important;
+#root .view-all-btn:hover,
+#root .view-all-btn:focus,
+#root .view-all-btn:active {
+  background: #1b5e20 !important;
+  background-image: linear-gradient(135deg, #14532d 0%, #0f401f 100%) !important;
+  color: #ffffff !important;
   transform: translateY(-2px);
   box-shadow: 0 8px 22px rgba(46, 125, 50, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
 }
 
-.view-all-btn:active {
-  transform: translateY(0);
+/* ==================================================
+   ATTRACTION CARDS - EXACT MATCH TO ACCOMMODATION
+   ================================================== */
+.featured-attractions-section .attraction-card {
+  background: var(--glass-bg-strong);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border: var(--glass-border) !important;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.featured-attractions-section .attraction-image-wrapper {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  background: #e5e7eb;
+}
+
+.featured-attractions-section .attraction-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.featured-attractions-section .attraction-card:hover .attraction-image {
+  transform: scale(1.1);
+}
+
+.featured-attractions-section .attraction-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 100%);
+  pointer-events: none;
+}
+
+.featured-attractions-section .attraction-info {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex-grow: 1;
+}
+
+.featured-attractions-section .attraction-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #111827;
+  margin: 0;
+  line-height: 1.3;
+  transition: none;
+}
+
+.featured-attractions-section .attraction-location {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.featured-attractions-section .attraction-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.25rem 0;
 }
 
 /* ==================================================
