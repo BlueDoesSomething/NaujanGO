@@ -55,7 +55,7 @@ const formatCurrency = (value, currency = 'PHP') => {
 };
 
 const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
-  const { t, language, supportedLanguages = [] } = useLanguage();
+  const { t, language } = useLanguage();
   const { user: authUser } = useAuth();
   const { isDark } = useTheme();
   const navigate = useNavigate();
@@ -351,8 +351,12 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
       {/* Floating leaves */}
       <div className="floating-leaves" aria-hidden="true">
         {[...Array(8)].map((_, i) => (
-          <span key={i} className="floating-leaf" style={{ left: `${(i * 13 + 5) % 97}%`, fontSize: `${18 + ((i * 9) % 20)}px` }}>
-            <Icons.Leaf />
+          <span
+            key={i}
+            className="floating-leaf"
+            style={{ left: `${(i * 13 + 5) % 97}%`, fontSize: `${14 + ((i * 7) % 16)}px`, animationDuration: `${15 + ((i * 3) % 14)}s`, animationDelay: `${i * 1.7}s` }}
+          >
+            <Icons.Leaf size={14 + ((i * 7) % 16)} />
           </span>
         ))}
       </div>
@@ -476,35 +480,6 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
           </div>
         </div>
       </section>
-
-      {/* ============ HERO STATS ============ */}
-      <div className="eco-hero-stats">
-        <div className="eco-hero-stat">
-          <div className="stat-icon"><Icons.Attraction size={20} /></div>
-          <div>
-            <div className="stat-num">{attractionsLoading ? '…' : attractions.length}</div>
-            <div className="stat-label">{t('hero_stat_eco_sites')}</div>
-          </div>
-        </div>
-        <div className="eco-hero-stat">
-          <div className="stat-icon"><Icons.Globe size={20} /></div>
-          <div>
-            <div className="stat-num">{supportedLanguages.length || 8}</div>
-            <div className="stat-label">{t('hero_stat_languages')}</div>
-          </div>
-        </div>
-        <div className="eco-hero-stat">
-          <div className="stat-icon"><Icons.Star size={20} /></div>
-          <div>
-            <div className="stat-num">
-              {attractions.length > 0
-                ? (attractions.reduce((s, a) => s + (toNumericRating(a.avg_rating) || 0), 0) / attractions.filter(a => toNumericRating(a.avg_rating) !== null).length || 4.8).toFixed(1)
-                : '…'}
-            </div>
-            <div className="stat-label">{t('hero_stat_eco_rating')}</div>
-          </div>
-        </div>
-      </div>
 
       {/* ============ SEARCH ============ */}
       <div className="eco-search-wrap">
