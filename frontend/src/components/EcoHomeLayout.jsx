@@ -363,6 +363,22 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
 
       {/* ============ HERO ============ */}
       <section className="hero-section" id="home">
+        <div className="hero-gradient-orb orb-1" aria-hidden="true" />
+        <div className="hero-gradient-orb orb-2" aria-hidden="true" />
+        <div className="hero-gradient-orb orb-3" aria-hidden="true" />
+
+        <div className="eco-hero-head">
+          <span className="hero-pill shimmer">
+            <span className="pulse-dot" />
+            <Icons.MapPin size={13} />
+            {t('hero_location_badge')}
+          </span>
+          <h1 className="hero-title">
+            {t('hero_title_pre')}{' '}
+            <span className="hero-title-accent">{t('hero_title_accent')}</span>
+          </h1>
+        </div>
+
         <div className="eco-hero-inner">
           <div className="featured-stage" ref={stageRef} id="featuredStage">
             <div className="stage-track" style={{ transform: `translate3d(-${stageIdx * 100}%, 0, 0)` }}>
@@ -375,7 +391,6 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                   <img src={attraction.image_url || '/placeholder-attraction.svg'} alt={attraction.name} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" draggable="false" />
                   <div className="stage-shade" />
                   <div className="stage-content">
-                    <span className="stage-eyebrow">{t('hero_location_badge')}</span>
                     <div className="stage-cat">
                       <Icons.Seedling size={13} />
                       {getCategoryChip(attraction, t)}
@@ -392,6 +407,13 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                 </article>
               ))}
             </div>
+
+            {featured.length > 0 && (
+              <div className="stage-badge">
+                <Icons.Seedling size={12} />
+                <span className="badge-txt">{t('featured_badge')}</span>
+              </div>
+            )}
 
             {featured.length > 1 && slideshowExt.showArrows !== false && (
               <>
@@ -608,24 +630,23 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
           </div>
           )}
 
-          {/* Eco Rating */}
-          <div className="bento-item bento-third">
+          {/* Safety Score */}
+          <div className="bento-item bento-third eco-safety">
             <div className="bento-head">
-              <div className="bh-icon"><Icons.Star size={20} /></div>
+              <div className="bh-icon"><Icons.ShieldCheck size={20} /></div>
               <div>
-                <h3>{t('eco_rating_label')}</h3>
+                <h3>{t('safety')}</h3>
                 <p>{t('eco_rating_desc')}</p>
               </div>
             </div>
-            <div className="eco-rating-ring">
-              <div className="eco-ring" style={{ ['--pct']: safetyScorePct }}>
-                <b>{safetyScorePct}<small>%</small></b>
-              </div>
-              <div className="rr-labels">
-                <b>{safetyScorePct >= 70 ? t('safety_good') : t('exercise_caution')}</b>
-                <span>{t('travel_sustainably')}</span>
-              </div>
+            <div className="safety-metric">
+              <b>{safetyScorePct >= 70 ? t('safety_good') : t('exercise_caution')}</b>
+              <span>{t('travel_sustainably')}</span>
             </div>
+            <div className="safety-bar">
+              <div className="safety-fill" style={{ width: `${safetyScorePct}%` }} />
+            </div>
+            <span className="safety-score">{safetyScorePct}/100</span>
           </div>
 
           {/* Eco Tip */}

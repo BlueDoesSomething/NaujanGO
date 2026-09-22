@@ -108,18 +108,101 @@
 .eco-home .hero-section {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  min-height: 640px;
-  height: 92vh;
-  max-height: 900px;
+  min-height: 100vh;
   padding-top: 40px;
+  padding-bottom: 88px;
+  overflow: hidden;
 }
-.eco-hero-inner {
+.eco-hero-head {
   position: relative;
   z-index: 5;
   width: 100%;
   max-width: 1320px;
   margin: 0 auto;
+  padding: 0 24px;
+}
+.eco-hero-head .hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 15px;
+  border-radius: 999px;
+  background: var(--eco-card-strong);
+  border: 1px solid var(--eco-border-strong);
+  backdrop-filter: blur(14px);
+  color: var(--eco-text);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.eco-hero-head .hero-pill .pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulseDot 1.6s ease-in-out infinite;
+}
+.eco-hero-head .hero-pill svg { color: var(--eco-green); flex-shrink: 0; }
+.eco-hero-head .hero-title {
+  font-size: clamp(32px, 5.2vw, 60px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin: 0;
+  text-shadow: 0 6px 30px rgba(0, 0, 0, 0.35);
+}
+.eco-hero-head .hero-title-accent {
+  background: linear-gradient(90deg, #4ade80, #34d399, #22d3ee);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Hero gradient orbs */
+.eco-home .hero-gradient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  animation: ecoOrbFloat 20s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+.eco-home .hero-gradient-orb.orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, #22c55e, transparent 70%); top: -120px; left: -120px; }
+.eco-home .hero-gradient-orb.orb-2 { width: 420px; height: 420px; background: radial-gradient(circle, #3b82f6, transparent 70%); bottom: -120px; right: -120px; animation-delay: -7s; }
+.eco-home .hero-gradient-orb.orb-3 { width: 320px; height: 320px; background: radial-gradient(circle, #10b981, transparent 70%); top: 45%; left: 45%; animation-delay: -14s; }
+@keyframes ecoOrbFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(50px, -50px) scale(1.1); }
+  66%      { transform: translate(-30px, 30px) scale(0.95); }
+}
+
+/* Shimmer sweep (hero pill) */
+.eco-home .shimmer { position: relative; overflow: hidden; }
+.eco-home .shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+  animation: shimmerSweep 3.2s infinite;
+  pointer-events: none;
+}
+@keyframes shimmerSweep { 0% { left: -100%; } 100% { left: 100%; } }
+
+.eco-hero-inner {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  max-width: 1320px;
+  margin: 28px auto 0;
   padding: 0 24px;
   display: grid;
   grid-template-columns: 1.35fr 1fr;
@@ -183,22 +266,6 @@
   transition: transform 0.6s ease, opacity 0.6s ease;
 }
 .stage-slide.is-active .stage-content { transform: translateY(0); }
-.stage-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 2.5px;
-  text-transform: uppercase;
-  color: #a7f3d0;
-  background: rgba(34, 197, 94, 0.18);
-  border: 1px solid rgba(74, 222, 128, 0.35);
-  border-radius: 999px;
-  padding: 6px 14px;
-  margin-bottom: 14px;
-  backdrop-filter: blur(8px);
-}
 .stage-cat {
   display: inline-flex;
   align-items: center;
@@ -271,6 +338,36 @@
 .stage-nav:hover { background: rgba(34, 197, 94, 0.5); border-color: rgba(74, 222, 128, 0.5); transform: translateY(-50%) scale(1.06); }
 .stage-nav-prev { left: 18px; }
 .stage-nav-next { right: 18px; }
+
+/* Stage badge "Featured Destination" */
+.stage-badge {
+  position: absolute;
+  top: 18px;
+  left: 22px;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  background: rgba(8, 20, 14, 0.55);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  max-width: calc(100% - 150px);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.stage-badge svg { color: var(--eco-green); flex-shrink: 0; }
+@media (max-width: 767px) {
+  .stage-badge { top: 14px; left: 14px; padding: 5px 10px; font-size: 9px; letter-spacing: 0.5px; }
+  .stage-badge .badge-txt { display: none; }
+}
 
 /* Stage counter + progress */
 .stage-counter {
@@ -818,38 +915,32 @@
   line-height: 1.5;
 }
 .eco-tip-list li svg, .eco-check-list li svg { color: var(--eco-green); flex-shrink: 0; margin-top: 2px; }
-.eco-rating-ring {
-  display: flex;
-  align-items: center;
-  gap: 16px;
+/* Safety score card */
+.eco-safety { background: linear-gradient(160deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.05)); border-color: rgba(74, 222, 128, 0.24); }
+.eco-safety .bh-icon { background: rgba(34, 197, 94, 0.16); }
+.eco-safety .safety-metric { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 6px; }
+.eco-safety .safety-metric b { font-size: 24px; font-weight: 800; color: var(--eco-green); }
+.eco-safety .safety-metric span { font-size: 12px; color: var(--eco-text-dim); }
+.eco-safety .safety-bar {
+  height: 10px;
+  margin-top: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
 }
-.eco-ring {
-  width: 74px;
-  height: 74px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: conic-gradient(var(--eco-green) calc(var(--pct) * 1%), rgba(255, 255, 255, 0.08) 0);
-  position: relative;
+.eco-safety .safety-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #16a34a, #4ade80);
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.eco-ring::before {
-  content: '';
-  position: absolute;
-  inset: 8px;
-  border-radius: 50%;
-  background: #10251b;
+.eco-safety .safety-score {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--eco-text-faint);
 }
-.eco-ring b {
-  position: relative;
-  z-index: 1;
-  font-size: 20px;
-  font-weight: 800;
-  color: var(--eco-text);
-}
-.eco-ring b small { font-size: 11px; color: var(--eco-text-faint); font-weight: 600; }
-.eco-rating-ring .rr-labels b { font-size: 26px; font-weight: 800; color: var(--eco-green); }
-.eco-rating-ring .rr-labels span { font-size: 12px; color: var(--eco-text-dim); }
 /* Weather widget on light bento */
 .eco-bento-weather { background: transparent !important; }
 
@@ -1342,8 +1433,10 @@
 [data-theme="light"] .eco-home .info-stat { background: rgba(15, 23, 42, 0.035); border-color: rgba(15, 23, 42, 0.07); }
 [data-theme="light"] .eco-home .info-stat b { color: #0f172a; }
 [data-theme="light"] .eco-home .btn-ghost-hero { color: #0f172a; background: rgba(15, 23, 42, 0.04); }
-[data-theme="light"] .eco-home .eco-ring::before { background: #eaf3ed; }
-[data-theme="light"] .eco-home .eco-gallery-tile .tile-cap,
+[data-theme="light"] .eco-home .hero-gradient-orb { opacity: 0.16; }
+[data-theme="light"] .eco-home .hero-title { color: #0f172a; text-shadow: none; }
+[data-theme="light"] .eco-home .safety-bar { background: rgba(15, 23, 42, 0.1); }
+[data-theme="light"] .eco-gallery-tile .tile-cap,
 [data-theme="light"] .eco-home .eco-gallery-tile .tile-shade { /* keep dark overlay on images regardless of theme */ }
 [data-theme="light"] .eco-home .eco-mobile-nav { background: rgba(255, 255, 255, 0.92); border-color: rgba(15, 23, 42, 0.1); }
 [data-theme="light"] .eco-home .eco-back-to-top { background: rgba(255, 255, 255, 0.9); }
@@ -1362,6 +1455,9 @@
 @media (prefers-reduced-motion: reduce) {
   .eco-home .floating-leaf,
   .eco-home .hero-backdrop-img,
-  .eco-home .stage-progress::before { animation: none !important; }
+  .eco-home .stage-progress::before,
+  .eco-home .hero-gradient-orb,
+  .eco-home .shimmer::after,
+  .eco-home .hero-pill .pulse-dot { animation: none !important; }
   .eco-reveal, .eco-stagger > * { transition: none !important; opacity: 1 !important; transform: none !important; }
 }
