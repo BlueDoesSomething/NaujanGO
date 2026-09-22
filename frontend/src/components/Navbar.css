@@ -39,7 +39,9 @@
 
 /* Modern Navbar */
 .navbar {
-  background: linear-gradient(135deg, var(--nav-bg, #16a34a) 0%, var(--primary-dark, #059669) 100%);
+  background: linear-gradient(135deg, rgba(16, 163, 74, 0.82) 0%, rgba(5, 150, 105, 0.82) 100%);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
   padding: 1rem 2rem;
   display: flex;
   align-items: center;
@@ -47,10 +49,10 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
   transition: all 0.3s ease;
   animation: slideDown 0.5s ease;
-  border-bottom: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 @keyframes slideDown {
@@ -65,8 +67,10 @@
 }
 
 .navbar.scrolled {
-  background: linear-gradient(135deg, var(--primary-dark, #15803d) 0%, #047857 100%);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, rgba(21, 128, 61, 0.9) 0%, rgba(4, 120, 87, 0.9) 100%);
+  backdrop-filter: blur(16px) saturate(1.5);
+  -webkit-backdrop-filter: blur(16px) saturate(1.5);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.24);
   padding: 0.75rem 2rem;
 }
 
@@ -763,7 +767,9 @@ a.navbar-link.active,
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(135deg, #2E7D32 0%, #388E3C 100%);
+    background: linear-gradient(135deg, rgba(46, 125, 50, 0.94) 0%, rgba(56, 142, 60, 0.94) 100%);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
     flex-direction: column;
     justify-content: flex-start;
     align-items: stretch;
@@ -1021,7 +1027,9 @@ a.navbar-link.active,
     position: fixed;
     inset: 70px 0 0 0;
     padding: 1.25rem;
-    background: linear-gradient(135deg, #2E7D32 0%, #388E3C 100%);
+    background: linear-gradient(135deg, rgba(46, 125, 50, 0.94) 0%, rgba(56, 142, 60, 0.94) 100%);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
     transform: translateX(-100%);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
@@ -1110,7 +1118,9 @@ a.navbar-link.active,
     position: fixed;
     inset: 76px 0 0 0;
     padding: 1.5rem;
-    background: linear-gradient(135deg, #2E7D32 0%, #388E3C 100%);
+    background: linear-gradient(135deg, rgba(46, 125, 50, 0.94) 0%, rgba(56, 142, 60, 0.94) 100%);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
     transform: translateX(-100%);
     transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     overflow-y: auto;
@@ -1372,7 +1382,9 @@ a.navbar-link.active,
   .nav-content {
     padding: 1rem 1rem 1.25rem;
     gap: 1rem;
-    background: linear-gradient(180deg, rgba(22, 163, 74, 0.98) 0%, rgba(21, 128, 61, 0.98) 100%);
+    background: linear-gradient(180deg, rgba(22, 163, 74, 0.95) 0%, rgba(21, 128, 61, 0.95) 100%);
+    backdrop-filter: blur(18px) saturate(1.4);
+    -webkit-backdrop-filter: blur(18px) saturate(1.4);
   }
 
   .navbar-links {

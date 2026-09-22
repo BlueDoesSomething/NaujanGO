@@ -374,6 +374,115 @@ export const PlusIcon = ({ size = 24, className = "" }) => (
   </svg>
 );
 
+export const WaterIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M12 2.69l5.66 5.66a8 8 0 11-11.31 0z" />
+  </svg>
+);
+
+export const FishIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M6.5 12c0-1 .5-2 1.5-2.5 3-1.5 7-1.5 10 1.5 1.5 1.5 2 3.5 2 5.5 0 .5-.5.5-.5 0-.5-2-2.5-3-6-3.5 1.5 1 3 2 3 4 .5 1-1 1-1.5 0-1-2-3-3.5-4-5-1 .5-2 1-2.5 2-.5 1-1.5.5-1.5 0 0-1 .5-1.5 1-2" />
+    <path d="M2 12c0-3 4-6 8.5-6" />
+  </svg>
+);
+
+export const CameraIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h3.5l1.5-3h6l1.5 3H21a2 2 0 012 2z" />
+    <circle cx="12" cy="13" r="4" />
+  </svg>
+);
+
+export const QuoteIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M9.5 7C6.5 8.5 5 10.5 5 13.5 5 16 6.5 17.5 8.5 17.5c1.8 0 3.2-1.4 3.2-3.3 0-1.8-1.3-3-3-3-.4 0-.7.1-1 .2" strokeWidth="1.8" />
+    <path d="M18.5 7c-3 1.5-4.5 3.5-4.5 6.5 0 2.5 1.5 4 3.5 4 1.8 0 3.2-1.4 3.2-3.3 0-1.8-1.3-3-3-3-.4 0-.7.1-1 .2" strokeWidth="1.8" />
+  </svg>
+);
+
+export const CoffeeIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M18 8h1a4 4 0 010 8h-1" />
+    <path d="M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4z" />
+    <line x1="6" y1="1" x2="6" y2="4" />
+    <line x1="10" y1="1" x2="10" y2="4" />
+    <line x1="14" y1="1" x2="14" y2="4" />
+  </svg>
+);
+
+export const CompassIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <circle cx="12" cy="12" r="10" />
+    <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+  </svg>
+);
+
+export const WifiIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M5 12.55a11 11 0 0114.08 0" />
+    <path d="M1.42 9a16 16 0 0121.16 0" />
+    <path d="M8.53 16.11a6 6 0 016.95 0" />
+    <line x1="12" y1="20" x2="12.01" y2="20" />
+  </svg>
+);
+
+export const MoonIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+  </svg>
+);
+
+export const SunIconSmall = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <circle cx="12" cy="12" r="5" />
+    <line x1="12" y1="1" x2="12" y2="3" />
+    <line x1="12" y1="21" x2="12" y2="23" />
+    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+    <line x1="1" y1="12" x2="3" y2="12" />
+    <line x1="21" y1="12" x2="23" y2="12" />
+    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+  </svg>
+);
+
+export const ArrowUpIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <line x1="12" y1="19" x2="12" y2="5" />
+    <polyline points="5 12 12 5 19 12" />
+  </svg>
+);
+
+export const ArrowRightIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <line x1="5" y1="12" x2="19" y2="12" />
+    <polyline points="12 5 19 12 12 19" />
+  </svg>
+);
+
+export const ArrowUpRightIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <line x1="7" y1="17" x2="17" y2="7" />
+    <polyline points="7 7 17 7 17 17" />
+  </svg>
+);
+
+export const SeedlingIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M12 22V8" />
+    <path d="M6 3c0 4.5 2.5 8 6 8v0c-3 0-6-2-6-8z" fill="currentColor" stroke="none" />
+    <path d="M18 5c0 4.5-3 7-6 6 3 0 6-2 6-6z" fill="currentColor" stroke="none" opacity="0.4" />
+  </svg>
+);
+
+export const ShieldCheckIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <polyline points="9 12 11 14 15 9" />
+  </svg>
+);
+
 // Export all icons as a collection
 export const Icons = {
   // Primary names
@@ -431,6 +540,19 @@ export const Icons = {
   Upload: UploadIcon,
   Edit2: Edit2Icon,
   Plus: PlusIcon,
+  Water: WaterIcon,
+  Fish: FishIcon,
+  Camera: CameraIcon,
+  Quote: QuoteIcon,
+  Coffee: CoffeeIcon,
+  Compass: CompassIcon,
+  Wifi: WifiIcon,
+  Moon: MoonIcon,
+  ArrowUp: ArrowUpIcon,
+  ArrowRight: ArrowRightIcon,
+  ArrowUpRight: ArrowUpRightIcon,
+  Seedling: SeedlingIcon,
+  ShieldCheck: ShieldCheckIcon,
   // Aliases with "Icon" suffix for compatibility
   MapIcon: MapIcon,
   LocationIcon: LocationIcon,
@@ -486,6 +608,19 @@ export const Icons = {
   UploadIcon: UploadIcon,
   Edit2Icon: Edit2Icon,
   PlusIcon: PlusIcon,
+  WaterIcon: WaterIcon,
+  FishIcon: FishIcon,
+  CameraIcon: CameraIcon,
+  QuoteIcon: QuoteIcon,
+  CoffeeIcon: CoffeeIcon,
+  CompassIcon: CompassIcon,
+  WifiIcon: WifiIcon,
+  MoonIcon: MoonIcon,
+  ArrowUpIcon: ArrowUpIcon,
+  ArrowRightIcon: ArrowRightIcon,
+  ArrowUpRightIcon: ArrowUpRightIcon,
+  SeedlingIcon: SeedlingIcon,
+  ShieldCheckIcon: ShieldCheckIcon,
 };
 
 export default Icons;
