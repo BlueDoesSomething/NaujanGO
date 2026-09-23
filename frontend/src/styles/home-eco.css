@@ -179,6 +179,37 @@
 .eco-home .hero-gradient-orb.orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, #22c55e, transparent 70%); top: -120px; left: -120px; }
 .eco-home .hero-gradient-orb.orb-2 { width: 420px; height: 420px; background: radial-gradient(circle, #3b82f6, transparent 70%); bottom: -120px; right: -120px; animation-delay: -7s; }
 .eco-home .hero-gradient-orb.orb-3 { width: 320px; height: 320px; background: radial-gradient(circle, #10b981, transparent 70%); top: 45%; left: 45%; animation-delay: -14s; }
+/* =========================================================
+   HERO BACKDROP — fixed image with drift animation
+   ========================================================= */
+.hero-backdrop {
+  position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  opacity: 1; will-change: opacity; contain: strict;
+}
+.hero-backdrop-img {
+  position: absolute; inset: 0;
+  background-image: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80');
+  background-size: cover; background-position: center center; background-repeat: no-repeat;
+  transform: scale(1.08);
+  animation: backdropDrift 34s ease-in-out infinite alternate;
+}
+@keyframes backdropDrift {
+  from { transform: scale(1.08) translate3d(0, 0, 0); }
+  to   { transform: scale(1.16) translate3d(-1.8%, -1.6%, 0); }
+}
+.hero-backdrop-shade {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse at 18% 8%, rgba(34,197,94,0.20), transparent 58%),
+    radial-gradient(ellipse at 88% 92%, rgba(59,130,246,0.16), transparent 55%),
+    linear-gradient(135deg, rgba(10,14,23,0.94) 0%, rgba(10,14,23,0.86) 45%, rgba(10,14,23,0.78) 100%);
+}
+[data-theme="light"] .hero-backdrop-shade {
+  background:
+    radial-gradient(ellipse at 14% 8%, rgba(16,185,129,0.22), transparent 56%),
+    radial-gradient(ellipse at 88% 92%, rgba(59,130,246,0.16), transparent 56%),
+    linear-gradient(158deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.88) 38%, rgba(247,251,250,0.80) 100%);
+}
 @keyframes ecoOrbFloat {
   0%, 100% { transform: translate(0, 0) scale(1); }
   33%      { transform: translate(50px, -50px) scale(1.1); }
@@ -225,7 +256,9 @@
   aspect-ratio: 16 / 10.5;
   box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06) inset;
   isolation: isolate;
+  contain: layout paint;
   cursor: grab;
+  touch-action: pan-y;
 }
 .featured-stage:active { cursor: grabbing; }
 .stage-track {
@@ -251,7 +284,21 @@
   object-fit: cover;
   display: block;
   user-select: none;
+  opacity: 0; transform: scale(1.28);
+  transition: opacity 0.85s ease, transform 1.05s cubic-bezier(0.76,0,0.24,1);
+  -webkit-user-drag: none;
 }
+.stage-slide.is-active img { opacity: 1; animation: stageExpand 9s cubic-bezier(0.22,1,0.36,1) forwards; }
+.stage-slide.is-exiting img { opacity: 0; transform: scale(0.88); }
+@keyframes stageExpand { 0% { transform: scale(1.22); } 100% { transform: scale(1.03); } }
+.stage-content > * {
+  opacity: 0; transform: translateY(26px);
+  transition: opacity 0.75s ease, transform 0.85s cubic-bezier(0.22,1,0.36,1);
+}
+.stage-slide.is-active .stage-content > *:nth-child(1) { opacity: 1; transform: none; transition-delay: 0.42s; }
+.stage-slide.is-active .stage-content > *:nth-child(2) { opacity: 1; transform: none; transition-delay: 0.52s; }
+.stage-slide.is-active .stage-content > *:nth-child(3) { opacity: 1; transform: none; transition-delay: 0.62s; }
+.stage-slide.is-active .stage-content > *:nth-child(4) { opacity: 1; transform: none; transition-delay: 0.72s; }
 .stage-shade {
   position: absolute;
   inset: 0;
@@ -370,6 +417,7 @@
 @media (max-width: 767px) {
   .stage-badge { top: 14px; left: 14px; padding: 5px 10px; font-size: 9px; letter-spacing: 0.5px; }
   .stage-badge .badge-txt { display: none; }
+  .stage-desc { display: none; }
   .thumb-rail-hint { display: none; }
   .ts-list { gap: 6px; }
   .ts-row { padding: 8px 10px; }
@@ -413,6 +461,7 @@
 }
 .stage-progress.run::before { animation-play-state: running; }
 .stage-progress:not(.run)::before { animation-play-state: paused; }
+.featured-stage:hover .stage-progress.run::before { animation-play-state: paused; }
 @keyframes stageProgress {
   from { transform: scaleX(0); }
   to   { transform: scaleX(1); }
@@ -529,11 +578,16 @@
 .info-card::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--eco-green), var(--eco-sky), transparent);
+  top: -70px;
+  right: -70px;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  background: var(--accent, var(--eco-green));
+  opacity: 0.12;
+  filter: blur(50px);
+  transition: background 0.7s ease;
+  pointer-events: none;
 }
 .info-idx {
   font-size: 11px;
@@ -611,15 +665,15 @@
 .info-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  padding: 13px 0;
+  margin-bottom: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .info-stat {
-  border-radius: 14px;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--eco-border);
   text-align: center;
+  min-width: 0;
 }
 .info-stat b {
   display: block;
@@ -1691,10 +1745,11 @@
   background: rgba(255, 255, 255, 0.88);
   border-color: rgba(15, 23, 42, 0.1);
 }
+[data-theme="light"] .eco-home .info-card::before { opacity: 0.20; }
 [data-theme="light"] .eco-home .info-name { color: #0f172a; }
 [data-theme="light"] .eco-home .info-desc { color: #46584f; }
-[data-theme="light"] .eco-home .info-stat { background: rgba(15, 23, 42, 0.035); border-color: rgba(15, 23, 42, 0.07); }
 [data-theme="light"] .eco-home .info-stat b { color: #0f172a; }
+[data-theme="light"] .eco-home .info-stats { border-top-color: rgba(15, 23, 42, 0.09); border-bottom-color: rgba(15, 23, 42, 0.09); }
 [data-theme="light"] .eco-home .ts-row { background: rgba(15, 23, 42, 0.035); border-color: rgba(15, 23, 42, 0.07); }
 [data-theme="light"] .eco-home .thumb-rail-hint { background: rgba(15, 23, 42, 0.035); border-color: rgba(15, 23, 42, 0.07); color: #46584f; }
 [data-theme="light"] .eco-home .btn-ghost-hero { color: #0f172a; background: rgba(15, 23, 42, 0.04); }

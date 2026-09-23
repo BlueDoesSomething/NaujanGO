@@ -468,6 +468,12 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
         ))}
       </div>
 
+      {/* Hero backdrop (drift animation behind hero) */}
+      <div className="hero-backdrop" aria-hidden="true">
+        <div className="hero-backdrop-img" />
+        <div className="hero-backdrop-shade" />
+      </div>
+
       {/* ============ HERO ============ */}
       <section className="hero-section" id="home">
         <div className="hero-gradient-orb orb-1" aria-hidden="true" />
