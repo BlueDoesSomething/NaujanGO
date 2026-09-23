@@ -37,7 +37,7 @@ const HazardAwareness = ({
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [expanded, setExpanded] = useState(!compact);
+  const [expanded, setExpanded] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [expandedHazardDetail, setExpandedHazardDetail] = useState(null);
 
