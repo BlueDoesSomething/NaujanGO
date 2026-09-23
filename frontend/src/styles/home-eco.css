@@ -1013,8 +1013,8 @@
   overflow: hidden;
 }
 .bento-item:hover { transform: translateY(-2px); border-color: rgba(74, 222, 128, 0.3); }
-.bento-main { grid-column: span 6; }
-.bento-half { grid-column: span 6; }
+.bento-main { grid-column: span 8; }
+.bento-half { grid-column: span 4; }
 .bento-third { grid-column: span 4; }
 .bento-quarter { grid-column: span 3; }
 .bento-full { grid-column: span 12; }
@@ -1095,11 +1095,11 @@
 .eco-safety .bh-icon { background: rgba(34, 197, 94, 0.16); }
 /* Hazard glass card */
 .eco-hazard { background: linear-gradient(160deg, rgba(244, 63, 94, 0.16), rgba(244, 63, 94, 0.05)); border-color: rgba(244, 63, 94, 0.28); }
-.eco-hazard .bh-icon { background: rgba(244, 63, 94, 0.18); }
-.eco-hazard .bh-icon svg { color: var(--eco-rose); }
-.eco-hazard .weather-widget-inner,
+.eco-hazard .bento-head { display: none; }
 .eco-hazard > div > div[style*="borderRadius"] { width: 100% !important; max-width: 100% !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; border: none !important; padding: 0 !important; }
 [data-theme="light"] .eco-home .eco-hazard { background: linear-gradient(160deg, rgba(244, 63, 94, 0.12), rgba(244, 63, 94, 0.04)); border-color: rgba(244, 63, 94, 0.26); }
+.eco-hazard > div { padding: 0 !important; }
+.eco-hazard > div > div:first-child { padding: 0 !important; margin-bottom: 0 !important; border-bottom: none !important; }
 .eco-safety-ring-row {
   display: flex;
   align-items: center;
