@@ -274,6 +274,13 @@ const WeatherWidget = ({
     ? forecast.hourlyToday.find(hour => hour.time === selectedHourlyTime) || forecast.hourlyToday[0]
     : null;
 
+  // Pass safety score up to parent (must be before conditional returns)
+  useEffect(() => {
+    if (onSafetyScore && weather) {
+      onSafetyScore(weatherService.getTravelSafetyScore(weather));
+    }
+  }, [weather, onSafetyScore]);
+
   if (loading) {
     return (
       <div style={getContainerStyle()}>
@@ -303,13 +310,6 @@ const WeatherWidget = ({
   }
 
   const safetyScore = getSafetyScore();
-
-  // Pass safety score up to parent
-  useEffect(() => {
-    if (onSafetyScore && safetyScore !== undefined) {
-      onSafetyScore(safetyScore);
-    }
-  }, [safetyScore, onSafetyScore]);
 
   return (
     <div style={getContainerStyle()}>
