@@ -908,8 +908,8 @@
   overflow: hidden;
 }
 .bento-item:hover { transform: translateY(-3px); border-color: rgba(74, 222, 128, 0.3); }
-.bento-main { grid-column: span 7; }
-.bento-half { grid-column: span 5; }
+.bento-main { grid-column: span 8; }
+.bento-half { grid-column: span 4; }
 .bento-third { grid-column: span 4; }
 .bento-quarter { grid-column: span 3; }
 .bento-full { grid-column: span 12; }
@@ -988,6 +988,13 @@
 /* Safety score card */
 .eco-safety { background: linear-gradient(160deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.05)); border-color: rgba(74, 222, 128, 0.24); }
 .eco-safety .bh-icon { background: rgba(34, 197, 94, 0.16); }
+/* Hazard glass card */
+.eco-hazard { background: linear-gradient(160deg, rgba(244, 63, 94, 0.16), rgba(244, 63, 94, 0.05)); border-color: rgba(244, 63, 94, 0.28); }
+.eco-hazard .bh-icon { background: rgba(244, 63, 94, 0.18); }
+.eco-hazard .bh-icon svg { color: var(--eco-rose); }
+.eco-hazard .weather-widget-inner,
+.eco-hazard > div > div[style*="borderRadius"] { width: 100% !important; max-width: 100% !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; border: none !important; padding: 0 !important; }
+[data-theme="light"] .eco-home .eco-hazard { background: linear-gradient(160deg, rgba(244, 63, 94, 0.12), rgba(244, 63, 94, 0.04)); border-color: rgba(244, 63, 94, 0.26); }
 .eco-safety-ring-row {
   display: flex;
   align-items: center;
@@ -1041,7 +1048,13 @@
   font-weight: 700;
   color: var(--eco-text-faint);
 }
-[data-theme="light"] .eco-home .eco-safety-ring-row .safety-ring-value { background: rgba(255, 255, 255, 0.92); }
+[data-theme="light"] .eco-home .eco-safety-ring-row .safety-ring-value { background: rgba(255, 255, 255, 0.92); color: #16a34a; }
+[data-theme="light"] .eco-home .eco-now .eco-now-temp {
+  background: linear-gradient(90deg, #16a34a, #059669, #0ea5e9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 /* Now / hourly card */
 .eco-now .eco-now-row {
   display: grid;
@@ -1634,6 +1647,13 @@
 [data-theme="light"] .eco-home .btn-ghost-hero { color: #0f172a; background: rgba(15, 23, 42, 0.04); }
 [data-theme="light"] .eco-home .hero-gradient-orb { opacity: 0.16; }
 [data-theme="light"] .eco-home .hero-title { color: #0f172a; text-shadow: none; }
+[data-theme="light"] .eco-home .hero-title-accent,
+[data-theme="light"] .eco-home .eco-hero-head .hero-stat b {
+  background: linear-gradient(90deg, #16a34a, #059669, #0ea5e9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 [data-theme="light"] .eco-home .hero-stat-divider { background: linear-gradient(180deg, transparent, rgba(15, 23, 42, 0.18), transparent); }
 [data-theme="light"] .eco-home .eco-now .eco-now-hour { background: rgba(255, 255, 255, 0.9); border-color: rgba(15, 23, 42, 0.08); }
 [data-theme="light"] .eco-home .eco-now .eco-now-hour b { color: #0f172a; }

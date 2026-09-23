@@ -735,9 +735,9 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
           </div>
         </div>
         <div className="bento-grid">
-          {/* Live Conditions */}
+          {/* Live Conditions (main weather card) */}
           {pagesections.showWeather !== false && (
-          <div className="bento-item bento-main">
+          <div className="bento-item bento-main eco-bento-weather">
             <div className="bento-head">
               <div className="bh-icon"><Icons.Cloud size={20} /></div>
               <div>
@@ -745,28 +745,22 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                 <p className="bento-live-badge"><span className="pulse-dot" /> {t('current_location')}</p>
               </div>
             </div>
-            <div className="bento-current-loc">
-              <Icons.MapPin size={14} />
-              Naujan, Oriental Mindoro — {t('just_now')}
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <WeatherWidget
-                latitude={NAUJAN_COORDS.lat}
-                longitude={NAUJAN_COORDS.lon}
-                locationName="Naujan, Oriental Mindoro"
-                showForecast={true}
-                showAlerts={true}
-                showSafetyTips={true}
-                size="large"
-                theme={isDark ? 'dark' : 'light'}
-              />
-            </div>
+            <WeatherWidget
+              latitude={NAUJAN_COORDS.lat}
+              longitude={NAUJAN_COORDS.lon}
+              locationName="Naujan, Oriental Mindoro"
+              showForecast={true}
+              showAlerts={true}
+              showSafetyTips={true}
+              size="large"
+              theme={isDark ? 'dark' : 'light'}
+            />
           </div>
           )}
 
           {/* Hazard Awareness */}
           {pagesections.showHazardAwareness !== false && (
-          <div className="bento-item bento-half">
+          <div className="bento-item bento-half eco-hazard">
             <div className="bento-head">
               <div className="bh-icon"><Icons.ShieldCheck size={20} /></div>
               <div>
@@ -781,7 +775,8 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               attractions={attractions}
               userId={resolvedUserId}
               enableNotifications={!isGuest}
-              compact={false}
+              compact={true}
+              theme={isDark ? 'dark' : 'light'}
             />
           </div>
           )}

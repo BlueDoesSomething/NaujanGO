@@ -546,7 +546,7 @@ const WeatherWidget = ({
                 </div>
               </div>
             ) : (
-              <div style={{ color: '#64748b', fontSize: '0.9rem' }}>
+              <div style={{ color: 'var(--ww-faint)', fontSize: '0.9rem' }}>
                 {t('no_hourly_forecast_today')}
               </div>
             )}
@@ -564,7 +564,7 @@ const WeatherWidget = ({
                       onClick={() => setSelectedHourlyTime(hour.time)}
                       style={{
                         ...hourlyItemStyle,
-                        borderColor: isSelected ? '#1976d2' : 'rgba(0,0,0,0.08)',
+                        borderColor: isSelected ? '#1976d2' : 'var(--ww-soft-border)',
                         boxShadow: isSelected ? '0 0 0 2px rgba(25, 118, 210, 0.18)' : 'none',
                         transform: isSelected ? 'translateY(-1px)' : 'none',
                         cursor: 'pointer'
@@ -639,13 +639,25 @@ const WeatherWidget = ({
 
   // Style functions and definitions
   function getContainerStyle() {
+    const isDark = theme === 'dark';
     const baseStyle = {
       fontFamily: 'Arial, sans-serif',
       borderRadius: '12px',
       boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
       overflow: 'hidden',
-      backgroundColor: theme === 'dark' ? '#2c3e50' : '#ffffff',
-      color: theme === 'dark' ? '#ecf0f1' : '#2c3e50'
+      backgroundColor: isDark ? '#2c3e50' : '#ffffff',
+      color: isDark ? '#ecf0f1' : '#2c3e50',
+      '--ww-bg': isDark ? '#2c3e50' : '#ffffff',
+      '--ww-text': isDark ? '#ecf0f1' : '#2c3e50',
+      '--ww-strong': isDark ? '#f1f5f9' : '#0f172a',
+      '--ww-soft': isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)',
+      '--ww-soft-border': isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.08)',
+      '--ww-muted': isDark ? '#cbd5e1' : '#555',
+      '--ww-faint': isDark ? '#94a3b8' : '#64748b',
+      '--ww-elevated': isDark ? '#34445e' : '#ffffff',
+      '--ww-tip-bg': isDark ? '#34445e' : '#f8fafc',
+      '--ww-tip-border': isDark ? 'rgba(255,255,255,0.18)' : '#dbeafe',
+      '--ww-detail': isDark ? '#cbd5e1' : '#334155'
     };
 
     switch (size) {
@@ -780,7 +792,7 @@ const weatherDetailStyle = {
   gap: '8px',
   padding: '8px',
   borderRadius: '8px',
-  backgroundColor: 'rgba(0,0,0,0.05)'
+  backgroundColor: 'var(--ww-soft)'
 };
 
 const detailIconStyle = {
@@ -809,15 +821,15 @@ const safetyTipsContainerStyle = {
   marginTop: '4px',
   padding: '14px',
   borderRadius: '10px',
-  backgroundColor: '#f8fafc',
-  border: '1px solid #dbeafe'
+  backgroundColor: 'var(--ww-tip-bg)',
+  border: '1px solid var(--ww-tip-border)'
 };
 
 const safetyTipsTitleStyle = {
   margin: '0 0 10px 0',
   fontSize: '0.95rem',
   fontWeight: '700',
-  color: '#0f172a'
+  color: 'var(--ww-strong)'
 };
 
 const safetyTipsListStyle = {
@@ -841,7 +853,7 @@ const safetyTipBulletStyle = {
 const safetyTipTextStyle = {
   fontSize: '0.88rem',
   lineHeight: '1.45',
-  color: '#334155'
+  color: 'var(--ww-detail)'
 };
 
 const alertStyle = {
@@ -859,7 +871,8 @@ const alertIconStyle = {
 };
 
 const alertMessageStyle = {
-  flex: 1
+  flex: 1,
+  color: '#1f2937'
 };
 
 const alternativesButtonStyle = {
@@ -874,7 +887,7 @@ const alternativesButtonStyle = {
 };
 
 const alternativesListStyle = {
-  backgroundColor: 'rgba(0,0,0,0.05)',
+  backgroundColor: 'var(--ww-soft)',
   borderRadius: '8px',
   padding: '16px'
 };
@@ -886,7 +899,7 @@ const alternativesTitleStyle = {
 };
 
 const alternativeItemStyle = {
-  backgroundColor: 'white',
+  backgroundColor: 'var(--ww-elevated)',
   borderRadius: '6px',
   padding: '12px',
   marginBottom: '8px',
@@ -920,19 +933,20 @@ const alternativeReasonStyle = {
 
 const detailsToggleStyle = {
   backgroundColor: 'transparent',
-  border: '1px solid rgba(0,0,0,0.2)',
+  border: '1px solid var(--ww-soft-border)',
   borderRadius: '6px',
   padding: '6px 12px',
   fontSize: '0.85rem',
   cursor: 'pointer',
-  alignSelf: 'center'
+  alignSelf: 'center',
+  color: 'var(--ww-text)'
 };
 
 const detailedInfoStyle = {
   display: 'flex',
   flexDirection: 'column',
   gap: '8px',
-  backgroundColor: 'rgba(0,0,0,0.05)',
+  backgroundColor: 'var(--ww-soft)',
   borderRadius: '8px',
   padding: '16px'
 };
@@ -966,16 +980,16 @@ const forecastItemStyle = {
   gap: '12px',
   padding: '12px 16px',
   borderRadius: '8px',
-  backgroundColor: 'rgba(0,0,0,0.05)',
+  backgroundColor: 'var(--ww-soft)',
   transition: 'all 0.3s ease',
-  border: '1px solid rgba(0,0,0,0.08)',
+  border: '1px solid var(--ww-soft-border)',
   scrollSnapAlign: 'start'
 };
 
 const forecastDateStyle = {
   fontSize: '0.9rem',
   fontWeight: '600',
-  color: '#2c3e50',
+  color: 'var(--ww-text)',
   minWidth: '80px'
 };
 
@@ -1004,7 +1018,7 @@ const forecastTempStyle = {
 const forecastConditionStyle = {
   fontSize: '0.85rem',
   opacity: 0.9,
-  color: '#555',
+  color: 'var(--ww-muted)',
   fontWeight: '500'
 };
 
@@ -1028,8 +1042,8 @@ const selectedHourlyCardStyle = {
   marginBottom: '14px',
   padding: '14px',
   borderRadius: '12px',
-  backgroundColor: '#ffffff',
-  border: '1px solid #e5eef8',
+  backgroundColor: 'var(--ww-elevated)',
+  border: '1px solid var(--ww-tip-border)',
   boxShadow: '0 2px 10px rgba(15, 23, 42, 0.05)'
 };
 
@@ -1045,7 +1059,7 @@ const selectedHourlyHeaderStyle = {
 const selectedHourlyLabelStyle = {
   fontSize: '0.8rem',
   fontWeight: '600',
-  color: '#64748b',
+  color: 'var(--ww-faint)',
   textTransform: 'uppercase',
   letterSpacing: '0.04em'
 };
@@ -1053,16 +1067,16 @@ const selectedHourlyLabelStyle = {
 const selectedHourlyTimeStyle = {
   fontSize: '1.05rem',
   fontWeight: '700',
-  color: '#0f172a'
+  color: 'var(--ww-strong)'
 };
 
 const selectedHourlySelectStyle = {
   minWidth: '110px',
   padding: '8px 10px',
   borderRadius: '10px',
-  border: '1px solid #cbd5e1',
-  backgroundColor: '#f8fafc',
-  color: '#0f172a',
+  border: '1px solid var(--ww-soft-border)',
+  backgroundColor: 'var(--ww-tip-bg)',
+  color: 'var(--ww-strong)',
   fontSize: '0.95rem',
   outline: 'none'
 };
@@ -1091,13 +1105,13 @@ const selectedHourlyMainIconStyle = {
 const selectedHourlyTempStyle = {
   fontSize: '1.7rem',
   fontWeight: '700',
-  color: '#0f172a',
+  color: 'var(--ww-strong)',
   lineHeight: 1.1
 };
 
 const selectedHourlyConditionStyle = {
   fontSize: '0.95rem',
-  color: '#475569',
+  color: 'var(--ww-muted)',
   textTransform: 'capitalize'
 };
 
@@ -1106,7 +1120,7 @@ const selectedHourlyMetaStyle = {
   flexDirection: 'column',
   gap: '4px',
   fontSize: '0.9rem',
-  color: '#334155'
+  color: 'var(--ww-detail)'
 };
 
 const hourlyItemStyle = {
@@ -1116,8 +1130,8 @@ const hourlyItemStyle = {
   gap: '6px',
   padding: '12px 10px',
   borderRadius: '8px',
-  backgroundColor: 'rgba(0,0,0,0.05)',
-  border: '1px solid rgba(0,0,0,0.08)',
+  backgroundColor: 'var(--ww-soft)',
+  border: '1px solid var(--ww-soft-border)',
   minWidth: '90px',
   flex: '0 0 90px',
   textAlign: 'center'
@@ -1126,7 +1140,7 @@ const hourlyItemStyle = {
 const hourlyTimeStyle = {
   fontSize: '0.8rem',
   fontWeight: '600',
-  color: '#2c3e50'
+  color: 'var(--ww-text)'
 };
 
 const hourlyIconStyle = {
@@ -1152,7 +1166,7 @@ const hourlyTempStyle = {
 const hourlyWindStyle = {
   fontSize: '0.75rem',
   opacity: 0.8,
-  color: '#666'
+  color: 'var(--ww-muted)'
 };
 
 const loadingStyle = {

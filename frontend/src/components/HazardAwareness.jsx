@@ -20,9 +20,11 @@ const HazardAwareness = ({
   enableNotifications = true,
   onHazardUpdate,
   style = {},
-  compact = false
+  compact = false,
+  theme = 'light'
 }) => {
   const { t } = useLanguage();
+  const isDark = theme === 'dark';
   const attractionList = Array.isArray(attractions) ? attractions : [];
   const [hazards, setHazards] = useState([]);
   const [hazardStats, setHazardStats] = useState({
@@ -363,9 +365,22 @@ const HazardAwareness = ({
     return recommendations[hazard.type] || 'Take appropriate safety precautions';
   };
 
+  const rootStyle = {
+    ...hazardAwarenessStyle,
+    ...style,
+    '--ha-bg': isDark ? 'rgba(20, 30, 40, 0.9)' : '#ffffff',
+    '--ha-title': isDark ? '#a7f3d0' : '#1b5e20',
+    '--ha-sub': isDark ? '#94a3b8' : '#5f6f66',
+    '--ha-ink': isDark ? '#e8f5e9' : '#1a1a1a',
+    '--ha-body': isDark ? '#d1d5db' : '#333',
+    '--ha-muted': isDark ? '#6b7280' : '#999',
+    '--ha-green': isDark ? '#86efac' : '#2e7d32',
+    '--ha-item-bg': isDark ? 'rgba(255, 255, 255, 0.05)' : '#fafafa'
+  };
+
   if (loading) {
     return (
-      <div style={{ ...hazardAwarenessStyle, ...style }}>
+      <div style={rootStyle}>
         <div style={loadingContainerStyle}>
           <div style={spinnerStyle}></div>
           <span>{t('monitoring_hazards')}</span>
@@ -376,7 +391,7 @@ const HazardAwareness = ({
 
   if (error) {
     return (
-      <div style={{ ...hazardAwarenessStyle, ...style }}>
+      <div style={rootStyle}>
         <div style={errorContainerStyle}>
           <span>⚠️ {t('unable_fetch_hazard_data')}</span>
           <button style={retryButtonStyle} onClick={fetchHazardData}>
@@ -391,7 +406,7 @@ const HazardAwareness = ({
   const criticalCount = hazardStats.extreme + hazardStats.high;
 
   return (
-    <div style={{ ...hazardAwarenessStyle, ...style }}>
+    <div style={rootStyle}>
       {/* Header */}
       <div style={headerStyle}>
         <div style={titleSectionStyle}>
@@ -534,7 +549,7 @@ const HazardAwareness = ({
 
 // Styles
 const hazardAwarenessStyle = {
-  backgroundColor: '#ffffff',
+  backgroundColor: 'var(--ha-bg, #ffffff)',
   border: '1px solid rgba(46, 125, 50, 0.14)',
   borderRadius: '18px',
   boxShadow: '0 6px 22px rgba(24, 64, 45, 0.08)',
@@ -558,20 +573,20 @@ const titleSectionStyle = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '0.55rem',
-  color: '#1b5e20'
+  color: 'var(--ha-title, #1b5e20)'
 };
 
 const titleStyle = {
   margin: '0 0 4px 0',
   fontSize: '1.3rem',
   fontWeight: '800',
-  color: '#1b5e20'
+  color: 'var(--ha-title, #1b5e20)'
 };
 
 const subtitleStyle = {
   margin: '0',
   fontSize: '0.88rem',
-  color: '#5f6f66',
+  color: 'var(--ha-sub, #5f6f66)',
   marginTop: '0.35rem'
 };
 
@@ -583,7 +598,7 @@ const expandButtonStyle = {
   padding: '6px 10px',
   borderRadius: '8px',
   transition: 'all 0.3s ease',
-  color: '#1b5e20',
+  color: 'var(--ha-title, #1b5e20)',
   fontWeight: '600',
   boxShadow: '0 2px 6px rgba(46, 125, 50, 0.08)'
 };
@@ -628,7 +643,7 @@ const statValueStyle = {
   display: 'block',
   fontSize: '1.5rem',
   fontWeight: '800',
-  color: '#1b5e20',
+  color: 'var(--ha-title, #1b5e20)',
   marginBottom: '4px'
 };
 
@@ -637,7 +652,7 @@ const statLabelStyle = {
   fontSize: '0.75rem',
   opacity: 0.7,
   fontWeight: '600',
-  color: '#1a1a1a'
+  color: 'var(--ha-ink, #1a1a1a)'
 };
 
 const hazardsContainerStyle = {
@@ -648,7 +663,7 @@ const sectionTitleStyle = {
   margin: '0 0 12px 0',
   fontSize: '0.95rem',
   fontWeight: '700',
-  color: '#1b5e20',
+  color: 'var(--ha-title, #1b5e20)',
   display: 'flex',
   alignItems: 'center',
   gap: '8px'
@@ -661,7 +676,7 @@ const hazardsListStyle = {
 };
 
 const hazardItemStyle = {
-  backgroundColor: '#fafafa',
+  backgroundColor: 'var(--ha-item-bg, #fafafa)',
   border: '1px solid rgba(46, 125, 50, 0.1)',
   borderLeft: '4px solid',
   borderRadius: '12px',
@@ -684,7 +699,7 @@ const hazardSeverityStyle = {
   padding: '4px 10px',
   borderRadius: '6px',
   backgroundColor: 'rgba(46, 125, 50, 0.1)',
-  color: '#1b5e20',
+  color: 'var(--ha-title, #1b5e20)',
   textTransform: 'uppercase',
   letterSpacing: '0.3px'
 };
@@ -692,7 +707,7 @@ const hazardSeverityStyle = {
 const hazardTypeStyle = {
   fontSize: '0.8rem',
   fontWeight: '600',
-  color: '#5f6f66',
+  color: 'var(--ha-sub, #5f6f66)',
   textTransform: 'uppercase',
   opacity: 0.8
 };
@@ -700,7 +715,7 @@ const hazardTypeStyle = {
 const locationTagStyle = {
   fontSize: '0.75rem',
   backgroundColor: 'rgba(46, 125, 50, 0.1)',
-  color: '#1b5e20',
+  color: 'var(--ha-title, #1b5e20)',
   padding: '3px 8px',
   borderRadius: '4px',
   marginLeft: 'auto',
@@ -717,7 +732,7 @@ const hazardBodyStyle = {
 const hazardMessageStyle = {
   margin: '0',
   fontSize: '0.9rem',
-  color: '#1a1a1a',
+  color: 'var(--ha-ink, #1a1a1a)',
   lineHeight: '1.5',
   fontWeight: '600'
 };
@@ -734,7 +749,7 @@ const descriptionTextStyle = {
   margin: '4px 0 0 0',
   fontSize: '0.8rem',
   lineHeight: '1.4',
-  color: '#333'
+  color: 'var(--ha-body, #333)'
 };
 
 const recommendationBoxStyle = {
@@ -749,11 +764,11 @@ const recommendationTextStyle = {
   margin: '4px 0 0 0',
   fontSize: '0.8rem',
   lineHeight: '1.4',
-  color: '#333'
+  color: 'var(--ha-body, #333)'
 };
 
 const acknowledgeButtonStyle = {
-  backgroundColor: '#2e7d32',
+  backgroundcolor: 'var(--ha-green, #2e7d32)',
   color: 'white',
   border: 'none',
   borderRadius: '8px',
@@ -769,7 +784,7 @@ const acknowledgeButtonStyle = {
 const noHazardsStyle = {
   textAlign: 'center',
   padding: '40px 16px',
-  color: '#2e7d32',
+  color: 'var(--ha-green, #2e7d32)',
   backgroundColor: 'linear-gradient(135deg, #f9fffb 0%, #eef8f1 100%)',
   borderRadius: '12px',
   border: '1px solid rgba(46, 125, 50, 0.15)'
@@ -817,11 +832,11 @@ const lastUpdateStyle = {
   opacity: 0.6,
   paddingTop: '10px',
   borderTop: '1px solid rgba(46, 125, 50, 0.1)',
-  color: '#5f6f66'
+  color: 'var(--ha-sub, #5f6f66)'
 };
 
 const refreshButtonStyle = {
-  backgroundColor: '#2e7d32',
+  backgroundcolor: 'var(--ha-green, #2e7d32)',
   color: 'white',
   border: 'none',
   borderRadius: '8px',
@@ -916,7 +931,7 @@ const hazardsScrollContainerStyle = {
 };
 
 const hazardItemCompactStyle = {
-  backgroundColor: '#fafafa',
+  backgroundColor: 'var(--ha-item-bg, #fafafa)',
   border: '1px solid rgba(46, 125, 50, 0.1)',
   borderLeft: '4px solid',
   borderRadius: '10px',
@@ -968,7 +983,7 @@ const hazardLocationRowStyle = {
 const locationNameStyle = {
   fontSize: '0.85rem',
   fontWeight: '700',
-  color: '#1b5e20'
+  color: 'var(--ha-title, #1b5e20)'
 };
 
 const hazardCountBadgeStyle = {
@@ -984,7 +999,7 @@ const hazardCountBadgeStyle = {
 const hazardTypeCompactStyle = {
   fontSize: '0.75rem',
   fontWeight: '700',
-  color: '#5f6f66',
+  color: 'var(--ha-sub, #5f6f66)',
   textTransform: 'uppercase',
   opacity: 0.7
 };
@@ -998,7 +1013,7 @@ const hazardTypeBadgeStyle = {
   fontSize: '0.75rem',
   fontWeight: '700',
   backgroundColor: 'rgba(46, 125, 50, 0.1)',
-  color: '#1b5e20',
+  color: 'var(--ha-title, #1b5e20)',
   padding: '4px 10px',
   borderRadius: '6px',
   marginBottom: '8px',
@@ -1015,7 +1030,7 @@ const hazardDividerStyle = {
 
 const hazardMessageCompactStyle = {
   fontSize: '0.85rem',
-  color: '#1a1a1a',
+  color: 'var(--ha-ink, #1a1a1a)',
   fontWeight: '500',
   lineHeight: '1.3',
   wordBreak: 'break-word'
@@ -1023,7 +1038,7 @@ const hazardMessageCompactStyle = {
 
 const expandIconStyle = {
   fontSize: '0.75rem',
-  color: '#999',
+  color: 'var(--ha-muted, #999)',
   flexShrink: 0,
   marginLeft: '4px'
 };
@@ -1043,7 +1058,7 @@ const detailLabelStyle = {
   display: 'block',
   fontSize: '0.75rem',
   fontWeight: '700',
-  color: '#1b5e20',
+  color: 'var(--ha-title, #1b5e20)',
   marginBottom: '4px',
   textTransform: 'uppercase'
 };
@@ -1052,11 +1067,11 @@ const detailTextStyle = {
   margin: '0',
   fontSize: '0.75rem',
   lineHeight: '1.3',
-  color: '#333'
+  color: 'var(--ha-body, #333)'
 };
 
 const acknowledgeButtonCompactStyle = {
-  backgroundColor: '#2e7d32',
+  backgroundcolor: 'var(--ha-green, #2e7d32)',
   color: 'white',
   border: 'none',
   borderRadius: '6px',
@@ -1071,7 +1086,7 @@ const acknowledgeButtonCompactStyle = {
 const noHazardsCompactStyle = {
   textAlign: 'center',
   padding: '16px',
-  color: '#2e7d32',
+  color: 'var(--ha-green, #2e7d32)',
   backgroundColor: 'linear-gradient(135deg, #f9fffb 0%, #eef8f1 100%)',
   borderRadius: '10px',
   border: '1px solid rgba(46, 125, 50, 0.15)',
@@ -1097,20 +1112,20 @@ const historyItemCompactStyle = {
   alignItems: 'center',
   gap: '8px',
   padding: '6px 8px',
-  backgroundColor: '#f9fffb',
+  backgroundColor: 'var(--ha-item-bg, #f9fffb)',
   borderRadius: '6px',
   fontSize: '0.75rem'
 };
 
 const historyTimeCompactStyle = {
   fontSize: '0.7rem',
-  color: '#999',
+  color: 'var(--ha-muted, #999)',
   flexShrink: 0
 };
 
 const refreshButtonCompactStyle = {
   marginTop: '10px',
-  backgroundColor: '#2e7d32',
+  backgroundcolor: 'var(--ha-green, #2e7d32)',
   color: 'white',
   border: 'none',
   borderRadius: '8px',
@@ -1133,7 +1148,7 @@ const timeWarningsContainerStyle = {
 const timeWarningSubtitleStyle = {
   margin: '0 0 12px 0',
   fontSize: '0.8rem',
-  color: '#5f6f66',
+  color: 'var(--ha-sub, #5f6f66)',
   fontWeight: '500'
 };
 
@@ -1144,7 +1159,7 @@ const timeWarningsListStyle = {
 };
 
 const timeWarningItemStyle = {
-  backgroundColor: '#fafafa',
+  backgroundColor: 'var(--ha-item-bg, #fafafa)',
   border: '1px solid rgba(46, 125, 50, 0.1)',
   borderRadius: '10px',
   padding: '12px',
@@ -1161,13 +1176,13 @@ const timeWarningHeaderStyle = {
 const timeWarningTimeStyle = {
   fontSize: '0.95rem',
   fontWeight: '700',
-  color: '#1b5e20'
+  color: 'var(--ha-title, #1b5e20)'
 };
 
 const timeWarningTempStyle = {
   fontSize: '0.85rem',
   fontWeight: '600',
-  color: '#5f6f66',
+  color: 'var(--ha-sub, #5f6f66)',
   backgroundColor: 'rgba(46, 125, 50, 0.08)',
   padding: '4px 10px',
   borderRadius: '6px'
@@ -1191,7 +1206,7 @@ const timeWarningBadgeStyle = {
 };
 
 const timeWarningMessageStyle = {
-  color: '#1a1a1a'
+  color: 'var(--ha-ink, #1a1a1a)'
 };
 
 const bestTimeContainerStyle = {
@@ -1210,7 +1225,7 @@ const bestTimeContentStyle = {
 const bestTimeTextStyle = {
   margin: '0',
   fontSize: '0.85rem',
-  color: '#1b5e20',
+  color: 'var(--ha-title, #1b5e20)',
   lineHeight: '1.5'
 };
 
