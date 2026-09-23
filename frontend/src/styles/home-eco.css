@@ -1096,10 +1096,12 @@
 /* Hazard glass card */
 .eco-hazard { background: linear-gradient(160deg, rgba(244, 63, 94, 0.16), rgba(244, 63, 94, 0.05)); border-color: rgba(244, 63, 94, 0.28); display: flex; flex-direction: column; max-height: 420px; }
 .eco-hazard .bento-head { display: none; }
-.eco-hazard > div > div[style*="borderRadius"] { width: 100% !important; max-width: 100% !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; border: none !important; padding: 0 !important; }
+.eco-hazard > div,
+.eco-hazard > div > div { background: transparent !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
+.eco-hazard > div > div[style*="borderRadius"] { width: 100% !important; max-width: 100% !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; border: none !important; padding: 0 !important; border-radius: 0 !important; }
 [data-theme="light"] .eco-home .eco-hazard { background: linear-gradient(160deg, rgba(244, 63, 94, 0.12), rgba(244, 63, 94, 0.04)); border-color: rgba(244, 63, 94, 0.26); }
-.eco-hazard > div { padding: 0 !important; flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-.eco-hazard > div > div:first-child { padding: 0 !important; margin-bottom: 0 !important; border-bottom: none !important; }
+.eco-hazard > div { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.eco-hazard > div > div:first-child { margin-bottom: 0 !important; border-bottom: none !important; }
 .eco-hazard [style*="maxHeight"] { overflow-y: auto !important; flex: 1; min-height: 0; }
 .eco-hazard [style*="scrollContainer"],
 .eco-hazard > div > div > div > div:last-child { overflow-y: auto; flex: 1; min-height: 0; max-height: none !important; }
@@ -1262,7 +1264,7 @@
   .eco-forecast .eco-forecast-row { grid-template-columns: repeat(2, 1fr); }
 }
 /* Weather widget on bento — flatten nested card */
-.eco-bento-weather { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+.eco-bento-weather { border: 1px solid var(--eco-border) !important; background: var(--eco-card) !important; box-shadow: none !important; }
 .eco-bento-weather .bento-head { display: flex !important; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
 .eco-bento-weather > div { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
 .eco-bento-weather .weather-widget-inner,
