@@ -661,17 +661,17 @@ const WeatherWidget = ({
     const baseStyle = {
       fontFamily: 'Arial, sans-serif',
       color: isDark ? '#ecf0f1' : '#2c3e50',
-      '--ww-bg': isDark ? '#2c3e50' : '#ffffff',
+      '--ww-bg': isDark ? (horizontal ? '#0e1a13' : '#2c3e50') : '#ffffff',
       '--ww-text': isDark ? '#ecf0f1' : '#2c3e50',
       '--ww-strong': isDark ? '#f1f5f9' : '#0f172a',
-      '--ww-soft': isDark ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.05)',
-      '--ww-soft-border': isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.08)',
-      '--ww-muted': isDark ? '#dbe4ec' : '#555',
-      '--ww-faint': isDark ? '#b4c2d0' : '#64748b',
-      '--ww-elevated': isDark ? '#34445e' : '#ffffff',
+      '--ww-soft': isDark ? (horizontal ? 'rgba(74, 222, 128, 0.10)' : 'rgba(255,255,255,0.13)') : 'rgba(0,0,0,0.05)',
+      '--ww-soft-border': isDark ? (horizontal ? 'rgba(74, 222, 128, 0.22)' : 'rgba(255,255,255,0.22)') : 'rgba(0,0,0,0.08)',
+      '--ww-muted': isDark ? (horizontal ? '#e2e9ef' : '#dbe4ec') : '#555',
+      '--ww-faint': isDark ? (horizontal ? '#c2cdd6' : '#b4c2d0') : '#64748b',
+      '--ww-elevated': isDark ? (horizontal ? '#132419' : '#34445e') : '#ffffff',
       '--ww-tip-bg': isDark ? '#34445e' : '#f8fafc',
       '--ww-tip-border': isDark ? 'rgba(255,255,255,0.18)' : '#dbeafe',
-      '--ww-detail': isDark ? '#cbd5e1' : '#334155'
+      '--ww-detail': isDark ? (horizontal ? '#d7e0e7' : '#cbd5e1') : '#334155'
     };
 
     if (horizontal) {
@@ -1199,7 +1199,7 @@ const spinnerStyle = {
   width: '32px',
   height: '32px',
   border: '3px solid rgba(0,0,0,0.1)',
-  borderTop: '3px solid #2196f3',
+  borderTop: '3px solid #4ade80',
   borderRadius: '50%',
   animation: 'spin 1s linear infinite'
 };

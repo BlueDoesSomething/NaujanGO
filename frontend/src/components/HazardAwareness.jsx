@@ -370,14 +370,27 @@ const HazardAwareness = ({
     ...style,
     '--ha-bg': isDark ? 'rgba(20, 30, 40, 0.9)' : '#ffffff',
     '--ha-title': isDark ? '#a7f3d0' : '#1b5e20',
-    '--ha-sub': isDark ? '#94a3b8' : '#5f6f66',
+    '--ha-sub': isDark ? (compact ? '#bcc9d4' : '#94a3b8') : '#5f6f66',
     '--ha-ink': isDark ? '#e8f5e9' : '#1a1a1a',
-    '--ha-body': isDark ? '#d1d5db' : '#333',
-    '--ha-muted': isDark ? '#6b7280' : '#999',
+    '--ha-body': isDark ? (compact ? '#dee6eb' : '#d1d5db') : '#333',
+    '--ha-muted': isDark ? (compact ? '#9aa7b4' : '#6b7280') : '#999',
     '--ha-green': isDark ? '#86efac' : '#2e7d32',
-    '--ha-item-bg': isDark ? 'rgba(255, 255, 255, 0.05)' : '#fafafa',
-    '--ha-item-bg-hover': isDark ? 'rgba(255, 255, 255, 0.12)' : '#f0fdf4'
+    '--ha-item-bg': isDark ? (compact ? 'rgba(74, 222, 128, 0.07)' : 'rgba(255, 255, 255, 0.05)') : '#fafafa',
+    '--ha-item-bg-hover': isDark ? (compact ? 'rgba(74, 222, 128, 0.14)' : 'rgba(255, 255, 255, 0.12)') : '#f0fdf4'
   };
+
+  // Homepage bento (compact) uses subtle green-glass surfaces in dark mode
+  const haDarkCompact = compact && isDark;
+  const statBoxLive = haDarkCompact
+    ? { ...statBoxStyle, backgroundColor: 'rgba(74, 222, 128, 0.08)', border: '1px solid rgba(74, 222, 128, 0.25)' }
+    : statBoxStyle;
+  const monitoringLive = haDarkCompact
+    ? { backgroundColor: 'rgba(56, 189, 248, 0.12)', borderColor: 'rgba(56, 189, 248, 0.35)' }
+    : monitoringStatStyle;
+  const statLabelLive = compact ? { ...statLabelStyle, opacity: 0.9 } : statLabelStyle;
+  const noHazardsLive = haDarkCompact
+    ? { ...noHazardsCompactStyle, backgroundColor: 'rgba(74, 222, 128, 0.08)', border: '1px solid rgba(74, 222, 128, 0.25)' }
+    : noHazardsCompactStyle;
 
   if (loading) {
     return (
@@ -434,20 +447,20 @@ const HazardAwareness = ({
 
       {/* Hazard Summary */}
       <div style={statsContainerStyle}>
-        <div style={{ ...statBoxStyle, flex: '1 1 240px' }}>
+        <div style={{ ...statBoxLive, flex: '1 1 240px' }}>
           <span style={statValueStyle}>
             {hasHazards ? `${criticalCount} critical` : 'Clear'}
           </span>
-          <span style={statLabelStyle}>
+          <span style={statLabelLive}>
             {hasHazards
               ? `${hazardStats.total} total hazards across ${hazards.length} locations`
               : t('no_current_hazards')}
           </span>
         </div>
         {attractionList.length > 0 && (
-          <div style={{ ...statBoxStyle, ...monitoringStatStyle }}>
+          <div style={{ ...statBoxLive, ...monitoringLive }}>
             <span style={statValueStyle}>{attractionList.length}</span>
-            <span style={statLabelStyle}>{t('locations_monitored')}</span>
+            <span style={statLabelLive}>{t('locations_monitored')}</span>
           </div>
         )}
       </div>
@@ -533,7 +546,7 @@ const HazardAwareness = ({
               </div>
             </div>
           ) : (
-            <div style={noHazardsCompactStyle}>
+            <div style={noHazardsLive}>
               <span>✅ {t('no_current_hazards')}</span>
             </div>
           )}
@@ -769,7 +782,7 @@ const recommendationTextStyle = {
 };
 
 const acknowledgeButtonStyle = {
-  backgroundcolor: 'var(--ha-green, #2e7d32)',
+  backgroundColor: 'var(--ha-green, #2e7d32)',
   color: 'white',
   border: 'none',
   borderRadius: '8px',
@@ -837,7 +850,7 @@ const lastUpdateStyle = {
 };
 
 const refreshButtonStyle = {
-  backgroundcolor: 'var(--ha-green, #2e7d32)',
+  backgroundColor: 'var(--ha-green, #2e7d32)',
   color: 'white',
   border: 'none',
   borderRadius: '8px',
@@ -1072,7 +1085,7 @@ const detailTextStyle = {
 };
 
 const acknowledgeButtonCompactStyle = {
-  backgroundcolor: 'var(--ha-green, #2e7d32)',
+  backgroundColor: 'var(--ha-green, #2e7d32)',
   color: 'white',
   border: 'none',
   borderRadius: '6px',
@@ -1126,7 +1139,7 @@ const historyTimeCompactStyle = {
 
 const refreshButtonCompactStyle = {
   marginTop: '10px',
-  backgroundcolor: 'var(--ha-green, #2e7d32)',
+  backgroundColor: 'var(--ha-green, #2e7d32)',
   color: 'white',
   border: 'none',
   borderRadius: '8px',
