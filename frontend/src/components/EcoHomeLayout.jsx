@@ -5,8 +5,6 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { fetchAttractions, getApiBaseUrl } from '../api';
 import Icons from './Icons';
-import WeatherWidget from './WeatherWidget';
-import HazardAwareness from './HazardAwareness';
 import { weatherService } from '../services/weatherService';
 import { loadCachedSetting, saveCachedSetting } from '../utils/siteSettingsCache';
 import '../styles/home-eco.css';
@@ -55,6 +53,13 @@ const getEcoWeatherEmoji = (condition = '') => {
   return map[cond] || '🌤️';
 };
 
+const formatTime = (d, language = 'en') => {
+  if (!d) return '—';
+  const date = d instanceof Date ? d : new Date(d);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleTimeString(language === 'zh' ? 'zh-CN' : language, { hour: '2-digit', minute: '2-digit', hour12: false });
+};
+
 const formatCurrency = (value, currency = 'PHP') => {
   try {
     const numValue = parseFloat(value);
@@ -71,26 +76,11 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   const { isDark } = useTheme();
   const navigate = useNavigate();
 
-  const resolvedUserId = userId || authUser?.id || null;
-
   const [attractions, setAttractions] = useState([]);
   const [hotels, setHotels] = useState([]);
   const [attractionsLoading, setAttractionsLoading] = useState(true);
   const [hotelsLoading, setHotelsLoading] = useState(true);
-  const [slideshowSettings, setSlideshowSettings] = useState(() => loadCachedSetting('home-slideshow', {
-    overlayColor: '#000000',
-    overlayOpacity: 0.4,
-    tagText: t('featured_badge'),
-    buttonTextUser: t('explore_now'),
-    titleColor: '#ffffff',
-    descriptionColor: '#e5e7eb',
-    tagTextColor: '#ffffff',
-    tagBgColor: '#ffffff',
-    buttonColor: '#ffffff',
-    buttonTextColor: '#111827',
-    buttonTransparent: false,
-  }));
-  const [slideshowExt, setSlideshowExt] = useState(() => loadCachedSetting('home-slideshow-extended', { intervalSeconds: 4, showArrows: true }, language));
+
   const [pagesections, setPageSections] = useState(() => loadCachedSetting('homepage-sections', {
     showWelcome: true, showWeather: true, showAttractions: true, showHotels: true, showDining: false,
     showGallery: true, showBento: true, showTestimonials: true,
@@ -98,69 +88,30 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
     hotelsTitle: '', hotelsSubtitle: '',
   }, language));
 
-  // Stage/slideshow state
-  const [stageIdx, setStageIdx] = useState(0);
-  const stageTimerRef = useRef(null);
-  const heroInViewRef = useRef(true);
-  const stageRef = useRef(null);
-
-  // Search
-  const [searchDestination, setSearchDestination] = useState('');
-  const [searchTab, setSearchTab] = useState('hotels');
-
   // Misc UI
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [lightbox, setLightbox] = useState(null);
 
-  // Now/hourly forecast for the bento "Now" card
+  // Now / hourly + current conditions
   const [nowForecast, setNowForecast] = useState(null);
   const [nowLoading, setNowLoading] = useState(true);
+  const [currentWeather, setCurrentWeather] = useState(null);
+  const [clock, setClock] = useState(new Date());
 
   const featured = useMemo(() => attractions.slice(0, 6), [attractions]);
 
   useEffect(() => {
-    setSlideshowSettings(loadCachedSetting('home-slideshow', {
-      overlayColor: '#000000',
-      overlayOpacity: 0.4,
-      tagText: t('featured_badge'),
-      buttonTextUser: t('explore_now'),
-      titleColor: '#ffffff',
-      descriptionColor: '#e5e7eb',
-      tagTextColor: '#ffffff',
-      tagBgColor: '#ffffff',
-      buttonColor: '#ffffff',
-      buttonTextColor: '#111827',
-      buttonTransparent: false,
-    }, language));
-    setSlideshowExt(loadCachedSetting('home-slideshow-extended', { intervalSeconds: 4, showArrows: true }, language));
     setPageSections(loadCachedSetting('homepage-sections', {
       showWelcome: true, showWeather: true, showAttractions: true, showHotels: true, showDining: false,
       showGallery: true, showBento: true, showTestimonials: true,
       welcomeTitle: '', welcomeSubtitle: '', attractionsTitle: '', attractionsSubtitle: '',
       hotelsTitle: '', hotelsSubtitle: '',
     }, language));
-  }, [language, t]);
+  }, [language]);
 
   // Data fetching
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/admin/home-slideshow`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (!data) return;
-        const merged = { ...slideshowSettings, ...data };
-        saveCachedSetting('home-slideshow', merged, language);
-        setSlideshowSettings(merged);
-      })
-      .catch(() => {});
-    fetch(`${API_BASE_URL}/api/admin/home-slideshow-extended`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => {
-        if (!data) return;
-        saveCachedSetting('home-slideshow-extended', data, language);
-        setSlideshowExt(data);
-      })
-      .catch(() => {});
     fetch(`${API_BASE_URL}/api/admin/homepage-sections`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
@@ -199,61 +150,18 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
       })
       .catch(err => console.error('Failed to fetch now forecast:', err))
       .finally(() => setNowLoading(false));
+
+    weatherService.getCurrentWeather(NAUJAN_COORDS.lat, NAUJAN_COORDS.lon, 'Naujan')
+      .then(setCurrentWeather)
+      .catch(err => console.error('Failed to fetch current weather:', err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);
 
-  // Stage autoplay + intersection observer (mirrors mockup behaviour)
-  const goToStage = useCallback((idx, isAuto = false) => {
-    setStageIdx(prev => {
-      const total = Math.max(1, featured.length);
-      return ((idx % total) + total) % total;
-    });
-  }, [featured.length]);
-
-  const stopAutoplay = useCallback(() => {
-    if (stageTimerRef.current) { clearInterval(stageTimerRef.current); stageTimerRef.current = null; }
+  // Live clock for the hero "Now" card
+  useEffect(() => {
+    const id = setInterval(() => setClock(new Date()), 15000);
+    return () => clearInterval(id);
   }, []);
-
-  const setAutoplay = useCallback(() => {
-    stopAutoplay();
-    if (!heroInViewRef.current) return;
-    const ms = (slideshowExt.intervalSeconds || 4) * 1000;
-    stageTimerRef.current = setInterval(() => {
-      setStageIdx(prev => (prev + 1) % Math.max(1, featured.length));
-    }, ms);
-  }, [slideshowExt.intervalSeconds, featured.length, stopAutoplay]);
-
-  useEffect(() => {
-    const el = stageRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        heroInViewRef.current = entry.isIntersecting;
-        if (entry.isIntersecting) setAutoplay();
-        else stopAutoplay();
-      });
-    }, { threshold: 0.2 });
-    observer.observe(el);
-    return () => { observer.disconnect(); stopAutoplay(); };
-  }, [setAutoplay, stopAutoplay, stageRef]);
-
-  useEffect(() => {
-    if (featured.length > 0) setAutoplay();
-    return stopAutoplay;
-  }, [featured.length, setAutoplay, stopAutoplay]);
-
-  // Keyboard nav
-  useEffect(() => {
-    const onKey = (e) => {
-      if (!heroInViewRef.current) return;
-      const tag = (e.target.tagName || '').toUpperCase();
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      if (e.key === 'ArrowRight') goToStage(stageIdx + 1);
-      if (e.key === 'ArrowLeft') goToStage(stageIdx - 1);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [goToStage, stageIdx]);
 
   // Scroll: progress bar + back-to-top + reveal on scroll
   useEffect(() => {
@@ -277,9 +185,6 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Lean autoplay fallback: if attraction images change, reset index
-  useEffect(() => { setStageIdx(0); }, [featured.length]);
-
   const handleSearch = () => {
     const route = searchTab === 'attractions' ? '/attractions' : searchTab === 'itineraries' ? '/itinerary' : '/hotels';
     navigate(route, {
@@ -291,8 +196,8 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
     });
   };
 
-  const active = featured.length ? featured[stageIdx % featured.length] : null;
-  const total = Math.max(1, featured.length);
+  const [searchDestination, setSearchDestination] = useState('');
+  const [searchTab, setSearchTab] = useState('hotels');
 
   const safetyScorePct = useMemo(() => {
     if (attractions.length === 0) return 80;
@@ -381,186 +286,109 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
     { key: 'about', label: t('mobile_about'), icon: Icons.Info, onClick: () => navigate('/about') },
   ];
 
-  const hotel = hotels[0];
+  const places = attractions.slice(0, 8);
+
+  const renderNowCell = (label, value) => (
+    <div className="hero-now-cell">
+      <span className="tag">{label}</span>
+      <b className="num">{value}</b>
+    </div>
+  );
 
   return (
     <div className="eco-home">
       <div className="eco-scroll-progress" style={{ width: `${scrollProgress}%` }} />
 
-      {/* Hero backdrop */}
-      <div className="hero-backdrop" id="heroBackdrop">
-        <div
-          className="hero-backdrop-img"
-          style={{ backgroundImage: featured[0]?.image_url ? `url(${featured[0].image_url})` : 'url(/placeholder-attraction.svg)' }}
-        />
-        <div className="hero-backdrop-shade" />
-      </div>
-
-      {/* Floating leaves */}
-      <div className="floating-leaves" aria-hidden="true">
-        {[...Array(8)].map((_, i) => (
-          <span
-            key={i}
-            className="floating-leaf"
-            style={{ left: `${(i * 13 + 5) % 97}%`, fontSize: `${14 + ((i * 7) % 16)}px`, animationDuration: `${15 + ((i * 3) % 14)}s`, animationDelay: `${i * 1.7}s` }}
-          >
-            <Icons.Leaf size={14 + ((i * 7) % 16)} />
-          </span>
-        ))}
-      </div>
-
-      {/* ============ HERO ============ */}
-      <section className="hero-section" id="home">
-        <div className="hero-gradient-orb orb-1" aria-hidden="true" />
-        <div className="hero-gradient-orb orb-2" aria-hidden="true" />
-        <div className="hero-gradient-orb orb-3" aria-hidden="true" />
-
-        <div className="eco-hero-head">
-          <span className="hero-pill shimmer">
-            <span className="pulse-dot" />
-            <Icons.MapPin size={13} />
-            {t('hero_location_badge')}
-          </span>
-          <h1 className="hero-title">
-            {t('hero_title_pre')}{' '}
-            <span className="hero-title-accent">{t('hero_title_accent')}</span>
-          </h1>
-          <div className="hero-stats">
-            <div className="hero-stat">
-              <b>{heroStats.ecoSites}</b>
-              <span>{t('hero_stat_eco_sites')}</span>
+      {/* ============ HERO — Editorial ============ */}
+      <section className="hero-editorial" id="home">
+        <div className="hero-editorial-inner">
+          {/* meta row */}
+          <div className="hero-meta eco-reveal">
+            <div className="hero-meta-left">
+              <span className="num">N° 001</span>
+              <span className="hero-meta-line" aria-hidden="true" />
+              <span className="uppercase">{t('hero_location_badge')}</span>
             </div>
-            <span className="hero-stat-divider" aria-hidden="true" />
-            <div className="hero-stat">
-              <b>{heroStats.languages}</b>
-              <span>{t('hero_stat_languages')}</span>
-            </div>
-            <span className="hero-stat-divider" aria-hidden="true" />
-            <div className="hero-stat">
-              <b>{heroStats.ecoRating}</b>
-              <span>{t('hero_stat_eco_rating')}</span>
+            <div className="hero-meta-live">
+              <span className="ring-pulse" aria-hidden="true" />
+              <span>Live · {heroStats.ecoSites} {t('hero_stat_eco_sites')}</span>
             </div>
           </div>
-        </div>
 
-        <div className="eco-hero-inner">
-          <div className="featured-stage" ref={stageRef} id="featuredStage">
-            <div className="stage-track" style={{ transform: `translate3d(-${stageIdx * 100}%, 0, 0)` }}>
-              {featured.map((attraction, i) => (
-                <article
-                  key={attraction.id}
-                  className={`stage-slide${i === stageIdx ? ' is-active' : ''}`}
-                  data-slide={i}
+          <div className="hero-grid">
+            {/* left big type */}
+            <div className="hero-type eco-reveal">
+              <h1 className="hero-headline">
+                {t('hero_title_pre')}
+                <br />
+                <span className="hero-headline-accent">{t('hero_title_accent')}<i className="hero-period">.</i></span>
+              </h1>
+              <p className="hero-sub">{pagesections.welcomeSubtitle || t('discover_paradise')}</p>
+            </div>
+
+            {/* right Now info card */}
+            <div className="hero-now-card eco-reveal">
+              <div className="hero-now-top">
+                <span className="tag">{t('current_label')}</span>
+                <span className="num">{pad2(clock.getHours())}:{pad2(clock.getMinutes())} · {pad2(clock.getSeconds())}</span>
+              </div>
+              <div className="hero-now-temp-row">
+                <span className="hero-now-temp-big num">{currentWeather?.temperature ?? nowCard?.current?.temperature ?? '—'}°</span>
+                <div className="hero-now-cond">
+                  <div className="num">{currentWeather?.description || nowCard?.current?.description || t('weather_data_unavailable')}</div>
+                  <div className="hero-now-feels num">Feels {currentWeather?.feelsLike !== null && currentWeather?.feelsLike !== undefined ? `${currentWeather.feelsLike}°` : '—'}</div>
+                </div>
+              </div>
+              <div className="hero-now-divider" aria-hidden="true" />
+              <div className="hero-now-grid">
+                {renderNowCell(t('wind'), currentWeather?.windSpeed != null ? `${currentWeather.windSpeed} km/h` : '—')}
+                {renderNowCell(t('humidity'), currentWeather?.humidity != null ? `${currentWeather.humidity}%` : '—')}
+                {renderNowCell('UV', currentWeather?.uvIndex != null ? currentWeather.uvIndex : '—')}
+              </div>
+              <div className="hero-now-safety">
+                <Icons.ShieldCheck size={14} />
+                <span>{t('safety')} · {safetyScorePct >= 70 ? t('safety_good') : t('exercise_caution')}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* hero image strip */}
+          <div className="hero-collage eco-reveal">
+            {featured[0] && (
+              <button
+                className="hero-tile-large bento-card"
+                onClick={() => navigate(`/attractions/${featured[0].id}`, { state: { attraction: featured[0] } })}
+                aria-label={featured[0].name}
+              >
+                <img className="bento-img" src={featured[0].image_url || '/placeholder-attraction.svg'} alt={featured[0].name} loading="eager" />
+                <span className="hero-tile-overlay" />
+                <span className="hero-tile-meta">
+                  <span className="tag">{getCategoryChip(featured[0], t)}</span>
+                  <b className="serif hero-tile-title">{featured[0].name}</b>
+                  <span className="hero-tile-sub">{getAttractionArea(featured[0]) || featured[0].municipality}</span>
+                </span>
+                <span className="hero-tile-num serif italic num">01</span>
+              </button>
+            )}
+            <div className="hero-col-side">
+              {featured[1] && (
+                <button
+                  className="hero-tile bento-card"
+                  onClick={() => navigate(`/attractions/${featured[1].id}`, { state: { attraction: featured[1] } })}
+                  aria-label={featured[1].name}
                 >
-                  <img src={attraction.image_url || '/placeholder-attraction.svg'} alt={attraction.name} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" draggable="false" />
-                  <div className="stage-shade" />
-                  <div className="stage-content">
-                    <div className="stage-cat">
-                      <Icons.Seedling size={13} />
-                      {getCategoryChip(attraction, t)}
-                    </div>
-                    <h2 className="stage-name">{attraction.name}</h2>
-                    <p className="stage-desc">{attraction.description || t('experience_beauty')}</p>
-                    <div className="stage-meta">
-                      <span className="green"><Icons.MapPin size={14} /> {getAttractionArea(attraction) || attraction.municipality}</span>
-                      {toNumericRating(attraction.avg_rating) !== null && (
-                        <span><Icons.Star size={14} /> {Number(attraction.avg_rating).toFixed(1)} {t('stat_rating')}</span>
-                      )}
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            {featured.length > 0 && (
-              <div className="stage-badge">
-                <Icons.Seedling size={12} />
-                <span className="badge-txt">{t('featured_badge')}</span>
-              </div>
-            )}
-
-            {featured.length > 1 && slideshowExt.showArrows !== false && (
-              <>
-                <div className="stage-counter">
-                  <span className="cur">{pad2(stageIdx + 1)}</span>
-                  <span className="tot">/ {pad2(total)}</span>
-                </div>
-                <button className="stage-nav stage-nav-prev" id="stagePrev" onClick={() => goToStage(stageIdx - 1)} aria-label={t('clear')}>
-                  <Icons.ChevronLeft size={20} />
+                  <img className="bento-img" src={featured[1].image_url || '/placeholder-attraction.svg'} alt={featured[1].name} loading="lazy" />
+                  <span className="hero-tile-overlay" />
+                  <span className="hero-tile-meta">
+                    <span className="tag">{getCategoryChip(featured[1], t)}</span>
+                    <b className="serif hero-tile-title">{featured[1].name}</b>
+                  </span>
                 </button>
-                <button className="stage-nav stage-nav-next" id="stageNext" onClick={() => goToStage(stageIdx + 1)} aria-label={t('explore_button')}>
-                  <Icons.ChevronRight size={20} />
-                </button>
-                <div className="thumb-rail-wrap">
-                  <div className="thumb-rail" id="thumbRail">
-                    {featured.map((attraction, i) => (
-                      <button
-                        key={attraction.id}
-                        className={`thumb-card${i === stageIdx ? ' is-active' : ''}`}
-                        onClick={() => goToStage(i)}
-                        aria-label={attraction.name}
-                      >
-                        <img src={attraction.image_url?.replace(/w=\d+/, 'w=320') || '/placeholder-attraction.svg'} alt="" loading="lazy" draggable="false" />
-                        <span className="thumb-shade" />
-                        <span className="thumb-idx">{pad2(i + 1)}</span>
-                        <span className="thumb-name">{attraction.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="rail-dots" id="railDots">
-                    {featured.map((_, i) => (
-                      <button key={i} className={`rail-dot${i === stageIdx ? ' is-active' : ''}`} onClick={() => goToStage(i)} aria-label={`${i + 1}`} />
-                    ))}
-                  </div>
-                </div>
-                <div className="stage-progress run" id="stageProgress" />
-              </>
-            )}
-          </div>
-
-          {/* Info card */}
-          <div className="info-card" id="infoCard">
-            <div className="info-idx" id="infoIdx">{pad2(stageIdx + 1)} / {pad2(total)}</div>
-            <div className="info-body" id="infoBody" key={stageIdx}>
-              <div className="info-cat" id="infoCat">
-                <Icons.Seedling size={15} />
-                {active ? getCategoryChip(active, t) : t('featured_badge')}
-              </div>
-              <h3 className="info-name" id="infoName">{active?.name || t('welcome_to_naujan')}</h3>
-              <p className="info-desc" id="infoDesc">{active?.description || t('experience_beauty')}</p>
-              {active && (
-                <>
-                  <div className="info-stats">
-                    <div className="info-stat">
-                      <b>{toNumericRating(active.avg_rating) !== null ? Number(active.avg_rating).toFixed(1) : '—'}</b>
-                      <span>{t('stat_rating')}</span>
-                    </div>
-                    <div className="info-stat">
-                      <b>{getAttractionArea(active) ? getAttractionArea(active).slice(0, 12) : '—'}</b>
-                      <span>{t('stat_area')}</span>
-                    </div>
-                    <div className="info-stat">
-                      <b>{active.duration || (active.duration_hours ? `${active.duration_hours}h` : '—')}</b>
-                      <span>{t('stat_category')}</span>
-                    </div>
-                  </div>
-                  <div className="info-tags" id="infoTags">
-                    {(active.category_tags || active.tags || []).slice(0, 4).map((tag, i) => (
-                      <span className="info-tag" key={i}>{tag}</span>
-                    ))}
-                  </div>
-                </>
               )}
-              <div className="hero-actions">
-                <button className="btn-primary-hero" id="heroExploreBtn" onClick={() => active && navigate(`/attractions/${active.id}`, { state: { attraction: active } })}>
-                  <Icons.Route size={16} />
-                  {t('explore_destination')}
-                </button>
-                {isGuest === false && (
-                  <button className="btn-ghost-hero hero-save-btn" onClick={() => navigate('/itinerary')} aria-label={t('my_itineraries')}>
-                    <Icons.Heart size={16} />
-                  </button>
-                )}
+              <div className="hero-tile-terra">
+                <span className="tag">{t('eco_tip')}</span>
+                <span className="serif hero-tile-quest italic">{t('travel_sustainably')}</span>
+                <span className="hero-tile-terra-sub">{t('tip_respect_wildlife')}</span>
               </div>
             </div>
           </div>
@@ -632,245 +460,189 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
         </section>
       )}
 
-      {/* ============ BENTO ============ */}
+      {/* ============ CLIMATE / SAFETY — prototype 3-col ============ */}
       {(pagesections.showWeather !== false || pagesections.showHazardAwareness !== false) && (
-        <section className="eco-bento-section eco-reveal">
-        <div className="eco-section-header">
-          <div className="esh-left">
-            <span className="eco-eyebrow">{t('live_conditions')}</span>
-            <h3>{t('weather_safety_heading')}</h3>
-            <p>{t('weather_safety_subtitle')}</p>
+        <section className="proto-climate eco-reveal" id="climate">
+          <div className="eco-section-header">
+            <div className="esh-left">
+              <span className="eco-eyebrow">{t('live_conditions')}</span>
+              <h3>{t('weather_safety_heading')}</h3>
+              <p>{t('weather_safety_subtitle')}</p>
+            </div>
           </div>
-        </div>
-        <div className="bento-grid">
-          {/* Live Conditions */}
-          {pagesections.showWeather !== false && (
-          <div className="bento-item bento-main">
-            <div className="bento-head">
-              <div className="bh-icon"><Icons.Cloud size={20} /></div>
-              <div>
-                <h3>{t('live_conditions')}</h3>
-                <p className="bento-live-badge"><span className="pulse-dot" /> {t('current_location')}</p>
+          <div className="proto-climate-grid">
+            {/* big weather card */}
+            <div className="climate-big">
+              <div className="grain" aria-hidden="true" />
+              <div className="climate-big-top">
+                <span className="tag">Today · {nowForecast?.location || 'Naujan'}</span>
+                <Icons.Cloud size={28} />
               </div>
-            </div>
-            <div className="bento-current-loc">
-              <Icons.MapPin size={14} />
-              Naujan, Oriental Mindoro — {t('just_now')}
-            </div>
-            <div style={{ marginTop: 12 }}>
-              <WeatherWidget
-                latitude={NAUJAN_COORDS.lat}
-                longitude={NAUJAN_COORDS.lon}
-                locationName="Naujan, Oriental Mindoro"
-                showForecast={true}
-                showAlerts={true}
-                showSafetyTips={true}
-                size="large"
-                theme={isDark ? 'dark' : 'light'}
-              />
-            </div>
-          </div>
-          )}
-
-          {/* Hazard Awareness */}
-          {pagesections.showHazardAwareness !== false && (
-          <div className="bento-item bento-half">
-            <div className="bento-head">
-              <div className="bh-icon"><Icons.ShieldCheck size={20} /></div>
-              <div>
-                <h3>{t('hazard_alert')}</h3>
-                <p>{t('critical_locations')}</p>
+              <div className="climate-big-temp-row">
+                <b className="serif num climate-big-temp">{currentWeather?.temperature ?? nowCard?.current?.temperature ?? '--'}°C</b>
+                <span className="climate-big-cond num">
+                  {currentWeather?.description || nowCard?.current?.description || t('weather_data_unavailable')}
+                </span>
               </div>
-            </div>
-            <HazardAwareness
-              latitude={NAUJAN_COORDS.lat}
-              longitude={NAUJAN_COORDS.lon}
-              locationName="Naujan, Oriental Mindoro"
-              attractions={attractions}
-              userId={resolvedUserId}
-              enableNotifications={!isGuest}
-              compact={true}
-            />
-          </div>
-          )}
-
-          {/* Safety Score */}
-          <div className="bento-item bento-third eco-safety">
-            <div className="bento-head">
-              <div className="bh-icon"><Icons.ShieldCheck size={20} /></div>
-              <div>
-                <h3>{t('safety')}</h3>
-                <p>{t('eco_rating_desc')}</p>
-              </div>
-            </div>
-            <div className="safety-metric">
-              <b>{safetyScorePct >= 70 ? t('safety_good') : t('exercise_caution')}</b>
-              <span>{t('travel_sustainably')}</span>
-            </div>
-            <div className="safety-bar">
-              <div className="safety-fill" style={{ width: `${safetyScorePct}%` }} />
-            </div>
-            <span className="safety-score">{safetyScorePct}/100</span>
-          </div>
-
-          {/* Now / hourly */}
-          <div className="bento-item bento-third eco-now">
-            {nowLoading ? (
-              <div className="eco-skeleton" style={{ height: 120 }} />
-            ) : nowCard ? (
-              <>
-                <div className="bento-head">
-                  <div className="bh-icon"><Icons.Clock size={20} /></div>
-                  <div>
-                    <h3>{t('current_label')}</h3>
-                    <p>{t('today_hourly_forecast')}</p>
-                  </div>
+              <div className="climate-big-grid">
+                <div className="climate-big-cell">
+                  <span className="tag">{t('sunrise')}</span>
+                  <b className="num">{formatTime(currentWeather?.location?.sunrise, language)}</b>
                 </div>
-                <div className="eco-now-row">
-                  <div className="eco-now-main">
-                    <span className="eco-now-cond">{nowCard.current.description || nowCard.current.condition}</span>
-                    <b className="eco-now-temp">{nowCard.current.temperature}°</b>
-                  </div>
-                  <div className="eco-now-hours">
-                    {nowCard.upcoming.map((hour, i) => (
-                      <div key={i} className="eco-now-hour">
-                        <span>{hour.time}</span>
-                        <b>{hour.temperature}°</b>
-                        <em>{hour.description || hour.condition}</em>
+                <div className="climate-big-cell">
+                  <span className="tag">{t('sunset')}</span>
+                  <b className="num">{formatTime(currentWeather?.location?.sunset, language)}</b>
+                </div>
+                <div className="climate-big-cell">
+                  <span className="tag">{t('wind')}</span>
+                  <b className="num">{currentWeather?.windSpeed != null ? `${currentWeather.windSpeed} km/h` : '—'}</b>
+                </div>
+                <div className="climate-big-cell">
+                  <span className="tag">{t('humidity')}</span>
+                  <b className="num">{currentWeather?.humidity != null ? `${currentWeather.humidity}%` : '—'}</b>
+                </div>
+              </div>
+            </div>
+
+            {/* 7-day outlook */}
+            <div className="climate-7day">
+              <div className="tag climate-7day-tag">{t('forecast_heading')}</div>
+              <div className="climate-7day-list">
+                {nowLoading ? (
+                  <div className="eco-skeleton" style={{ height: 180 }} />
+                ) : Array.isArray(nowForecast?.forecast) && nowForecast.forecast.length > 0 ? (
+                  nowForecast.forecast.slice(0, 7).map((day, i) => {
+                    const date = day.datetime instanceof Date ? day.datetime : new Date(day.datetime);
+                    let dayLabel = '';
+                    try {
+                      dayLabel = date.toLocaleDateString(language === 'zh' ? 'zh-CN' : language, { weekday: 'short' }).toUpperCase();
+                    } catch {
+                      dayLabel = t('forecast_heading').slice(0, 3).toUpperCase();
+                    }
+                    return (
+                      <div className="climate-7day-row" key={i}>
+                        <span className="num">{dayLabel}</span>
+                        <div className="climate-7day-ico">{getEcoWeatherEmoji(day.condition)}</div>
+                        <b className="num">{day.temperature}°</b>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </>
+                    );
+                  })
+                ) : (
+                  <div className="climate-7day-empty">{t('no_forecast_data')}</div>
+                )}
+              </div>
+            </div>
+
+            {/* safety advisory */}
+            <div className="climate-advisory">
+              <div className="climate-advisory-head">
+                <span className="tag">{t('safety')}</span>
+                <span className="ring-pulse" aria-hidden="true" />
+              </div>
+              <div className="climate-advisory-status serif">{safetyScorePct >= 70 ? t('safety_good') : t('exercise_caution')}</div>
+              <p className="climate-advisory-text">{t('weather_safety_subtitle')}</p>
+              <div className="climate-advisory-list">
+                <span className="climate-advisory-item">
+                  <i className="terra-dot" aria-hidden="true" />
+                  <span>{t('tip_check_hazards')}</span>
+                </span>
+                <span className="climate-advisory-item">
+                  <i className="terra-dot" aria-hidden="true" />
+                  <span>{t('tip_reusable_bottle')}</span>
+                </span>
+                <span className="climate-advisory-item">
+                  <i className="terra-dot" aria-hidden="true" />
+                  <span>{t('tip_respect_wildlife')}</span>
+                </span>
+              </div>
+              <button className="climate-advisory-link" onClick={() => navigate('/map')}>
+                {t('interactive_map')} →
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ============ PLACES — Prototype bento ============ */}
+      {pagesections.showAttractions !== false && (attractionsLoading || attractions.length > 0) && (
+        <section className="proto-places" id="places">
+          <div className="proto-places-inner">
+            <div className="eco-section-header light">
+              <div className="esh-left">
+                <span className="eco-eyebrow">{t('featured_section_eyebrow')}</span>
+                <h3>{pagesections.attractionsTitle || t('explore_top_attractions')}</h3>
+                <p>{pagesections.attractionsSubtitle || t('handpicked_destinations')}</p>
+              </div>
+            </div>
+            {attractionsLoading ? (
+              <div className="place-grid">
+                {[...Array(4)].map((_, i) => <div key={i} className="eco-skeleton" style={{ height: 220 }} />)}
+              </div>
+            ) : places.length === 0 ? (
+              <div className="place-grid">
+                <div className="place-empty">{t('home_no_results')}</div>
+              </div>
             ) : (
-              <div className="bento-head">
-                <div className="bh-icon"><Icons.Clock size={20} /></div>
-                <div>
-                  <h3>{t('current_label')}</h3>
-                  <p>{t('weather_data_unavailable')}</p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Eco Tip */}
-          <div className="bento-item bento-third">
-            <div className="bento-head">
-              <div className="bh-icon"><Icons.Seedling size={20} /></div>
-              <div>
-                <h3>{t('eco_tip')}</h3>
-                <p>{t('travel_sustainably')}</p>
-              </div>
-            </div>
-            <ul className="eco-tip-list">
-              <li><Icons.Check size={15} /> {t('tip_check_hazards')}</li>
-              <li><Icons.Check size={15} /> {t('tip_reusable_bottle')}</li>
-              <li><Icons.Check size={15} /> {t('tip_respect_wildlife')}</li>
-            </ul>
-          </div>
-
-          {/* 7-day forecast */}
-          <div className="bento-item bento-full eco-forecast">
-            <div className="bento-head">
-              <div className="bh-icon"><Icons.Calendar size={20} /></div>
-              <div>
-                <h3>{t('forecast_heading')}</h3>
-                <p>{t('next_7_days')}</p>
-              </div>
-            </div>
-            {nowLoading ? (
-              <div className="eco-skeleton" style={{ height: 120 }} />
-            ) : Array.isArray(nowForecast?.forecast) && nowForecast.forecast.length > 0 ? (
-              <div className="eco-forecast-row">
-                {nowForecast.forecast.slice(0, 7).map((day, i) => {
-                  const date = day.datetime instanceof Date ? day.datetime : new Date(day.datetime);
-                  const dayLabel = date.toLocaleDateString(language === 'zh' ? 'zh-CN' : language, { weekday: 'short' }).toUpperCase();
-                  const icon = day.icon || day.iconCode;
+              <div className="place-grid">
+                {places.map((attraction, i) => {
+                  const cls = i === 0 ? 'place-lg' : i === 1 ? 'place-5' : i === 2 ? 'place-terra' : i === 3 ? 'place-3' : i === 4 ? 'place-4' : i === 5 ? 'place-text' : i === 6 ? 'place-3' : 'place-banner';
                   return (
-                    <div key={i} className="eco-forecast-day">
-                      <span className="ef-day">{dayLabel}</span>
-                      <span className="ef-icon">{typeof icon === 'string' && icon.startsWith('http') ? (
-                        <img src={icon} alt={day.condition} className="ef-img" />
+                    <div
+                      key={attraction.id}
+                      className={`place-tile ${cls} ${i === 0 || i === 1 || i === 3 || i === 4 || i === 6 || i === 7 ? 'bento-card' : ''}`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => navigate(`/attractions/${attraction.id}`, { state: { attraction } })}
+                    >
+                      {i === 5 ? (
+                        <div className="place-text-body">
+                          <div className="place-text-head">
+                            <span className="tag">N° {pad2(i + 1)} · {getCategoryChip(attraction, t)}</span>
+                            <Icons.ArrowUpRight size={18} />
+                          </div>
+                          <b className="serif place-text-title italic">{attraction.name}</b>
+                          <p className="place-text-desc">
+                            {attraction.description
+                              ? (String(attraction.description).length > 90 ? String(attraction.description).slice(0, 90) + '…' : attraction.description)
+                              : t('experience_beauty')}
+                          </p>
+                          {toNumericRating(attraction.avg_rating) !== null && (
+                            <span className="place-text-rating num">★ {Number(attraction.avg_rating).toFixed(1)}</span>
+                          )}
+                        </div>
+                      ) : i === 2 ? (
+                        <div className="place-terra-body">
+                          <span className="tag">N° {pad2(i + 1)}</span>
+                          <b className="serif place-terra-title">{attraction.name}</b>
+                          <span className="place-terra-sub">{getCategoryChip(attraction, t)}</span>
+                        </div>
                       ) : (
-                        getEcoWeatherEmoji(day.condition)
-                      )}</span>
-                      <b className="ef-temp">{day.temperature}°</b>
-                      <span className="ef-cond">{day.condition}</span>
+                        <>
+                          <img className="bento-img" src={attraction.image_url || '/placeholder-attraction.svg'} alt={attraction.name} loading="lazy" />
+                          <span className="place-tile-overlay" />
+                          <span className="place-tile-meta">
+                            <span className="tag">N° {pad2(i + 1)}{i === 0 || i === 1 || i === 3 ? ` · ${getCategoryChip(attraction, t)}` : ''}</span>
+                            <b className="serif place-tile-title">{attraction.name}</b>
+                            <span className="place-tile-sub">
+                              {i === 0 || i === 1
+                                ? (getAttractionArea(attraction) || attraction.municipality)
+                                : (getAttractionArea(attraction) || getCategoryChip(attraction, t) || '')}
+                            </span>
+                          </span>
+                        </>
+                      )}
                     </div>
                   );
                 })}
               </div>
-            ) : (
-              <p style={{ color: 'var(--eco-text-faint)', fontSize: 13 }}>{t('no_forecast_data')}</p>
             )}
+            <div className="proto-places-foot">
+              <button className="btn-ghost-light" onClick={() => navigate('/attractions')}>
+                {t('view_all')} {places.length} {t('hero_stat_eco_sites')}
+              </button>
+            </div>
           </div>
-        </div>
-      </section>
-      )}
-
-      {/* ============ ECO ATTRACTIONS ============ */}
-      {pagesections.showAttractions !== false && (attractionsLoading || attractions.length > 0) && (
-      <section className="eco-attractions eco-reveal" id="attractions">
-        <div className="eco-section-header">
-          <div className="esh-left">
-            <span className="eco-eyebrow">{t('featured_section_eyebrow')}</span>
-            <h3>{pagesections.attractionsTitle || (isGuest ? t('explore_top_attractions') : t('recommended_for_you'))}</h3>
-            <p>{pagesections.attractionsSubtitle || (isGuest ? t('handpicked_destinations') : t('personalized_recommendations'))}</p>
-          </div>
-          <button className="eco-view-all" onClick={() => navigate('/attractions')}>
-            {t('view_all')} <Icons.ArrowRight size={15} />
-          </button>
-        </div>
-        {attractionsLoading ? (
-          <div className="eco-rail">
-            {[...Array(4)].map((_, i) => <div key={i} className="eco-skeleton" style={{ height: 300 }} />)}
-          </div>
-        ) : attractions.length === 0 ? (
-          <div className="eco-rail">
-            <div className="bento-item bento-third">{t('home_no_results')}</div>
-          </div>
-        ) : (
-          <div className="eco-rail eco-stagger">
-            {attractions.slice(0, 8).map(attraction => (
-              <div
-                key={attraction.id}
-                className="eco-attraction-card"
-                onClick={() => navigate(`/attractions/${attraction.id}`, { state: { attraction } })}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => e.key === 'Enter' && navigate(`/attractions/${attraction.id}`, { state: { attraction } })}
-              >
-                <div className="card-img">
-                  <img src={attraction.image_url || '/placeholder-attraction.svg'} alt={attraction.name} loading="lazy" />
-                  <div className="card-shade" />
-                  <span className="eco-cat-chip">
-                    <Icons.Seedling size={12} />
-                    {getCategoryChip(attraction, t)}
-                  </span>
-                </div>
-                <div className="eco-card-body">
-                  <h4>{attraction.name}</h4>
-                  <div className="card-loc">
-                    <Icons.MapPin size={13} />
-                    {getAttractionArea(attraction) || attraction.municipality}
-                  </div>
-                  <div className="eco-card-meta">
-                    {toNumericRating(attraction.avg_rating) !== null && (
-                      <span className="eco-rating-pill">
-                        <Icons.Star size={13} filled />
-                        {Number(attraction.avg_rating).toFixed(1)}
-                      </span>
-                    )}
-                    {attraction.duration && (
-                      <span className="eco-duration-pill">{attraction.duration}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+        </section>
       )}
 
       {/* ============ GALLERY ============ */}
@@ -897,34 +669,34 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
 
       {/* ============ TESTIMONIALS ============ */}
       {pagesections.showTestimonials !== false && (
-      <section className="eco-testimonials eco-reveal">
-        <div className="eco-section-header">
-          <div className="esh-left">
-            <span className="eco-eyebrow">{t('testimonials_eyebrow')}</span>
-            <h3>{t('traveler_stories')}</h3>
-            <p>{t('testimonials_subtitle')}</p>
+        <section className="eco-testimonials eco-reveal">
+          <div className="eco-section-header">
+            <div className="esh-left">
+              <span className="eco-eyebrow">{t('testimonials_eyebrow')}</span>
+              <h3>{t('traveler_stories')}</h3>
+              <p>{t('testimonials_subtitle')}</p>
+            </div>
           </div>
-        </div>
-        <div className="eco-testimonial-grid eco-stagger">
-          {testimonialData.map((item, i) => (
-            <div key={i} className="eco-testimonial-card">
-              <div className="quote-mark"><Icons.Quote size={18} /></div>
-              <div className="ts-stars">★★★★★</div>
-              <blockquote>"{item.quote}"</blockquote>
-              <div className="ts-author">
-                <div className="ts-avatar">{item.name.split(' ').map(w => w[0]).join('').slice(0, 2)}</div>
-                <div>
-                  <b>{item.name}</b>
-                  <span>{item.loc}</span>
+          <div className="eco-testimonial-grid eco-stagger">
+            {testimonialData.map((item, i) => (
+              <div key={i} className="eco-testimonial-card">
+                <div className="quote-mark"><Icons.Quote size={18} /></div>
+                <div className="ts-stars">★★★★★</div>
+                <blockquote>"{item.quote}"</blockquote>
+                <div className="ts-author">
+                  <div className="ts-avatar">{item.name.split(' ').map(w => w[0]).join('').slice(0, 2)}</div>
+                  <div>
+                    <b>{item.name}</b>
+                    <span>{item.loc}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      </section>
+            ))}
+          </div>
+        </section>
       )}
 
-      {/* ============ FEATURED STAY ============ */}
+      {/* ============ STAY — Prototype horizontal cards ============ */}
       {pagesections.showHotels !== false && (hotelsLoading || hotels.length > 0) && (
         <section className="eco-stay eco-reveal" id="accommodation">
           <div className="eco-section-header">
@@ -938,48 +710,40 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
             </button>
           </div>
           {hotelsLoading ? (
-            <div className="eco-skeleton" style={{ height: 360 }} />
-          ) : hotel ? (
-            <div className="eco-split">
-              <div className="eco-split-img">
-                <img src={hotel.image || '/placeholder-hotel.svg'} alt={hotel.name} loading="lazy" />
-                <span className="split-badge"><Icons.Star size={12} /> {t('top_rated_txt')}</span>
-              </div>
-              <div className="eco-split-body">
-                <h3>{hotel.name}</h3>
-                <div className="split-loc">
-                  <Icons.MapPin size={14} />
-                  {hotel.location || t('current_location')}
-                </div>
-                {toNumericRating(hotel.rating) !== null && (
-                  <div className="eco-split-stars">
-                    {'★★★★★'.slice(0, 5)}
-                    <span className="val"> {Number(hotel.rating).toFixed(1)}</span>
-                    <span> · {hotel.reviews_count || hotel.reviewCount || 0} {t('reviews_txt')}</span>
+            <div className="eco-skeleton" style={{ height: 380 }} />
+          ) : hotels.length === 0 ? null : (
+            <div className="stay-cards eco-stagger">
+              {hotels.slice(0, 3).map(hotel => (
+                <article key={hotel.id} className="stay-card" onClick={() => navigate(`/hotels/${hotel.id}`)}>
+                  <div className="stay-card-img">
+                    <img src={hotel.image || '/placeholder-hotel.svg'} alt={hotel.name} loading="lazy" />
+                    <span className="stay-badge stay-badge-plain">{t('amenity_eco')}</span>
+                    {toNumericRating(hotel.rating) !== null && hotel.rating >= 4.8 && (
+                      <span className="stay-badge stay-badge-terra">{t('top_rated_txt')}</span>
+                    )}
                   </div>
-                )}
-                <div className="eco-amenities">
-                  <span className="eco-amenity"><Icons.Wifi size={14} /> {t('amenity_wifi')}</span>
-                  <span className="eco-amenity"><Icons.Coffee size={14} /> {t('amenity_breakfast')}</span>
-                  <span className="eco-amenity"><Icons.Seedling size={14} /> {t('amenity_eco')}</span>
-                </div>
-                <div className="eco-split-price">
-                  <span className="from">{t('starting_from')}</span>
-                  <b>{formatCurrency(hotel.pricePerNight || hotel.price || 0, hotel.currency)}</b>
-                  <span className="eco-reviews-count">/ {t('mobile_stay')}</span>
-                </div>
-                <div className="eco-book-row">
-                  <button className="eco-book-btn" onClick={() => navigate(`/hotels/${hotel.id}`)}>
-                    <Icons.Booking size={16} />
-                    {t('book_now_txt')}
-                  </button>
-                  <button className="btn-ghost-hero" onClick={() => navigate('/hotels')}>
-                    {t('view_all')}
-                  </button>
-                </div>
-              </div>
+                  <div className="stay-card-body">
+                    <div className="stay-card-title-row">
+                      <h4 className="serif stay-card-name">{hotel.name}</h4>
+                      <b className="stay-card-price num">{formatCurrency(hotel.pricePerNight || hotel.price || 0, hotel.currency)}<span className="stay-card-per">/{t('mobile_stay')}</span></b>
+                    </div>
+                    <p className="stay-card-desc">{hotel.location || t('current_location')}</p>
+                    <div className="stay-card-meta">
+                      <span className="stay-stars num">{'★★★★★'.slice(0, 5)}</span>
+                      {toNumericRating(hotel.rating) !== null && (
+                        <span className="num"> {Number(hotel.rating).toFixed(1)}</span>
+                      )}
+                      <span className="stay-reviews num"> · {hotel.reviews_count || hotel.reviewCount || 0} {t('reviews_txt')}</span>
+                    </div>
+                    <button className="eco-book-btn stay-book" onClick={(e) => { e.stopPropagation(); navigate(`/hotels/${hotel.id}`); }}>
+                      <Icons.Booking size={16} />
+                      {t('book_now_txt')}
+                    </button>
+                  </div>
+                </article>
+              ))}
             </div>
-          ) : null}
+          )}
         </section>
       )}
 
