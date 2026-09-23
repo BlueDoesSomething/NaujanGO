@@ -7,6 +7,7 @@ import { fetchAttractions, getApiBaseUrl } from '../api';
 import Icons from './Icons';
 import WeatherWidget from './WeatherWidget';
 import HazardAwareness from './HazardAwareness';
+import { weatherService } from '../services/weatherService';
 import { loadCachedSetting, saveCachedSetting } from '../utils/siteSettingsCache';
 import '../styles/home-eco.css';
 
@@ -44,6 +45,16 @@ const toNumericRating = (rating) => {
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
+const getEcoWeatherEmoji = (condition = '') => {
+  const cond = String(condition).toLowerCase();
+  const map = {
+    clear: '🌞', clouds: '☁️', rain: '🌧️', drizzle: '🌦️',
+    thunderstorm: '⛈️', snow: '❄️', mist: '🌫️', fog: '🌫️',
+    haze: '🌫️', smoke: '💨'
+  };
+  return map[cond] || '🌤️';
+};
+
 const formatCurrency = (value, currency = 'PHP') => {
   try {
     const numValue = parseFloat(value);
@@ -55,7 +66,7 @@ const formatCurrency = (value, currency = 'PHP') => {
 };
 
 const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
-  const { t, language } = useLanguage();
+  const { t, language, supportedLanguages } = useLanguage();
   const { user: authUser } = useAuth();
   const { isDark } = useTheme();
   const navigate = useNavigate();
@@ -101,6 +112,10 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [lightbox, setLightbox] = useState(null);
+
+  // Now/hourly forecast for the bento "Now" card
+  const [nowForecast, setNowForecast] = useState(null);
+  const [nowLoading, setNowLoading] = useState(true);
 
   const featured = useMemo(() => attractions.slice(0, 6), [attractions]);
 
@@ -174,6 +189,16 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
       })
       .catch(err => { console.error('Failed to fetch hotels:', err); setHotels([]); })
       .finally(() => setHotelsLoading(false));
+
+    weatherService.getWeatherForecast(NAUJAN_COORDS.lat, NAUJAN_COORDS.lon)
+      .then(raw => {
+        const payload = raw && (Array.isArray(raw.hourlyToday) || (raw.data && Array.isArray(raw.data.hourlyToday)))
+          ? (raw.data && Array.isArray(raw.data.hourlyToday) ? raw.data : raw)
+          : null;
+        setNowForecast(payload && Array.isArray(payload.hourlyToday) && payload.hourlyToday.length > 0 ? payload : null);
+      })
+      .catch(err => console.error('Failed to fetch now forecast:', err))
+      .finally(() => setNowLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language]);
 
@@ -274,6 +299,29 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
     const avg = attractions.reduce((sum, a) => sum + (toNumericRating(a.avg_rating) || 4.5), 0) / attractions.length;
     return Math.round(Math.min(100, Math.max(40, avg * 19)));
   }, [attractions]);
+
+  const heroStats = useMemo(() => {
+    const ratings = attractions.map(a => toNumericRating(a.avg_rating)).filter(r => r !== null);
+    const avg = ratings.length > 0 ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 4.9;
+    return {
+      ecoSites: attractions.length,
+      languages: supportedLanguages?.length || 8,
+      ecoRating: avg.toFixed(1),
+    };
+  }, [attractions, supportedLanguages]);
+
+  const nowCard = useMemo(() => {
+    const hourly = nowForecast?.hourlyToday;
+    if (!Array.isArray(hourly) || hourly.length === 0) return null;
+    const currentHour = new Date().getHours();
+    const paddedNow = `${String(currentHour).padStart(2, '0')}:00`;
+    let idx = hourly.findIndex(h => h.time === paddedNow);
+    if (idx === -1) idx = hourly.findIndex(h => parseInt(h.time, 10) > currentHour);
+    if (idx === -1) idx = 0;
+    const current = hourly[idx] || hourly[0];
+    const upcoming = hourly.slice(idx + 1, idx + 4);
+    return { current, upcoming };
+  }, [nowForecast]);
 
   const galleryItems = useMemo(() => {
     const imgs = [];
@@ -377,6 +425,22 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
             {t('hero_title_pre')}{' '}
             <span className="hero-title-accent">{t('hero_title_accent')}</span>
           </h1>
+          <div className="hero-stats">
+            <div className="hero-stat">
+              <b>{heroStats.ecoSites}</b>
+              <span>{t('hero_stat_eco_sites')}</span>
+            </div>
+            <span className="hero-stat-divider" aria-hidden="true" />
+            <div className="hero-stat">
+              <b>{heroStats.languages}</b>
+              <span>{t('hero_stat_languages')}</span>
+            </div>
+            <span className="hero-stat-divider" aria-hidden="true" />
+            <div className="hero-stat">
+              <b>{heroStats.ecoRating}</b>
+              <span>{t('hero_stat_eco_rating')}</span>
+            </div>
+          </div>
         </div>
 
         <div className="eco-hero-inner">
@@ -649,6 +713,46 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
             <span className="safety-score">{safetyScorePct}/100</span>
           </div>
 
+          {/* Now / hourly */}
+          <div className="bento-item bento-third eco-now">
+            {nowLoading ? (
+              <div className="eco-skeleton" style={{ height: 120 }} />
+            ) : nowCard ? (
+              <>
+                <div className="bento-head">
+                  <div className="bh-icon"><Icons.Clock size={20} /></div>
+                  <div>
+                    <h3>{t('current_label')}</h3>
+                    <p>{t('today_hourly_forecast')}</p>
+                  </div>
+                </div>
+                <div className="eco-now-row">
+                  <div className="eco-now-main">
+                    <span className="eco-now-cond">{nowCard.current.description || nowCard.current.condition}</span>
+                    <b className="eco-now-temp">{nowCard.current.temperature}°</b>
+                  </div>
+                  <div className="eco-now-hours">
+                    {nowCard.upcoming.map((hour, i) => (
+                      <div key={i} className="eco-now-hour">
+                        <span>{hour.time}</span>
+                        <b>{hour.temperature}°</b>
+                        <em>{hour.description || hour.condition}</em>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="bento-head">
+                <div className="bh-icon"><Icons.Clock size={20} /></div>
+                <div>
+                  <h3>{t('current_label')}</h3>
+                  <p>{t('weather_data_unavailable')}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Eco Tip */}
           <div className="bento-item bento-third">
             <div className="bento-head">
@@ -666,7 +770,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
           </div>
 
           {/* 7-day forecast */}
-          <div className="bento-item bento-third">
+          <div className="bento-item bento-full eco-forecast">
             <div className="bento-head">
               <div className="bh-icon"><Icons.Calendar size={20} /></div>
               <div>
@@ -674,18 +778,31 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                 <p>{t('next_7_days')}</p>
               </div>
             </div>
-            <div style={{ opacity: 0.92 }}>
-              <WeatherWidget
-                latitude={NAUJAN_COORDS.lat}
-                longitude={NAUJAN_COORDS.lon}
-                locationName="Naujan"
-                showForecast={true}
-                showAlerts={false}
-                showSafetyTips={false}
-                size="small"
-                theme={isDark ? 'dark' : 'light'}
-              />
-            </div>
+            {nowLoading ? (
+              <div className="eco-skeleton" style={{ height: 120 }} />
+            ) : Array.isArray(nowForecast?.forecast) && nowForecast.forecast.length > 0 ? (
+              <div className="eco-forecast-row">
+                {nowForecast.forecast.slice(0, 7).map((day, i) => {
+                  const date = day.datetime instanceof Date ? day.datetime : new Date(day.datetime);
+                  const dayLabel = date.toLocaleDateString(language === 'zh' ? 'zh-CN' : language, { weekday: 'short' }).toUpperCase();
+                  const icon = day.icon || day.iconCode;
+                  return (
+                    <div key={i} className="eco-forecast-day">
+                      <span className="ef-day">{dayLabel}</span>
+                      <span className="ef-icon">{typeof icon === 'string' && icon.startsWith('http') ? (
+                        <img src={icon} alt={day.condition} className="ef-img" />
+                      ) : (
+                        getEcoWeatherEmoji(day.condition)
+                      )}</span>
+                      <b className="ef-temp">{day.temperature}°</b>
+                      <span className="ef-cond">{day.condition}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p style={{ color: 'var(--eco-text-faint)', fontSize: 13 }}>{t('no_forecast_data')}</p>
+            )}
           </div>
         </div>
       </section>
