@@ -511,7 +511,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
           </div>
         </div>
 
-        <div className="eco-hero-inner">
+        <div className="eco-hero-inner showcase-grid">
           <div className="featured-stage" ref={stageRef} id="featuredStage">
             <div className="stage-track" style={{ transform: `translate3d(-${stageIdx * 100}%, 0, 0)` }}>
               {featured.map((attraction, i) => (
@@ -551,46 +551,30 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               <>
                 <div className="stage-counter">
                   <span className="cur">{pad2(stageIdx + 1)}</span>
-                  <span className="tot">/ {pad2(total)}</span>
+                  <span className="sep">/</span>
+                  <span className="tot">{pad2(total)}</span>
                 </div>
-                <button className="stage-nav stage-nav-prev" id="stagePrev" onClick={() => goToStage(stageIdx - 1)} aria-label={t('clear')}>
-                  <Icons.ChevronLeft size={20} />
-                </button>
-                <button className="stage-nav stage-nav-next" id="stageNext" onClick={() => goToStage(stageIdx + 1)} aria-label={t('explore_button')}>
-                  <Icons.ChevronRight size={20} />
-                </button>
-                <div className="thumb-rail-wrap">
-                  <span className="thumb-rail-hint">{t('browse_destinations_rail')}</span>
-                  <div className="thumb-rail" id="thumbRail">
-                    {featured.map((attraction, i) => (
-                      <button
-                        key={attraction.id}
-                        className={`thumb-card${i === stageIdx ? ' is-active' : ''}`}
-                        onClick={() => goToStage(i)}
-                        aria-label={attraction.name}
-                      >
-                        <img src={attraction.image_url?.replace(/w=\d+/, 'w=320') || '/placeholder-attraction.svg'} alt="" loading="lazy" draggable="false" />
-                        <span className="thumb-shade" />
-                        <span className="thumb-idx">{pad2(i + 1)}</span>
-                        <span className="thumb-name">{attraction.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <div className="rail-dots" id="railDots">
-                    {featured.map((_, i) => (
-                      <button key={i} className={`rail-dot${i === stageIdx ? ' is-active' : ''}`} onClick={() => goToStage(i)} aria-label={`${i + 1}`} />
-                    ))}
-                  </div>
+                <div className="stage-nav">
+                  <button id="stagePrev" onClick={() => goToStage(stageIdx - 1)} aria-label={t('clear')}>
+                    <Icons.ChevronLeft size={20} />
+                  </button>
+                  <button id="stageNext" onClick={() => goToStage(stageIdx + 1)} aria-label={t('explore_button')}>
+                    <Icons.ChevronRight size={20} />
+                  </button>
                 </div>
-                <div className="stage-progress run" id="stageProgress" />
+                <div className="stage-progress run" id="stageProgress" key={stageIdx} style={{ '--dur': `${(slideshowExt.intervalSeconds || 4) * 1000}ms` }} />
               </>
             )}
           </div>
 
-          {/* Info card */}
-          <div className="info-card" id="infoCard">
-            <div className="info-idx" id="infoIdx">{pad2(stageIdx + 1)} / {pad2(total)}</div>
-            <div className="info-body" id="infoBody" key={stageIdx}>
+          {/* Side panel: Destination Details + Browse Destinations */}
+          <div className="side-panel">
+          <div className="info-card glass-strong" id="infoCard">
+            <div className="info-eyebrow">
+              <span className="lbl"><Icons.Seedling size={12} />{t('destination_details')}</span>
+              <span className="info-idx" id="infoIdx">{pad2(stageIdx + 1)} / {pad2(total)}</span>
+            </div>
+            <div className="info-body swap-in" id="infoBody" key={stageIdx}>
               <div className="info-cat" id="infoCat">
                 <Icons.Seedling size={15} />
                 {active ? getCategoryChip(active, t) : t('featured_badge')}
@@ -639,7 +623,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                   </div>
                 </>
               )}
-              <div className="hero-actions">
+              <div className="info-actions">
                 <button className="btn-primary-hero" id="heroExploreBtn" onClick={() => active && navigate(`/attractions/${active.id}`, { state: { attraction: active } })}>
                   <Icons.Route size={16} />
                   {t('explore_destination')}
@@ -651,6 +635,34 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                 )}
               </div>
             </div>
+          </div>
+          {featured.length > 1 && slideshowExt.showArrows !== false && (
+          <div className="thumb-rail-wrap">
+            <div className="rail-hint">
+              <span className="t">{t('browse_destinations_rail')}</span>
+              <div className="rail-dots" id="railDots">
+                {featured.map((_, i) => (
+                  <button key={i} className={`rail-dot${i === stageIdx ? ' is-active' : ''}`} onClick={() => goToStage(i)} aria-label={`${i + 1}`} />
+                ))}
+              </div>
+            </div>
+            <div className="thumb-rail" id="thumbRail">
+              {featured.map((attraction, i) => (
+                <button
+                  key={attraction.id}
+                  className={`thumb-card${i === stageIdx ? ' is-active' : ''}`}
+                  onClick={() => goToStage(i)}
+                  aria-label={attraction.name}
+                >
+                  <img src={attraction.image_url?.replace(/w=\d+/, 'w=320') || '/placeholder-attraction.svg'} alt="" loading="lazy" draggable="false" />
+                  <span className="thumb-shade" />
+                  <span className="thumb-idx">{pad2(i + 1)}</span>
+                  <span className="thumb-name">{attraction.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          )}
           </div>
         </div>
       </section>
@@ -990,7 +1002,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
           </div>
           <div className="eco-gallery-grid">
             {galleryItems.slice(0, 8).map((item, i) => (
-              <button key={i} className="eco-gallery-tile" onClick={() => setLightbox(item)} aria-label={item.caption}>
+              <button key={i} className={`eco-gallery-tile${i === 0 ? ' gallery-wide gallery-tall' : ''}${i === 5 ? ' gallery-wide' : ''}`} onClick={() => setLightbox(item)} aria-label={item.caption}>
                 <img src={item.src} alt={item.caption} loading="lazy" />
                 <div className="tile-shade" />
                 <span className="tile-cap"><Icons.Camera size={12} /> {item.caption}</span>
