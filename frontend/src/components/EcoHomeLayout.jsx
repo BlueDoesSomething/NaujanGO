@@ -551,6 +551,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                   <Icons.ChevronRight size={20} />
                 </button>
                 <div className="thumb-rail-wrap">
+                  <span className="thumb-rail-hint">{t('browse_destinations_rail')}</span>
                   <div className="thumb-rail" id="thumbRail">
                     {featured.map((attraction, i) => (
                       <button
@@ -587,6 +588,25 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               </div>
               <h3 className="info-name" id="infoName">{active?.name || t('welcome_to_naujan')}</h3>
               <p className="info-desc" id="infoDesc">{active?.description || t('experience_beauty')}</p>
+              {active && (
+                <div className="ts-list" id="infoTs">
+                  <div className="ts-row ts-row-sun">
+                    <span className="ts-ico"><Icons.Sun size={14} /></span>
+                    <span className="ts-label">{t('best_time')}</span>
+                    <span className="ts-value">{active.best_time_to_visit || t('early_morning')}</span>
+                  </div>
+                  <div className="ts-row ts-row-clock">
+                    <span className="ts-ico"><Icons.Clock size={14} /></span>
+                    <span className="ts-label">{t('visit_duration')}</span>
+                    <span className="ts-value">{active.visit_duration || active.duration || active.duration_hours || t('approx_2_3_hours')}</span>
+                  </div>
+                  <div className="ts-row ts-row-route">
+                    <span className="ts-ico"><Icons.Route size={14} /></span>
+                    <span className="ts-label">{t('difficulty')}</span>
+                    <span className="ts-value">{active.difficulty_level || t('easy_to_moderate')}</span>
+                  </div>
+                </div>
+              )}
               {active && (
                 <>
                   <div className="info-stats">
