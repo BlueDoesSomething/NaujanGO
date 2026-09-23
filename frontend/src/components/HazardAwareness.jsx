@@ -375,7 +375,8 @@ const HazardAwareness = ({
     '--ha-body': isDark ? '#d1d5db' : '#333',
     '--ha-muted': isDark ? '#6b7280' : '#999',
     '--ha-green': isDark ? '#86efac' : '#2e7d32',
-    '--ha-item-bg': isDark ? 'rgba(255, 255, 255, 0.05)' : '#fafafa'
+    '--ha-item-bg': isDark ? 'rgba(255, 255, 255, 0.05)' : '#fafafa',
+    '--ha-item-bg-hover': isDark ? 'rgba(255, 255, 255, 0.12)' : '#f0fdf4'
   };
 
   if (loading) {
@@ -410,10 +411,10 @@ const HazardAwareness = ({
       {/* Header */}
       <div style={headerStyle}>
         <div style={titleSectionStyle}>
-          <span style={{ fontSize: '1.3rem' }}>{hasHazards ? '⚠️' : '✅'}</span>
+          <span style={{ fontSize: compact ? '1.05rem' : '1.3rem' }}>{hasHazards ? '⚠️' : '✅'}</span>
           <div>
-            <h3 style={titleStyle}>{t('hazard_awareness')}</h3>
-            <p style={subtitleStyle}>
+            <h3 style={compact ? { ...titleStyle, fontSize: '13px' } : titleStyle}>{t('hazard_awareness')}</h3>
+            <p style={compact ? { ...subtitleStyle, fontSize: '11px' } : subtitleStyle}>
               {attractionList.length > 0 
                 ? `${t('locations_monitored')}: ${attractionList.length} • ${t('last_updated')}: ${lastUpdate.toLocaleTimeString()}`
                 : `${t('weather_related_safety_monitoring')} • ${t('last_updated')}: ${lastUpdate.toLocaleTimeString()}`
@@ -422,7 +423,7 @@ const HazardAwareness = ({
           </div>
         </div>
         <button 
-          style={expandButtonStyle}
+          style={compact ? { ...expandButtonStyle, padding: '4px 8px', fontSize: '0.8rem' } : expandButtonStyle}
           className="expand-button"
           onClick={() => setExpanded(!expanded)}
           title={expanded ? t('collapse') : t('expand')}
@@ -904,8 +905,8 @@ if (typeof window !== 'undefined' && !document.getElementById('hazard-awareness-
     }
     
     .hazard-item-card:hover {
-      box-shadow: 0 4px 12px rgba(24, 64, 45, 0.1) !important;
-      background-color: #ffffff !important;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+      background-color: var(--ha-item-bg-hover) !important;
     }
     
     .expand-button:hover {

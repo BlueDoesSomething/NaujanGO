@@ -363,6 +363,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   const total = Math.max(1, featured.length);
 
   const [weatherSafetyScore, setWeatherSafetyScore] = useState(100);
+  const [weatherScoreLoaded, setWeatherScoreLoaded] = useState(false);
 
   const safetyScorePct = useMemo(() => {
     if (attractions.length === 0) return 80;
@@ -772,10 +773,17 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               </div>
               <div className="bento-weather-score">
                 <div className="bento-weather-score-circle" style={{
-                  borderColor: weatherSafetyScore >= 80 ? '#4caf50' : weatherSafetyScore >= 60 ? '#ff9800' : '#ff5722'
+                  borderColor: weatherScoreLoaded
+                    ? (weatherSafetyScore >= 80 ? '#4caf50' : weatherSafetyScore >= 60 ? '#ff9800' : '#ff5722')
+                    : 'var(--eco-border)'
                 }}>
-                  <span style={{ color: weatherSafetyScore >= 80 ? '#4caf50' : weatherSafetyScore >= 60 ? '#ff9800' : '#ff5722', fontWeight: 'bold' }}>
-                    {weatherSafetyScore}
+                  <span style={{
+                    color: weatherScoreLoaded
+                      ? (weatherSafetyScore >= 80 ? '#4caf50' : weatherSafetyScore >= 60 ? '#ff9800' : '#ff5722')
+                      : 'var(--eco-text-faint)',
+                    fontWeight: 'bold'
+                  }}>
+                    {weatherScoreLoaded ? weatherSafetyScore : '–'}
                   </span>
                 </div>
                 <span className="bento-weather-score-label">{t('safety_score')}</span>
@@ -791,7 +799,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               size="large"
               theme={isDark ? 'dark' : 'light'}
               horizontal={true}
-              onSafetyScore={setWeatherSafetyScore}
+              onSafetyScore={(v) => { setWeatherSafetyScore(v); setWeatherScoreLoaded(true); }}
             />
           </div>
           )}

@@ -339,7 +339,7 @@ const WeatherWidget = ({
           </div>
         </div>
 
-        <div style={horizontal ? { ...currentWeatherStyle, flexDirection: 'row', alignItems: 'center', gap: '16px', flexWrap: 'nowrap' } : currentWeatherStyle}>
+        <div style={horizontal ? { ...currentWeatherStyle, flexDirection: 'row', alignItems: 'center', gap: '16px', flexWrap: 'wrap' } : currentWeatherStyle}>
           <div style={horizontal ? { ...temperatureDisplayStyle, gap: '10px', flexShrink: 0 } : temperatureDisplayStyle}>
             {typeof getWeatherIcon(weather.condition, weather.iconCode) === 'string' && 
              getWeatherIcon(weather.condition, weather.iconCode).startsWith('http') ? (
@@ -359,37 +359,37 @@ const WeatherWidget = ({
             </div>
           </div>
 
-          <div style={horizontal ? { ...weatherDetailsGridStyle, gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', flex: '1 1 0', minWidth: '200px' } : weatherDetailsGridStyle}>
+          <div style={horizontal ? { ...weatherDetailsGridStyle, gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', flex: '1 1 0', minWidth: '0' } : weatherDetailsGridStyle}>
             <div style={horizontal ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
-              <span style={horizontal ? { fontSize: '1rem' } : detailIconStyle}>🌡️</span>
+              <span style={horizontal ? { fontSize: '1.1rem' } : detailIconStyle}>🌡️</span>
               <div>
-                <span style={horizontal ? { fontSize: '0.7rem' } : detailLabelStyle}>{t('feels_like')}</span>
-                <span style={horizontal ? { fontSize: '0.8rem' } : detailValueStyle}>{weather.feelsLike}°C</span>
+                <span style={horizontal ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('feels_like')}</span>
+                <span style={horizontal ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.feelsLike}°C</span>
               </div>
             </div>
             
             <div style={horizontal ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
-              <span style={horizontal ? { fontSize: '1rem' } : detailIconStyle}>💧</span>
+              <span style={horizontal ? { fontSize: '1.1rem' } : detailIconStyle}>💧</span>
               <div>
-                <span style={horizontal ? { fontSize: '0.7rem' } : detailLabelStyle}>{t('humidity')}</span>
-                <span style={horizontal ? { fontSize: '0.8rem' } : detailValueStyle}>{weather.humidity}%</span>
+                <span style={horizontal ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('humidity')}</span>
+                <span style={horizontal ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.humidity}%</span>
               </div>
             </div>
             
             <div style={horizontal ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
-              <span style={horizontal ? { fontSize: '1rem' } : detailIconStyle}>💨</span>
+              <span style={horizontal ? { fontSize: '1.1rem' } : detailIconStyle}>💨</span>
               <div>
-                <span style={horizontal ? { fontSize: '0.7rem' } : detailLabelStyle}>{t('wind')}</span>
-                <span style={horizontal ? { fontSize: '0.8rem' } : detailValueStyle}>{weather.windSpeed} km/h</span>
+                <span style={horizontal ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('wind')}</span>
+                <span style={horizontal ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.windSpeed} km/h</span>
               </div>
             </div>
             
             {weather.rainfall > 0 && (
               <div style={horizontal ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
-                <span style={horizontal ? { fontSize: '1rem' } : detailIconStyle}>🌧️</span>
+                <span style={horizontal ? { fontSize: '1.1rem' } : detailIconStyle}>🌧️</span>
                 <div>
-                  <span style={horizontal ? { fontSize: '0.7rem' } : detailLabelStyle}>{t('rain')}</span>
-                  <span style={horizontal ? { fontSize: '0.8rem' } : detailValueStyle}>{weather.rainfall.toFixed(1)}mm</span>
+                  <span style={horizontal ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('rain')}</span>
+                  <span style={horizontal ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.rainfall.toFixed(1)}mm</span>
                 </div>
               </div>
             )}
@@ -622,12 +622,12 @@ const WeatherWidget = ({
                         padding: '8px 10px', borderRadius: '10px', minWidth: '60px',
                         backgroundColor: 'var(--ww-soft)', border: '1px solid var(--ww-soft-border)'
                       }}>
-                        <span style={{ fontSize: '0.65rem', fontWeight: '700', color: 'var(--ww-muted)' }}>{dayName}</span>
+                        <span style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--ww-muted)' }}>{dayName}</span>
                         <span style={{ fontSize: '1.3rem' }}>
                           {isImageUrl ? <img src={iconResult} alt={day.condition} style={{ width: '28px', height: '28px', objectFit: 'contain' }} /> : iconResult}
                         </span>
                         <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#ff6b6b' }}>{day.temperature}°</span>
-                        <span style={{ fontSize: '0.6rem', color: 'var(--ww-muted)', textTransform: 'capitalize' }}>{day.condition}</span>
+                        <span style={{ fontSize: '0.68rem', color: 'var(--ww-muted)', textTransform: 'capitalize' }}>{day.condition}</span>
                       </div>
                     );
                   }
@@ -664,10 +664,10 @@ const WeatherWidget = ({
       '--ww-bg': isDark ? '#2c3e50' : '#ffffff',
       '--ww-text': isDark ? '#ecf0f1' : '#2c3e50',
       '--ww-strong': isDark ? '#f1f5f9' : '#0f172a',
-      '--ww-soft': isDark ? 'rgba(255,255,255,0.09)' : 'rgba(0,0,0,0.05)',
-      '--ww-soft-border': isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.08)',
-      '--ww-muted': isDark ? '#cbd5e1' : '#555',
-      '--ww-faint': isDark ? '#94a3b8' : '#64748b',
+      '--ww-soft': isDark ? 'rgba(255,255,255,0.13)' : 'rgba(0,0,0,0.05)',
+      '--ww-soft-border': isDark ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.08)',
+      '--ww-muted': isDark ? '#dbe4ec' : '#555',
+      '--ww-faint': isDark ? '#b4c2d0' : '#64748b',
       '--ww-elevated': isDark ? '#34445e' : '#ffffff',
       '--ww-tip-bg': isDark ? '#34445e' : '#f8fafc',
       '--ww-tip-border': isDark ? 'rgba(255,255,255,0.18)' : '#dbeafe',
@@ -735,7 +735,7 @@ const locationNameStyle = {
 
 const timestampStyle = {
   fontSize: '0.8rem',
-  opacity: 0.7,
+  opacity: 0.85,
   display: 'block',
   marginTop: '4px'
 };
@@ -760,7 +760,7 @@ const safetyCircleStyle = {
 
 const safetyLabelStyle = {
   fontSize: '0.7rem',
-  opacity: 0.8
+  opacity: 0.9
 };
 
 const currentWeatherStyle = {
@@ -793,7 +793,7 @@ const temperatureStyle = {
 
 const conditionStyle = {
   fontSize: '1rem',
-  opacity: 0.8,
+  opacity: 0.95,
   textTransform: 'capitalize',
   display: 'block'
 };
@@ -819,7 +819,7 @@ const detailIconStyle = {
 
 const detailLabelStyle = {
   fontSize: '0.8rem',
-  opacity: 0.7,
+  opacity: 0.9,
   display: 'block'
 };
 
@@ -1035,7 +1035,7 @@ const forecastTempStyle = {
 
 const forecastConditionStyle = {
   fontSize: '0.85rem',
-  opacity: 0.9,
+  opacity: 1,
   color: 'var(--ww-muted)',
   fontWeight: '500'
 };
