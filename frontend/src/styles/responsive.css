@@ -267,6 +267,11 @@ button, .btn {
   .chatbot-widget,
   .close-btn,
   .map-filter-btn,
+  .rail-dot,
+  .rail-dot.is-active,
+  .stage-nav button,
+  .thumb-card,
+  .pb-haz-toggle,
   button[aria-label],
   button.round,
   button.icon {

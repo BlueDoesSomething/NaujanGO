@@ -483,6 +483,84 @@ export const ShieldCheckIcon = ({ size = 24, className = "" }) => (
   </svg>
 );
 
+export const ThermometerIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0z" />
+  </svg>
+);
+
+export const DropletIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" />
+  </svg>
+);
+
+export const WindIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2" />
+    <path d="M9.6 4.6A2 2 0 1 1 11 8H2" />
+    <path d="M12.6 19.4A2 2 0 1 0 14 16H2" />
+  </svg>
+);
+
+export const CloudRainIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.24" />
+    <path d="M16 14v6" />
+    <path d="M8 14v6" />
+    <path d="M12 16v6" />
+  </svg>
+);
+
+export const CloudLightningIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M6 16.33A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 .5 8.97" />
+    <path d="m13 12-3 5h4l-3 5" />
+  </svg>
+);
+
+export const CloudSunIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M12 2v2" />
+    <path d="m4.93 4.93 1.41 1.41" />
+    <path d="M20 12h2" />
+    <path d="m19.07 4.93-1.41 1.41" />
+    <path d="M15.95 12.65a4 4 0 0 0-5.93-4.13" />
+    <path d="M13 22H7a5 5 0 1 1 4.9-6H13a3 3 0 0 1 0 6Z" />
+  </svg>
+);
+
+export const AlertTriangleIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+    <path d="M12 9v4" />
+    <path d="M12 17h.01" />
+  </svg>
+);
+
+export const ChevronDownIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
+export const CalendarDaysIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M8 2v4" />
+    <path d="M16 2v4" />
+    <rect x="3" y="4" width="18" height="18" rx="2" />
+    <path d="M3 10h18" />
+  </svg>
+);
+
+export const LightbulbIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M9 18h6" />
+    <path d="M10 22h4" />
+    <path d="M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.4 1 2.1V17h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0 0 12 2z" />
+  </svg>
+);
+
 // Export all icons as a collection
 export const Icons = {
   // Primary names
@@ -553,6 +631,16 @@ export const Icons = {
   ArrowUpRight: ArrowUpRightIcon,
   Seedling: SeedlingIcon,
   ShieldCheck: ShieldCheckIcon,
+  Thermometer: ThermometerIcon,
+  Droplet: DropletIcon,
+  Wind: WindIcon,
+  CloudRain: CloudRainIcon,
+  CloudLightning: CloudLightningIcon,
+  CloudSun: CloudSunIcon,
+  AlertTriangle: AlertTriangleIcon,
+  ChevronDown: ChevronDownIcon,
+  CalendarDays: CalendarDaysIcon,
+  Lightbulb: LightbulbIcon,
   // Aliases with "Icon" suffix for compatibility
   MapIcon: MapIcon,
   LocationIcon: LocationIcon,
@@ -621,6 +709,16 @@ export const Icons = {
   ArrowUpRightIcon: ArrowUpRightIcon,
   SeedlingIcon: SeedlingIcon,
   ShieldCheckIcon: ShieldCheckIcon,
+  ThermometerIcon: ThermometerIcon,
+  DropletIcon: DropletIcon,
+  WindIcon: WindIcon,
+  CloudRainIcon: CloudRainIcon,
+  CloudLightningIcon: CloudLightningIcon,
+  CloudSunIcon: CloudSunIcon,
+  AlertTriangleIcon: AlertTriangleIcon,
+  ChevronDownIcon: ChevronDownIcon,
+  CalendarDaysIcon: CalendarDaysIcon,
+  LightbulbIcon: LightbulbIcon,
 };
 
 export default Icons;

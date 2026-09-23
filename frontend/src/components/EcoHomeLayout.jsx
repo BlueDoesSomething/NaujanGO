@@ -140,7 +140,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const featured = useMemo(() => attractions.slice(0, 6), [attractions]);
+  const featured = useMemo(() => attractions, [attractions]);
 
   useEffect(() => {
     setSlideshowSettings(loadCachedSetting('home-slideshow', {
@@ -362,9 +362,6 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   const active = featured.length ? featured[stageIdx % featured.length] : null;
   const total = Math.max(1, featured.length);
 
-  const [weatherSafetyScore, setWeatherSafetyScore] = useState(100);
-  const [weatherScoreLoaded, setWeatherScoreLoaded] = useState(false);
-
   const safetyScorePct = useMemo(() => {
     if (attractions.length === 0) return 80;
     const avg = attractions.reduce((sum, a) => sum + (toNumericRating(a.avg_rating) || 4.5), 0) / attractions.length;
@@ -397,12 +394,12 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   const galleryItems = useMemo(() => {
     const imgs = [];
     attractions.forEach(a => {
-      if (a.image_url && imgs.length < 6) imgs.push({ src: a.image_url, caption: a.name });
+      if (a.image_url) imgs.push({ src: a.image_url, caption: a.name });
     });
     hotels.forEach(h => {
       if (h.image && imgs.length < 8) imgs.push({ src: h.image, caption: h.name });
     });
-    return imgs;
+    return imgs.slice(0, 8);
   }, [attractions, hotels]);
 
   const isGuest = variant === 'guest';
@@ -779,28 +776,6 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
           {/* Live Conditions (main weather card) */}
           {pagesections.showWeather !== false && (
           <div className="bento-item bento-main eco-bento-weather">
-            <div className="bento-head">
-              <div>
-                <p className="bento-live-badge"><span className="pulse-dot" /> {t('current_location')}</p>
-              </div>
-              <div className="bento-weather-score">
-                <div className="bento-weather-score-circle" style={{
-                  borderColor: weatherScoreLoaded
-                    ? (weatherSafetyScore >= 80 ? '#4caf50' : weatherSafetyScore >= 60 ? '#ff9800' : '#ff5722')
-                    : 'var(--eco-border)'
-                }}>
-                  <span style={{
-                    color: weatherScoreLoaded
-                      ? (weatherSafetyScore >= 80 ? '#4caf50' : weatherSafetyScore >= 60 ? '#ff9800' : '#ff5722')
-                      : 'var(--eco-text-faint)',
-                    fontWeight: 'bold'
-                  }}>
-                    {weatherScoreLoaded ? weatherSafetyScore : '–'}
-                  </span>
-                </div>
-                <span className="bento-weather-score-label">{t('safety_score')}</span>
-              </div>
-            </div>
             <WeatherWidget
               latitude={NAUJAN_COORDS.lat}
               longitude={NAUJAN_COORDS.lon}
@@ -811,7 +786,6 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               size="large"
               theme={isDark ? 'dark' : 'light'}
               horizontal={true}
-              onSafetyScore={(v) => { setWeatherSafetyScore(v); setWeatherScoreLoaded(true); }}
             />
           </div>
           )}
@@ -819,13 +793,6 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
           {/* Hazard Awareness */}
           {pagesections.showHazardAwareness !== false && (
           <div className="bento-item bento-half eco-hazard">
-            <div className="bento-head">
-              <div className="bh-icon"><Icons.ShieldCheck size={20} /></div>
-              <div>
-                <h3>{t('hazard_alert')}</h3>
-                <p>{t('critical_locations')}</p>
-              </div>
-            </div>
             <HazardAwareness
               latitude={NAUJAN_COORDS.lat}
               longitude={NAUJAN_COORDS.lon}

@@ -7,6 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { weatherService } from '../services/weatherService';
 import { getApiBaseUrl } from '../api';
 import { useLanguage } from '../context/LanguageContext';
+import Icons from './Icons';
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -379,19 +380,6 @@ const HazardAwareness = ({
     '--ha-item-bg-hover': isDark ? (compact ? 'rgba(74, 222, 128, 0.14)' : 'rgba(255, 255, 255, 0.12)') : '#f0fdf4'
   };
 
-  // Homepage bento (compact) uses subtle green-glass surfaces in dark mode
-  const haDarkCompact = compact && isDark;
-  const statBoxLive = haDarkCompact
-    ? { ...statBoxStyle, backgroundColor: 'rgba(74, 222, 128, 0.08)', border: '1px solid rgba(74, 222, 128, 0.25)' }
-    : statBoxStyle;
-  const monitoringLive = haDarkCompact
-    ? { backgroundColor: 'rgba(56, 189, 248, 0.12)', borderColor: 'rgba(56, 189, 248, 0.35)' }
-    : monitoringStatStyle;
-  const statLabelLive = compact ? { ...statLabelStyle, opacity: 0.9 } : statLabelStyle;
-  const noHazardsLive = haDarkCompact
-    ? { ...noHazardsCompactStyle, backgroundColor: 'rgba(74, 222, 128, 0.08)', border: '1px solid rgba(74, 222, 128, 0.25)' }
-    : noHazardsCompactStyle;
-
   if (loading) {
     return (
       <div style={rootStyle}>
@@ -421,88 +409,57 @@ const HazardAwareness = ({
 
   return (
     <div style={rootStyle}>
-      {/* Header */}
-      <div style={headerStyle}>
-        <div style={titleSectionStyle}>
-          <span style={{ fontSize: compact ? '1.05rem' : '1.3rem' }}>{hasHazards ? '⚠️' : '✅'}</span>
-          <div>
-            <h3 style={compact ? { ...titleStyle, fontSize: '13px' } : titleStyle}>{t('hazard_awareness')}</h3>
-            <p style={compact ? { ...subtitleStyle, fontSize: '11px' } : subtitleStyle}>
-              {attractionList.length > 0 
-                ? `${t('locations_monitored')}: ${attractionList.length} • ${t('last_updated')}: ${lastUpdate.toLocaleTimeString()}`
-                : `${t('weather_related_safety_monitoring')} • ${t('last_updated')}: ${lastUpdate.toLocaleTimeString()}`
-              }
-            </p>
+      <div className={`pb-haz${expanded ? ' open' : ''}`}>
+        <div className="pb-haz-top">
+          <div className="pb-haz-title">
+            <span style={{ color: '#f87171' }}><Icons.AlertTriangle size={15} /></span>
+            <p>{t('hazard_alert')}</p>
           </div>
+          <button
+            className="pb-haz-toggle"
+            onClick={() => setExpanded(!expanded)}
+            title={expanded ? t('collapse') : t('expand')}
+            aria-label={expanded ? t('collapse') : t('expand')}
+            aria-expanded={expanded}
+          >
+            <Icons.ChevronDown size={11} />
+          </button>
         </div>
-        <button 
-          style={compact ? { ...expandButtonStyle, padding: '4px 8px', fontSize: '0.8rem' } : expandButtonStyle}
-          className="expand-button"
-          onClick={() => setExpanded(!expanded)}
-          title={expanded ? t('collapse') : t('expand')}
-        >
-          {expanded ? '▼' : '▶'} 
-        </button>
-      </div>
-
-      {/* Hazard Summary */}
-      <div style={statsContainerStyle}>
-        <div style={{ ...statBoxLive, flex: '1 1 240px' }}>
-          <span style={statValueStyle}>
-            {hasHazards ? `${criticalCount} critical` : 'Clear'}
-          </span>
-          <span style={statLabelLive}>
-            {hasHazards
-              ? `${hazardStats.total} total hazards across ${hazards.length} locations`
-              : t('no_current_hazards')}
-          </span>
+        <p className="pb-haz-total">{criticalCount}</p>
+        <p className="pb-haz-sub">{t('critical_locations')}</p>
+        <div className="pb-haz-foot">
+          <p>{hazardStats.total} total hazards monitored</p>
         </div>
-        {attractionList.length > 0 && (
-          <div style={{ ...statBoxLive, ...monitoringLive }}>
-            <span style={statValueStyle}>{attractionList.length}</span>
-            <span style={statLabelLive}>{t('locations_monitored')}</span>
-          </div>
-        )}
-      </div>
 
-      {/* Expanded Content */}
-      {expanded && (
-        <div style={expandedContentStyle}>
-          {/* Hazards List */}
-          {hasHazards ? (
-            <div style={hazardsContainerStyle}>
-              <h4 style={sectionTitleStyle}>
-                <span>⚠️</span> {t('current_hazards')}
-              </h4>
-              <div style={hazardsScrollContainerStyle}>
-                {hazards.map((locationGroup, idx) => (
-                  <div 
-                    key={idx}
-                    className="hazard-item-card"
-                    style={{
-                      ...hazardItemCompactStyle,
-                      borderLeftColor: getSeverityColor(locationGroup.highestLevel)
-                    }}
-                  >
-                    <div 
-                      style={hazardHeaderCompactStyle}
+        <div className="pb-haz-panel">
+          <div className="pb-haz-panel-inner">
+            <div className="pb-haz-list-title">
+              <span style={{ color: '#f87171' }}><Icons.AlertTriangle size={12} /></span> {t('current_hazards')}
+            </div>
+            <div className="pb-haz-scroll">
+              {hasHazards ? (
+                hazards.map((locationGroup, idx) => (
+                  <div key={idx}>
+                    <div
+                      className="pb-haz-row"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setExpandedHazardDetail(expandedHazardDetail === idx ? null : idx)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedHazardDetail(expandedHazardDetail === idx ? null : idx); } }}
                     >
-                      <div style={hazardLabelCompactStyle}>
-                        <span style={hazardSeverityCompactStyle}>
-                          {getSeverityIcon(locationGroup.highestLevel)}
-                        </span>
-                        <div style={hazardTextCompactStyle}>
-                          <div style={hazardLocationRowStyle}>
-                            <span style={locationNameStyle}>📍 {locationGroup.location}</span>
-                            <span style={hazardCountBadgeStyle}>{locationGroup.hazards.length} hazard{locationGroup.hazards.length > 1 ? 's' : ''}</span>
-                          </div>
-                          <span style={hazardMessageCompactStyle}>
-                            {locationGroup.hazards.map(h => h.type).join(', ').toUpperCase()}
-                          </span>
+                      <span style={{ color: '#f87171' }}><Icons.AlertTriangle size={12} /></span>
+                      <div className="pb-haz-body">
+                        <div className="pb-haz-name">
+                          <span className="pb-haz-pin" style={{ color: '#f87171' }}><Icons.MapPin size={10} /></span> {locationGroup.location}
+                        </div>
+                        <div className="pb-haz-tags">
+                          {locationGroup.hazards.slice(0, 3).map((h, tIdx) => (
+                            <span className="pb-haz-tag" key={tIdx}>{h.type}</span>
+                          ))}
                         </div>
                       </div>
-                      <span style={expandIconStyle}>{expandedHazardDetail === idx ? '▼' : '▶'}</span>
+                      <span className="pb-haz-count">{locationGroup.hazards.length} hazard{locationGroup.hazards.length > 1 ? 's' : ''}</span>
+                      <span style={{ color: 'rgba(252,165,165,0.7)', fontSize: '10px', flex: '0 0 auto' }}><Icons.ChevronRight size={10} /></span>
                     </div>
 
                     {expandedHazardDetail === idx && (
@@ -542,21 +499,14 @@ const HazardAwareness = ({
                       </div>
                     )}
                   </div>
-                ))}
-              </div>
+                ))
+              ) : (
+                <div className="pb-haz-empty"><span>✅ {t('no_current_hazards')}</span></div>
+              )}
             </div>
-          ) : (
-            <div style={noHazardsLive}>
-              <span>✅ {t('no_current_hazards')}</span>
-            </div>
-          )}
-
-          {/* Refresh Button */}
-          <button style={refreshButtonCompactStyle} onClick={fetchHazardData}>
-            🔄 {t('refresh')}
-          </button>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };

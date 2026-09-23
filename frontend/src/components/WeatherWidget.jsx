@@ -7,6 +7,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { weatherService } from '../services/weatherService';
 import { getApiBaseUrl } from '../api';
 import { useLanguage } from '../context/LanguageContext';
+import Icons from './Icons';
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -310,6 +311,95 @@ const WeatherWidget = ({
   }
 
   const safetyScore = getSafetyScore();
+
+  // Prototype-identical bento card (homepage horizontal mode only)
+  const pbCondVisual = (condition) => {
+    const key = String(condition || '').toLowerCase();
+    if (key.includes('thunder') || key.includes('storm')) return { Icon: Icons.CloudLightning, color: '#c084fc' };
+    if (key.includes('rain') || key.includes('drizzle') || key.includes('shower')) return { Icon: Icons.CloudRain, color: '#60a5fa' };
+    if (key.includes('clear') || key.includes('sun')) return { Icon: Icons.Sun, color: '#facc15' };
+    if (key.includes('few') || key.includes('scattered') || key.includes('partly')) return { Icon: Icons.CloudSun, color: '#fde047' };
+    return { Icon: Icons.Cloud, color: '#94a3b8' };
+  };
+
+  if (horizontal) {
+    const main = pbCondVisual(weather.condition);
+    const MainIcon = main.Icon;
+    const ringColor = getSafetyColor(safetyScore);
+    const ringPct = Math.max(0, Math.min(100, safetyScore)) * 3.6;
+    const days = Array.isArray(forecast?.forecast) ? forecast.forecast.slice(0, 7) : [];
+    return (
+      <div style={getContainerStyle()}>
+        <div className="pb-wx-top">
+          <div className="pb-wx-loc">
+            <p className="pb-loc-label"><span style={{ color: '#94a3b8' }}><Icons.MapPin size={11} /></span> {t('current_location')}</p>
+            <h4 className="pb-loc-name">{locationName || weather.location?.name || t('location')}</h4>
+            {weather.timestamp && (
+              <p className="pb-updated"><span style={{ color: '#94a3b8' }}><Icons.Clock size={11} /></span> {t('updated')} {formatTime(weather.timestamp)}</p>
+            )}
+          </div>
+          <div className="pb-ring" style={{ background: `conic-gradient(${ringColor} 0deg, ${ringColor} ${ringPct}deg, rgba(255,255,255,0.1) ${ringPct}deg)` }}>
+            <div className="pb-ring-inner">
+              <span style={{ color: ringColor }}>{safetyScore}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="pb-wx-main">
+          <span className="pb-big-ico" style={{ color: main.color }}><MainIcon size={48} /></span>
+          <div>
+            <p className="pb-temp">{weather.temperature}°</p>
+            <p className="pb-cond">{weather.description}</p>
+          </div>
+        </div>
+
+        <div className="pb-stats">
+          <div className="pb-stat">
+            <p className="pb-stat-label"><span style={{ color: '#f87171' }}><Icons.Thermometer size={13} /></span> {t('feels_like')}</p>
+            <p className="pb-stat-val">{weather.feelsLike}°C</p>
+          </div>
+          <div className="pb-stat">
+            <p className="pb-stat-label"><span style={{ color: '#60a5fa' }}><Icons.Droplet size={13} /></span> {t('humidity')}</p>
+            <p className="pb-stat-val">{weather.humidity}%</p>
+          </div>
+          <div className="pb-stat">
+            <p className="pb-stat-label"><span style={{ color: '#cbd5e1' }}><Icons.Wind size={13} /></span> {t('wind')}</p>
+            <p className="pb-stat-val">{weather.windSpeed} km/h</p>
+          </div>
+        </div>
+
+        {showForecast && days.length > 0 && (
+          <div className="pb-forecast">
+            <div className="pb-forecast-head">
+              <p className="pb-forecast-title"><span style={{ color: '#93c5fd' }}><Icons.CalendarDays size={14} /></span> {t('forecast_7_day')}</p>
+              <span className="pb-forecast-sub">{t('next_7_days')}</span>
+            </div>
+            <div className="pb-forecast-grid">
+              {days.map((day, i) => {
+                const v = pbCondVisual(day.condition);
+                const DayIcon = v.Icon;
+                const d = day?.datetime ? new Date(day.datetime) : new Date(Date.now() + i * 86400000);
+                let dayName = '';
+                try {
+                  dayName = d.toLocaleDateString(language === 'zh' ? 'zh-CN' : language, { weekday: 'short' });
+                } catch { dayName = ''; }
+                const hi = day.tempMax ?? day.temperature;
+                const lo = day.tempMin ?? day.temperature;
+                return (
+                  <div className="pb-fc" key={i}>
+                    <span className="pb-fc-day">{dayName}</span>
+                    <span className="pb-fc-ico" style={{ color: v.color }}><DayIcon size={15} /></span>
+                    <span className="pb-fc-hi">{hi}°</span>
+                    <span className="pb-fc-lo">{lo}°</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div style={getContainerStyle()}>

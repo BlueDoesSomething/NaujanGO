@@ -431,6 +431,8 @@ class WeatherService {
       .map(item => ({
         datetime: new Date(item.dt * 1000),
         temperature: Math.round(item.main.temp),
+        tempMax: Math.round(item.main.temp_max ?? item.main.temp),
+        tempMin: Math.round(item.main.temp_min ?? item.main.temp),
         condition: item.weather[0].main,
         description: item.weather[0].description,
         icon: item.weather[0].icon,
@@ -510,6 +512,8 @@ class WeatherService {
       forecast.push({
         datetime: date,
         temperature: Math.floor(Math.random() * 10) + 22,
+        tempMax: Math.floor(Math.random() * 10) + 24,
+        tempMin: Math.floor(Math.random() * 8) + 18,
         condition: condition,
         description: this.getConditionDescription(condition),
         icon: this.getWeatherIcon(condition),
