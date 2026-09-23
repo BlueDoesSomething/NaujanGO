@@ -45,16 +45,6 @@ const toNumericRating = (rating) => {
 
 const pad2 = (n) => String(n).padStart(2, '0');
 
-const getEcoWeatherEmoji = (condition = '') => {
-  const cond = String(condition).toLowerCase();
-  const map = {
-    clear: '🌞', clouds: '☁️', rain: '🌧️', drizzle: '🌦️',
-    thunderstorm: '⛈️', snow: '❄️', mist: '🌫️', fog: '🌫️',
-    haze: '🌫️', smoke: '💨'
-  };
-  return map[cond] || '🌤️';
-};
-
 const formatCurrency = (value, currency = 'PHP') => {
   try {
     const numValue = parseFloat(value);
@@ -769,42 +759,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
             </ul>
           </div>
 
-          {/* 7-day forecast */}
-          <div className="bento-item bento-full eco-forecast">
-            <div className="bento-head">
-              <div className="bh-icon"><Icons.Calendar size={20} /></div>
-              <div>
-                <h3>{t('forecast_heading')}</h3>
-                <p>{t('next_7_days')}</p>
-              </div>
-            </div>
-            {nowLoading ? (
-              <div className="eco-skeleton" style={{ height: 120 }} />
-            ) : Array.isArray(nowForecast?.forecast) && nowForecast.forecast.length > 0 ? (
-              <div className="eco-forecast-row">
-                {nowForecast.forecast.slice(0, 7).map((day, i) => {
-                  const date = day.datetime instanceof Date ? day.datetime : new Date(day.datetime);
-                  const dayLabel = date.toLocaleDateString(language === 'zh' ? 'zh-CN' : language, { weekday: 'short' }).toUpperCase();
-                  const icon = day.icon || day.iconCode;
-                  return (
-                    <div key={i} className="eco-forecast-day">
-                      <span className="ef-day">{dayLabel}</span>
-                      <span className="ef-icon">{typeof icon === 'string' && icon.startsWith('http') ? (
-                        <img src={icon} alt={day.condition} className="ef-img" />
-                      ) : (
-                        getEcoWeatherEmoji(day.condition)
-                      )}</span>
-                      <b className="ef-temp">{day.temperature}°</b>
-                      <span className="ef-cond">{day.condition}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <p style={{ color: 'var(--eco-text-faint)', fontSize: 13 }}>{t('no_forecast_data')}</p>
-            )}
           </div>
-        </div>
       </section>
       )}
 
