@@ -994,40 +994,40 @@
   z-index: 4;
   max-width: 1320px;
   margin: 0 auto;
-  padding: 40px 24px;
+  padding: 24px 20px;
 }
 .bento-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
-  gap: 18px;
-  margin-top: 24px;
+  gap: 12px;
+  margin-top: 16px;
 }
 .bento-item {
   position: relative;
-  border-radius: 22px;
-  padding: 22px;
+  border-radius: 16px;
+  padding: 14px 16px;
   background: var(--eco-card);
   border: 1px solid var(--eco-border);
   backdrop-filter: blur(16px);
   transition: transform 0.25s ease, border-color 0.25s ease;
   overflow: hidden;
 }
-.bento-item:hover { transform: translateY(-3px); border-color: rgba(74, 222, 128, 0.3); }
-.bento-main { grid-column: span 8; }
-.bento-half { grid-column: span 4; }
+.bento-item:hover { transform: translateY(-2px); border-color: rgba(74, 222, 128, 0.3); }
+.bento-main { grid-column: span 6; }
+.bento-half { grid-column: span 6; }
 .bento-third { grid-column: span 4; }
 .bento-quarter { grid-column: span 3; }
 .bento-full { grid-column: span 12; }
 .bento-item .bento-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 .bento-item .bento-head .bh-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 12px;
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1035,8 +1035,8 @@
   background: rgba(34, 197, 94, 0.14);
   border: 1px solid rgba(74, 222, 128, 0.2);
 }
-.bento-item .bento-head h3 { font-size: 15px; font-weight: 800; color: var(--eco-text); margin: 0; }
-.bento-item .bento-head p { font-size: 12px; color: var(--eco-text-faint); margin: 2px 0 0; }
+.bento-item .bento-head h3 { font-size: 13px; font-weight: 800; color: var(--eco-text); margin: 0; }
+.bento-item .bento-head p { font-size: 11px; color: var(--eco-text-faint); margin: 1px 0 0; }
 /* WeatherWidget + HazardAwareness inner rescaling inside bento */
 .bento-item .weather-widget-inner,
 .bento-item > div > div[style*="borderRadius"] {
@@ -1076,20 +1076,20 @@
 .bento-current-loc svg { color: var(--eco-sky); }
 .eco-tip-list, .eco-check-list {
   list-style: none;
-  margin: 10px 0 0;
+  margin: 6px 0 0;
   padding: 0;
   display: grid;
-  gap: 10px;
+  gap: 6px;
 }
 .eco-tip-list li, .eco-check-list li {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  font-size: 13px;
+  gap: 8px;
+  font-size: 12px;
   color: var(--eco-text-dim);
-  line-height: 1.5;
+  line-height: 1.4;
 }
-.eco-tip-list li svg, .eco-check-list li svg { color: var(--eco-green); flex-shrink: 0; margin-top: 2px; }
+.eco-tip-list li svg, .eco-check-list li svg { color: var(--eco-green); flex-shrink: 0; margin-top: 1px; width: 13px; height: 13px; }
 /* Safety score card */
 .eco-safety { background: linear-gradient(160deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.05)); border-color: rgba(74, 222, 128, 0.24); }
 .eco-safety .bh-icon { background: rgba(34, 197, 94, 0.16); }
@@ -1103,13 +1103,13 @@
 .eco-safety-ring-row {
   display: flex;
   align-items: center;
-  gap: 18px;
-  margin-top: 8px;
+  gap: 14px;
+  margin-top: 4px;
 }
 .eco-safety-ring-row .safety-ring {
   --safety-pct: 252deg;
-  width: 84px;
-  height: 84px;
+  width: 68px;
+  height: 68px;
   flex-shrink: 0;
   border-radius: 50%;
   background: conic-gradient(#22c55e 0deg, #22c55e var(--safety-pct), rgba(255, 255, 255, 0.1) var(--safety-pct));
@@ -1118,24 +1118,24 @@
   justify-content: center;
 }
 .eco-safety-ring-row .safety-ring-value {
-  width: 62px;
-  height: 62px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   background: rgba(8, 14, 21, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #4ade80;
-  font-size: 22px;
+  font-size: 18px;
   font-weight: 800;
 }
 .eco-safety .eco-safety-copy { flex: 1; min-width: 0; }
-.eco-safety .safety-metric { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-top: 0; }
-.eco-safety .safety-metric b { font-size: 18px; font-weight: 800; color: var(--eco-green); }
-.eco-safety .safety-metric span { font-size: 12px; color: var(--eco-text-dim); }
+.eco-safety .safety-metric { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-top: 0; }
+.eco-safety .safety-metric b { font-size: 14px; font-weight: 800; color: var(--eco-green); }
+.eco-safety .safety-metric span { font-size: 11px; color: var(--eco-text-dim); }
 .eco-safety .safety-bar {
-  height: 10px;
-  margin-top: 12px;
+  height: 7px;
+  margin-top: 8px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.1);
   overflow: hidden;
@@ -1148,8 +1148,8 @@
 }
 .eco-safety .safety-score {
   display: block;
-  margin-top: 8px;
-  font-size: 12px;
+  margin-top: 4px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--eco-text-faint);
 }
@@ -1163,28 +1163,28 @@
 /* Now / hourly card */
 .eco-now .eco-now-row {
   display: grid;
-  grid-template-columns: 1.1fr 1fr;
-  gap: 16px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
   align-items: stretch;
-  margin-top: 6px;
+  margin-top: 4px;
 }
 .eco-now .eco-now-main {
   background: rgba(34, 197, 94, 0.1);
   border: 1px solid rgba(74, 222, 128, 0.2);
-  border-radius: 16px;
-  padding: 16px;
+  border-radius: 12px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 .eco-now .eco-now-cond {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--eco-text-dim);
   text-transform: capitalize;
 }
 .eco-now .eco-now-temp {
-  font-size: 40px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1;
   background: linear-gradient(90deg, #4ade80, #34d399, #22d3ee);
@@ -1195,22 +1195,22 @@
 .eco-now .eco-now-hours {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 6px;
 }
 .eco-now .eco-now-hour {
   background: var(--eco-card-strong);
   border: 1px solid var(--eco-border);
-  border-radius: 14px;
-  padding: 12px;
+  border-radius: 10px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
-.eco-now .eco-now-hour span { font-size: 11px; font-weight: 700; color: var(--eco-green); }
-.eco-now .eco-now-hour b { font-size: 18px; font-weight: 800; color: var(--eco-text); }
+.eco-now .eco-now-hour span { font-size: 10px; font-weight: 700; color: var(--eco-green); }
+.eco-now .eco-now-hour b { font-size: 14px; font-weight: 800; color: var(--eco-text); }
 .eco-now .eco-now-hour em {
   font-style: normal;
-  font-size: 10px;
+  font-size: 9px;
   color: var(--eco-text-faint);
   text-transform: capitalize;
   white-space: nowrap;
@@ -1763,9 +1763,9 @@
   -webkit-text-fill-color: transparent;
 }
 [data-theme="light"] .eco-home .hero-stat-divider { background: linear-gradient(180deg, transparent, rgba(15, 23, 42, 0.18), transparent); }
-[data-theme="light"] .eco-home .eco-now .eco-now-hour { background: rgba(255, 255, 255, 0.9); border-color: rgba(15, 23, 42, 0.08); }
+[data-theme="light"] .eco-home .eco-now .eco-now-hour { background: rgba(255, 255, 255, 0.9); border-color: rgba(15, 23, 42, 0.08); border-radius: 10px; }
 [data-theme="light"] .eco-home .eco-now .eco-now-hour b { color: #0f172a; }
-[data-theme="light"] .eco-home .eco-now .eco-now-main { background: rgba(22, 163, 74, 0.08); border-color: rgba(22, 163, 74, 0.18); }
+[data-theme="light"] .eco-home .eco-now .eco-now-main { background: rgba(22, 163, 74, 0.08); border-color: rgba(22, 163, 74, 0.18); border-radius: 12px; }
 [data-theme="light"] .eco-home .eco-forecast .eco-forecast-day { background: rgba(255, 255, 255, 0.9); border-color: rgba(15, 23, 42, 0.08); }
 [data-theme="light"] .eco-home .eco-forecast .ef-temp { color: #0f172a; }
 [data-theme="light"] .eco-home .safety-bar { background: rgba(15, 23, 42, 0.1); }
