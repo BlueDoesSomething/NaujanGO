@@ -32,38 +32,6 @@
   scroll-behavior: smooth;
 }
 
-/* Backdrop drift behind hero */
-.eco-home .hero-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 1;
-  transition: opacity 0.4s ease, visibility 0.4s ease;
-  will-change: opacity;
-}
-.eco-home .hero-backdrop-img {
-  position: absolute;
-  inset: 0;
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-  transform: scale(1.08);
-  animation: backdropDrift 34s ease-in-out infinite alternate;
-}
-.eco-home .hero-backdrop-shade {
-  position: absolute;
-  inset: 0;
-  background:
-    radial-gradient(ellipse at 18% 8%, rgba(34, 197, 94, 0.22), transparent 58%),
-    radial-gradient(ellipse at 88% 92%, rgba(59, 130, 246, 0.16), transparent 55%),
-    linear-gradient(135deg, rgba(7, 18, 12, 0.94) 0%, rgba(7, 18, 12, 0.88) 45%, rgba(7, 18, 12, 0.8) 100%);
-}
-@keyframes backdropDrift {
-  from { transform: scale(1.08) translate3d(0, 0, 0); }
-  to   { transform: scale(1.16) translate3d(-1.8%, -1.6%, 0); }
-}
-
 /* Scroll progress */
 .eco-scroll-progress {
   position: fixed;
@@ -1592,7 +1560,6 @@
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
   .eco-home .floating-leaf,
-  .eco-home .hero-backdrop-img,
   .eco-home .stage-progress::before,
   .eco-home .hero-gradient-orb,
   .eco-home .shimmer::after,

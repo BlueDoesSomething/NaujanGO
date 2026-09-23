@@ -377,15 +377,6 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
     <div className="eco-home">
       <div className="eco-scroll-progress" style={{ width: `${scrollProgress}%` }} />
 
-      {/* Hero backdrop */}
-      <div className="hero-backdrop" id="heroBackdrop">
-        <div
-          className="hero-backdrop-img"
-          style={{ backgroundImage: featured[0]?.image_url ? `url(${featured[0].image_url})` : 'url(/placeholder-attraction.svg)' }}
-        />
-        <div className="hero-backdrop-shade" />
-      </div>
-
       {/* Floating leaves */}
       <div className="floating-leaves" aria-hidden="true">
         {[...Array(8)].map((_, i) => (
