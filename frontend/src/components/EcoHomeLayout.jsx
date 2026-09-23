@@ -780,6 +780,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               showSafetyTips={true}
               size="large"
               theme={isDark ? 'dark' : 'light'}
+              horizontal={true}
             />
           </div>
           )}

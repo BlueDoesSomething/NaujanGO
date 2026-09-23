@@ -19,7 +19,8 @@ const WeatherWidget = ({
   showAlerts = true,
   showSafetyTips = false,
   size = 'medium', // small, medium, large
-  theme = 'light' // light, dark
+  theme = 'light', // light, dark
+  horizontal = false
 }) => {
   const { t, language } = useLanguage();
   const [weather, setWeather] = useState(null);
@@ -305,7 +306,7 @@ const WeatherWidget = ({
   return (
     <div style={getContainerStyle()}>
       {/* Main Weather Display */}
-      <div style={mainWeatherStyle}>
+      <div style={horizontal ? { ...mainWeatherStyle, flexDirection: 'column', gap: '10px' } : mainWeatherStyle}>
         <div style={headerStyle}>
           <div style={locationStyle}>
             <h3 style={locationNameStyle}>{locationName || weather.location?.name || t('location')}</h3>
@@ -330,7 +331,7 @@ const WeatherWidget = ({
           </div>
         </div>
 
-        <div style={currentWeatherStyle}>
+        <div style={horizontal ? { ...currentWeatherStyle, flexDirection: 'row', alignItems: 'center', gap: '20px', flexWrap: 'wrap' } : currentWeatherStyle}>
           <div style={temperatureDisplayStyle}>
             {typeof getWeatherIcon(weather.condition, weather.iconCode) === 'string' && 
              getWeatherIcon(weather.condition, weather.iconCode).startsWith('http') ? (
@@ -350,7 +351,7 @@ const WeatherWidget = ({
             </div>
           </div>
 
-          <div style={weatherDetailsGridStyle}>
+          <div style={horizontal ? { ...weatherDetailsGridStyle, gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', flex: '1 1 0', minWidth: '200px' } : weatherDetailsGridStyle}>
             <div style={weatherDetailStyle}>
               <span style={detailIconStyle}>🌡️</span>
               <div>
@@ -406,7 +407,7 @@ const WeatherWidget = ({
           </div>
         )}
 
-        {showSafetyTips && (
+        {showSafetyTips && !horizontal && (
           <div style={safetyTipsContainerStyle}>
             <h4 style={safetyTipsTitleStyle}>{t('safety_tips')}</h4>
             <div style={safetyTipsListStyle}>
@@ -449,7 +450,7 @@ const WeatherWidget = ({
         )}
 
         {/* Detailed Weather Info Toggle */}
-        {size !== 'small' && (
+        {size !== 'small' && !horizontal && (
           <button 
             style={detailsToggleStyle}
             onClick={() => setShowDetails(!showDetails)}
@@ -594,33 +595,42 @@ const WeatherWidget = ({
 
         {/* Weather Forecast */}
         {showForecast && forecast && (
-          <div style={forecastContainerStyle}>
-            <h4 style={forecastTitleStyle}>📅 {t('forecast_7_day')}</h4>
-            <div style={forecastListStyle}>
+          <div style={horizontal ? { ...forecastContainerStyle, marginTop: '8px' } : forecastContainerStyle}>
+            <h4 style={horizontal ? { ...forecastTitleStyle, fontSize: '0.85rem', marginBottom: '8px' } : forecastTitleStyle}>📅 {t('forecast_7_day')}</h4>
+            <div style={horizontal ? { ...forecastListStyle, flexDirection: 'row', gap: '6px', overflowX: 'auto', paddingBottom: '4px' } : forecastListStyle}>
               {forecast.forecast && Array.isArray(forecast.forecast) ? (
                 forecast.forecast.slice(0, 7).map((day, index) => {
-                  // Parse date - handle both date objects and ISO strings
                   const date = day.datetime ? new Date(day.datetime) : new Date();
-                  // Get UTC date to avoid timezone shift issues
                   const utcDate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
                   const iconResult = getWeatherIcon(day.condition, day.iconCode);
                   const isImageUrl = typeof iconResult === 'string' && iconResult.startsWith('http');
                   
+                  const dayName = utcDate.toLocaleDateString(language === 'zh' ? 'zh-CN' : language, { weekday: 'short' }).toUpperCase();
+                  
+                  if (horizontal) {
+                    return (
+                      <div key={index} style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                        padding: '8px 10px', borderRadius: '10px', minWidth: '60px',
+                        backgroundColor: 'var(--ww-soft)', border: '1px solid var(--ww-soft-border)'
+                      }}>
+                        <span style={{ fontSize: '0.65rem', fontWeight: '700', color: 'var(--ww-muted)' }}>{dayName}</span>
+                        <span style={{ fontSize: '1.3rem' }}>
+                          {isImageUrl ? <img src={iconResult} alt={day.condition} style={{ width: '28px', height: '28px', objectFit: 'contain' }} /> : iconResult}
+                        </span>
+                        <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#ff6b6b' }}>{day.temperature}°</span>
+                        <span style={{ fontSize: '0.6rem', color: 'var(--ww-muted)', textTransform: 'capitalize' }}>{day.condition}</span>
+                      </div>
+                    );
+                  }
+                  
                   return (
                     <div key={index} style={forecastItemStyle}>
-                      <span style={forecastDateStyle}>
-                        {utcDate.toLocaleDateString(language === 'zh' ? 'zh-CN' : language, { weekday: 'short' }).toUpperCase()}
-                      </span>
+                      <span style={forecastDateStyle}>{dayName}</span>
                       <div style={forecastIconStyle}>
                         {isImageUrl ? (
-                          <img 
-                            src={iconResult} 
-                            alt={day.condition}
-                            style={forecastWeatherIconStyle}
-                          />
-                        ) : (
-                          iconResult
-                        )}
+                          <img src={iconResult} alt={day.condition} style={forecastWeatherIconStyle} />
+                        ) : iconResult}
                       </div>
                       <span style={forecastTempStyle}>{day.temperature}°</span>
                       <span style={forecastConditionStyle}>{day.condition}</span>
