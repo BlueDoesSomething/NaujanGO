@@ -362,6 +362,8 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   const active = featured.length ? featured[stageIdx % featured.length] : null;
   const total = Math.max(1, featured.length);
 
+  const [weatherSafetyScore, setWeatherSafetyScore] = useState(100);
+
   const safetyScorePct = useMemo(() => {
     if (attractions.length === 0) return 80;
     const avg = attractions.reduce((sum, a) => sum + (toNumericRating(a.avg_rating) || 4.5), 0) / attractions.length;
@@ -765,10 +767,18 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
           {pagesections.showWeather !== false && (
           <div className="bento-item bento-main eco-bento-weather">
             <div className="bento-head">
-              <div className="bh-icon"><Icons.Cloud size={20} /></div>
               <div>
-                <h3>{t('live_conditions')}</h3>
                 <p className="bento-live-badge"><span className="pulse-dot" /> {t('current_location')}</p>
+              </div>
+              <div className="bento-weather-score">
+                <div className="bento-weather-score-circle" style={{
+                  borderColor: weatherSafetyScore >= 80 ? '#4caf50' : weatherSafetyScore >= 60 ? '#ff9800' : '#ff5722'
+                }}>
+                  <span style={{ color: weatherSafetyScore >= 80 ? '#4caf50' : weatherSafetyScore >= 60 ? '#ff9800' : '#ff5722', fontWeight: 'bold' }}>
+                    {weatherSafetyScore}
+                  </span>
+                </div>
+                <span className="bento-weather-score-label">{t('safety_score')}</span>
               </div>
             </div>
             <WeatherWidget
@@ -781,6 +791,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               size="large"
               theme={isDark ? 'dark' : 'light'}
               horizontal={true}
+              onSafetyScore={setWeatherSafetyScore}
             />
           </div>
           )}

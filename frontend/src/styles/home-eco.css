@@ -1258,8 +1258,19 @@
 @media (max-width: 520px) {
   .eco-forecast .eco-forecast-row { grid-template-columns: repeat(2, 1fr); }
 }
-/* Weather widget on light bento */
-.eco-bento-weather { background: transparent !important; }
+/* Weather widget on bento — flatten nested card */
+.eco-bento-weather { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+.eco-bento-weather .bento-head { display: flex !important; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+.eco-bento-weather > div { background: transparent !important; border: none !important; box-shadow: none !important; padding: 0 !important; }
+.eco-bento-weather .weather-widget-inner,
+.eco-bento-weather > div > div[style*="borderRadius"] { background: transparent !important; border: none !important; box-shadow: none !important; }
+.bento-weather-score { display: flex; flex-direction: column; align-items: center; gap: 4px; flex-shrink: 0; }
+.bento-weather-score-circle {
+  width: 44px; height: 44px; border-radius: 50%; border: 3px solid;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.85rem; font-weight: 800;
+}
+.bento-weather-score-label { font-size: 0.6rem; opacity: 0.7; text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* ============ SECTION HEADER ============ */
 .eco-section-header {

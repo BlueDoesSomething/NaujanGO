@@ -20,7 +20,8 @@ const WeatherWidget = ({
   showSafetyTips = false,
   size = 'medium', // small, medium, large
   theme = 'light', // light, dark
-  horizontal = false
+  horizontal = false,
+  onSafetyScore
 }) => {
   const { t, language } = useLanguage();
   const [weather, setWeather] = useState(null);
@@ -303,6 +304,13 @@ const WeatherWidget = ({
 
   const safetyScore = getSafetyScore();
 
+  // Pass safety score up to parent
+  useEffect(() => {
+    if (onSafetyScore && safetyScore !== undefined) {
+      onSafetyScore(safetyScore);
+    }
+  }, [safetyScore, onSafetyScore]);
+
   return (
     <div style={getContainerStyle()}>
       {/* Main Weather Display */}
@@ -316,7 +324,7 @@ const WeatherWidget = ({
               </span>
             )}
           </div>
-          <div style={horizontal ? { ...safetyScoreStyle, flexDirection: 'row', gap: '6px' } : safetyScoreStyle}>
+          <div style={horizontal ? { display: 'none' } : (horizontal ? { ...safetyScoreStyle, flexDirection: 'row', gap: '6px' } : safetyScoreStyle)}>
             <div 
               style={{
                 ...(horizontal ? { ...safetyCircleStyle, width: '38px', height: '38px', fontSize: '0.75rem' } : safetyCircleStyle),
@@ -652,10 +660,6 @@ const WeatherWidget = ({
     const isDark = theme === 'dark';
     const baseStyle = {
       fontFamily: 'Arial, sans-serif',
-      borderRadius: '12px',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-      overflow: 'hidden',
-      backgroundColor: isDark ? '#2c3e50' : '#ffffff',
       color: isDark ? '#ecf0f1' : '#2c3e50',
       '--ww-bg': isDark ? '#2c3e50' : '#ffffff',
       '--ww-text': isDark ? '#ecf0f1' : '#2c3e50',
@@ -670,13 +674,17 @@ const WeatherWidget = ({
       '--ww-detail': isDark ? '#cbd5e1' : '#334155'
     };
 
+    if (horizontal) {
+      return { ...baseStyle, width: '100%', padding: '0', borderRadius: '0', boxShadow: 'none', backgroundColor: 'transparent', overflow: 'visible' };
+    }
+
     switch (size) {
       case 'small':
-        return { ...baseStyle, width: '100%', maxWidth: '340px', padding: '14px' };
+        return { ...baseStyle, width: '100%', maxWidth: '340px', padding: '14px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: isDark ? '#2c3e50' : '#ffffff' };
       case 'large':
-        return { ...baseStyle, width: '100%', maxWidth: '500px', padding: '24px' };
+        return { ...baseStyle, width: '100%', maxWidth: '500px', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: isDark ? '#2c3e50' : '#ffffff' };
       default:
-        return { ...baseStyle, width: '100%', maxWidth: '400px', padding: '20px' };
+        return { ...baseStyle, width: '100%', maxWidth: '400px', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: isDark ? '#2c3e50' : '#ffffff' };
     }
   }
 
