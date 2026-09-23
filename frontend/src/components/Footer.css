@@ -1,10 +1,23 @@
-/* Modern Footer */
+/* Modern Footer — eco glass (mirrors prototype footer) */
 .footer {
-  background: linear-gradient(135deg, #16a34a 0%, #059669 100%);
-  color: white;
+  background: #0a0e17;
+  color: #f1f5f9;
   padding: 4rem 2rem 2rem;
   position: relative;
   overflow: hidden;
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
+}
+
+.footer::before {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.14), transparent 70%);
+  pointer-events: none;
 }
 
 .footer-container {
@@ -35,6 +48,21 @@
   margin-bottom: 1rem;
 }
 
+/* Circled leaf logo mark (mirrors prototype footer) */
+.footer-logo-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e, #047857);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+}
+
 .footer-brand-name {
   font-size: var(--font-size-h3, 1.5rem);
   font-weight: var(--font-heading-weight, 800);
@@ -44,7 +72,7 @@
 }
 
 .footer-description {
-  color: rgba(255, 255, 255, 0.95);
+  color: #94a3b8;
   line-height: 1.6;
   margin-bottom: 1.5rem;
   font-size: 0.875rem;
@@ -62,7 +90,7 @@
   display: flex;
   align-items: center;
   gap: 0.85rem;
-  color: white;
+  color: #cbd5e1;
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1.35;
@@ -77,6 +105,8 @@
   width: 20px;
   height: 20px;
 }
+.highlight-item:nth-child(2) .highlight-icon { color: #38bdf8; }
+.highlight-item:nth-child(3) .highlight-icon { color: #a78bfa; }
 .highlight-icon svg {
   width: 20px;
   height: 20px;
@@ -88,7 +118,7 @@
   font-weight: var(--font-heading-weight, 700);
   font-size: var(--font-size-nav, 1rem);
   margin-bottom: 1.5rem;
-  color: white;
+  color: #f8fafc;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -106,18 +136,30 @@
 }
 
 .footer-link {
-  color: rgba(255, 255, 255, 0.9);
+  color: #94a3b8;
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 400;
   transition: all 0.3s ease;
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   width: fit-content;
 }
 
+.footer-link::before {
+  content: '›';
+  color: rgba(148, 163, 184, 0.5);
+  font-size: 0.8rem;
+  transition: color 0.3s ease;
+}
+
 .footer-link:hover {
-  color: white;
+  color: #ffffff;
   transform: translateX(4px);
+}
+.footer-link:hover::before {
+  color: #22c55e;
 }
 
 /* Contact Information */
@@ -137,13 +179,15 @@
 
 .contact-icon {
   flex-shrink: 0;
-  color: #fbbf24;
+  color: #22c55e;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: 20px;
   height: 20px;
 }
+.contact-item:nth-child(2) .contact-icon { color: #94a3b8; }
+.contact-item:nth-child(3) .contact-icon { color: #38bdf8; }
 .contact-icon svg {
   width: 20px;
   height: 20px;
@@ -152,12 +196,12 @@
 
 .contact-item p {
   margin: 0;
-  color: white;
+  color: #94a3b8;
   font-size: 0.875rem;
   line-height: 1.4;
 }
 
-/* Social Media */
+/* Social Media — glass chips (mirrors prototype) */
 .social-links {
   display: flex;
   flex-direction: column;
@@ -169,21 +213,23 @@
   align-items: center;
   gap: 0.85rem;
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-lg);
-  color: white;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
   text-decoration: none;
   font-weight: 500;
   font-size: 0.875rem;
-  transition: all var(--transition-base);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
 }
 
 .social-link:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
   transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
-  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
 }
 
 .social-icon {
@@ -195,6 +241,10 @@
   width: 20px;
   height: 20px;
 }
+.social-link:nth-child(1) .social-icon { color: #3b82f6; }
+.social-link:nth-child(2) .social-icon { color: #ec4899; }
+.social-link:nth-child(3) .social-icon { color: #ffffff; }
+.social-link:nth-child(4) .social-icon { color: #ef4444; }
 .social-icon svg {
   width: 20px;
   height: 20px;
@@ -203,10 +253,10 @@
 
 /* Footer Bottom */
 .footer-bottom {
-  background: rgba(0, 0, 0, 0.2);
+  background: #06090f;
   margin: 3rem -2rem -2rem -2rem;
   padding: 1.5rem 2rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(148, 163, 184, 0.08);
 }
 
 .footer-bottom-content {
@@ -223,7 +273,7 @@
 
 .copyright {
   margin: 0;
-  color: white;
+  color: #94a3b8;
   font-size: 0.875rem;
   font-weight: 500;
 }
@@ -236,22 +286,26 @@
 }
 
 .bottom-link {
-  color: rgba(255, 255, 255, 0.9);
+  color: #94a3b8;
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 400;
-  transition: color var(--transition-base);
+  transition: color 0.3s ease;
 }
 
 .bottom-link:hover {
-  color: white;
+  color: #22c55e;
 }
 
 .developed-by {
   margin: 0;
-  color: rgba(255, 255, 255, 0.85);
+  color: #64748b;
   font-size: 0.8125rem;
   flex: 1 1 100%;
+}
+.developed-by::before {
+  content: '❦ ';
+  color: #22c55e;
 }
 
 /* Responsive Design */

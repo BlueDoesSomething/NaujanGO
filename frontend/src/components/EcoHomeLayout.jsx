@@ -97,6 +97,9 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   // Search
   const [searchDestination, setSearchDestination] = useState('');
   const [searchTab, setSearchTab] = useState('hotels');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchActive, setSearchActive] = useState(-1);
+  const searchWrapRef = useRef(null);
 
   // Misc UI
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -106,6 +109,36 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   // Now/hourly forecast for the bento "Now" card
   const [nowForecast, setNowForecast] = useState(null);
   const [nowLoading, setNowLoading] = useState(true);
+
+  // Dynamic falling leaves (mirrors prototype leaf spawner)
+  const leafIconVariants = useMemo(() => [Icons.Leaf, Icons.Seedling], []);
+  const leafSeqRef = useRef(0);
+  const [leaves, setLeaves] = useState([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const createLeaf = () => {
+      const id = leafSeqRef.current++;
+      const Icon = leafIconVariants[Math.floor(Math.random() * leafIconVariants.length)];
+      setLeaves(prev => {
+        const next = [...prev, {
+          id,
+          Icon,
+          left: Math.random() * 100,
+          size: Math.random() * 20 + 12,
+          dur: Math.random() * 15 + 15,
+          delay: Math.random() * 5,
+        }];
+        const excess = next.length - 40;
+        return excess > 0 ? next.slice(excess) : next;
+      });
+    };
+    const seedTimers = [];
+    for (let i = 0; i < 8; i++) seedTimers.push(setTimeout(createLeaf, i * 2000));
+    const interval = setInterval(createLeaf, 4000);
+    return () => { seedTimers.forEach(clearTimeout); clearInterval(interval); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const featured = useMemo(() => attractions.slice(0, 6), [attractions]);
 
@@ -281,6 +314,51 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
     });
   };
 
+  // Search autocomplete suggestions (mirrors prototype autocomplete-list)
+  const searchSuggestions = useMemo(() => {
+    const q = searchDestination.trim().toLowerCase();
+    if (q.length === 0) return [];
+    const items = [];
+    attractions.forEach(a => {
+      if (items.length >= 6) return;
+      const label = String(a.name || '');
+      const sub = getAttractionArea(a) || String(a.municipality || '');
+      if ((label + ' ' + sub).toLowerCase().includes(q)) {
+        items.push({ type: 'attraction', id: a.id, label, sub, image: a.image_url });
+      }
+    });
+    hotels.forEach(h => {
+      if (items.length >= 6) return;
+      const label = String(h.name || '');
+      const sub = String(h.location || h.city || '');
+      if ((label + ' ' + sub).toLowerCase().includes(q)) {
+        items.push({ type: 'hotel', id: h.id, label, sub, image: h.image });
+      }
+    });
+    return items.slice(0, 6);
+  }, [searchDestination, attractions, hotels]);
+
+  const pickSuggestion = (item) => {
+    setSearchOpen(false);
+    setSearchActive(-1);
+    setSearchDestination('');
+    if (item.type === 'hotel') navigate(`/hotels/${item.id}`, { state: { hotel: item } });
+    else navigate(`/attractions/${item.id}`, { state: { attraction: item } });
+  };
+
+  // Close autocomplete when clicking outside the search bar
+  useEffect(() => {
+    if (!searchWrapRef.current) return;
+    const onDoc = (e) => {
+      if (searchWrapRef.current && !searchWrapRef.current.contains(e.target)) {
+        setSearchOpen(false);
+        setSearchActive(-1);
+      }
+    };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, []);
+
   const active = featured.length ? featured[stageIdx % featured.length] : null;
   const total = Math.max(1, featured.length);
 
@@ -379,13 +457,13 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
 
       {/* Floating leaves */}
       <div className="floating-leaves" aria-hidden="true">
-        {[...Array(8)].map((_, i) => (
+        {leaves.map(l => (
           <span
-            key={i}
+            key={l.id}
             className="floating-leaf"
-            style={{ left: `${(i * 13 + 5) % 97}%`, fontSize: `${14 + ((i * 7) % 16)}px`, animationDuration: `${15 + ((i * 3) % 14)}s`, animationDelay: `${i * 1.7}s` }}
+            style={{ left: `${l.left}%`, fontSize: `${l.size}px`, animationDuration: `${l.dur}s`, animationDelay: `${l.delay}s` }}
           >
-            <Icons.Leaf size={14 + ((i * 7) % 16)} />
+            <l.Icon size={Math.round(l.size)} />
           </span>
         ))}
       </div>
@@ -550,7 +628,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
 
       {/* ============ SEARCH ============ */}
       <div className="eco-search-wrap">
-        <div className="eco-search-bar">
+        <div className="eco-search-bar" ref={searchWrapRef}>
           <div className="eco-search-tabs" role="tablist">
             {[
               { key: 'hotels', label: t('search_tab_stay') },
@@ -576,14 +654,47 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               type="text"
               placeholder={t('search_eco_placeholder')}
               value={searchDestination}
-              onChange={(e) => setSearchDestination(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+              onChange={(e) => { setSearchDestination(e.target.value); setSearchOpen(true); setSearchActive(-1); }}
+              onFocus={() => setSearchOpen(true)}
+              onBlur={() => setSearchOpen(false)}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowDown') { e.preventDefault(); setSearchActive(prev => (prev + 1) % Math.max(1, searchSuggestions.length)); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); setSearchActive(prev => (prev - 1 + Math.max(1, searchSuggestions.length)) % Math.max(1, searchSuggestions.length)); }
+                else if (e.key === 'Enter') {
+                  e.preventDefault();
+                  if (searchOpen && searchActive >= 0 && searchSuggestions[searchActive]) pickSuggestion(searchSuggestions[searchActive]);
+                  else handleSearch();
+                } else if (e.key === 'Escape') { setSearchOpen(false); setSearchActive(-1); }
+              }}
               aria-label={t('search_eco_placeholder')}
+              aria-expanded={searchOpen && searchSuggestions.length > 0}
+              role="combobox"
             />
             {searchDestination && (
               <button type="button" onClick={() => setSearchDestination('')} aria-label={t('clear')} style={{ background: 'none', border: 'none', color: 'var(--eco-text-faint)', cursor: 'pointer' }}>
                 <Icons.X size={16} />
               </button>
+            )}
+            {searchOpen && searchSuggestions.length > 0 && (
+              <ul className="eco-autocomplete" role="listbox" onMouseDown={(e) => e.preventDefault()} onBlur={() => setSearchOpen(false)}>
+                {searchSuggestions.map((s, i) => (
+                  <li
+                    key={`${s.type}-${s.id}`}
+                    role="option"
+                    aria-selected={i === searchActive}
+                    className={`eco-autocomplete-item${i === searchActive ? ' is-active' : ''}`}
+                    onMouseEnter={() => setSearchActive(i)}
+                    onClick={() => { setSearchOpen(false); pickSuggestion(s); }}
+                  >
+                    <span className="eco-ac-ic">{s.type === 'hotel' ? <Icons.Hotel size={15} /> : <Icons.Attraction size={15} />}</span>
+                    <span className="eco-ac-body">
+                      <b>{s.label}</b>
+                      <em>{s.sub}</em>
+                    </span>
+                    <span className="eco-ac-type">{s.type === 'hotel' ? t('mobile_stay') : t('mobile_attraction')}</span>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
           <button className="eco-search-submit" onClick={handleSearch}>
@@ -670,7 +781,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               attractions={attractions}
               userId={resolvedUserId}
               enableNotifications={!isGuest}
-              compact={true}
+              compact={false}
             />
           </div>
           )}
@@ -684,14 +795,21 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                 <p>{t('eco_rating_desc')}</p>
               </div>
             </div>
-            <div className="safety-metric">
-              <b>{safetyScorePct >= 70 ? t('safety_good') : t('exercise_caution')}</b>
-              <span>{t('travel_sustainably')}</span>
+            <div className="eco-safety-ring-row">
+              <div className="safety-ring" style={{ '--safety-pct': `${safetyScorePct * 3.6}deg` }}>
+                <span className="safety-ring-value">{safetyScorePct}</span>
+              </div>
+              <div className="eco-safety-copy">
+                <div className="safety-metric">
+                  <b>{safetyScorePct >= 70 ? t('safety_good') : t('exercise_caution')}</b>
+                  <span>{t('travel_sustainably')}</span>
+                </div>
+                <div className="safety-bar">
+                  <div className="safety-fill" style={{ width: `${safetyScorePct}%` }} />
+                </div>
+                <span className="safety-score">{safetyScorePct}/100</span>
+              </div>
             </div>
-            <div className="safety-bar">
-              <div className="safety-fill" style={{ width: `${safetyScorePct}%` }} />
-            </div>
-            <span className="safety-score">{safetyScorePct}/100</span>
           </div>
 
           {/* Now / hourly */}

@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { getApiBaseUrl } from '../api';
 import { loadCachedSetting, saveCachedSetting } from '../utils/siteSettingsCache';
+import { LeafIcon } from './Icons';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -48,6 +49,9 @@ const Footer = () => {
         {/* About Section */}
         <section className="footer-about" aria-label={t('aria_about_naujango')}>
           <div className="footer-brand">
+            <div className="footer-logo-mark" aria-hidden="true">
+              <LeafIcon size={18} />
+            </div>
             <h3 className="footer-brand-name">{siteName}</h3>
           </div>
           <p className="footer-description">{tagline}</p>

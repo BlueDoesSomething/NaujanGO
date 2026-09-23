@@ -9,8 +9,9 @@ import LanguageSelector from './LanguageSelector';
 import { useTheme } from '../context/ThemeContext';
 import {
   AttractionIcon, HotelIcon, CalendarIcon, MapIcon, InfoIcon,
-  UserIcon, BookingIcon, ShieldIcon, LogoutIcon, PlusIcon, GlobeIcon,
+  UserIcon, BookingIcon, ShieldIcon, LogoutIcon, PlusIcon, GlobeIcon, LeafIcon,
 } from './Icons';
+import { fetchAttractions } from '../api';
 
 const HomeIcon = ({ size = 18 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
@@ -36,17 +37,30 @@ const Navbar = () => {
     console.log('[Navbar] isLoggedIn:', isLoggedIn, 'loading:', loading, 'path:', location.pathname, 'user:', user?.email);
   }, [isLoggedIn, loading, location.pathname]);
   
-  const { t } = useLanguage();
+  const { t, supportedLanguages } = useLanguage();
   const { isDark, toggleDark } = useTheme();
   const [showDropdown, setShowDropdown] = useState(false);
   const [showAboutDropdown, setShowAboutDropdown] = useState(false);
   const [activeAboutSection, setActiveAboutSection] = useState('overview');
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [ecoSiteCount, setEcoSiteCount] = useState(null);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
   const aboutDropdownRef = useRef(null);
   const aboutButtonRef = useRef(null);
+
+  // Top meta bar: real one-time attraction count
+  useEffect(() => {
+    let mounted = true;
+    fetchAttractions()
+      .then(res => {
+        const list = Array.isArray(res) ? res : res?.data;
+        if (mounted) setEcoSiteCount(Array.isArray(list) ? list.length : null);
+      })
+      .catch(() => { if (mounted) setEcoSiteCount(null); });
+    return () => { mounted = false; };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -171,8 +185,28 @@ const Navbar = () => {
 
   return (
     <nav className={`navbar ${scrolled ? 'scrolled' : ''}`} role="navigation" aria-label="Main navigation">
+      <div className="navbar-meta">
+        <div className="navbar-meta-inner">
+          <span className="navbar-meta-loc">
+            <span className="navbar-meta-dot" aria-hidden="true" />
+            {t('hero_location_badge')}
+          </span>
+          <span className="navbar-meta-stats">
+            <span className="navbar-meta-stat">{ecoSiteCount ?? '—'} {t('hero_stat_eco_sites')}</span>
+            <span className="navbar-meta-sep" aria-hidden="true">·</span>
+            <span className="navbar-meta-stat">{supportedLanguages.length} {t('hero_stat_languages')}</span>
+            <span className="navbar-meta-sep" aria-hidden="true">·</span>
+            <span className="navbar-meta-stat">
+              <span className="navbar-meta-star" aria-hidden="true">★</span> 4.9 {t('hero_stat_eco_rating')}
+            </span>
+          </span>
+        </div>
+      </div>
       <div className="navbar-container">
         <Link to="/" className="navbar-logo" aria-label="NaujanGO Home">
+          <div className="logo-mark" aria-hidden="true">
+            <LeafIcon size={18} />
+          </div>
           <div className="logo-content">
             <span className="logo-text">{t('brand')}</span>
             <span className="logo-subtitle">{t('discover_naujan')}</span>
