@@ -306,20 +306,20 @@ const WeatherWidget = ({
   return (
     <div style={getContainerStyle()}>
       {/* Main Weather Display */}
-      <div style={horizontal ? { ...mainWeatherStyle, flexDirection: 'column', gap: '10px' } : mainWeatherStyle}>
-        <div style={headerStyle}>
+      <div style={horizontal ? { ...mainWeatherStyle, flexDirection: 'column', gap: '8px' } : mainWeatherStyle}>
+        <div style={horizontal ? { ...headerStyle, marginBottom: '4px', paddingBottom: '6px' } : headerStyle}>
           <div style={locationStyle}>
-            <h3 style={locationNameStyle}>{locationName || weather.location?.name || t('location')}</h3>
+            <h3 style={horizontal ? { ...locationNameStyle, fontSize: '1.1rem' } : locationNameStyle}>{locationName || weather.location?.name || t('location')}</h3>
             {weather.timestamp && (
               <span style={timestampStyle}>
                 {t('updated')}: {formatTime(weather.timestamp)}
               </span>
             )}
           </div>
-          <div style={safetyScoreStyle}>
+          <div style={horizontal ? { ...safetyScoreStyle, flexDirection: 'row', gap: '6px' } : safetyScoreStyle}>
             <div 
               style={{
-                ...safetyCircleStyle,
+                ...(horizontal ? { ...safetyCircleStyle, width: '38px', height: '38px', fontSize: '0.75rem' } : safetyCircleStyle),
                 borderColor: getSafetyColor(safetyScore)
               }}
             >
@@ -327,61 +327,61 @@ const WeatherWidget = ({
                 {safetyScore}
               </span>
             </div>
-            <span style={safetyLabelStyle}>{t('safety_score')}</span>
+            <span style={horizontal ? { ...safetyLabelStyle, fontSize: '0.6rem' } : safetyLabelStyle}>{t('safety_score')}</span>
           </div>
         </div>
 
-        <div style={horizontal ? { ...currentWeatherStyle, flexDirection: 'row', alignItems: 'center', gap: '20px', flexWrap: 'wrap' } : currentWeatherStyle}>
-          <div style={temperatureDisplayStyle}>
+        <div style={horizontal ? { ...currentWeatherStyle, flexDirection: 'row', alignItems: 'center', gap: '16px', flexWrap: 'nowrap' } : currentWeatherStyle}>
+          <div style={horizontal ? { ...temperatureDisplayStyle, gap: '10px', flexShrink: 0 } : temperatureDisplayStyle}>
             {typeof getWeatherIcon(weather.condition, weather.iconCode) === 'string' && 
              getWeatherIcon(weather.condition, weather.iconCode).startsWith('http') ? (
               <img 
                 src={getWeatherIcon(weather.condition, weather.iconCode)} 
                 alt={weather.condition}
-                style={weatherIconImageStyle}
+                style={horizontal ? { width: '48px', height: '48px' } : weatherIconImageStyle}
               />
             ) : (
-              <span style={weatherIconStyle}>
+              <span style={horizontal ? { fontSize: '2.2rem' } : weatherIconStyle}>
                 {getWeatherIcon(weather.condition, weather.iconCode)}
               </span>
             )}
             <div>
-              <span style={temperatureStyle}>{weather.temperature}°C</span>
-              <span style={conditionStyle}>{weather.description}</span>
+              <span style={horizontal ? { ...temperatureStyle, fontSize: '2rem' } : temperatureStyle}>{weather.temperature}°C</span>
+              <span style={horizontal ? { ...conditionStyle, fontSize: '0.85rem' } : conditionStyle}>{weather.description}</span>
             </div>
           </div>
 
           <div style={horizontal ? { ...weatherDetailsGridStyle, gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', flex: '1 1 0', minWidth: '200px' } : weatherDetailsGridStyle}>
-            <div style={weatherDetailStyle}>
-              <span style={detailIconStyle}>🌡️</span>
+            <div style={horizontal ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
+              <span style={horizontal ? { fontSize: '1rem' } : detailIconStyle}>🌡️</span>
               <div>
-                <span style={detailLabelStyle}>{t('feels_like')}</span>
-                <span style={detailValueStyle}>{weather.feelsLike}°C</span>
+                <span style={horizontal ? { fontSize: '0.7rem' } : detailLabelStyle}>{t('feels_like')}</span>
+                <span style={horizontal ? { fontSize: '0.8rem' } : detailValueStyle}>{weather.feelsLike}°C</span>
               </div>
             </div>
             
-            <div style={weatherDetailStyle}>
-              <span style={detailIconStyle}>💧</span>
+            <div style={horizontal ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
+              <span style={horizontal ? { fontSize: '1rem' } : detailIconStyle}>💧</span>
               <div>
-                <span style={detailLabelStyle}>{t('humidity')}</span>
-                <span style={detailValueStyle}>{weather.humidity}%</span>
+                <span style={horizontal ? { fontSize: '0.7rem' } : detailLabelStyle}>{t('humidity')}</span>
+                <span style={horizontal ? { fontSize: '0.8rem' } : detailValueStyle}>{weather.humidity}%</span>
               </div>
             </div>
             
-            <div style={weatherDetailStyle}>
-              <span style={detailIconStyle}>💨</span>
+            <div style={horizontal ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
+              <span style={horizontal ? { fontSize: '1rem' } : detailIconStyle}>💨</span>
               <div>
-                <span style={detailLabelStyle}>{t('wind')}</span>
-                <span style={detailValueStyle}>{weather.windSpeed} km/h</span>
+                <span style={horizontal ? { fontSize: '0.7rem' } : detailLabelStyle}>{t('wind')}</span>
+                <span style={horizontal ? { fontSize: '0.8rem' } : detailValueStyle}>{weather.windSpeed} km/h</span>
               </div>
             </div>
             
             {weather.rainfall > 0 && (
-              <div style={weatherDetailStyle}>
-                <span style={detailIconStyle}>🌧️</span>
+              <div style={horizontal ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
+                <span style={horizontal ? { fontSize: '1rem' } : detailIconStyle}>🌧️</span>
                 <div>
-                  <span style={detailLabelStyle}>{t('rain')}</span>
-                  <span style={detailValueStyle}>{weather.rainfall.toFixed(1)}mm</span>
+                  <span style={horizontal ? { fontSize: '0.7rem' } : detailLabelStyle}>{t('rain')}</span>
+                  <span style={horizontal ? { fontSize: '0.8rem' } : detailValueStyle}>{weather.rainfall.toFixed(1)}mm</span>
                 </div>
               </div>
             )}
@@ -389,7 +389,7 @@ const WeatherWidget = ({
         </div>
 
         {/* Weather Alerts */}
-        {showAlerts && alerts.length > 0 && (
+        {showAlerts && alerts.length > 0 && !horizontal && (
           <div style={alertsContainerStyle}>
             {alerts.map((alert, index) => (
               <div 
@@ -498,7 +498,7 @@ const WeatherWidget = ({
         )}
 
         {/* Today's Hourly Forecast */}
-        {showForecast && forecast && (
+        {showForecast && forecast && !horizontal && (
           <div style={hourlyContainerStyle}>
             <h4 style={forecastTitleStyle}>⏰ {t('today_hourly_forecast')}</h4>
             {selectedHourlyForecast ? (
