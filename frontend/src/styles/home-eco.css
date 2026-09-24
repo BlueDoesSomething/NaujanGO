@@ -930,7 +930,6 @@
   padding: 24px 20px;
 }
 /* Bento-region unified slate (dark only; light mode untouched) */
-[data-theme="dark"] .eco-home .eco-bento-section { background: #0F172A; border-radius: 24px; }
 [data-theme="dark"] .eco-home .eco-bento-section .bento-item { background: #1E293B; border-color: rgba(148, 163, 184, 0.14); }
 [data-theme="dark"] .eco-home .eco-bento-section .eco-bento-weather { background: #1E293B !important; border-color: rgba(148, 163, 184, 0.14) !important; }
 .bento-grid {
@@ -1245,7 +1244,7 @@
 
 /* ============ PROTOTYPE BENTO — Hazard card ============ */
 .pb-haz { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; }
-.pb-haz-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.pb-haz-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .pb-haz-title { display: flex; align-items: center; gap: 8px; }
 .pb-haz-title span { display: inline-flex; }
 .pb-haz-title p { color: #fff; font-weight: 700; font-size: 14px; margin: 0; }
@@ -1259,7 +1258,7 @@
 .pb-haz-foot p { color: rgba(254, 202, 202, 0.6); font-size: 12px; margin: 0; }
 .pb-haz-panel { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease, margin-top 0.35s ease; margin-top: 0; }
 .pb-haz.open .pb-haz-panel { max-height: 360px; opacity: 1; margin-top: 14px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
-.pb-haz-panel-inner { border-top: 1px solid rgba(239, 68, 68, 0.18); padding-top: 12px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.pb-haz-panel-inner { padding-top: 0; flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .pb-haz-list-title { display: flex; align-items: center; gap: 7px; color: #fca5a5; font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 9px; }
 .pb-haz-list-title span { display: inline-flex; }
 .pb-haz-scroll { overflow-y: auto; padding-right: 4px; scrollbar-width: thin; scrollbar-color: rgba(239,68,68,0.4) transparent; flex: 1; min-height: 0; }
@@ -1285,7 +1284,6 @@
 [data-theme="light"] .eco-home .pb-haz-sub { color: rgba(153,27,27,0.78); }
 [data-theme="light"] .eco-home .pb-haz-foot { border-top-color: rgba(220,38,38,0.16); }
 [data-theme="light"] .eco-home .pb-haz-foot p { color: rgba(153,27,27,0.64); }
-[data-theme="light"] .eco-home .pb-haz-panel-inner { border-top-color: rgba(220,38,38,0.16); }
 [data-theme="light"] .eco-home .pb-haz-list-title { color: #dc2626; }
 [data-theme="light"] .eco-home .pb-haz-scroll { scrollbar-color: rgba(220,38,38,0.3) transparent; }
 [data-theme="light"] .eco-home .pb-haz-scroll::-webkit-scrollbar-thumb { background: rgba(220,38,38,0.3); }
