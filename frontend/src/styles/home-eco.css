@@ -1016,7 +1016,7 @@
 /* Hazard glass card */
 .eco-hazard { background: linear-gradient(160deg, rgba(244, 63, 94, 0.16), rgba(244, 63, 94, 0.05)); border-color: rgba(244, 63, 94, 0.28); display: flex; flex-direction: column; max-height: 420px; }
 [data-theme="light"] .eco-home .eco-hazard { background: linear-gradient(160deg, rgba(244, 63, 94, 0.12), rgba(244, 63, 94, 0.04)); border-color: rgba(244, 63, 94, 0.26); }
-.eco-hazard > div { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.eco-hazard > div { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: transparent !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
 .eco-safety-ring-row {
   display: flex;
   align-items: center;
@@ -1248,7 +1248,7 @@
 .pb-haz.open .pb-haz-toggle svg { transform: rotate(180deg); }
 .pb-haz-total { color: #f87171; font-size: 24px; font-weight: 700; margin: 0 0 4px; line-height: 1.2; }
 .pb-haz-sub { color: rgba(254, 202, 202, 0.7); font-size: 12px; margin: 0; }
-.pb-haz-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid rgba(239, 68, 68, 0.2); }
+.pb-haz-foot { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(239, 68, 68, 0.2); }
 .pb-haz-foot p { color: rgba(254, 202, 202, 0.6); font-size: 12px; margin: 0; }
 .pb-haz-panel { max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease, margin-top 0.35s ease; margin-top: 0; }
 .pb-haz.open .pb-haz-panel { max-height: 360px; opacity: 1; margin-top: 14px; flex: 1; min-height: 0; display: flex; flex-direction: column; }
