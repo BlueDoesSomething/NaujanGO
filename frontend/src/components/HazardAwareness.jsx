@@ -442,6 +442,7 @@ const HazardAwareness = ({
                   <div key={idx}>
                     <div
                       className="pb-haz-row"
+                      style={{ borderLeftColor: getSeverityColor(locationGroup.highestLevel) }}
                       role="button"
                       tabIndex={0}
                       onClick={() => setExpandedHazardDetail(expandedHazardDetail === idx ? null : idx)}
