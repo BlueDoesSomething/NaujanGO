@@ -1195,7 +1195,7 @@
 .pb-ring { position: relative; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .pb-ring-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 0 0 auto; }
 .pb-ring-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #fff; }
-.pb-ring-inner { width: 40px; height: 40px; border-radius: 50%; background: transparent; display: flex; align-items: center; justify-content: center; }
+.pb-ring-inner { width: 40px; height: 40px; border-radius: 50%; background: #0a1419; display: flex; align-items: center; justify-content: center; }
 .pb-ring-inner span { font-weight: 700; font-size: 14px; }
 .pb-wx-main { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
 .pb-big-ico { display: inline-flex; line-height: 0; flex: 0 0 auto; }
@@ -1240,7 +1240,6 @@
 [data-theme="light"] .eco-home .pb-forecast { border-top-color: rgba(15,23,42,0.09); }
 [data-theme="light"] .eco-home .pb-fc { background: transparent; border-color: transparent; }
 [data-theme="light"] .eco-home .pb-fc:hover { background: transparent; border-color: transparent; }
-[data-theme="light"] .eco-home .pb-ring-inner { background: transparent; }
 
 /* ============ PROTOTYPE BENTO — Hazard card ============ */
 .pb-haz { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; }
