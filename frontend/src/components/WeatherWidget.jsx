@@ -341,7 +341,7 @@ const WeatherWidget = ({
           <div className="pb-ring-wrap">
             <div className="pb-ring" style={{ background: `conic-gradient(${ringColor} 0deg, ${ringColor} ${ringPct}deg, rgba(255,255,255,0.1) ${ringPct}deg)` }}>
               <div className="pb-ring-inner">
-                <span style={{ color: ringColor }}>{safetyScore}</span>
+                <span style={{ color: theme === 'dark' ? '#fff' : ringColor }}>{safetyScore}</span>
               </div>
             </div>
             <span className="pb-ring-label">{t('safety_score')}</span>
