@@ -919,7 +919,7 @@
   border: 1px solid rgba(74, 222, 128, 0.32);
 }
 .eco-quick-action b { display: block; font-size: 14px; font-weight: 800; }
-.eco-quick-action span { font-size: 12px; color: var(--eco-text-dim); }
+.eco-quick-action span { font-size: 12px; color: #94a3b8; }
 
 /* ============ BENTO (Live Conditions / Safety) ============ */
 .eco-bento-section {
@@ -929,6 +929,10 @@
   margin: 0 auto;
   padding: 24px 20px;
 }
+/* Bento-region unified slate (dark only; light mode untouched) */
+[data-theme="dark"] .eco-home .eco-bento-section { background: #0F172A; border-radius: 24px; }
+[data-theme="dark"] .eco-home .eco-bento-section .bento-item { background: #1E293B; border-color: rgba(148, 163, 184, 0.14); }
+[data-theme="dark"] .eco-home .eco-bento-section .eco-bento-weather { background: #1E293B !important; border-color: rgba(148, 163, 184, 0.14) !important; }
 .bento-grid {
   display: grid;
   grid-template-columns: repeat(12, 1fr);
@@ -1014,8 +1018,8 @@
 .eco-safety { background: linear-gradient(160deg, rgba(34, 197, 94, 0.14), rgba(34, 197, 94, 0.05)); border-color: rgba(74, 222, 128, 0.24); }
 .eco-safety .bh-icon { background: rgba(34, 197, 94, 0.16); }
 /* Hazard glass card */
-.eco-hazard { background: linear-gradient(160deg, rgba(244, 63, 94, 0.16), rgba(244, 63, 94, 0.05)); border-color: rgba(244, 63, 94, 0.28); display: flex; flex-direction: column; max-height: 420px; }
-[data-theme="light"] .eco-home .eco-hazard { background: linear-gradient(160deg, rgba(244, 63, 94, 0.12), rgba(244, 63, 94, 0.04)); border-color: rgba(244, 63, 94, 0.26); }
+.eco-hazard { background: var(--eco-card); border-color: var(--eco-border); display: flex; flex-direction: column; max-height: 420px; }
+[data-theme="light"] .eco-home .eco-hazard { background: var(--eco-card); border-color: var(--eco-border); }
 .eco-hazard > div { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: transparent !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
 .eco-safety-ring-row {
   display: flex;
@@ -1190,6 +1194,8 @@
 .pb-updated { display: flex; align-items: center; gap: 4px; color: #94a3b8; font-size: 12px; margin: 4px 0 0; }
 .pb-updated span { display: inline-flex; }
 .pb-ring { position: relative; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.pb-ring-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 0 0 auto; }
+.pb-ring-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #94a3b8; }
 .pb-ring-inner { width: 40px; height: 40px; border-radius: 50%; background: transparent; display: flex; align-items: center; justify-content: center; }
 .pb-ring-inner span { font-weight: 700; font-size: 14px; }
 .pb-wx-main { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
@@ -1205,14 +1211,14 @@
 .pb-forecast-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
 .pb-forecast-title { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 700; font-size: 14px; margin: 0; }
 .pb-forecast-title span { display: inline-flex; }
-.pb-forecast-sub { color: #64748b; font-size: 10px; white-space: nowrap; }
+.pb-forecast-sub { color: #94a3b8; font-size: 10px; white-space: nowrap; }
 .pb-forecast-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
 .pb-fc { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px; border-radius: 12px; background: transparent; border: 1px solid transparent; transition: background 0.2s ease, border-color 0.2s ease; min-width: 0; }
 .pb-fc:hover { background: transparent; border-color: transparent; }
 .pb-fc-day { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: #94a3b8; text-transform: uppercase; }
 .pb-fc-ico { display: inline-flex; line-height: 0; }
 .pb-fc-hi { font-size: 12px; font-weight: 700; color: #fff; }
-.pb-fc-lo { font-size: 10px; color: #64748b; }
+.pb-fc-lo { font-size: 10px; color: #94a3b8; }
 @media (max-width: 640px) {
   .pb-forecast-grid { gap: 4px; }
   .pb-fc-day { font-size: 9px; }
@@ -1222,6 +1228,7 @@
 [data-theme="light"] .eco-home .pb-loc-label,
 [data-theme="light"] .eco-home .pb-updated,
 [data-theme="light"] .eco-home .pb-fc-day { color: #7b8a9c; }
+[data-theme="light"] .eco-home .pb-ring-label { color: #7b8a9c; }
 [data-theme="light"] .eco-home .pb-loc-name,
 [data-theme="light"] .eco-home .pb-temp,
 [data-theme="light"] .eco-home .pb-stat-val,

@@ -338,10 +338,13 @@ const WeatherWidget = ({
               <p className="pb-updated"><span style={{ color: '#94a3b8' }}><Icons.Clock size={11} /></span> {t('updated')} {formatTime(weather.timestamp)}</p>
             )}
           </div>
-          <div className="pb-ring" style={{ background: `conic-gradient(${ringColor} 0deg, ${ringColor} ${ringPct}deg, rgba(255,255,255,0.1) ${ringPct}deg)` }}>
-            <div className="pb-ring-inner">
-              <span style={{ color: ringColor }}>{safetyScore}</span>
+          <div className="pb-ring-wrap">
+            <div className="pb-ring" style={{ background: `conic-gradient(${ringColor} 0deg, ${ringColor} ${ringPct}deg, rgba(255,255,255,0.1) ${ringPct}deg)` }}>
+              <div className="pb-ring-inner">
+                <span style={{ color: ringColor }}>{safetyScore}</span>
+              </div>
             </div>
+            <span className="pb-ring-label">{t('safety_score')}</span>
           </div>
         </div>
 
@@ -383,8 +386,10 @@ const WeatherWidget = ({
                 try {
                   dayName = d.toLocaleDateString(language === 'zh' ? 'zh-CN' : language, { weekday: 'short' });
                 } catch { dayName = ''; }
-                const hi = day.tempMax ?? day.temperature;
-                const lo = day.tempMin ?? day.temperature;
+                const hiRaw = day.tempMax ?? day.temperature;
+                const loRaw = day.tempMin ?? day.temperature;
+                const hi = Math.max(hiRaw, loRaw);
+                const lo = Math.min(hiRaw, loRaw);
                 return (
                   <div className="pb-fc" key={i}>
                     <span className="pb-fc-day">{dayName}</span>
