@@ -1190,14 +1190,14 @@
 .pb-updated { display: flex; align-items: center; gap: 4px; color: #94a3b8; font-size: 12px; margin: 4px 0 0; }
 .pb-updated span { display: inline-flex; }
 .pb-ring { position: relative; width: 56px; height: 56px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
-.pb-ring-inner { width: 40px; height: 40px; border-radius: 50%; background: #0a1410; display: flex; align-items: center; justify-content: center; }
+.pb-ring-inner { width: 40px; height: 40px; border-radius: 50%; background: transparent; display: flex; align-items: center; justify-content: center; }
 .pb-ring-inner span { font-weight: 700; font-size: 14px; }
 .pb-wx-main { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
 .pb-big-ico { display: inline-flex; line-height: 0; flex: 0 0 auto; }
 .pb-temp { color: #fff; font-size: 36px; line-height: 1; font-weight: 700; margin: 0; }
 .pb-cond { color: #cbd5e1; font-size: 14px; margin: 4px 0 0; text-transform: capitalize; }
 .pb-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
-.pb-stat { background: rgba(0, 0, 0, 0.2); border-radius: 8px; padding: 10px; min-width: 0; }
+.pb-stat { background: transparent; border-radius: 8px; padding: 10px; min-width: 0; }
 .pb-stat-label { display: flex; align-items: center; gap: 4px; color: #94a3b8; font-size: 12px; margin: 0 0 4px; white-space: nowrap; }
 .pb-stat-label span { display: inline-flex; }
 .pb-stat-val { color: #fff; font-weight: 700; font-size: 14px; margin: 0; white-space: nowrap; }
@@ -1207,8 +1207,8 @@
 .pb-forecast-title span { display: inline-flex; }
 .pb-forecast-sub { color: #64748b; font-size: 10px; white-space: nowrap; }
 .pb-forecast-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-.pb-fc { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px; border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.06); transition: background 0.2s ease, border-color 0.2s ease; min-width: 0; }
-.pb-fc:hover { background: rgba(255, 255, 255, 0.07); border-color: rgba(34,197,94,0.25); }
+.pb-fc { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 4px; border-radius: 12px; background: transparent; border: 1px solid transparent; transition: background 0.2s ease, border-color 0.2s ease; min-width: 0; }
+.pb-fc:hover { background: transparent; border-color: transparent; }
 .pb-fc-day { font-size: 10px; font-weight: 700; letter-spacing: 0.5px; color: #94a3b8; text-transform: uppercase; }
 .pb-fc-ico { display: inline-flex; line-height: 0; }
 .pb-fc-hi { font-size: 12px; font-weight: 700; color: #fff; }
@@ -1230,11 +1230,11 @@
 [data-theme="light"] .eco-home .pb-cond { color: #334155; }
 [data-theme="light"] .eco-home .pb-forecast-sub,
 [data-theme="light"] .eco-home .pb-fc-lo { color: #8b9aac; }
-[data-theme="light"] .eco-home .pb-stat { background: rgba(15,23,42,0.035); }
+[data-theme="light"] .eco-home .pb-stat { background: transparent; }
 [data-theme="light"] .eco-home .pb-forecast { border-top-color: rgba(15,23,42,0.09); }
-[data-theme="light"] .eco-home .pb-fc { background: rgba(15,23,42,0.035); border-color: rgba(15,23,42,0.07); }
-[data-theme="light"] .eco-home .pb-fc:hover { background: rgba(16,185,129,0.09); border-color: rgba(16,185,129,0.25); }
-[data-theme="light"] .eco-home .pb-ring-inner { background: #ffffff; }
+[data-theme="light"] .eco-home .pb-fc { background: transparent; border-color: transparent; }
+[data-theme="light"] .eco-home .pb-fc:hover { background: transparent; border-color: transparent; }
+[data-theme="light"] .eco-home .pb-ring-inner { background: transparent; }
 
 /* ============ PROTOTYPE BENTO — Hazard card ============ */
 .pb-haz { position: relative; display: flex; flex-direction: column; flex: 1; min-height: 0; }

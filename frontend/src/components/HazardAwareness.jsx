@@ -466,7 +466,7 @@ const HazardAwareness = ({
                       <div style={hazardDetailStyle}>
                         {locationGroup.hazards.map((hazard, hIdx) => (
                           <div key={hIdx} style={individualHazardStyle}>
-                            <div style={hazardTypeBadgeStyle}>
+                            <div style={isDark ? hazardTypeBadgeStyle : { ...hazardTypeBadgeStyle, color: '#b91c1c', backgroundColor: 'rgba(220, 38, 38, 0.10)', borderColor: 'rgba(220, 38, 38, 0.2)' }}>
                               {getSeverityIcon(hazard.level || hazard.severity)} {(hazard.type || 'unknown').toUpperCase()}
                             </div>
                             <div style={detailSectionStyle}>
@@ -976,17 +976,18 @@ const hazardTypeBadgeStyle = {
   display: 'inline-block',
   fontSize: '0.75rem',
   fontWeight: '700',
-  backgroundColor: 'rgba(46, 125, 50, 0.1)',
-  color: 'var(--ha-title, #1b5e20)',
+  backgroundColor: 'rgba(239, 68, 68, 0.14)',
+  color: '#fca5a5',
   padding: '4px 10px',
   borderRadius: '6px',
+  border: '1px solid rgba(239, 68, 68, 0.25)',
   marginBottom: '8px',
   textTransform: 'uppercase'
 };
 
 const hazardDividerStyle = {
   height: '1px',
-  backgroundColor: 'rgba(46, 125, 50, 0.15)',
+  backgroundColor: 'rgba(239, 68, 68, 0.15)',
   margin: '12px 0'
 };
 
@@ -1009,8 +1010,8 @@ const expandIconStyle = {
 
 const hazardDetailStyle = {
   padding: '0 12px 10px 12px',
-  backgroundColor: 'rgba(46, 125, 50, 0.02)',
-  borderTop: '1px solid rgba(46, 125, 50, 0.08)'
+  backgroundColor: 'transparent',
+  borderTop: '1px solid rgba(239, 68, 68, 0.18)'
 };
 
 const detailSectionStyle = {
