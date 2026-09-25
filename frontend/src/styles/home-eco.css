@@ -1821,6 +1821,21 @@
 /* Dark-mode visibility: mint hero meta labels, bright testimonial quotes */
 [data-theme="dark"] .eco-home .eco-hero-head .hero-stat span { color: #6EE7B7; }
 [data-theme="dark"] .eco-home .eco-testimonial-card blockquote { color: #CBD5E1; }
+/* Dark-mode section brightening: Weather & Safety, Attractions, Gallery, Stories, Stay */
+[data-theme="dark"] .eco-home .eco-section-header .esh-left p { color: #cbd5e1; }
+[data-theme="dark"] .eco-home .bento-item .bento-head p { color: #a7bbb4; }
+[data-theme="dark"] .eco-home .eco-safety .safety-metric span { color: #cbd5e1; }
+[data-theme="dark"] .eco-home .eco-safety .safety-score { color: #a7bbb4; }
+[data-theme="dark"] .eco-home .eco-now .eco-now-hour em { color: #a7bbb4; }
+[data-theme="dark"] .eco-home .eco-tip-list li, [data-theme="dark"] .eco-home .eco-check-list li { color: #cbd5e1; }
+[data-theme="dark"] .eco-home .info-desc { color: #cbd5e1; }
+[data-theme="dark"] .eco-home .ts-label { color: #a7bbb4; }
+[data-theme="dark"] .eco-home .info-stat span { color: #a7bbb4; }
+[data-theme="dark"] .eco-home .eco-testimonial-card .quote-mark { background: rgba(34, 197, 94, 0.22); border-color: rgba(74, 222, 128, 0.32); }
+[data-theme="dark"] .eco-home .eco-testimonial-card .ts-author span { color: #cbd5e1; }
+[data-theme="dark"] .eco-home .eco-card-body .card-loc, [data-theme="dark"] .eco-home .eco-split-body .split-loc { color: #cbd5e1; }
+[data-theme="dark"] .eco-home .eco-amenity { color: #cbd5e1; }
+[data-theme="dark"] .eco-home .eco-split-price .from { color: #a7bbb4; }
 [data-theme="light"] .eco-home .eco-skeleton::after { background: linear-gradient(90deg, transparent, rgba(15, 23, 42, 0.06), transparent); }
 
 /* Dark/Light mode overrides for Feature Destination and Gallery cards */

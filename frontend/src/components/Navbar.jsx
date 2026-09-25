@@ -9,7 +9,7 @@ import LanguageSelector from './LanguageSelector';
 import { useTheme } from '../context/ThemeContext';
 import {
   AttractionIcon, HotelIcon, CalendarIcon, MapIcon, InfoIcon,
-  UserIcon, BookingIcon, ShieldIcon, LogoutIcon, PlusIcon, GlobeIcon, LeafIcon,
+  UserIcon, BookingIcon, ShieldIcon, LogoutIcon, PlusIcon, GlobeIcon,
 } from './Icons';
 import { fetchAttractions } from '../api';
 
@@ -204,9 +204,6 @@ const Navbar = () => {
       </div>
       <div className="navbar-container">
         <Link to="/" className="navbar-logo" aria-label="NaujanGO Home">
-          <div className="logo-mark" aria-hidden="true">
-            <LeafIcon size={18} />
-          </div>
           <div className="logo-content">
             <span className="logo-text">{t('brand')}</span>
             <span className="logo-subtitle">{t('discover_naujan')}</span>
