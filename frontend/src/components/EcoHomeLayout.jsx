@@ -1010,6 +1010,9 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               <h3>{t('featured_stay')}</h3>
               <p>{t('featured_stay_subtitle')}</p>
             </div>
+            <button className="eco-view-all" onClick={() => navigate('/hotels')}>
+              {t('view_all')} <Icons.ArrowRight size={15} />
+            </button>
           </div>
           {hotelsLoading ? (
             <div className="eco-skeleton" style={{ height: 360 }} />
@@ -1046,9 +1049,6 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                   <button className="eco-book-btn" onClick={() => navigate(`/hotels/${hotel.id}`)}>
                     <Icons.Booking size={16} />
                     {t('book_now_txt')}
-                  </button>
-                  <button className="btn-ghost-hero" onClick={() => navigate('/hotels')}>
-                    {t('view_all')}
                   </button>
                 </div>
               </div>
