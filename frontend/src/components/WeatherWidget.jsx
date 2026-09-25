@@ -985,7 +985,7 @@ const alertIconStyle = {
 
 const alertMessageStyle = {
   flex: 1,
-  color: '#1f2937'
+  color: 'var(--ww-text, #1f2937)'
 };
 
 const alternativesButtonStyle = {

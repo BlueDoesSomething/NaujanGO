@@ -20,8 +20,8 @@ const LanguageSelector = ({ style = {} }) => {
         className="language-selector-button"
       >
         <span style={flagStyle}>{currentLang.flag}</span>
-        <span style={labelStyle}>{currentLang.nativeName}</span>
-        <span style={arrowStyle}>{isOpen ? '▲' : '▼'}</span>
+        <span style={labelStyle} className="lang-btn-label">{currentLang.nativeName}</span>
+        <span style={arrowStyle} className="lang-btn-arrow">{isOpen ? '▲' : '▼'}</span>
       </button>
 
       {isOpen && (
@@ -34,14 +34,14 @@ const LanguageSelector = ({ style = {} }) => {
                 ...optionStyle,
                 ...(lang.code === language ? activeOptionStyle : {})
               }}
-              className="language-option"
+              className={lang.code === language ? 'language-option active' : 'language-option'}
             >
               <span style={flagStyle}>{lang.flag}</span>
               <div style={optionTextStyle}>
-                <span style={nativeNameStyle}>{lang.nativeName}</span>
-                <span style={englishNameStyle}>{lang.label}</span>
+                <span style={nativeNameStyle} className="lang-opt-native">{lang.nativeName}</span>
+                <span style={englishNameStyle} className="lang-opt-english">{lang.label}</span>
               </div>
-              {lang.code === language && <span style={checkStyle}>✓</span>}
+              {lang.code === language && <span style={checkStyle} className="lang-opt-check">✓</span>}
             </button>
           ))}
         </div>
@@ -184,6 +184,35 @@ style.textContent = `
   .language-option:last-child {
     border-bottom: none !important;
   }
+
+  [data-theme="dark"] .language-selector-button {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35) !important;
+  }
+  [data-theme="dark"] .language-selector-button:hover {
+    border-color: rgba(74, 222, 128, 0.45) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+    background-color: rgba(255, 255, 255, 0.10) !important;
+    transform: translateY(-1px);
+  }
+  [data-theme="dark"] .language-dropdown {
+    background-color: rgba(13, 18, 28, 0.97) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55) !important;
+  }
+  [data-theme="dark"] .language-option {
+    background-color: transparent !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  }
+  [data-theme="dark"] .language-option:not(.active):hover {
+    background-color: rgba(255, 255, 255, 0.07) !important;
+  }
+  [data-theme="dark"] .lang-opt-native { color: #f1f5f9 !important; }
+  [data-theme="dark"] .lang-opt-english { color: #94a3b8 !important; }
+  [data-theme="dark"] .lang-btn-label, [data-theme="dark"] .lang-btn-arrow { color: #4ade80 !important; }
+  [data-theme="dark"] .lang-opt-check { color: #4ade80 !important; }
+  [data-theme="dark"] .language-option.active { background-color: rgba(34, 197, 94, 0.14) !important; border-left: 4px solid #22c55e !important; }
 `;
 document.head.appendChild(style);
 
