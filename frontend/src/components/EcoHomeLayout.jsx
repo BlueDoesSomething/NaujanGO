@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { fetchAttractions, getApiBaseUrl } from '../api';
+import { fetchAttractions, fetchReviews, get, getApiBaseUrl } from '../api';
 import Icons from './Icons';
 import MobileBottomNav from './MobileBottomNav';
 import WeatherWidget from './WeatherWidget';
@@ -45,6 +45,11 @@ const toNumericRating = (rating) => {
 };
 
 const pad2 = (n) => String(n).padStart(2, '0');
+
+const renderStars = (rating) => {
+  const full = Math.max(0, Math.min(5, Math.round(Number(rating) || 0)));
+  return '★★★★★'.slice(0, full).padEnd(5, '☆');
+};
 
 const formatCurrency = (value, currency = 'PHP') => {
   try {
@@ -94,6 +99,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   const stageTimerRef = useRef(null);
   const heroInViewRef = useRef(true);
   const stageRef = useRef(null);
+  const railRef = useRef(null);
 
   // Search
   const [searchDestination, setSearchDestination] = useState('');
@@ -266,6 +272,24 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
     return stopAutoplay;
   }, [featured.length, setAutoplay, stopAutoplay]);
 
+  // Keep the Browse Destinations rail synced with the active slide
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail || typeof rail.querySelector !== 'function') return;
+    const active = rail.querySelector('.thumb-card.is-active');
+    if (!active) return;
+    if (rail.scrollWidth <= rail.clientWidth + 2) return;
+    const reduceMotion = typeof window !== 'undefined'
+      && typeof window.matchMedia === 'function'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const target = active.offsetLeft - (rail.clientWidth / 2) + (active.clientWidth / 2);
+    try {
+      rail.scrollTo({ left: Math.max(0, target), behavior: reduceMotion ? 'auto' : 'smooth' });
+    } catch {
+      rail.scrollLeft = Math.max(0, target);
+    }
+  }, [stageIdx, featured.length]);
+
   // Keyboard nav
   useEffect(() => {
     const onKey = (e) => {
@@ -406,10 +430,75 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   const isGuest = variant === 'guest';
 
   const testimonialData = [
-    { quote: t('testimonial_1_quote'), name: t('testimonial_1_name'), loc: t('testimonial_1_loc') },
-    { quote: t('testimonial_2_quote'), name: t('testimonial_2_name'), loc: t('testimonial_2_loc') },
-    { quote: t('testimonial_3_quote'), name: t('testimonial_3_name'), loc: t('testimonial_3_loc') },
+    { quote: t('testimonial_1_quote'), name: t('testimonial_1_name'), loc: t('testimonial_1_loc'), rating: 5 },
+    { quote: t('testimonial_2_quote'), name: t('testimonial_2_name'), loc: t('testimonial_2_loc'), rating: 5 },
+    { quote: t('testimonial_3_quote'), name: t('testimonial_3_name'), loc: t('testimonial_3_loc'), rating: 5 },
   ];
+
+  // Real traveler stories from moderated attraction + hotel reviews.
+  // Falls back to the static mock cards when no review data is available.
+  const [storyReviews, setStoryReviews] = useState([]);
+  useEffect(() => {
+    let cancelled = false;
+    const loadStories = async () => {
+      try {
+        const rated = [...attractions]
+          .filter(a => a && a.id != null)
+          .sort((a, b) => (Number(b.review_count) || 0) - (Number(a.review_count) || 0))
+          .slice(0, 6);
+        const jobs = [
+          ...rated.map(a => fetchReviews(a.id).then(res => ({ place: a.name, rows: res && res.data }))),
+          ...hotels
+            .filter(h => h && h.id != null)
+            .map(h => get(`/hotels/${h.id}/reviews`).then(res => ({ place: h.name, rows: res && res.data })))
+        ];
+        if (jobs.length === 0) return;
+        const settled = await Promise.allSettled(jobs);
+        const pool = [];
+        settled.forEach(s => {
+          if (!s || s.status !== 'fulfilled' || !s.value) return;
+          const { place, rows } = s.value;
+          const list = Array.isArray(rows) ? rows : (rows && Array.isArray(rows.data) ? rows.data : []);
+          list.forEach(r => {
+            const comment = String((r && r.comment) || '').trim();
+            const rating = Number(r && r.rating);
+            if (!comment || !Number.isFinite(rating)) return;
+            pool.push({
+              quote: comment,
+              name: (r && r.username) || null,
+              loc: place,
+              rating,
+              date: (r && (r.review_date || r.created_at)) || null
+            });
+          });
+        });
+        pool.sort((a, b) => (b.rating - a.rating) || (new Date(b.date || 0) - new Date(a.date || 0)));
+        const seen = new Set();
+        const unique = pool.filter(r => {
+          const k = `${r.name || ''}|${r.quote}`;
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
+        if (!cancelled) setStoryReviews(unique.slice(0, 3));
+      } catch {
+        // Keep mock fallback on any failure
+      }
+    };
+    if (attractions.length > 0 || hotels.length > 0) loadStories();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attractions, hotels]);
+
+  const stories = useMemo(() => {
+    const out = [...storyReviews.slice(0, 3)];
+    for (const m of testimonialData) {
+      if (out.length >= 3) break;
+      out.push(m);
+    }
+    return out;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storyReviews, language]);
 
   const quickActions = [
     {
@@ -636,7 +725,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                 ))}
               </div>
             </div>
-            <div className="thumb-rail" id="thumbRail">
+            <div className="thumb-rail" id="thumbRail" ref={railRef}>
               {featured.map((attraction, i) => (
                 <button
                   key={attraction.id}
@@ -983,20 +1072,23 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
           </div>
         </div>
         <div className="eco-testimonial-grid eco-stagger">
-          {testimonialData.map((item, i) => (
+          {stories.map((item, i) => {
+            const displayName = item.name || t('anonymous_user');
+            return (
             <div key={i} className="eco-testimonial-card">
               <div className="quote-mark"><Icons.Quote size={18} /></div>
-              <div className="ts-stars">★★★★★</div>
+              <div className="ts-stars">{renderStars(item.rating)}</div>
               <blockquote>"{item.quote}"</blockquote>
               <div className="ts-author">
-                <div className="ts-avatar">{item.name.split(' ').map(w => w[0]).join('').slice(0, 2)}</div>
+                <div className="ts-avatar">{displayName.split(' ').map(w => w[0]).join('').slice(0, 2)}</div>
                 <div>
-                  <b>{item.name}</b>
+                  <b>{displayName}</b>
                   <span>{item.loc}</span>
                 </div>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
       )}
