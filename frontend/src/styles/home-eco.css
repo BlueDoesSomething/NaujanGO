@@ -893,7 +893,7 @@
 @media (max-width: 480px) { .eco-quick-actions { grid-template-columns: 1fr; } }
 .eco-quick-action {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
   padding: 16px 18px;
   border-radius: 18px;
@@ -905,11 +905,13 @@
   text-align: left;
   transition: all 0.25s ease;
 }
+.eco-quick-action > div:last-child { flex: 1; min-width: 0; }
 .eco-quick-action:hover { transform: translateY(-3px); border-color: rgba(74, 222, 128, 0.4); background: rgba(34, 197, 94, 0.08); }
 .eco-quick-action .qa-icon {
   width: 42px;
   height: 42px;
   flex-shrink: 0;
+  margin-top: 2px;
   border-radius: 13px;
   display: flex;
   align-items: center;
