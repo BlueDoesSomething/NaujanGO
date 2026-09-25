@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { useLanguage } from './context/LanguageContext.jsx';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
+import MobileBottomNav from './components/MobileBottomNav.jsx';
 import DashboardLayout from './components/DashboardLayout.jsx';
 import Home from './pages/Home.jsx';
 import Attractions from './pages/Attractions.jsx';
@@ -333,6 +334,7 @@ const App = () => {
           </main>
           <Chatbot />
           <Footer />
+          <MobileBottomNav />
         </div>
       </>
     );

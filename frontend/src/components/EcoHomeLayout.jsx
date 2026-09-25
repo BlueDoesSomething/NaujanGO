@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { fetchAttractions, getApiBaseUrl } from '../api';
 import Icons from './Icons';
+import MobileBottomNav from './MobileBottomNav';
 import WeatherWidget from './WeatherWidget';
 import HazardAwareness from './HazardAwareness';
 import { weatherService } from '../services/weatherService';
@@ -439,14 +440,6 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
       icon: Icons.Chat,
       onClick: () => navigate('/contact')
     }
-  ];
-
-  const mobileNavItems = [
-    { key: 'home', label: t('mobile_home'), icon: Icons.MapPin, onClick: () => navigate('/') },
-    { key: 'attraction', label: t('mobile_attraction'), icon: Icons.Attraction, onClick: () => navigate('/attractions') },
-    { key: 'stay', label: t('mobile_stay'), icon: Icons.Hotel, onClick: () => navigate('/hotels') },
-    { key: 'explore', label: t('mobile_explore'), icon: Icons.Compass, onClick: () => navigate('/map') },
-    { key: 'about', label: t('mobile_about'), icon: Icons.Info, onClick: () => navigate('/about') },
   ];
 
   const hotel = hotels[0];
@@ -1090,23 +1083,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
       )}
 
       {/* Mobile bottom nav */}
-      <nav className="eco-mobile-nav" aria-label={t('explore_button')}>
-        {mobileNavItems.slice(0, 2).map(item => (
-          <button key={item.key} className="nav-item" onClick={item.onClick}>
-            <item.icon size={20} />
-            <span>{item.label}</span>
-          </button>
-        ))}
-        <button className="nav-center" onClick={() => navigate('/map')} aria-label={t('interactive_map')}>
-          <Icons.Compass size={22} />
-        </button>
-        {mobileNavItems.slice(3).map(item => (
-          <button key={item.key} className="nav-item" onClick={item.onClick}>
-            <item.icon size={20} />
-            <span>{item.label}</span>
-          </button>
-        ))}
-      </nav>
+      <MobileBottomNav />
     </div>
   );
 };
