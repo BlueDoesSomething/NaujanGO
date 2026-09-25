@@ -10,6 +10,7 @@ import { useTheme } from '../context/ThemeContext';
 import {
   AttractionIcon, HotelIcon, CalendarIcon, MapIcon, InfoIcon,
   UserIcon, BookingIcon, ShieldIcon, LogoutIcon, PlusIcon, GlobeIcon,
+  XIcon,
 } from './Icons';
 import { fetchAttractions } from '../api';
 
@@ -553,6 +554,73 @@ const Navbar = () => {
             )}
         </div>
       </div>
+      <div
+        className={`mobile-menu-overlay${menuOpen ? ' open' : ''}`}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden="true"
+      />
+      <aside className={`mobile-menu${menuOpen ? ' open' : ''}`} aria-label={t('explore_button')}>
+        <button className="mobile-menu-close" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+          <XIcon size={18} />
+        </button>
+        <div className="mobile-menu-links">
+          <NavLink to="/" className={({ isActive }) => isActive ? 'mobile-menu-link active' : 'mobile-menu-link'} onClick={handleNavClick}>
+            <span className="mobile-menu-icon"><HomeIcon size={18} /></span>{t('home')}
+          </NavLink>
+          <NavLink to="/attractions" className={({ isActive }) => isActive ? 'mobile-menu-link active' : 'mobile-menu-link'} onClick={handleNavClick}>
+            <span className="mobile-menu-icon"><AttractionIcon size={18} /></span>{t('attractions')}
+          </NavLink>
+          <NavLink to="/hotels" className={({ isActive }) => isActive ? 'mobile-menu-link active' : 'mobile-menu-link'} onClick={handleNavClick}>
+            <span className="mobile-menu-icon"><HotelIcon size={18} /></span>{t('accommodation')}
+          </NavLink>
+          <NavLink to="/map" className={({ isActive }) => isActive ? 'mobile-menu-link active' : 'mobile-menu-link'} onClick={handleNavClick}>
+            <span className="mobile-menu-icon"><MapIcon size={18} /></span>{t('interactive_map')}
+          </NavLink>
+          <NavLink to="/about" className={({ isActive }) => isActive ? 'mobile-menu-link active' : 'mobile-menu-link'} onClick={handleNavClick}>
+            <span className="mobile-menu-icon"><InfoIcon size={18} /></span>{t('about')}
+          </NavLink>
+          {isLoggedIn && (
+            <NavLink to="/itinerary" className={({ isActive }) => isActive ? 'mobile-menu-link active' : 'mobile-menu-link'} onClick={handleNavClick}>
+              <span className="mobile-menu-icon"><CalendarIcon size={18} /></span>{t('create_itinerary')}
+            </NavLink>
+          )}
+        </div>
+        <div className="mobile-lang-block">
+          <div className="lang-label"><GlobeIcon size={14} />{t('language')}</div>
+          <LanguageSelector style={{ width: '100%', marginLeft: 0 }} />
+        </div>
+        <div className="mobile-menu-auth">
+          {loading ? null : isLoggedIn ? (
+            <>
+              <div className="mobile-auth-heading">{user?.username || t('myAccount')}</div>
+              <Link to="/profile" className="mobile-menu-link" onClick={handleNavClick}>
+                <span className="mobile-menu-icon"><UserIcon size={17} /></span>{t('profile')}
+              </Link>
+              <Link to="/bookings" className="mobile-menu-link" onClick={handleNavClick}>
+                <span className="mobile-menu-icon"><BookingIcon size={17} /></span>{t('my_bookings')}
+              </Link>
+              {user?.role === 'admin' && (
+                <Link to="/admin" className="mobile-menu-link" onClick={handleNavClick}>
+                  <span className="mobile-menu-icon"><ShieldIcon size={17} /></span>{t('admin_dashboard')}
+                </Link>
+              )}
+              {(user?.role === 'owner' || user?.role === 'admin') && (
+                <Link to="/owner" className="mobile-menu-link" onClick={handleNavClick}>
+                  <span className="mobile-menu-icon"><GlobeIcon size={17} /></span>{t('owner_dashboard')}
+                </Link>
+              )}
+              <button type="button" className="mobile-menu-link logout" onClick={handleLogout}>
+                <span className="mobile-menu-icon"><LogoutIcon size={17} /></span>{t('logout')}
+              </button>
+            </>
+          ) : (
+            <>
+              <NavLink to="/register" className="mobile-menu-register" onClick={handleNavClick}>{t('register')}</NavLink>
+              <NavLink to="/login" className="mobile-menu-login" onClick={handleNavClick}>{t('login')}</NavLink>
+            </>
+          )}
+        </div>
+      </aside>
     </nav>
   );
 };
