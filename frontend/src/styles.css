@@ -69,6 +69,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
+[data-theme="light"] body {
+  background: #f3f9f5;
+}
 
 h1,
 h2,
