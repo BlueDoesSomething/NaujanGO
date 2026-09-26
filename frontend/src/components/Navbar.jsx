@@ -220,6 +220,15 @@ const Navbar = () => {
         >
           <span className="hamburger" />
         </button>
+        <button
+          type="button"
+          className="mobile-theme-toggle"
+          onClick={toggleDark}
+          aria-label={isDark ? t('switch_to_light_mode') : t('switch_to_dark_mode')}
+          title={isDark ? t('light_mode') : t('dark_mode')}
+        >
+          <span className="dark-mode-icon" aria-hidden="true">{isDark ? '☀' : '🌙'}</span>
+        </button>
 
         <div className={`nav-content ${menuOpen ? 'mobile-open' : ''}`}>
           <ul

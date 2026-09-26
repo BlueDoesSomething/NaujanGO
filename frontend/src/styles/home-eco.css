@@ -687,6 +687,13 @@
   padding: 0 20px;
 }
 @media (max-width: 1024px) { .eco-search-wrap { margin-top: 16px; } }
+@media (max-width: 640px) {
+  .eco-search-bar { flex-wrap: wrap; border-radius: 18px; }
+  .eco-search-bar .eco-search-tabs { flex: 1 1 100%; overflow-x: auto; }
+  .eco-search-bar .eco-search-tabs .eco-search-tab { flex-shrink: 0; }
+  .eco-search-bar .eco-search-input { flex: 1 1 140px; min-width: 0; }
+  .eco-search-bar .eco-search-submit { flex-shrink: 0; }
+}
 .eco-search-bar {
   display: flex;
   align-items: center;
