@@ -76,6 +76,13 @@
   transform: scale(0.95);
 }
 
+/* Draggable bubble on mobile (messenger-style) */
+@media (max-width: 768px) {
+  .chatbot-widget-wrapper { touch-action: none; }
+  .chatbot-widget { cursor: grab; }
+  .chatbot-widget:active { cursor: grabbing; }
+}
+
 .chatbot-container {
   position: fixed;
   bottom: 30px;

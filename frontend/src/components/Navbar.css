@@ -839,6 +839,7 @@ a.navbar-link.active,
     top: 50%;
     transform: translateY(-50%);
     z-index: 1002;
+    padding: 8px;
   }
   
   .nav-content {
@@ -1452,7 +1453,7 @@ a.navbar-link.active,
 
 @media (max-width: 767px) {
   .navbar-container {
-    padding-right: 3.5rem;
+    padding-right: 6rem;
   }
 
   .navbar-actions {
@@ -1967,13 +1968,13 @@ a.navbar-link.active,
 
 /* Mobile theme toggle (topbar, responsive only) */
 .mobile-theme-toggle { display: none; }
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   .mobile-theme-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
     position: absolute;
-    right: 3.1rem;
+    right: 3.4rem;
     top: 50%;
     transform: translateY(-50%);
     width: 38px;

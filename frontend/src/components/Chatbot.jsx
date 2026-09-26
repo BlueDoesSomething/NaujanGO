@@ -124,6 +124,51 @@ const Chatbot = ({ language }) => {
   const navigate = useNavigate();
   const [hasManualLanguage, setHasManualLanguage] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const bubbleWrapRef = useRef(null);
+  const bubbleDragRef = useRef({ dragging: false, moved: false, startX: 0, startY: 0, originLeft: 0, originTop: 0 });
+  const [bubblePos, setBubblePos] = useState(null);
+
+  // Messenger-style draggable bubble (mobile only)
+  const isMobileViewport = () => typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(max-width: 768px)').matches;
+  const onBubblePointerDown = (e) => {
+    if (!isMobileViewport()) return;
+    const wrap = bubbleWrapRef.current;
+    if (!wrap) return;
+    const rect = wrap.getBoundingClientRect();
+    bubbleDragRef.current = {
+      dragging: true, moved: false,
+      startX: e.clientX, startY: e.clientY,
+      originLeft: rect.left, originTop: rect.top
+    };
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
+  };
+  const onBubblePointerMove = (e) => {
+    const d = bubbleDragRef.current;
+    if (!d.dragging) return;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (Math.abs(dx) + Math.abs(dy) > 8) d.moved = true;
+    if (!d.moved) return;
+    const margin = 12;
+    const size = 65;
+    const maxLeft = Math.max(margin, window.innerWidth - size - margin);
+    const maxTop = Math.max(margin, window.innerHeight - size - margin);
+    setBubblePos({
+      left: Math.min(Math.max(margin, d.originLeft + dx), maxLeft),
+      top: Math.min(Math.max(margin, d.originTop + dy), maxTop)
+    });
+  };
+  const endBubbleDrag = () => { bubbleDragRef.current.dragging = false; };
+  const onBubbleClick = (e) => {
+    if (bubbleDragRef.current.moved) {
+      e.preventDefault();
+      bubbleDragRef.current.moved = false;
+      return;
+    }
+    toggleChatbot();
+  };
   const [messages, setMessages] = useState(() => ([
     { sender: 'bot', text: (chatbotTexts[language]?.welcome || chatbotTexts.en.welcome), timestamp: new Date() },
   ]));
@@ -1129,9 +1174,21 @@ const Chatbot = ({ language }) => {
 
   if (!isOpen) {
     return (
-      <div className="chatbot-widget-wrapper">
+      <div
+        className="chatbot-widget-wrapper"
+        ref={bubbleWrapRef}
+        style={bubblePos ? { left: bubblePos.left, top: bubblePos.top, right: 'auto', bottom: 'auto' } : undefined}
+      >
         {hasNewMessage && <div className="notification-badge"></div>}
-        <button className="chatbot-widget" onClick={toggleChatbot} aria-label="Open chat">
+        <button
+          className="chatbot-widget"
+          onClick={onBubbleClick}
+          onPointerDown={onBubblePointerDown}
+          onPointerMove={onBubblePointerMove}
+          onPointerUp={endBubbleDrag}
+          onPointerCancel={endBubbleDrag}
+          aria-label="Open chat"
+        >
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
           </svg>
