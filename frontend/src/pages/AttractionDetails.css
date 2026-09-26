@@ -553,3 +553,8 @@
 .ad-modal-body {
   padding: 24px;
 }
+
+/* Dark mode: eco canvas; white content cards stay readable */
+[data-theme="dark"] .ad-page { background: transparent; color: #e2e8f0; }
+[data-theme="dark"] .ad-loading,
+[data-theme="dark"] .ad-empty { color: #e2e8f0; }

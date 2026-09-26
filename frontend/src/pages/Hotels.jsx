@@ -377,7 +377,7 @@ export default function Hotels() {
         showControls={false}
       />
 
-      <div style={filtersSection}>
+      <div className="hotels-filters" style={filtersSection}>
         <div style={searchContainer}>
           <input
             type="text"
@@ -385,13 +385,14 @@ export default function Hotels() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t('search_placeholder_hotels_page')}
             style={searchInput}
+            className="hotels-search-input"
           />
-          <div style={searchIcon}><Icons.Search size={20} /></div>
+          <div className="hotels-search-icon" style={searchIcon}><Icons.Search size={20} /></div>
         </div>
       </div>
 
-      <div style={viewToggleSection}>
-        <div style={resultsCount}>{filteredHotels.length}{t('hotels_found_count')}</div>
+      <div className="hotels-viewbar" style={viewToggleSection}>
+        <div className="hotels-results-count" style={resultsCount}>{filteredHotels.length}{t('hotels_found_count')}</div>
       </div>
 
       {loading ? (

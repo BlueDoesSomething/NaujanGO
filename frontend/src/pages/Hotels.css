@@ -57,3 +57,28 @@
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   font-style: italic;
 }
+
+/* Dark mode: eco canvas + dark chrome (light cards stay readable) */
+[data-theme="dark"] .hotels-page { background: transparent !important; }
+[data-theme="dark"] .hotels-filters {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35) !important;
+}
+[data-theme="dark"] .hotels-viewbar {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+[data-theme="dark"] .hotels-search-input {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(148, 163, 184, 0.25) !important;
+  color: #f1f5f9 !important;
+}
+[data-theme="dark"] .hotels-search-input::placeholder { color: #64748b !important; }
+[data-theme="dark"] .hotels-search-input:focus {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-color: #16a34a !important;
+  box-shadow: none !important;
+}
+[data-theme="dark"] .hotels-search-icon { color: #cbd5e1 !important; }
+[data-theme="dark"] .hotels-results-count { color: #cbd5e1 !important; }
