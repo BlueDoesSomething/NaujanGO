@@ -1989,6 +1989,18 @@ a.navbar-link.active,
 [data-theme="light"] .mobile-menu-login { color: #0f172a; background: rgba(15, 23, 42, 0.05); border-color: rgba(15, 23, 42, 0.12); }
 [data-theme="light"] .mobile-menu-link.logout { color: #dc2626; }
 
+/* ── Blur page content + hide chatbot when drawer is open ── */
+main { transition: filter 0.4s ease; }
+body.menu-open main {
+  filter: blur(12px) brightness(0.92);
+  pointer-events: none;
+  user-select: none;
+}
+body.menu-open .chatbot-widget-wrapper,
+body.menu-open .chatbot-container {
+  opacity: 0; visibility: hidden; pointer-events: none;
+}
+
 /* Mobile theme toggle (topbar, responsive only) */
 .mobile-theme-toggle { display: none; }
 @media (max-width: 767px) {
