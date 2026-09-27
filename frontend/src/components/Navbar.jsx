@@ -218,7 +218,7 @@ const Navbar = () => {
           aria-label="Toggle menu"
           onClick={toggleMenu}
         >
-          <span className="hamburger" />
+          <span className="hamburger" aria-hidden="true"><span /><span /><span /></span>
         </button>
         <button
           type="button"

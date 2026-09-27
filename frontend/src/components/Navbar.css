@@ -223,42 +223,37 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
-.hamburger, .hamburger::before, .hamburger::after {
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.hamburger > span {
+  display: block;
   width: 24px;
   height: 2px;
-  background-color: white;
-  display: block;
-  position: relative;
   border-radius: 2px;
-  transition: all var(--transition-base);
+  background-color: white;
+  transition: all 0.3s ease;
 }
 
-.hamburger::before, .hamburger::after {
-  content: "";
-  position: absolute;
-  left: 0;
+.navbar-toggle[aria-expanded="true"] .hamburger > span:nth-child(2) {
+  opacity: 0;
 }
 
-.hamburger::before {
-  top: -10px;
+.navbar-toggle[aria-expanded="true"] .hamburger > span:first-child {
+  transform: translateY(7px) rotate(45deg);
 }
 
-.hamburger::after {
-  top: 10px;
-}
-
-.navbar-toggle[aria-expanded="true"] .hamburger {
-  background-color: transparent;
-}
-
-.navbar-toggle[aria-expanded="true"] .hamburger::before {
-  transform: rotate(45deg);
-  top: 0;
-}
-
-.navbar-toggle[aria-expanded="true"] .hamburger::after {
-  transform: rotate(-45deg);
-  top: 0;
+.navbar-toggle[aria-expanded="true"] .hamburger > span:last-child {
+  transform: translateY(-7px) rotate(-45deg);
 }
 
 /* Navigation Content */
@@ -1862,9 +1857,7 @@ a.navbar-link.active,
 [data-theme="light"] .navbar-toggle {
   color: #0f172a;
 }
-[data-theme="light"] .hamburger,
-[data-theme="light"] .hamburger::before,
-[data-theme="light"] .hamburger::after {
+[data-theme="light"] .hamburger > span {
   background-color: #0f172a;
 }
 [data-theme="light"] .login-btn {
