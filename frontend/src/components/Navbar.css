@@ -1912,8 +1912,8 @@ a.navbar-link.active,
 /* ── Prototype burger drawer (mobile) — replaces green dropdown panel ── */
 .mobile-menu-overlay {
   position: fixed; inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   z-index: 1200; opacity: 0; pointer-events: none;
   transition: opacity 0.4s, visibility 0.4s; display: none;
 }
@@ -1978,6 +1978,7 @@ a.navbar-link.active,
   .nav-content { display: none !important; }
 }
 [data-theme="light"] .mobile-menu { background: rgba(255, 255, 255, 0.97); border-left: 1px solid rgba(15, 23, 42, 0.08); }
+[data-theme="light"] .mobile-menu-overlay { background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }
 [data-theme="light"] .mobile-menu-close { background: rgba(15, 23, 42, 0.05); border-color: rgba(15, 23, 42, 0.1); color: #0f172a; }
 [data-theme="light"] .mobile-menu-link { color: #334155; }
 [data-theme="light"] .mobile-menu-link:hover { background: rgba(15, 23, 42, 0.05); }
