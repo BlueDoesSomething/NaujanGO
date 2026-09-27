@@ -87,6 +87,8 @@ const ItineraryBuilder = () => {
     display: 'flex',
     flexDirection: 'column',
     gap: '1rem',
+    minWidth: 0,
+    overflow: 'hidden',
     ...(isWide ? { position: 'sticky', top: '2rem', height: 'fit-content' } : {})
   };
 
@@ -3117,7 +3119,10 @@ const styles = {
     borderRadius: '16px',
     padding: '24px',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
-    border: '1px solid #1e3a5f'
+    border: '1px solid #1e3a5f',
+    width: '100%',
+    overflow: 'hidden',
+    boxSizing: 'border-box'
   },
   summaryItem: {
     display: 'flex',
@@ -3135,7 +3140,10 @@ const styles = {
     border: '1px solid #1e3a5f',
     maxHeight: '480px',
     display: 'flex',
-    flexDirection: 'column'
+    flexDirection: 'column',
+    width: '100%',
+    overflow: 'hidden',
+    boxSizing: 'border-box'
   },
   savedSearchInput: {
     width: '100%',
