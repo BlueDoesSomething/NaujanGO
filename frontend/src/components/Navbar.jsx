@@ -110,8 +110,10 @@ const Navbar = () => {
   useEffect(() => {
     if (!menuOpen) return;
     document.body.style.overflow = 'hidden';
+    document.body.classList.add('menu-open');
     return () => {
       document.body.style.overflow = '';
+      document.body.classList.remove('menu-open');
     };
   }, [menuOpen]);
 
