@@ -1453,7 +1453,7 @@ a.navbar-link.active,
 
 @media (max-width: 767px) {
   .navbar-container {
-    padding-right: 6rem;
+    padding-right: 6.6rem;
   }
 
   .navbar-actions {
@@ -1968,13 +1968,13 @@ a.navbar-link.active,
 
 /* Mobile theme toggle (topbar, responsive only) */
 .mobile-theme-toggle { display: none; }
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .mobile-theme-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
     position: absolute;
-    right: 3.4rem;
+    right: 3.9rem;
     top: 50%;
     transform: translateY(-50%);
     width: 38px;
