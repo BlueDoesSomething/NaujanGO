@@ -1736,16 +1736,16 @@ const ItineraryBuilder = () => {
 
           <div style={actionButtonsStyle}>
             <button style={styles.saveBtn} onClick={saveItinerary}>
-              <Icons.BookingIcon size={20} color="white" />
-              Save Itinerary
+              <Icons.BookingIcon size={16} color="white" />
+              Save
             </button>
             <button style={styles.shareBtn} onClick={() => window.print()}>
-              <Icons.GlobeIcon size={20} color="white" />
+              <Icons.GlobeIcon size={16} color="white" />
               Share
             </button>
             <button style={styles.exportBtn} onClick={() => window.print()}>
-              <Icons.BookingIcon size={20} color="white" />
-              Print/Export
+              <Icons.BookingIcon size={16} color="white" />
+              Export
             </button>
           </div>
 
@@ -1802,28 +1802,28 @@ const ItineraryBuilder = () => {
               </div>
 
               {/* Budget Range Section */}
-              <div style={{marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e5e7eb'}}>
-                <label style={{fontSize: '0.85rem', fontWeight: '600', color: '#374151', display: 'block', marginBottom: '8px'}}>Budget Range (₱)</label>
-                <div style={{display: 'flex', gap: '8px', alignItems: 'center'}}>
+              <div style={{marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(30, 58, 95, 0.3)'}}>
+                <label style={{fontSize: '0.8rem', fontWeight: '600', color: THEME.textSecondary, display: 'block', marginBottom: '6px'}}>Budget Range (₱)</label>
+                <div style={{display: 'flex', gap: '6px', alignItems: 'center'}}>
                   <input
                     type="number"
                     min="0"
-                    placeholder={t('itinerary_min_placeholder')}
+                    placeholder="Min"
                     value={savedBudgetMin}
                     onChange={(e) => setSavedBudgetMin(e.target.value.replace(/^0+(?!$)/, ''))}
                     inputMode="numeric"
-                    style={{...styles.savedBudgetInput, flex: 1}}
+                    style={{...styles.savedBudgetInput, flex: 1, padding: '7px 8px'}}
                     title={t('admin_min_budget')}
                   />
-                  <span style={{color: '#9ca3af', fontWeight: '500'}}>to</span>
+                  <span style={{color: THEME.textMuted, fontWeight: '500', fontSize: '12px'}}>to</span>
                   <input
                     type="number"
                     min="0"
-                    placeholder={t('itinerary_max_placeholder')}
+                    placeholder="Max"
                     value={savedBudgetMax}
                     onChange={(e) => setSavedBudgetMax(e.target.value.replace(/^0+(?!$)/, ''))}
                     inputMode="numeric"
-                    style={{...styles.savedBudgetInput, flex: 1}}
+                    style={{...styles.savedBudgetInput, flex: 1, padding: '7px 8px'}}
                     title={t('admin_max_budget')}
                   />
                 </div>
@@ -1859,26 +1859,20 @@ const ItineraryBuilder = () => {
               >
                 <div style={styles.savedItemNumber}>{idx + 1}</div>
                 <div style={styles.savedItemContent}>
-                  <h4 style={{margin: '0 0 0.5rem 0'}}>{saved.name}</h4>
-                  <p style={{fontSize: '0.85rem', color: THEME.textSecondary, margin: '0 0 0.75rem 0', display: 'flex', alignItems: 'center', gap: '4px'}}>
-                    <Icons.CalendarIcon size={14} color="#666" />
+                  <h4 style={{margin: '0 0 4px 0', fontSize: '14px'}}>{saved.name}</h4>
+                  <p style={{fontSize: '0.8rem', color: THEME.textSecondary, margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '4px'}}>
+                    <Icons.CalendarIcon size={12} />
                     {new Date(saved.created_at).toLocaleDateString()}
                   </p>
-                  <div style={styles.savedItemMetaGrid}>
-                    <div style={styles.savedMetaItem}>
-                      <span style={styles.savedMetaLabel}>
-                        <Icons.MoneyIcon size={12} color={THEME.textMuted} />
-                        Budget
-                      </span>
-                      <span style={styles.savedMetaValue}>₱{Number(saved.total_budget || 0).toFixed(2)}</span>
-                    </div>
-                    <div style={styles.savedMetaItem}>
-                      <span style={styles.savedMetaLabel}>
-                        <Icons.BookingIcon size={12} color={THEME.textMuted} />
-                        Status
-                      </span>
-                      <span style={{...styles.savedMetaValue, textTransform: 'capitalize'}}>{saved.status || 'draft'}</span>
-                    </div>
+                  <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+                    <span style={{display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', backgroundColor: 'rgba(251, 191, 36, 0.12)', border: '1px solid rgba(251, 191, 36, 0.25)', fontSize: '12px', fontWeight: 600, color: THEME.accent}}>
+                      <Icons.MoneyIcon size={11} />
+                      ₱{Number(saved.total_budget || 0).toFixed(2)}
+                    </span>
+                    <span style={{display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', backgroundColor: saved.status === 'published' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(99, 102, 241, 0.12)', border: `1px solid ${saved.status === 'published' ? 'rgba(34, 197, 94, 0.25)' : 'rgba(99, 102, 241, 0.25)'}`, fontSize: '12px', fontWeight: 600, color: saved.status === 'published' ? THEME.primary : '#818cf8', textTransform: 'capitalize'}}>
+                      <span style={{width: '6px', height: '6px', borderRadius: '50%', backgroundColor: saved.status === 'published' ? THEME.primary : '#818cf8'}} />
+                      {saved.status || 'draft'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -3056,15 +3050,14 @@ const styles = {
   actionButtons: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr 1fr',
-    gap: '12px',
-    marginTop: '20px'
+    gap: '10px'
   },
   saveBtn: {
-    padding: '12px',
+    padding: '10px',
     background: THEME.primary,
     color: 'white',
     border: 'none',
-    borderRadius: '12px',
+    borderRadius: '10px',
     cursor: 'pointer',
     fontWeight: 700,
     fontSize: '13px',
@@ -3076,11 +3069,11 @@ const styles = {
     fontFamily: 'inherit'
   },
   shareBtn: {
-    padding: '12px',
+    padding: '10px',
     background: THEME.secondary,
     color: 'white',
     border: 'none',
-    borderRadius: '12px',
+    borderRadius: '10px',
     cursor: 'pointer',
     fontWeight: 700,
     fontSize: '13px',
@@ -3092,11 +3085,11 @@ const styles = {
     fontFamily: 'inherit'
   },
   exportBtn: {
-    padding: '12px',
+    padding: '10px',
     background: '#475569',
     color: 'white',
     border: 'none',
-    borderRadius: '12px',
+    borderRadius: '10px',
     cursor: 'pointer',
     fontWeight: 700,
     fontSize: '13px',
@@ -3120,6 +3113,7 @@ const styles = {
     padding: '24px',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
     border: '1px solid #1e3a5f',
+    borderLeft: '4px solid #22c55e',
     width: '100%',
     overflow: 'hidden',
     boxSizing: 'border-box'
@@ -3129,7 +3123,7 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '11px 0',
-    borderBottom: '1px solid #1e3a5f',
+    borderBottom: `1px solid ${THEME.border}`,
     fontSize: '13px'
   },
   savedList: {
@@ -3138,6 +3132,7 @@ const styles = {
     padding: '24px',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
     border: '1px solid #1e3a5f',
+    borderLeft: '4px solid #22c55e',
     maxHeight: '480px',
     display: 'flex',
     flexDirection: 'column',
