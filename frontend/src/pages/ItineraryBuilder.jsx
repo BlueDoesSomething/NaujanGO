@@ -17,19 +17,25 @@ import { weatherService } from '../services/weatherService';
 
 // Unified Theme System
 const THEME = {
-  primary: '#16a34a',
-  secondary: '#059669',
-  accent: '#f59e0b',
-  success: '#10b981',
-  warning: '#f59e0b',
+  primary: '#22c55e',
+  primaryDark: '#16a34a',
+  secondary: '#06b6d4',
+  accent: '#fbbf24',
+  success: '#22c55e',
+  warning: '#fbbf24',
   error: '#ef4444',
-  background: '#f8f9fa',
-  surface: '#ffffff',
-  text: '#1f2937',
-  textSecondary: '#6b7280',
-  border: '#e5e7eb',
-  shadow: '0 4px 12px rgba(0,0,0,0.08)',
-  shadowLarge: '0 8px 24px rgba(0,0,0,0.12)'
+  background: 'transparent',
+  surface: 'transparent',
+  text: '#e8edf3',
+  textSecondary: '#8899aa',
+  textMuted: '#5a6f85',
+  border: '#1e3a5f',
+  borderLight: '#243b5c',
+  bgCard: '#152238',
+  bgCardHover: '#1a2d47',
+  bgInput: '#1a2d47',
+  shadow: '0 4px 24px rgba(0,0,0,0.3)',
+  shadowLarge: '0 8px 40px rgba(0,0,0,0.4)'
 };
 
 export const MINUTES_BY_TIME_OF_DAY = {
@@ -62,8 +68,8 @@ const ItineraryBuilder = () => {
   
   // Page shell: single max-width column — attractions on top, Step-2 grid below.
   const containerStyle = isMobile
-    ? { maxWidth: '1700px', margin: '0 auto', padding: '0 0.75rem', display: 'block' }
-    : { maxWidth: '1700px', margin: '0 auto', padding: '0 2rem', display: 'block' };
+    ? { maxWidth: '1320px', margin: '0 auto', padding: '0 16px', display: 'block' }
+    : { maxWidth: '1320px', margin: '0 auto', padding: '0 24px', display: 'block' };
 
   // Attractions panel is now a full-width card at the top (no longer a sticky sidebar).
   const sidebarStyle = {
@@ -85,8 +91,8 @@ const ItineraryBuilder = () => {
   };
 
   const lowerLayoutStyle = isMobile
-    ? { display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', paddingTop: '2.5rem' }
-    : { display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(0, 1fr)', gap: '1.5rem', paddingTop: '2.5rem', alignItems: 'start' };
+    ? { display: 'grid', gridTemplateColumns: '1fr', gap: '24px', paddingTop: '24px' }
+    : { display: 'grid', gridTemplateColumns: '1fr 400px', gap: '24px', paddingTop: '24px', alignItems: 'start' };
 
   const leftColumnStyle = { display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 };
   
@@ -1320,8 +1326,8 @@ const ItineraryBuilder = () => {
               </div>
             </div>
             {itinerary.startDate && itinerary.endDate && (
-              <div style={{padding: '10px', backgroundColor: '#e8f5e9', borderRadius: '6px', marginTop: '10px'}}>
-                <p style={{margin: 0, fontSize: '0.9rem', color: '#2e7d32'}}>
+              <div style={{padding: '10px', backgroundColor: 'rgba(34, 197, 94, 0.12)', borderRadius: '6px', marginTop: '10px'}}>
+                <p style={{margin: 0, fontSize: '0.9rem', color: THEME.primary}}>
                   ✓ {t('duration')}: <strong>{itinerary.durationDays} {t('days')}</strong> ({t('auto_calculated')})
                 </p>
               </div>
@@ -1393,7 +1399,7 @@ const ItineraryBuilder = () => {
                   <span style={styles.autoCalcBadge}>⚡ Auto-suggested</span>
                 </div>
                 <div style={dayBudgetBreakdownRowStyle}>
-                  <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle, backgroundColor: '#f0fdf4', borderColor: '#bbf7d0' }}>
+                   <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle, backgroundColor: 'rgba(34, 197, 94, 0.08)', borderColor: 'rgba(34, 197, 94, 0.25)' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       <Icons.RouteIcon size={14} color={THEME.primary} /> Fare
                     </span>
@@ -1404,7 +1410,7 @@ const ItineraryBuilder = () => {
                         fareOverriddenRef.current[currentDay] = true;
                         setFarePerDay(prev => ({ ...prev, [currentDay]: parseFloat(e.target.value) || 0 }));
                       }}
-                      style={{ ...styles.budgetInlineInput, ...budgetBreakdownInputResponsiveStyle, borderColor: '#bbf7d0', backgroundColor: '#f0fdf4', color: THEME.primary }}
+                      style={{ ...styles.budgetInlineInput, ...budgetBreakdownInputResponsiveStyle, borderColor: 'rgba(34, 197, 94, 0.25)', backgroundColor: 'rgba(34, 197, 94, 0.08)', color: THEME.primary }}
                     />
                   </div>
                   <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle }}>
@@ -1429,9 +1435,9 @@ const ItineraryBuilder = () => {
                       style={{ ...styles.budgetInlineInput, ...budgetBreakdownInputResponsiveStyle }}
                     />
                   </div>
-                  <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle, gridColumn: isTiny ? '1' : isMobile ? 'span 2' : 'span 3', backgroundColor: '#ecfdf3', borderColor: '#bbf7d0' }}>
-                    <span style={{ fontWeight: 700 }}>Total Estimated</span>
-                    <strong style={{ color: '#15803d', fontSize: isTiny ? '1.3rem' : '1rem' }}>₱{currentDayBudget.estimatedNeed.toFixed(2)}</strong>
+                   <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle, gridColumn: isTiny ? '1' : isMobile ? 'span 2' : 'span 3', backgroundColor: 'rgba(34, 197, 94, 0.08)', borderColor: 'rgba(34, 197, 94, 0.25)' }}>
+                     <span style={{ fontWeight: 700 }}>Total Estimated</span>
+                     <strong style={{ color: THEME.primary, fontSize: isTiny ? '1.3rem' : '1rem' }}>₱{currentDayBudget.estimatedNeed.toFixed(2)}</strong>
                   </div>
                 </div>
               </div>
@@ -1625,7 +1631,7 @@ const ItineraryBuilder = () => {
                         <div key={i} style={{display:'flex',alignItems:'flex-start',gap:'0.75rem'}}>
                           <div style={{display:'flex',flexDirection:'column',alignItems:'center',flexShrink:0}}>
                             <div style={{width:'12px',height:'12px',borderRadius:'50%',background:dotColor,boxShadow:`0 0 0 3px ${dotColor}25`,flexShrink:0,marginTop:'3px'}} />
-                            {!isLast && <div style={{width:'2px',flex:1,minHeight:'20px',background:'linear-gradient(180deg,#bbf7d0,#d1fae5)',margin:'3px 0'}} />}
+                             {!isLast && <div style={{width:'2px',flex:1,minHeight:'20px',background:'linear-gradient(180deg,rgba(34,197,94,0.4),rgba(34,197,94,0.15))',margin:'3px 0'}} />}
                           </div>
                           <div style={{paddingBottom: isLast ? 0 : '0.6rem', minWidth:0}}>
                             <div style={{fontSize:'0.82rem',fontWeight:700,color:THEME.text,lineHeight:1.3,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:'100%'}}>
@@ -1844,27 +1850,28 @@ const ItineraryBuilder = () => {
             {visibleSavedItineraries.map((saved, idx) => (
               <div 
                 key={saved.itinerary_id} 
+                className="itn-saved-item-card"
                 style={savedItemCardStyle}
                 onClick={() => navigate(`/itinerary/${saved.itinerary_id}`)}
               >
                 <div style={styles.savedItemNumber}>{idx + 1}</div>
                 <div style={styles.savedItemContent}>
                   <h4 style={{margin: '0 0 0.5rem 0'}}>{saved.name}</h4>
-                  <p style={{fontSize: '0.85rem', color: '#666', margin: '0 0 0.75rem 0', display: 'flex', alignItems: 'center', gap: '4px'}}>
+                  <p style={{fontSize: '0.85rem', color: THEME.textSecondary, margin: '0 0 0.75rem 0', display: 'flex', alignItems: 'center', gap: '4px'}}>
                     <Icons.CalendarIcon size={14} color="#666" />
                     {new Date(saved.created_at).toLocaleDateString()}
                   </p>
                   <div style={styles.savedItemMetaGrid}>
                     <div style={styles.savedMetaItem}>
                       <span style={styles.savedMetaLabel}>
-                        <Icons.MoneyIcon size={12} color="#999" />
+                        <Icons.MoneyIcon size={12} color={THEME.textMuted} />
                         Budget
                       </span>
                       <span style={styles.savedMetaValue}>₱{Number(saved.total_budget || 0).toFixed(2)}</span>
                     </div>
                     <div style={styles.savedMetaItem}>
                       <span style={styles.savedMetaLabel}>
-                        <Icons.BookingIcon size={12} color="#999" />
+                        <Icons.BookingIcon size={12} color={THEME.textMuted} />
                         Status
                       </span>
                       <span style={{...styles.savedMetaValue, textTransform: 'capitalize'}}>{saved.status || 'draft'}</span>
@@ -1903,77 +1910,70 @@ const ItineraryBuilder = () => {
 const styles = {
   page: {
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%)',
     paddingBottom: '3rem'
   },
   header: {
-    background: 'linear-gradient(135deg, #16a34a 0%, #059669 100%)',
-    color: 'white',
-    padding: '3rem 2rem',
     textAlign: 'center',
-    boxShadow: THEME.shadowLarge
+    padding: '0'
   },
   headerTitle: {
     fontSize: '3.5rem',
     fontWeight: '800',
     margin: '0 0 1rem 0',
-    textShadow: '0 2px 8px rgba(0,0,0,0.2)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center'
   },
   headerSubtitle: {
     fontSize: '1.2rem',
-    margin: 0,
-    opacity: 0.95
+    margin: 0
   },
   container: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr) 300px',
-    gap: '1.5rem',
-    padding: '2rem',
-    maxWidth: '1700px',
+    display: 'block',
+    maxWidth: '1320px',
+    padding: '24px',
     margin: '0 auto'
   },
   stepHeader: {
     display: 'flex',
-    alignItems: 'flex-start',
-    gap: '1rem',
-    padding: '1.75rem 0 1.25rem'
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '4px',
+    flexWrap: 'wrap',
+    padding: '24px 0 16px'
   },
   stepBadge: {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    minWidth: '72px',
-    padding: '0.35rem 0.9rem',
-    borderRadius: '999px',
-    background: 'linear-gradient(135deg, #16a34a 0%, #059669 100%)',
+    padding: '4px 14px',
+    borderRadius: '20px',
+    background: THEME.primary,
     color: '#fff',
-    fontSize: '0.85rem',
-    fontWeight: 800,
+    fontSize: '11px',
+    fontWeight: 700,
     letterSpacing: '0.06em',
     textTransform: 'uppercase',
-    boxShadow: '0 6px 16px rgba(22, 163, 74, 0.28)'
+    boxShadow: '0 4px 12px rgba(34, 197, 94, 0.28)'
   },
   stepTitle: {
-    margin: '0 0 0.2rem 0',
-    fontSize: '1.55rem',
-    fontWeight: '800',
+    margin: 0,
+    fontSize: '22px',
+    fontWeight: 800,
     color: THEME.text,
     letterSpacing: '-0.01em'
   },
   stepSubtitle: {
-    margin: 0,
-    fontSize: '0.95rem',
+    margin: '0 0 0 90px',
+    fontSize: '13px',
     color: THEME.textSecondary,
     lineHeight: 1.5
   },
   plannerGuide: {
-    maxWidth: '1700px',
+    maxWidth: '1320px',
     margin: '1.25rem auto 0',
-    padding: '0 2rem'
+    padding: '0 24px'
   },
   plannerGuideCard: {
     display: 'flex',
@@ -1981,10 +1981,10 @@ const styles = {
     gap: '1.5rem',
     alignItems: 'center',
     padding: '1.25rem 1.5rem',
-    borderRadius: '20px',
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.92), rgba(240,253,244,0.92))',
-    border: '1px solid rgba(22, 163, 74, 0.12)',
-    boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)'
+    borderRadius: '16px',
+    background: 'var(--bg-card, #152238)',
+    border: '1px solid var(--border-color, #1e3a5f)',
+    boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))'
   },
   plannerGuideCardMobile: {
     display: 'flex',
@@ -1993,10 +1993,10 @@ const styles = {
     gap: '1.25rem',
     alignItems: 'flex-start',
     padding: '1.25rem 1.5rem',
-    borderRadius: '20px',
-    background: 'linear-gradient(135deg, rgba(255,255,255,0.92), rgba(240,253,244,0.92))',
-    border: '1px solid rgba(22, 163, 74, 0.12)',
-    boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)'
+    borderRadius: '16px',
+    background: 'var(--bg-card, #152238)',
+    border: '1px solid var(--border-color, #1e3a5f)',
+    boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))'
   },
   plannerGuideCopy: {
     minWidth: 0,
@@ -2008,7 +2008,7 @@ const styles = {
     gap: '0.35rem',
     padding: '0.3rem 0.65rem',
     borderRadius: '999px',
-    backgroundColor: '#e8f5e9',
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
     color: THEME.primary,
     fontSize: '0.75rem',
     fontWeight: 700,
@@ -2028,193 +2028,195 @@ const styles = {
     lineHeight: 1.5,
     maxWidth: '64ch'
   },
-  plannerGuideActions: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '0.75rem',
-    justifyContent: 'flex-end'
-  },
   plannerGuideButton: {
     border: `1px solid ${THEME.border}`,
-    backgroundColor: '#fff',
+    backgroundColor: THEME.bgCard,
     color: THEME.text,
     borderRadius: '999px',
     padding: '0.7rem 1rem',
     cursor: 'pointer',
     fontWeight: 600,
-    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.06)'
+    boxShadow: '0 4px 14px rgba(0, 0, 0, 0.2)'
   },
   plannerGuideButtonPrimary: {
-    border: '1px solid transparent',
-    backgroundColor: THEME.primary,
-    color: '#fff',
+    border: `1px solid ${THEME.primary}`,
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    color: THEME.primary,
     borderRadius: '999px',
     padding: '0.7rem 1rem',
     cursor: 'pointer',
     fontWeight: 700,
-    boxShadow: '0 6px 18px rgba(22, 163, 74, 0.2)'
+    boxShadow: '0 4px 14px rgba(34, 197, 94, 0.15)'
   },
   sidebar: {
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    backdropFilter: 'blur(30px)',
-    WebkitBackdropFilter: 'blur(30px)',
-    borderRadius: '24px',
+    backgroundColor: 'var(--bg-card, #152238)',
+    borderRadius: '16px',
     height: 'fit-content',
     position: 'sticky',
     top: '2rem',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+    boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
     overflow: 'hidden',
-    border: '1px solid rgba(255, 255, 255, 0.18)'
+    border: '1px solid var(--border-color, #1e3a5f)'
   },
   tabs: {
     display: 'flex',
-    borderBottom: `1px solid ${THEME.border}`
+    borderBottom: '2px solid var(--border-color, #1e3a5f)',
+    gap: 0
   },
   tab: {
     flex: 1,
-    padding: '1rem',
+    padding: '12px 24px',
     border: 'none',
+    borderBottom: '3px solid transparent',
+    marginBottom: '-2px',
     background: 'none',
     cursor: 'pointer',
-    fontWeight: '500',
+    fontWeight: 500,
     color: THEME.textSecondary,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px'
+    gap: '6px',
+    fontSize: '14px',
+    transition: 'all 0.2s'
   },
   tabActive: {
     flex: 1,
-    padding: '1rem',
+    padding: '12px 24px',
     border: 'none',
+    borderBottom: `3px solid ${THEME.primary}`,
+    marginBottom: '-2px',
     background: 'none',
     cursor: 'pointer',
-    fontWeight: '600',
+    fontWeight: 600,
     color: THEME.primary,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px',
-    borderBottom: `3px solid ${THEME.primary}`
+    gap: '6px',
+    fontSize: '14px',
+    transition: 'all 0.2s'
   },
   attractionsList: {
     overflowY: 'visible',
-    padding: '1.1rem'
+    padding: '24px'
   },
   attractionGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-    gap: '1rem'
+    gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+    gap: '24px',
+    marginBottom: '20px'
   },
   attractionCard: {
     display: 'flex',
     flexDirection: 'column',
-    border: '1px solid rgba(148, 163, 184, 0.22)',
-    borderRadius: '14px',
+    border: '1px solid rgba(34, 197, 94, 0.25)',
+    borderRadius: '20px',
     overflow: 'hidden',
-    background: 'rgba(255, 255, 255, 0.92)',
-    boxShadow: '0 4px 14px rgba(15, 23, 42, 0.06)',
-    transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+    background: 'var(--bg-card, #152238)',
+    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(34, 197, 94, 0.15)',
+    position: 'relative',
+    animation: 'itn-fadeInUp 0.5s ease forwards'
   },
   attractionImage: {
     width: '100%',
-    height: '160px',
+    height: '200px',
     objectFit: 'cover',
     display: 'block',
-    flexShrink: 0,
-    transition: 'transform 0.25s ease'
+    flexShrink: 0
   },
   attractionInfo: {
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    padding: '0.8rem 0.9rem 1rem'
+    padding: '16px'
   },
   location: {
-    fontSize: '0.88rem',
+    fontSize: '12px',
     color: THEME.textSecondary,
-    margin: '0.3rem 0',
+    margin: '4px 0',
     display: 'flex',
     alignItems: 'center',
-    gap: '8px'
+    gap: '4px'
   },
   dayActionWrap: {
     marginTop: 'auto',
-    padding: '0.9rem',
+    padding: '14px',
     borderRadius: '12px',
-    backgroundColor: '#f8fafc',
-    border: `1px solid ${THEME.border}`
+    backgroundColor: 'var(--bg-input, #1a2d47)',
+    border: '1px solid var(--border-color, #1e3a5f)'
   },
   dayActionHeader: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.2rem',
-    marginBottom: '0.65rem'
+    gap: '2px',
+    marginBottom: '10px'
   },
   dayActionLabel: {
-    fontSize: '0.78rem',
+    fontSize: '12px',
     fontWeight: 700,
     color: THEME.text,
     textTransform: 'uppercase',
     letterSpacing: '0.04em'
   },
   dayActionHint: {
-    fontSize: '0.82rem',
+    fontSize: '11px',
     color: THEME.textSecondary,
     lineHeight: 1.4
   },
   dayActionButtons: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: '0.5rem'
+    gap: '8px'
   },
   dayActionPrimaryButton: {
-    padding: '0.6rem 1rem',
+    padding: '8px 16px',
     borderRadius: '999px',
-    border: '1px solid transparent',
+    border: 'none',
     backgroundColor: THEME.primary,
     color: '#fff',
     cursor: 'pointer',
     fontWeight: 700,
-    fontSize: '0.82rem',
-    boxShadow: '0 6px 18px rgba(22, 163, 74, 0.16)'
+    fontSize: '13px',
+    boxShadow: '0 4px 12px rgba(34, 197, 94, 0.2)'
   },
   dayActionButton: {
-    padding: '0.6rem 0.9rem',
+    padding: '8px 14px',
     borderRadius: '999px',
     border: `1px solid ${THEME.border}`,
-    backgroundColor: '#fff',
-    color: THEME.text,
+    backgroundColor: 'transparent',
+    color: THEME.textSecondary,
     cursor: 'pointer',
     fontWeight: 600,
-    fontSize: '0.82rem'
+    fontSize: '13px',
+    transition: 'all 0.2s'
   },
   dayActionButtonActive: {
-    padding: '0.6rem 0.9rem',
+    padding: '8px 14px',
     borderRadius: '999px',
     border: `1px solid ${THEME.primary}`,
-    backgroundColor: '#ecfdf3',
-    color: '#166534',
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    color: THEME.primary,
     cursor: 'pointer',
     fontWeight: 700,
-    fontSize: '0.82rem'
+    fontSize: '13px'
   },
   filterHeaderRow: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    gap: '0.75rem',
-    marginBottom: '1rem'
+    gap: '8px',
+    marginBottom: '12px'
   },
   filterSectionTitle: {
-    fontSize: '0.95rem',
+    fontSize: '14px',
     fontWeight: 700,
     color: THEME.text,
-    marginBottom: '0.25rem'
+    marginBottom: '2px'
   },
   filterSectionHint: {
-    fontSize: '0.82rem',
-    color: THEME.textSecondary,
+    fontSize: '11px',
+    color: THEME.textMuted,
     lineHeight: 1.4
   },
   resetFilterBtn: {
@@ -2223,9 +2225,9 @@ const styles = {
     gap: '4px',
     border: 'none',
     background: 'transparent',
-    color: '#6b7280',
-    fontSize: '0.8rem',
-    fontWeight: 600,
+    color: THEME.primary,
+    fontSize: '12px',
+    fontWeight: 700,
     cursor: 'pointer',
     padding: '4px 8px',
     borderRadius: '6px',
@@ -2236,209 +2238,179 @@ const styles = {
   chipGrid: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: '0.5rem'
+    gap: '8px'
   },
   chipButton: {
     border: `1px solid ${THEME.border}`,
-    backgroundColor: '#fff',
-    color: THEME.text,
+    backgroundColor: 'var(--bg-input, #1a2d47)',
+    color: THEME.textSecondary,
     borderRadius: '999px',
-    padding: '0.45rem 0.75rem',
+    padding: '6px 14px',
     cursor: 'pointer',
-    fontWeight: 600
+    fontWeight: 600,
+    fontSize: '12px',
+    transition: 'all 0.2s'
   },
   chipButtonActive: {
     border: `1px solid ${THEME.primary}`,
-    backgroundColor: '#ecfdf3',
-    color: '#166534',
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    color: THEME.primary,
     borderRadius: '999px',
-    padding: '0.45rem 0.75rem',
+    padding: '6px 14px',
     cursor: 'pointer',
-    fontWeight: 700
+    fontWeight: 700,
+    fontSize: '12px'
   },
   showMoreBtn: {
     border: `1px dashed ${THEME.border}`,
     backgroundColor: 'transparent',
-    color: THEME.textSecondary,
+    color: THEME.primary,
     borderRadius: '999px',
-    padding: '0.45rem 0.75rem',
+    padding: '6px 14px',
     cursor: 'pointer',
     fontWeight: 600,
-    fontSize: '0.78rem'
+    fontSize: '12px'
   },
   rangeRow: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem'
+    gap: '8px'
   },
   rangeSeparator: {
     color: THEME.textSecondary,
     fontWeight: 600
   },
   templatesList: {
-    padding: '1rem',
+    padding: '16px',
     maxHeight: '70vh',
     overflowY: 'auto'
   },
   templatesIntro: {
-    marginBottom: '1rem',
-    padding: '1rem',
+    marginBottom: '16px',
+    padding: '16px',
     borderRadius: '12px',
-    backgroundColor: '#f8fafc',
-    border: `1px solid ${THEME.border}`
+    backgroundColor: 'var(--bg-input, #1a2d47)',
+    border: '1px solid var(--border-color, #1e3a5f)'
   },
   templatesIntroTitle: {
-    margin: '0 0 0.25rem 0'
+    margin: '0 0 4px 0',
+    fontSize: '16px',
+    color: THEME.text
   },
   templatesIntroText: {
     margin: 0,
     color: THEME.textSecondary,
     lineHeight: 1.5,
-    fontSize: '0.92rem'
+    fontSize: '13px'
   },
   templatesRecommendations: {
-    marginBottom: '1rem'
+    marginBottom: '16px'
   },
   templatesRecommendationsHeader: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.5rem',
-    marginBottom: '0.75rem'
+    gap: '8px',
+    marginBottom: '12px'
   },
   templatesRecommendationsTitle: {
     margin: 0,
-    fontSize: '1rem'
+    fontSize: '14px',
+    color: THEME.text
   },
   templatesRecommendationsText: {
-    margin: '0.25rem 0 0',
+    margin: '2px 0 0',
     color: THEME.textSecondary,
-    fontSize: '0.88rem',
+    fontSize: '12px',
     lineHeight: 1.45
   },
   templatesRecommendationsPill: {
     display: 'inline-flex',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    padding: '0.35rem 0.65rem',
+    padding: '4px 10px',
     borderRadius: '999px',
-    backgroundColor: '#ecfdf3',
-    color: '#166534',
-    border: '1px solid #bbf7d0',
-    fontSize: '0.82rem',
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    color: THEME.primary,
+    border: '1px solid rgba(34, 197, 94, 0.3)',
+    fontSize: '11px',
     fontWeight: 700,
     whiteSpace: 'nowrap'
-  },
-  templatesSectionHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '1rem',
-    margin: '0.5rem 0 0.75rem'
-  },
-  templatesSectionTitle: {
-    margin: 0,
-    fontSize: '1rem'
-  },
-  templatesSectionCount: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    padding: '0.3rem 0.6rem',
-    borderRadius: '999px',
-    backgroundColor: '#f8fafc',
-    color: THEME.textSecondary,
-    border: `1px solid ${THEME.border}`,
-    fontSize: '0.8rem',
-    fontWeight: 700
   },
   templatesRecommendationRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '0.75rem'
-  },
-  templatesGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: '1rem'
+    gap: '12px'
   },
   recommendedTemplateCard: {
     width: '100%',
     textAlign: 'left',
-    padding: '1rem',
+    padding: '16px',
     border: `1px solid ${THEME.border}`,
-    borderRadius: '14px',
-    backgroundColor: '#fff',
+    borderRadius: '16px',
+    backgroundColor: 'var(--bg-card, #152238)',
     cursor: 'pointer',
     boxShadow: THEME.shadow,
     position: 'relative',
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.5rem'
+    gap: '8px',
+    color: THEME.text,
+    transition: 'all 0.2s'
   },
   recommendedTemplateCardActive: {
     border: `1px solid ${THEME.primary}`,
-    boxShadow: '0 10px 24px rgba(22, 163, 74, 0.16)'
+    boxShadow: '0 0 0 3px rgba(34, 197, 94, 0.15)'
   },
   recommendedTemplateAction: {
     display: 'inline-flex',
-    marginTop: '0.5rem',
-    padding: '0.35rem 0.65rem',
+    marginTop: '8px',
+    padding: '4px 10px',
     borderRadius: '999px',
-    backgroundColor: '#f8fafc',
+    backgroundColor: 'var(--bg-input, #1a2d47)',
     color: THEME.textSecondary,
-    fontSize: '0.78rem',
+    fontSize: '11px',
     fontWeight: 700
-  },
-  templateCard: {
-    padding: '1rem',
-    border: `1px solid ${THEME.border}`,
-    borderRadius: '8px',
-    height: '100%',
-    position: 'relative',
-    boxShadow: THEME.shadow,
-    display: 'flex',
-    flexDirection: 'column'
-  },
-  templateCardActive: {
-    border: `1px solid ${THEME.primary}`,
-    boxShadow: '0 10px 24px rgba(22, 163, 74, 0.14)'
   },
   templateBadge: {
     position: 'absolute',
-    top: '0.5rem',
-    right: '0.5rem',
-    padding: '0.25rem 0.5rem',
-    backgroundColor: THEME.success,
+    top: '12px',
+    right: '12px',
+    padding: '4px 8px',
+    backgroundColor: THEME.primary,
     color: 'white',
-    borderRadius: '4px',
-    fontSize: '0.75rem',
+    borderRadius: '6px',
+    fontSize: '10px',
     textTransform: 'capitalize',
-    fontWeight: '600'
+    fontWeight: 700
+  },
+  templateTitle: {
+    marginTop: '4px',
+    marginBottom: '2px',
+    fontSize: '14px',
+    color: THEME.text
+  },
+  templateDescription: {
+    fontSize: '12px',
+    color: THEME.textSecondary,
+    lineHeight: 1.5
   },
   templateMeta: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: '0.5rem',
-    fontSize: '0.85rem',
+    gap: '6px',
+    fontSize: '12px',
     color: THEME.textSecondary,
-    margin: '0.5rem 0'
+    margin: '4px 0'
   },
   templateMetaPill: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '0.35rem',
-    padding: '0.35rem 0.55rem',
+    gap: '4px',
+    padding: '4px 8px',
     borderRadius: '999px',
-    backgroundColor: '#f8fafc',
-    border: `1px solid ${THEME.border}`
-  },
-  templateTitle: {
-    marginTop: '0.9rem',
-    marginBottom: '0.25rem'
-  },
-  templateDescription: {
-    fontSize: '0.9rem',
-    color: THEME.textSecondary,
-    lineHeight: 1.5
+    backgroundColor: 'var(--bg-input, #1a2d47)',
+    border: `1px solid ${THEME.border}`,
+    fontSize: '11px'
   },
   templateAttractionList: {
     display: 'flex',
@@ -2449,7 +2421,7 @@ const styles = {
   templateAttractionChip: {
     padding: '0.35rem 0.55rem',
     borderRadius: '999px',
-    backgroundColor: '#e8f5e9',
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
     color: '#166534',
     fontSize: '0.8rem',
     fontWeight: 600
@@ -2476,46 +2448,52 @@ const styles = {
   mainContent: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.5rem'
+    gap: '20px'
   },
   itineraryHeader: {
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    backdropFilter: 'blur(30px)',
-    WebkitBackdropFilter: 'blur(30px)',
-    padding: '2rem',
-    borderRadius: '24px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-    border: '1px solid rgba(255, 255, 255, 0.18)'
+    backgroundColor: 'var(--bg-card, #152238)',
+    padding: '28px',
+    borderRadius: '16px',
+    boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
+    border: '1px solid var(--border-color, #1e3a5f)'
   },
   nameInput: {
     width: '100%',
-    padding: '1rem',
-    fontSize: '2rem',
-    fontWeight: '700',
-    border: `2px solid ${THEME.border}`,
-    borderRadius: '12px',
-    marginBottom: '1rem',
-    fontFamily: 'inherit'
+    padding: '14px 16px',
+    fontSize: '20px',
+    fontWeight: 700,
+    border: `1px solid ${THEME.border}`,
+    borderRadius: '10px',
+    marginBottom: '12px',
+    fontFamily: 'inherit',
+    backgroundColor: 'var(--bg-input, #1a2d47)',
+    color: THEME.text,
+    outline: 'none',
+    transition: 'border 0.2s'
   },
   descriptionInput: {
     width: '100%',
-    padding: '0.75rem',
-    border: `2px solid ${THEME.border}`,
-    borderRadius: '8px',
-    marginBottom: '1rem',
+    padding: '12px 16px',
+    border: `1px solid ${THEME.border}`,
+    borderRadius: '10px',
+    marginBottom: '12px',
     minHeight: '80px',
     resize: 'vertical',
-    fontFamily: 'inherit'
+    fontFamily: 'inherit',
+    fontSize: '14px',
+    backgroundColor: 'var(--bg-input, #1a2d47)',
+    color: THEME.text,
+    outline: 'none'
   },
   durationInput: {
     width: '70px',
     padding: '8px 10px',
-    border: `2px solid ${THEME.primary}`,
-    borderRadius: '6px',
-    fontSize: '0.95rem',
-    fontWeight: '600',
-    color: THEME.text,
-    backgroundColor: '#f0fdf4',
+    border: `1px solid ${THEME.primary}`,
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: 600,
+    color: THEME.primary,
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
     fontFamily: 'inherit',
     transition: 'all 0.2s ease',
     cursor: 'pointer',
@@ -2524,12 +2502,12 @@ const styles = {
   costInput: {
     width: '85px',
     padding: '8px 10px',
-    border: `2px solid ${THEME.accent}`,
-    borderRadius: '6px',
-    fontSize: '0.95rem',
-    fontWeight: '600',
-    color: THEME.text,
-    backgroundColor: '#fffbf0',
+    border: `1px solid ${THEME.accent}`,
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: 600,
+    color: THEME.accent,
+    backgroundColor: 'rgba(251, 191, 36, 0.1)',
     fontFamily: 'inherit',
     transition: 'all 0.2s ease',
     cursor: 'pointer',
@@ -2537,80 +2515,87 @@ const styles = {
   },
   dateInputs: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '1rem',
-    marginBottom: '1rem'
+    gridTemplateColumns: '1fr 1fr',
+    gap: '16px',
+    marginBottom: '16px'
   },
   label: {
-    fontSize: '0.75rem',
-    color: THEME.textSecondary,
-    fontWeight: '600',
-    textTransform: 'uppercase'
+    fontSize: '11px',
+    color: THEME.textMuted,
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    display: 'block',
+    marginBottom: '6px'
   },
   dateInput: {
     width: '100%',
-    padding: '0.5rem',
+    padding: '10px 12px',
     border: `1px solid ${THEME.border}`,
-    borderRadius: '6px',
-    marginTop: '0.25rem',
-    fontFamily: 'inherit'
+    borderRadius: '10px',
+    marginTop: '2px',
+    fontFamily: 'inherit',
+    fontSize: '13px',
+    backgroundColor: 'var(--bg-input, #1a2d47)',
+    color: THEME.text,
+    outline: 'none'
   },
   statsBar: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '1rem',
-    marginTop: '1rem',
-    padding: '1rem',
-    backgroundColor: THEME.background,
-    borderRadius: '8px'
+    gap: '12px',
+    marginBottom: '16px',
+    padding: '16px',
+    borderRadius: '12px',
+    backgroundColor: 'var(--bg-input, #1a2d47)',
+    border: '1px solid var(--border-color, #1e3a5f)'
   },
   stat: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.25rem'
+    textAlign: 'center'
   },
   statLabel: {
-    fontSize: '0.75rem',
-    color: THEME.textSecondary,
+    fontSize: '10px',
+    color: THEME.textMuted,
     textTransform: 'uppercase',
-    fontWeight: '600'
+    letterSpacing: '0.5px',
+    marginBottom: '4px',
+    fontWeight: 600
   },
   statValue: {
-    fontSize: '1.1rem',
-    fontWeight: '600',
+    fontSize: '15px',
+    fontWeight: 700,
     color: THEME.primary,
     display: 'flex',
     alignItems: 'center',
-    gap: '8px'
+    justifyContent: 'center',
+    gap: '6px'
   },
   daysContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    backdropFilter: 'blur(30px)',
-    WebkitBackdropFilter: 'blur(30px)',
-    borderRadius: '24px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-    border: '1px solid rgba(255, 255, 255, 0.18)'
+    backgroundColor: 'var(--bg-card, #152238)',
+    borderRadius: '16px',
+    boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
+    border: '1px solid var(--border-color, #1e3a5f)'
   },
   routeSummary: {
-    marginBottom: '1.25rem',
-    borderRadius: '20px',
+    marginBottom: '20px',
+    borderRadius: '16px',
     overflow: 'hidden',
-    border: '1px solid rgba(226,232,240,0.8)',
-    boxShadow: '0 8px 32px rgba(15,23,42,0.10)'
+    border: '1px solid var(--border-color, #1e3a5f)',
+    boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))'
   },
   routeBanner: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     flexWrap: 'wrap',
-    gap: '0.75rem',
-    padding: '1.1rem 1.4rem',
+    gap: '12px',
+    padding: '18px 22px',
     background: 'linear-gradient(135deg, #064e3b 0%, #065f46 60%, #047857 100%)'
   },
   routeBannerLeft: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.75rem'
+    gap: '12px'
   },
   routeBannerIconWrap: {
     width: '40px',
@@ -2624,106 +2609,106 @@ const styles = {
     flexShrink: 0
   },
   routeBannerTitle: {
-    fontSize: '1rem',
+    fontSize: '14px',
     fontWeight: 800,
     color: '#fff',
     lineHeight: 1.2
   },
   routeBannerSub: {
-    fontSize: '0.75rem',
+    fontSize: '11px',
     color: 'rgba(167,243,208,0.85)',
-    marginTop: '0.15rem'
+    marginTop: '2px'
   },
   routeBannerBadges: {
     display: 'flex',
     flexWrap: 'wrap',
-    gap: '0.4rem'
+    gap: '6px'
   },
   routeBannerBadge: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: '0.3rem',
-    padding: '0.3rem 0.65rem',
+    gap: '4px',
+    padding: '4px 10px',
     borderRadius: '999px',
     background: 'rgba(255,255,255,0.1)',
     border: '1px solid rgba(255,255,255,0.18)',
     color: '#d1fae5',
-    fontSize: '0.75rem',
+    fontSize: '11px',
     fontWeight: 700,
     whiteSpace: 'nowrap'
   },
   routeStatsRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
-    background: '#fff',
-    borderBottom: '1px solid #f1f5f9'
+    background: 'var(--bg-card, #152238)',
+    borderBottom: '1px solid var(--border-color, #1e3a5f)'
   },
   routeStatCard: {
     position: 'relative',
     display: 'flex',
     alignItems: 'flex-start',
-    gap: '0.75rem',
-    padding: '1.1rem 1rem 1.25rem',
-    borderRight: '1px solid #f1f5f9'
+    gap: '12px',
+    padding: '18px 16px 20px',
+    borderRight: '1px solid var(--border-color, #1e3a5f)'
   },
   routeTimelineWrap: {
-    padding: '1rem 1.4rem 1.1rem',
-    background: '#f8fafc'
+    padding: '16px 22px 18px',
+    background: 'var(--bg-input, #1a2d47)'
   },
   routeTimelineHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.4rem',
-    fontSize: '0.7rem',
+    gap: '6px',
+    fontSize: '10px',
     fontWeight: 800,
     textTransform: 'uppercase',
     letterSpacing: '0.07em',
-    color: '#16a34a',
-    marginBottom: '0.85rem'
+    color: THEME.primary,
+    marginBottom: '14px'
   },
   routeTimelineScroll: {
     display: 'flex',
     flexDirection: 'column'
   },
   fareEstimateWrap: {
-    padding: '1rem 1.4rem',
-    background: '#fffdf4',
-    borderTop: '1px solid #fde68a'
+    padding: '16px 22px',
+    background: 'rgba(251, 191, 36, 0.06)',
+    borderTop: '1px solid rgba(251, 191, 36, 0.2)'
   },
   fareEstimateHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.4rem',
-    fontSize: '0.7rem',
+    gap: '6px',
+    fontSize: '10px',
     fontWeight: 800,
     textTransform: 'uppercase',
     letterSpacing: '0.07em',
-    color: '#d97706',
-    marginBottom: '0.75rem'
+    color: THEME.accent,
+    marginBottom: '12px'
   },
   fareEstimateNote: {
     marginLeft: 'auto',
-    fontSize: '0.68rem',
+    fontSize: '10px',
     fontWeight: 500,
-    color: '#92400e',
+    color: THEME.textSecondary,
     textTransform: 'none',
     letterSpacing: 0
   },
   fareEstimateGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '0.6rem',
-    marginBottom: '0.75rem'
+    gap: '10px',
+    marginBottom: '12px'
   },
   fareCard: {
     position: 'relative',
     display: 'flex',
     alignItems: 'center',
-    gap: '0.6rem',
-    padding: '0.7rem 0.75rem 0.7rem 0.85rem',
+    gap: '10px',
+    padding: '11px 12px 11px 14px',
     borderRadius: '12px',
-    background: '#fff',
-    border: '1px solid #fde68a',
+    background: 'var(--bg-card, #152238)',
+    border: '1px solid var(--border-color, #1e3a5f)',
     overflow: 'hidden'
   },
   fareCardAccent: {
@@ -2743,293 +2728,295 @@ const styles = {
     justifyContent: 'center',
     flexShrink: 0
   },
-  fareCardBody: {
-    minWidth: 0
-  },
+  fareCardBody: { minWidth: 0 },
   fareCardLabel: {
-    fontSize: '0.7rem',
+    fontSize: '10px',
     fontWeight: 700,
-    color: '#374151',
+    color: THEME.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: '0.04em'
   },
   fareCardRange: {
-    fontSize: '0.95rem',
+    fontSize: '14px',
     fontWeight: 900,
     lineHeight: 1.2,
-    marginTop: '0.1rem'
+    marginTop: '2px'
   },
   fareCardNote: {
-    fontSize: '0.65rem',
-    color: '#9ca3af',
-    marginTop: '0.1rem'
+    fontSize: '10px',
+    color: THEME.textMuted,
+    marginTop: '2px'
   },
   fareDisclaimer: {
     display: 'flex',
     alignItems: 'flex-start',
-    gap: '0.4rem',
-    fontSize: '0.72rem',
-    color: '#92400e',
-    background: '#fef3c7',
-    border: '1px solid #fde68a',
+    gap: '6px',
+    fontSize: '11px',
+    color: THEME.accent,
+    background: 'rgba(251, 191, 36, 0.08)',
+    border: '1px solid rgba(251, 191, 36, 0.2)',
     borderRadius: '8px',
-    padding: '0.5rem 0.75rem'
+    padding: '8px 12px'
   },
   routeTip: {
     display: 'flex',
     alignItems: 'flex-start',
-    gap: '0.7rem',
-    fontSize: '0.85rem',
-    color: '#475569',
-    marginTop: '0.95rem',
-    padding: '0.95rem 1rem',
-    background: 'linear-gradient(135deg, #fffdf4 0%, #fff7e6 100%)',
-    borderRadius: '16px',
-    border: '1px solid rgba(245, 158, 11, 0.22)',
-    boxShadow: '0 8px 20px rgba(245, 158, 11, 0.08)'
+    gap: '11px',
+    fontSize: '13px',
+    color: THEME.textSecondary,
+    marginTop: '16px',
+    padding: '16px',
+    background: 'var(--bg-input, #1a2d47)',
+    borderRadius: '12px',
+    border: '1px solid var(--border-color, #1e3a5f)'
   },
   dayTabs: {
     display: 'flex',
-    gap: '0.5rem',
-    padding: '1rem',
-    borderBottom: `1px solid ${THEME.border}`,
-    overflowX: 'auto'
+    gap: '8px',
+    padding: '16px',
+    borderBottom: '1px solid var(--border-color, #1e3a5f)',
+    overflowX: 'auto',
+    flexWrap: 'wrap'
   },
   dayTab: {
-    padding: '0.75rem 1.5rem',
+    padding: '8px 16px',
     border: `1px solid ${THEME.border}`,
-    borderRadius: '8px',
-    background: THEME.surface,
+    borderRadius: '20px',
+    background: 'var(--bg-input, #1a2d47)',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem'
+    gap: '6px',
+    color: THEME.textSecondary,
+    fontSize: '13px',
+    transition: 'all 0.2s'
   },
   dayTabActive: {
-    padding: '0.75rem 1.5rem',
-    border: `2px solid ${THEME.primary}`,
-    borderRadius: '8px',
-    background: 'rgba(25, 118, 210, 0.05)',
+    padding: '8px 16px',
+    border: `1px solid ${THEME.primary}`,
+    borderRadius: '20px',
+    background: 'rgba(34, 197, 94, 0.15)',
     cursor: 'pointer',
     whiteSpace: 'nowrap',
-    fontWeight: '600',
+    fontWeight: 600,
     color: THEME.primary,
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem'
+    gap: '6px',
+    fontSize: '13px',
+    transition: 'all 0.2s'
   },
   dayItemCount: {
     backgroundColor: THEME.primary,
     color: 'white',
     borderRadius: '50%',
-    width: '20px',
-    height: '20px',
-    minWidth: '20px',
-    minHeight: '20px',
+    width: '18px',
+    height: '18px',
+    minWidth: '18px',
+    minHeight: '18px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '0.75rem',
-    fontWeight: '600',
+    fontSize: '10px',
+    fontWeight: 700,
     lineHeight: '1',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
-    flexShrink: 0,
-    flexBasis: '20px'
+    flexShrink: 0
   },
   addDayBtn: {
-    padding: '0.75rem 1.5rem',
+    padding: '8px 16px',
     border: `2px dashed ${THEME.primary}`,
-    borderRadius: '8px',
+    borderRadius: '20px',
     background: 'transparent',
     color: THEME.primary,
     cursor: 'pointer',
-    fontWeight: '500'
+    fontWeight: 500,
+    fontSize: '13px',
+    transition: 'all 0.2s'
   },
-  dayContent: {
-    padding: '1.5rem'
-  },
+  dayContent: { padding: '24px' },
   dayBudgetPanel: {
-    marginBottom: '1rem',
-    padding: '1rem',
-    borderRadius: '10px',
-    border: `1px solid ${THEME.border}`,
-    backgroundColor: '#ffffff'
+    marginBottom: '16px',
+    padding: '18px',
+    borderRadius: '12px',
+    border: '1px solid var(--border-color, #1e3a5f)',
+    backgroundColor: 'var(--bg-input, #1a2d47)'
   },
   dayBudgetHeaderRow: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: '0.75rem',
-    marginBottom: '0.75rem',
+    gap: '12px',
+    marginBottom: '14px',
     flexWrap: 'wrap'
   },
-  dayBudgetTitle: {
-    margin: 0,
-    fontSize: '1rem',
-    color: THEME.text
-  },
+  dayBudgetTitle: { margin: 0, fontSize: '14px', color: THEME.text },
   budgetFitBadgeGood: {
-    backgroundColor: '#dcfce7',
-    color: '#166534',
-    padding: '0.3rem 0.6rem',
+    backgroundColor: 'rgba(34, 197, 94, 0.15)',
+    color: THEME.primary,
+    padding: '4px 10px',
     borderRadius: '999px',
-    fontSize: '0.8rem',
-    fontWeight: '700'
+    fontSize: '11px',
+    fontWeight: 700
   },
   budgetFitBadgeBad: {
-    backgroundColor: '#fee2e2',
-    color: '#991b1b',
-    padding: '0.3rem 0.6rem',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    color: THEME.error,
+    padding: '4px 10px',
     borderRadius: '999px',
-    fontSize: '0.8rem',
-    fontWeight: '700'
+    fontSize: '11px',
+    fontWeight: 700
   },
   dayBudgetInputGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-    gap: '0.75rem',
-    marginBottom: '0.75rem'
+    gap: '12px',
+    marginBottom: '12px'
   },
   dayBudgetLabel: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.35rem',
-    fontSize: '0.78rem',
+    gap: '6px',
+    fontSize: '11px',
     color: THEME.textSecondary,
-    fontWeight: '600',
+    fontWeight: 600,
     textTransform: 'uppercase'
   },
   dayBudgetInput: {
     width: '100%',
-    padding: '0.5rem 0.6rem',
+    padding: '8px 10px',
     border: `1px solid ${THEME.border}`,
-    borderRadius: '6px',
-    fontSize: '0.9rem',
-    fontWeight: '600',
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: 600,
     color: THEME.text,
-    backgroundColor: '#f9fafb'
+    backgroundColor: 'var(--bg-card, #152238)'
   },
   dayBudgetBreakdownGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-    gap: '0.5rem'
+    gap: '8px'
   },
   dayBudgetBreakdownItem: {
-    padding: '0.55rem 0.65rem',
+    padding: '9px 11px',
     borderRadius: '8px',
-    backgroundColor: '#f8fafc',
-    border: `1px solid ${THEME.border}`,
+    backgroundColor: 'var(--bg-card, #152238)',
+    border: '1px solid var(--border-color, #1e3a5f)',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    fontSize: '0.85rem'
+    fontSize: '13px'
   },
   emptyDay: {
     textAlign: 'center',
-    padding: '3rem',
-    color: '#999'
+    padding: '40px 20px',
+    border: '1px dashed rgba(34, 197, 94, 0.3)',
+    borderRadius: '12px',
+    background: 'rgba(34, 197, 94, 0.04)',
+    color: THEME.textSecondary
   },
   emptyDayHint: {
-    fontSize: '0.9rem',
-    marginTop: '0.5rem',
-    color: THEME.textSecondary
+    fontSize: '12px',
+    marginTop: '8px',
+    color: THEME.textMuted
   },
   dayItems: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem'
+    gap: '16px'
   },
   dayItem: {
     display: 'flex',
-    gap: '1rem',
-    padding: '1rem',
-    border: `1px solid ${THEME.border}`,
-    borderRadius: '8px',
-    backgroundColor: THEME.background,
-    alignItems: 'flex-start'
+    gap: '16px',
+    padding: '16px',
+    border: '1px solid var(--border-color, #1e3a5f)',
+    borderRadius: '12px',
+    backgroundColor: 'var(--bg-input, #1a2d47)',
+    alignItems: 'flex-start',
+    transition: 'all 0.2s'
   },
   itemNumber: {
-    width: '40px',
-    height: '40px',
-    minWidth: '40px',
-    maxWidth: '40px',
-    minHeight: '40px',
-    maxHeight: '40px',
+    width: '32px',
+    height: '32px',
+    minWidth: '32px',
+    maxWidth: '32px',
+    minHeight: '32px',
+    maxHeight: '32px',
     borderRadius: '50%',
     backgroundColor: THEME.primary,
     color: 'white',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontWeight: '600',
+    fontWeight: 700,
+    fontSize: '14px',
     lineHeight: '1',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
-    flexShrink: 0,
-    flexBasis: '40px'
+    flexShrink: 0
   },
-  itemDetails: {
-    flex: 1
-  },
+  itemDetails: { flex: 1 },
   itemLocation: {
-    fontSize: '0.85rem',
+    fontSize: '12px',
     color: THEME.textSecondary,
-    margin: '0.25rem 0',
+    margin: '4px 0',
     display: 'flex',
     alignItems: 'center',
-    gap: '8px'
+    gap: '6px'
   },
   itemMeta: {
     display: 'flex',
-    gap: '1rem',
-    fontSize: '0.85rem',
+    gap: '16px',
+    fontSize: '12px',
     color: THEME.textSecondary,
-    marginTop: '0.5rem',
+    marginTop: '8px',
     flexWrap: 'wrap'
   },
   priorityBadge: (priority) => ({
-    padding: '0.25rem 0.5rem',
-    borderRadius: '4px',
-    fontSize: '0.75rem',
-    fontWeight: '600',
+    padding: '4px 8px',
+    borderRadius: '6px',
+    fontSize: '10px',
+    fontWeight: 700,
     textTransform: 'uppercase',
     backgroundColor:
+      priority === 'high' || priority === 'must-visit' ? 'rgba(239, 68, 68, 0.15)' :
+      priority === 'medium' ? 'rgba(251, 191, 36, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+    color:
       priority === 'high' || priority === 'must-visit' ? THEME.error :
-      priority === 'medium' ? THEME.warning : THEME.success,
-    color: 'white'
+      priority === 'medium' ? THEME.accent : THEME.primary
   }),
   weatherBadge: {
     display: 'inline-block',
-    padding: '0.25rem 0.5rem',
-    backgroundColor: 'rgba(25, 118, 210, 0.1)',
-    borderRadius: '4px',
-    fontSize: '0.8rem',
-    color: THEME.primary,
-    marginTop: '0.5rem'
+    padding: '4px 8px',
+    backgroundColor: 'rgba(6, 182, 212, 0.12)',
+    borderRadius: '6px',
+    fontSize: '11px',
+    color: THEME.secondary,
+    marginTop: '8px'
   },
   transportSelect: {
     width: '100%',
     padding: '6px 8px',
-    border: `1.5px solid ${THEME.primary}`,
-    borderRadius: '6px',
-    fontSize: '0.85rem',
+    border: `1px solid ${THEME.primary}`,
+    borderRadius: '8px',
+    fontSize: '13px',
     fontWeight: 600,
-    color: THEME.text,
-    backgroundColor: '#f0fdf4',
+    color: THEME.primary,
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
     fontFamily: 'inherit',
     cursor: 'pointer'
   },
   budgetInlineInput: {
     width: '100px',
     padding: '7px 10px',
-    border: `1.5px solid ${THEME.border}`,
-    borderRadius: '6px',
-    fontSize: '0.92rem',
+    border: `1px solid ${THEME.border}`,
+    borderRadius: '8px',
+    fontSize: '13px',
     fontWeight: 700,
     color: THEME.text,
-    backgroundColor: '#fff',
+    backgroundColor: 'var(--bg-card, #152238)',
     textAlign: 'right',
     fontFamily: 'inherit',
     lineHeight: '1.4'
@@ -3039,194 +3026,196 @@ const styles = {
     alignItems: 'center',
     padding: '4px 10px',
     borderRadius: '999px',
-    backgroundColor: '#f0fdf4',
-    border: '1px solid #bbf7d0',
-    color: '#166534',
-    fontSize: '0.88rem',
+    backgroundColor: 'rgba(34, 197, 94, 0.12)',
+    border: '1px solid rgba(34, 197, 94, 0.25)',
+    color: THEME.primary,
+    fontSize: '11px',
     fontWeight: 700
   },
   removeBtn: {
-    padding: '0.25rem 0.5rem',
+    padding: '4px 8px',
     border: 'none',
-    background: THEME.error,
-    color: 'white',
-    borderRadius: '4px',
+    background: 'rgba(239, 68, 68, 0.15)',
+    color: THEME.error,
+    borderRadius: '6px',
     cursor: 'pointer',
-    height: 'fit-content'
+    height: 'fit-content',
+    fontSize: '12px',
+    fontWeight: 700
   },
   mapContainer: {
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.45) 100%)',
-    backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
-    padding: '1.5rem',
-    borderRadius: '28px',
-    boxShadow: '0 18px 48px rgba(15, 23, 42, 0.08)',
-    border: '1px solid rgba(148, 163, 184, 0.16)'
+    background: 'var(--bg-card, #152238)',
+    padding: '24px',
+    borderRadius: '16px',
+    boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
+    border: '1px solid var(--border-color, #1e3a5f)'
   },
   actionButtons: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(3, 1fr)',
-    gap: '1rem'
+    gridTemplateColumns: '1fr 1fr 1fr',
+    gap: '12px',
+    marginTop: '20px'
   },
   saveBtn: {
-    padding: '1.2rem',
-    background: 'linear-gradient(135deg, #16a34a, #059669)',
+    padding: '12px',
+    background: THEME.primary,
     color: 'white',
     border: 'none',
     borderRadius: '12px',
     cursor: 'pointer',
-    fontWeight: '700',
-    fontSize: '1.1rem',
-    boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
-    transition: 'all 0.3s ease',
+    fontWeight: 700,
+    fontSize: '13px',
+    transition: 'all 0.2s',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px'
+    gap: '6px',
+    fontFamily: 'inherit'
   },
   shareBtn: {
-    padding: '1.2rem',
-    background: 'linear-gradient(135deg, #0891b2, #06b6d4)',
+    padding: '12px',
+    background: THEME.secondary,
     color: 'white',
     border: 'none',
     borderRadius: '12px',
     cursor: 'pointer',
-    fontWeight: '700',
-    fontSize: '1.1rem',
-    boxShadow: '0 4px 12px rgba(8, 145, 178, 0.3)',
-    transition: 'all 0.3s ease',
+    fontWeight: 700,
+    fontSize: '13px',
+    transition: 'all 0.2s',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px'
+    gap: '6px',
+    fontFamily: 'inherit'
   },
   exportBtn: {
-    padding: '1.2rem',
-    background: 'linear-gradient(135deg, #6b7280, #4b5563)',
+    padding: '12px',
+    background: '#475569',
     color: 'white',
     border: 'none',
     borderRadius: '12px',
     cursor: 'pointer',
-    fontWeight: '700',
-    fontSize: '1.1rem',
-    boxShadow: '0 4px 12px rgba(107, 114, 128, 0.3)',
-    transition: 'all 0.3s ease',
+    fontWeight: 700,
+    fontSize: '13px',
+    transition: 'all 0.2s',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '8px'
+    gap: '6px',
+    fontFamily: 'inherit'
   },
   rightPanel: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem',
+    gap: '20px',
     position: 'sticky',
-    top: '2rem',
-    height: 'fit-content'
+    top: '100px'
   },
   summaryCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    backdropFilter: 'blur(30px)',
-    WebkitBackdropFilter: 'blur(30px)',
-    padding: '2rem',
-    borderRadius: '24px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-    border: '1px solid rgba(255, 255, 255, 0.18)'
+    backgroundColor: 'var(--bg-card, #152238)',
+    borderRadius: '16px',
+    padding: '24px',
+    boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
+    border: '1px solid var(--border-color, #1e3a5f)'
   },
   summaryItem: {
     display: 'flex',
     justifyContent: 'space-between',
-    padding: '0.75rem 0',
-    borderBottom: `1px solid ${THEME.border}`
+    alignItems: 'center',
+    padding: '11px 0',
+    borderBottom: '1px solid var(--border-color, #1e3a5f)',
+    fontSize: '13px'
   },
   savedList: {
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    backdropFilter: 'blur(30px)',
-    WebkitBackdropFilter: 'blur(30px)',
-    padding: '1.25rem',
-    borderRadius: '24px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-    border: '1px solid rgba(255, 255, 255, 0.18)',
-    maxHeight: 'calc(100vh - 190px)',
-    overflowY: 'auto'
+    backgroundColor: 'var(--bg-card, #152238)',
+    borderRadius: '16px',
+    padding: '24px',
+    boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
+    border: '1px solid var(--border-color, #1e3a5f)',
+    maxHeight: '480px',
+    display: 'flex',
+    flexDirection: 'column'
   },
   savedSearchInput: {
     width: '100%',
-    padding: '0.6rem 0.8rem',
-    borderRadius: '8px',
-    border: `1px solid ${THEME.border}`,
-    margin: '0.75rem 0 0.9rem',
-    fontSize: '0.9rem'
+    padding: '10px 14px',
+    borderRadius: '10px',
+    border: '1px solid var(--border-color, #1e3a5f)',
+    margin: '0 0 12px',
+    fontSize: '13px',
+    background: 'var(--bg-input, #1a2d47)',
+    color: THEME.text,
+    fontFamily: 'inherit',
+    outline: 'none',
+    flexShrink: 0
   },
-  sidebarFiltersWrap: {
-    marginBottom: '0.9rem'
-  },
-  sidebarSearchWrap: {
-    position: 'relative'
-  },
+  sidebarFiltersWrap: { marginBottom: '12px' },
+  sidebarSearchWrap: { position: 'relative' },
   sidebarSearchInput: {
     width: '100%',
-    padding: '0.6rem 2rem 0.6rem 0.75rem',
-    borderRadius: '8px',
-    border: `1px solid ${THEME.border}`,
-    fontSize: '0.86rem',
-    marginBottom: '0.6rem'
+    padding: '10px 2rem 10px 12px',
+    borderRadius: '10px',
+    border: '1px solid var(--border-color, #1e3a5f)',
+    fontSize: '13px',
+    marginBottom: '10px',
+    background: 'var(--bg-input, #1a2d47)',
+    color: THEME.text,
+    fontFamily: 'inherit'
   },
   sidebarClearBtn: {
     position: 'absolute',
-    top: '0.38rem',
-    right: '0.4rem',
+    top: '6px',
+    right: '6px',
     border: 'none',
-    background: '#f3f4f6',
+    background: 'var(--bg-card, #152238)',
     borderRadius: '999px',
     width: '24px',
     height: '24px',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    color: THEME.textSecondary
   },
-  sidebarFilterGrid: {
-    display: 'grid',
-    gap: '0.45rem'
-  },
+  sidebarFilterGrid: { display: 'grid', gap: '8px' },
   sidebarFilterSelect: {
     width: '100%',
-    padding: '0.45rem 0.6rem',
+    padding: '8px 10px',
     borderRadius: '8px',
-    border: `1px solid ${THEME.border}`,
-    fontSize: '0.82rem',
-    background: '#fff',
+    border: '1px solid var(--border-color, #1e3a5f)',
+    fontSize: '12px',
+    background: 'var(--bg-input, #1a2d47)',
+    color: THEME.text,
     cursor: 'pointer',
     transition: 'border-color 0.2s ease'
   },
   savedFilterSelect: {
     width: '100%',
-    padding: '0.6rem',
+    padding: '10px',
     borderRadius: '8px',
-    border: `1px solid ${THEME.border}`,
-    fontSize: '0.85rem',
-    background: '#fff',
+    border: '1px solid var(--border-color, #1e3a5f)',
+    fontSize: '12px',
+    background: 'var(--bg-input, #1a2d47)',
+    color: THEME.text,
     fontFamily: 'inherit',
     cursor: 'pointer',
     transition: 'border-color 0.2s ease'
   },
   savedBudgetInput: {
-    padding: '0.65rem 0.7rem',
+    padding: '10px',
     borderRadius: '8px',
-    border: `1.5px solid ${THEME.border}`,
-    fontSize: '0.9rem',
-    background: '#fff',
+    border: '1px solid var(--border-color, #1e3a5f)',
+    fontSize: '12px',
+    background: 'var(--bg-input, #1a2d47)',
+    color: THEME.text,
     fontFamily: 'inherit',
-    transition: 'all 0.2s ease',
-    '&:focus': {
-      borderColor: THEME.primary
-    }
+    transition: 'all 0.2s ease'
   },
   multiSelectDropdown: {
     width: '100%',
-    padding: '0.4rem 0.6rem',
+    padding: '6px 10px',
     border: `1px solid ${THEME.border}`,
-    borderRadius: '6px',
-    fontSize: '0.85rem',
-    background: '#fff',
+    borderRadius: '8px',
+    fontSize: '13px',
+    background: 'var(--bg-input, #1a2d47)',
+    color: THEME.text,
     fontFamily: 'inherit',
     cursor: 'pointer',
     transition: 'border-color 0.2s ease',
@@ -3235,194 +3224,190 @@ const styles = {
     overflowY: 'auto'
   },
   sidebarClearFiltersBtn: {
-    marginTop: '0.5rem',
+    marginTop: '8px',
     border: 'none',
     background: 'transparent',
-    color: THEME.secondary,
-    fontSize: '0.8rem',
-    fontWeight: '600',
+    color: THEME.primary,
+    fontSize: '12px',
+    fontWeight: 600,
     cursor: 'pointer',
     textAlign: 'left',
     padding: 0
   },
   sidebarResultCount: {
-    margin: '0.45rem 0 0',
-    fontSize: '0.78rem',
-    color: THEME.textSecondary,
-    fontWeight: '600'
+    margin: '8px 0 0',
+    fontSize: '12px',
+    color: THEME.textMuted,
+    fontWeight: 600
   },
   sidebarMetaText: {
-    margin: '0.25rem 0 0.5rem',
-    fontSize: '0.82rem',
+    margin: '4px 0 8px',
+    fontSize: '12px',
     color: THEME.textSecondary
   },
   sidebarPaginationWrap: {
-    marginTop: '0.8rem',
+    marginTop: '14px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '0.35rem',
+    gap: '6px',
     flexWrap: 'wrap'
   },
   pageBtn: {
     border: `1px solid ${THEME.border}`,
-    background: '#fff',
-    borderRadius: '8px',
-    padding: '0.35rem 0.6rem',
-    fontSize: '0.78rem',
+    background: 'var(--bg-input, #1a2d47)',
+    borderRadius: '6px',
+    padding: '6px 12px',
+    fontSize: '12px',
     cursor: 'pointer',
-    color: THEME.text
+    color: THEME.textSecondary,
+    fontFamily: 'inherit',
+    transition: 'all 0.2s'
   },
   pageBtnActive: {
     border: `1px solid ${THEME.primary}`,
     background: THEME.primary,
     color: '#fff',
-    borderRadius: '8px',
-    padding: '0.35rem 0.6rem',
-    fontSize: '0.78rem',
-    cursor: 'pointer'
+    borderRadius: '6px',
+    padding: '6px 12px',
+    fontSize: '12px',
+    cursor: 'pointer',
+    fontFamily: 'inherit'
   },
   pageBtnDisabled: {
     border: `1px solid ${THEME.border}`,
-    background: '#f3f4f6',
-    color: '#9ca3af',
-    borderRadius: '8px',
-    padding: '0.35rem 0.6rem',
-    fontSize: '0.78rem',
-    cursor: 'not-allowed'
+    background: 'var(--bg-input, #1a2d47)',
+    color: THEME.textMuted,
+    borderRadius: '6px',
+    padding: '6px 12px',
+    fontSize: '12px',
+    cursor: 'not-allowed',
+    fontFamily: 'inherit'
   },
-  skeletonList: {
-    display: 'grid',
-    gap: '0.7rem'
-  },
+  skeletonList: { display: 'grid', gap: '12px' },
   skeletonCard: {
     border: `1px solid ${THEME.border}`,
     borderRadius: '12px',
-    padding: '0.6rem',
-    background: '#fff'
+    padding: '10px',
+    background: 'var(--bg-input, #1a2d47)'
   },
   skeletonImage: {
     height: '90px',
     borderRadius: '8px',
-    background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%)',
-    backgroundSize: '400% 100%'
+    background: 'linear-gradient(90deg, var(--bg-input, #1a2d47) 25%, var(--bg-card-hover, #1a2d47) 37%, var(--bg-input, #1a2d47) 63%)',
+    backgroundSize: '400% 100%',
+    animation: 'itn-shimmer 1.5s infinite'
   },
   skeletonLineWide: {
     height: '11px',
     borderRadius: '6px',
-    marginTop: '0.55rem',
+    marginTop: '10px',
     width: '80%',
-    background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%)',
-    backgroundSize: '400% 100%'
+    background: 'linear-gradient(90deg, var(--bg-input, #1a2d47) 25%, var(--bg-card-hover, #1a2d47) 37%, var(--bg-input, #1a2d47) 63%)',
+    backgroundSize: '400% 100%',
+    animation: 'itn-shimmer 1.5s infinite'
   },
   skeletonLineShort: {
     height: '11px',
     borderRadius: '6px',
-    marginTop: '0.4rem',
+    marginTop: '8px',
     width: '52%',
-    background: 'linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 37%, #f3f4f6 63%)',
-    backgroundSize: '400% 100%'
+    background: 'linear-gradient(90deg, var(--bg-input, #1a2d47) 25%, var(--bg-card-hover, #1a2d47) 37%, var(--bg-input, #1a2d47) 63%)',
+    backgroundSize: '400% 100%',
+    animation: 'itn-shimmer 1.5s infinite'
   },
   emptyAttractionsState: {
-    border: `1px dashed ${THEME.border}`,
-    borderRadius: '10px',
-    padding: '0.8rem',
+    border: '1px dashed var(--border-color, #1e3a5f)',
+    borderRadius: '12px',
+    padding: '14px',
     textAlign: 'center'
   },
   savedFiltersRow: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '0.5rem',
-    marginBottom: '0.5rem'
+    gap: '8px',
+    marginBottom: '8px'
   },
   savedBudgetRow: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
-    gap: '0.5rem',
-    marginBottom: '0.45rem'
+    gap: '8px',
+    marginBottom: '8px'
   },
   savedClearFiltersBtn: {
     border: 'none',
     background: 'transparent',
-    color: THEME.secondary,
-    fontWeight: '600',
+    color: THEME.primary,
+    fontWeight: 600,
     cursor: 'pointer',
-    fontSize: '0.78rem',
+    fontSize: '12px',
     padding: 0,
-    marginBottom: '0.35rem'
+    marginBottom: '6px'
   },
   savedResultsInfo: {
-    margin: '0.2rem 0 0.5rem',
-    color: THEME.textSecondary,
-    fontSize: '0.78rem'
+    margin: '4px 0 10px',
+    color: THEME.textMuted,
+    fontSize: '11px',
+    flexShrink: 0
   },
   savedItem: {
-    padding: '0.75rem',
-    borderBottom: `1px solid ${THEME.border}`,
+    padding: '12px',
+    borderBottom: '1px solid var(--border-color, #1e3a5f)',
     cursor: 'pointer',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: '0.35rem',
+    gap: '6px',
     flexWrap: 'wrap'
   },
   savedItemCard: {
     display: 'flex',
-    gap: '1rem',
-    padding: '1.25rem',
-    backgroundColor: '#fafafa',
-    border: `1px solid ${THEME.border}`,
-    borderRadius: '10px',
+    gap: '12px',
+    padding: '12px',
+    border: '1px solid var(--border-color, #1e3a5f)',
+    borderRadius: '12px',
+    backgroundColor: 'var(--bg-input, #1a2d47)',
     cursor: 'pointer',
-    marginBottom: '0.85rem',
-    transition: 'all 0.2s ease',
-    '&:hover': {
-      backgroundColor: '#f5f5f5',
-      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-      borderColor: THEME.primary
-    }
+    marginBottom: '10px',
+    transition: 'all 0.2s'
   },
   savedItemNumber: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: '36px',
-    height: '36px',
-    minWidth: '36px',
-    minHeight: '36px',
+    width: '32px',
+    height: '32px',
+    minWidth: '32px',
+    minHeight: '32px',
     borderRadius: '50%',
     backgroundColor: THEME.primary,
     color: 'white',
-    fontWeight: '700',
-    fontSize: '0.95rem',
+    fontWeight: 700,
+    fontSize: '14px',
     lineHeight: '1',
     whiteSpace: 'nowrap',
     overflow: 'hidden',
-    flexShrink: 0,
-    flexBasis: '36px'
+    flexShrink: 0
   },
-  savedItemContent: {
-    flex: 1,
-    minWidth: 0
-  },
+  savedItemContent: { flex: 1, minWidth: 0 },
   savedItemMetaGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
-    gap: '0.65rem'
+    gap: '10px'
   },
   savedMetaItem: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.2rem',
-    padding: '0.55rem',
-    backgroundColor: '#fff',
-    borderRadius: '6px',
-    border: `1px solid ${THEME.border}`
+    gap: '4px',
+    padding: '9px',
+    backgroundColor: 'var(--bg-card, #152238)',
+    borderRadius: '8px',
+    border: '1px solid var(--border-color, #1e3a5f)'
   },
   savedMetaLabel: {
-    fontSize: '0.7rem',
-    fontWeight: '600',
-    color: '#999',
+    fontSize: '10px',
+    fontWeight: 600,
+    color: THEME.textMuted,
     textTransform: 'uppercase',
     letterSpacing: '0.4px',
     display: 'flex',
@@ -3430,25 +3415,25 @@ const styles = {
     gap: '3px'
   },
   savedMetaValue: {
-    fontSize: '0.9rem',
-    fontWeight: '600',
+    fontSize: '13px',
+    fontWeight: 600,
     color: THEME.text
   },
   savedDate: {
-    fontSize: '0.75rem',
+    fontSize: '11px',
     color: THEME.textSecondary
   },
   savedMetaInline: {
     width: '100%',
-    fontSize: '0.74rem',
+    fontSize: '11px',
     color: THEME.textSecondary
   },
   savedPaginationWrap: {
-    marginTop: '0.65rem',
+    marginTop: '10px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: '0.5rem'
+    gap: '8px'
   }
 };
 

@@ -1,3 +1,8 @@
+/* ================================================================
+   ItineraryBuilder — Dark-navy glass design system
+   ================================================================ */
+
+/* --- Search & Filter shell ------------------------------------- */
 .itinerary-search-shell {
   display: flex;
   flex-direction: column;
@@ -14,17 +19,20 @@
 .itinerary-search-input,
 .saved-search-input {
   width: 100%;
-  border: 1px solid #d0d7de;
-  border-radius: 10px;
+  border: 1px solid var(--border-color, #1e3a5f);
+  border-radius: 12px;
   padding: 10px 40px 10px 42px;
   font-size: 14px;
-  background: #fff;
+  background: var(--bg-input, #1a2d47);
+  color: var(--text-primary, #e8edf3);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Apply unified dropdown/select/button look across the entire Itinerary Builder
-   - make selects and toggle buttons visually match the left sidebar controls
-   - use specific selectors to avoid global overrides */
+.itinerary-search-input::placeholder,
+.saved-search-input::placeholder {
+  color: var(--text-muted, #5a6f85);
+}
+
 .itinerary-search-input,
 .saved-search-input,
 .itinerary-filter-input,
@@ -33,9 +41,10 @@
 #rating-select,
 #sort-select,
 .saved-filter-grid select {
-  border: 1px solid #d1d5db !important;
-  border-radius: 10px !important;
-  background: #fff !important;
+  border: 1px solid var(--border-color, #1e3a5f) !important;
+  border-radius: 12px !important;
+  background: var(--bg-input, #1a2d47) !important;
+  color: var(--text-primary, #e8edf3) !important;
   padding: 10px 12px !important;
   font-size: 13px !important;
   box-sizing: border-box !important;
@@ -43,29 +52,25 @@
   -webkit-appearance: none !important;
 }
 
-/* Consistent arrow for all selects in the itinerary builder */
 .itinerary-filter-panel select,
 .saved-filter-panel select,
 #rating-select,
 #sort-select,
 .saved-filter-grid select {
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7%2010l5%205%205-5'%20stroke='%236b7280'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7%2010l5%205%205-5'%20stroke='%238899aa'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-position: right 0.75rem center !important;
   padding-right: 2.5rem !important;
 }
-
-/* Make toggle buttons match input boxes (rounded, same height and padding) */
-
 
 .itinerary-search-input:focus,
 .saved-search-input:focus,
 .itinerary-filter-input:focus,
 .saved-filter-panel input:focus,
 .saved-filter-panel select:focus {
-  border-color: #16a34a;
+  border-color: var(--accent-green, #22c55e) !important;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15);
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15) !important;
 }
 
 .itinerary-search-clear,
@@ -76,7 +81,7 @@
   transform: translateY(-50%);
   border: 0;
   background: transparent;
-  color: #64748b;
+  color: var(--text-muted, #5a6f85);
   cursor: pointer;
   font-size: 16px;
   padding: 4px;
@@ -91,10 +96,10 @@
   max-height: 220px;
   overflow-y: auto;
   z-index: 20;
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  background: var(--bg-card, #152238);
+  border: 1px solid var(--border-color, #1e3a5f);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 .itinerary-search-item,
@@ -103,67 +108,33 @@
   text-align: left;
   padding: 10px 12px;
   border: 0;
-  background: #fff;
+  background: transparent;
   cursor: pointer;
-  color: #1f2937;
+  color: var(--text-primary, #e8edf3);
 }
 
 .itinerary-search-item:hover,
 .saved-search-item:hover,
 .itinerary-search-item.is-active,
 .saved-search-item.is-active {
-  background: #f0fdf4;
+  background: rgba(34, 197, 94, 0.1);
 }
 
 .itinerary-search-loading,
 .saved-search-loading {
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted, #5a6f85);
   padding: 2px 2px 0;
 }
 
-
-/* Panel animation: use max-height + translate for smooth open/close */
-.itinerary-filter-panel,
-.saved-filter-panel {
-  max-height: 0;
-  overflow: hidden;
-  opacity: 0;
-  transform: translateY(-6px);
-  transition: max-height 320ms cubic-bezier(.2,.9,.2,1), opacity 220ms ease, transform 220ms ease;
-  margin-top: 0.25rem;
-}
-
-.itinerary-filter-panel.is-open,
-.saved-filter-panel.is-open {
-  max-height: 800px; /* large enough to reveal content */
-  opacity: 1;
-  transform: translateY(0);
-  margin-top: 1rem;
-}
-
-/* Desktop: panels are always visible — override to remove max-height limit */
-@media (min-width: 769px) {
-  .itinerary-filter-panel,
-  .saved-filter-panel {
-    max-height: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-    margin-top: 1rem !important;
-    overflow: visible !important;
-    display: block !important;
-  }
-}
-
-
-
+/* --- Filter panel ---------------------------------------------- */
 .itinerary-filter-panel,
 .saved-filter-panel {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
   transition: grid-template-rows 0.25s ease, opacity 0.25s ease;
-  margin-top: 1rem;
+  margin-top: 0.25rem;
 }
 
 .itinerary-filter-panel > *,
@@ -176,6 +147,22 @@
 .saved-filter-panel.is-open {
   grid-template-rows: 1fr;
   opacity: 1;
+  margin-top: 1rem;
+}
+
+@media (min-width: 769px) {
+  .itinerary-filter-panel,
+  .saved-filter-panel {
+    grid-template-rows: 1fr !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    display: block !important;
+    margin-top: 1rem !important;
+  }
+  .itinerary-filter-panel > *,
+  .saved-filter-panel > * {
+    overflow: visible;
+  }
 }
 
 .itinerary-filter-group {
@@ -184,7 +171,7 @@
 
 .itinerary-filter-label {
   font-size: 12px;
-  color: #64748b;
+  color: var(--text-muted, #5a6f85);
   font-weight: 700;
   letter-spacing: 0.02em;
   display: inline-block;
@@ -198,19 +185,26 @@
 }
 
 .itinerary-chip-btn {
-  border: 1px solid #d1d5db;
-  background: #fff;
-  color: #111827;
+  border: 1px solid var(--border-color, #1e3a5f);
+  background: var(--bg-input, #1a2d47);
+  color: var(--text-secondary, #8899aa);
   border-radius: 999px;
   padding: 6px 10px;
   font-size: 12px;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.itinerary-chip-btn:hover {
+  border-color: var(--accent-green, #22c55e);
+  color: var(--accent-green, #22c55e);
 }
 
 .itinerary-chip-btn.is-active {
-  border-color: #16a34a;
-  background: #ecfdf3;
-  color: #166534;
+  border-color: var(--accent-green, #22c55e);
+  background: rgba(34, 197, 94, 0.15);
+  color: var(--accent-green, #22c55e);
+  font-weight: 700;
 }
 
 .itinerary-filter-grid {
@@ -236,37 +230,33 @@
 .saved-filter-panel input,
 .saved-filter-panel select {
   width: 100%;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color, #1e3a5f);
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 13px;
   font-family: inherit;
+  background: var(--bg-input, #1a2d47);
+  color: var(--text-primary, #e8edf3);
   transition: all 0.2s ease;
 }
 
-/* Override global select arrow for itinerary sidebar selects */
 #rating-select,
 #sort-select {
   appearance: none !important;
   -webkit-appearance: none !important;
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7%2010l5%205%205-5'%20stroke='%236b7280'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7%2010l5%205%205-5'%20stroke='%238899aa'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-position: right 0.75rem center !important;
   padding-right: 2.5rem !important;
   cursor: pointer !important;
-}
-
-/* Ensure the select renders consistently with surrounding inputs */
-#rating-select,
-#sort-select {
-  border: 1px solid #d1d5db !important;
+  border: 1px solid var(--border-color, #1e3a5f) !important;
   border-radius: 8px !important;
-  padding: 8px 10px 8px 10px !important;
+  padding: 8px 10px !important;
   font-size: 13px !important;
-  background-color: #fff !important;
+  background-color: var(--bg-input, #1a2d47) !important;
+  color: var(--text-primary, #e8edf3) !important;
 }
 
-/* Make all selects inside itinerary builder match input fields */
 .itinerary-filter-group select,
 .itinerary-filter-grid select,
 .itinerary-filter-panel select,
@@ -275,50 +265,49 @@
 .itinerary-filter-input {
   box-sizing: border-box;
   width: 100%;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-color, #1e3a5f);
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 13px;
-  background: #fff;
+  background: var(--bg-input, #1a2d47);
+  color: var(--text-primary, #e8edf3);
   appearance: none;
   -webkit-appearance: none;
 }
 
-/* Add a consistent arrow for selects in the itinerary builder */
 .itinerary-filter-group select,
 .itinerary-filter-grid select,
 .itinerary-filter-panel select,
 .saved-filter-panel select {
-  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7%2010l5%205%205-5'%20stroke='%236b7280'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7%2010l5%205%205-5'%20stroke='%238899aa'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   padding-right: 2.5rem;
 }
 
-/* Toggle-button styles removed (buttons were removed from JSX) */
-
-.saved-filter-panel input[type=\"number\"] {
-  border: 1.5px solid #d1d5db;
+.saved-filter-panel input[type="number"] {
+  border: 1px solid var(--border-color, #1e3a5f) !important;
   padding: 10px 12px;
   font-size: 0.95rem;
   font-weight: 500;
+  background: var(--bg-input, #1a2d47) !important;
+  color: var(--text-primary, #e8edf3) !important;
 }
 
-.saved-filter-panel input[type=\"number\"]:focus,
+.saved-filter-panel input[type="number"]:focus,
 .saved-filter-panel select:focus {
   outline: none;
-  border-color: #16a34a;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+  border-color: var(--accent-green, #22c55e) !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15);
 }
 
-/* Remove spinner arrows from number input */
-.saved-filter-panel input[type=\"number\"]::-webkit-outer-spin-button,
-.saved-filter-panel input[type=\"number\"]::-webkit-inner-spin-button {
+.saved-filter-panel input[type="number"]::-webkit-outer-spin-button,
+.saved-filter-panel input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
 
-.saved-filter-panel input[type=\"number\"] {
+.saved-filter-panel input[type="number"] {
   -moz-appearance: textfield;
 }
 
@@ -333,15 +322,14 @@
 
 .itinerary-active-chip,
 .saved-active-chip {
-  border: 1px solid #bbf7d0;
-  background: #f0fdf4;
-  color: #166534;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  background: rgba(34, 197, 94, 0.12);
+  color: var(--accent-green, #22c55e);
   border-radius: 999px;
   padding: 5px 10px;
   font-size: 12px;
 }
 
-/* Style the small remove (X) button inside chips */
 .itinerary-active-chip > button,
 .itinerary-chip-btn > button,
 .saved-active-chip > button {
@@ -355,7 +343,7 @@
   margin-left: 8px;
   border-radius: 50%;
   background: transparent;
-  color: #166534;
+  color: var(--accent-green, #22c55e);
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
@@ -364,14 +352,14 @@
 .itinerary-active-chip > button:hover,
 .itinerary-chip-btn > button:hover,
 .saved-active-chip > button:hover {
-  background: rgba(22, 163, 74, 0.08);
+  background: rgba(34, 197, 94, 0.2);
 }
 
 .itinerary-clear-all-btn,
 .saved-clear-all {
   border: 0;
   background: transparent;
-  color: #166534;
+  color: var(--accent-green, #22c55e);
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
@@ -394,22 +382,8 @@
 }
 
 @media (min-width: 769px) {
-  /* On desktop, hide the left (sidebar) toggle because the panel is always visible,
-     but keep the Saved Itineraries toggle visible so the right sidebar can be collapsed */
   .itn-toggle-btn {
     display: none;
-  }
-
-  .itinerary-filter-panel,
-  .saved-filter-panel {
-    grid-template-rows: 1fr;
-    opacity: 1;
-    transform: none;
-  }
-
-  .itinerary-filter-panel > *,
-  .saved-filter-panel > * {
-    overflow: visible;
   }
 }
 
@@ -418,17 +392,195 @@
   .saved-filter-grid {
     grid-template-columns: 1fr;
   }
-
   .saved-itinerary-header-row {
     margin-bottom: 6px;
   }
 }
 
+/* --- Attraction cards (glass card hover) ----------------------- */
+.itinerary-attraction-card {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+}
+
 .itinerary-attraction-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
 }
 
 .itinerary-attraction-card:hover .itinerary-attraction-image {
-  transform: scale(1.03);
+  transform: scale(1.05);
+}
+
+.itinerary-attraction-image {
+  transition: transform 0.4s ease;
+}
+
+/* --- Animations ------------------------------------------------ */
+@keyframes itn-fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes itn-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(34,197,94,0.15), inset 0 0 12px rgba(34,197,94,0.1); transform: scale(1); }
+  50%      { box-shadow: 0 0 30px rgba(34,197,94,0.25), inset 0 0 16px rgba(34,197,94,0.15); transform: scale(1.05); }
+}
+
+@keyframes itn-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* --- Saved itinerary card hover -------------------------------- */
+.itn-saved-item-card {
+  transition: all 0.2s ease;
+}
+
+.itn-saved-item-card:hover {
+  border-color: var(--accent-green, #22c55e) !important;
+  transform: translateX(2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ================================================================
+   Light-mode overrides
+   ================================================================ */
+[data-theme="light"] .itinerary-search-input,
+[data-theme="light"] .saved-search-input {
+  background: #fff !important;
+  border-color: #d1d5db !important;
+  color: #1f2937 !important;
+}
+
+[data-theme="light"] .itinerary-search-input::placeholder,
+[data-theme="light"] .saved-search-input::placeholder {
+  color: #9ca3af !important;
+}
+
+[data-theme="light"] .itinerary-search-input,
+[data-theme="light"] .saved-search-input,
+[data-theme="light"] .itinerary-filter-input,
+[data-theme="light"] .itinerary-filter-panel select,
+[data-theme="light"] .saved-filter-panel select,
+[data-theme="light"] #rating-select,
+[data-theme="light"] #sort-select,
+[data-theme="light"] .saved-filter-grid select {
+  border-color: #d1d5db !important;
+  background: #fff !important;
+  color: #1f2937 !important;
+}
+
+[data-theme="light"] .itinerary-filter-panel select,
+[data-theme="light"] .saved-filter-panel select,
+[data-theme="light"] #rating-select,
+[data-theme="light"] #sort-select,
+[data-theme="light"] .saved-filter-grid select {
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7%2010l5%205%205-5'%20stroke='%236b7280'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E") !important;
+}
+
+[data-theme="light"] .itinerary-search-input:focus,
+[data-theme="light"] .saved-search-input:focus,
+[data-theme="light"] .itinerary-filter-input:focus,
+[data-theme="light"] .saved-filter-panel input:focus,
+[data-theme="light"] .saved-filter-panel select:focus {
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.15) !important;
+}
+
+[data-theme="light"] .itinerary-search-clear,
+[data-theme="light"] .saved-search-clear {
+  color: #6b7280;
+}
+
+[data-theme="light"] .itinerary-search-dropdown,
+[data-theme="light"] .saved-search-dropdown {
+  background: #fff;
+  border-color: #e5e7eb;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+}
+
+[data-theme="light"] .itinerary-search-item,
+[data-theme="light"] .saved-search-item {
+  color: #1f2937;
+  background: #fff;
+}
+
+[data-theme="light"] .itinerary-search-item:hover,
+[data-theme="light"] .saved-search-item:hover,
+[data-theme="light"] .itinerary-search-item.is-active,
+[data-theme="light"] .saved-search-item.is-active {
+  background: #f0fdf4;
+}
+
+[data-theme="light"] .itinerary-search-loading,
+[data-theme="light"] .saved-search-loading {
+  color: #6b7280;
+}
+
+[data-theme="light"] .itinerary-filter-input,
+[data-theme="light"] .saved-filter-panel input,
+[data-theme="light"] .saved-filter-panel select {
+  border-color: #d1d5db;
+  background: #fff;
+  color: #1f2937;
+}
+
+[data-theme="light"] #rating-select,
+[data-theme="light"] #sort-select {
+  background-color: #fff !important;
+  color: #1f2937 !important;
+}
+
+[data-theme="light"] .itinerary-filter-group select,
+[data-theme="light"] .itinerary-filter-grid select,
+[data-theme="light"] .itinerary-filter-panel select,
+[data-theme="light"] .saved-filter-panel select {
+  background: #fff;
+  color: #1f2937;
+}
+
+[data-theme="light"] .saved-filter-panel input[type="number"] {
+  background: #fff !important;
+  color: #1f2937 !important;
+  border-color: #d1d5db !important;
+}
+
+[data-theme="light"] .itinerary-active-chip,
+[data-theme="light"] .saved-active-chip {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+  color: #166534;
+}
+
+[data-theme="light"] .itinerary-active-chip > button,
+[data-theme="light"] .itinerary-chip-btn > button,
+[data-theme="light"] .saved-active-chip > button {
+  color: #166534;
+}
+
+[data-theme="light"] .itinerary-clear-all-btn,
+[data-theme="light"] .saved-clear-all {
+  color: #16a34a;
+}
+
+[data-theme="light"] .itinerary-chip-btn {
+  border-color: #d1d5db;
+  background: #fff;
+  color: #1f2937;
+}
+
+[data-theme="light"] .itinerary-chip-btn:hover,
+[data-theme="light"] .itinerary-chip-btn.is-active {
+  border-color: #16a34a;
+  background: #ecfdf3;
+  color: #166534;
+}
+
+[data-theme="light"] .itinerary-attraction-card {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+[data-theme="light"] .itinerary-attraction-card:hover {
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
 }
