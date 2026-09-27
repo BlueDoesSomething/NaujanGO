@@ -1456,7 +1456,7 @@ a.navbar-link.active,
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 768px) {
   .navbar-container {
     padding-right: 6.8rem;
   }
