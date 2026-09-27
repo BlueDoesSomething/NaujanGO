@@ -88,7 +88,7 @@ const pageStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  background: 'linear-gradient(135deg, #e0f2fe 0%, #ecfccb 100%)',
+  background: 'transparent',
   padding: '2rem'
 };
 

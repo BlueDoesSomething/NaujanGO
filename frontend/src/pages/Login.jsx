@@ -22,7 +22,7 @@ const containerStyle = {
 
 const DEFAULT_LOGIN_BG_STYLE = {
   backgroundColor: 'transparent',
-  backgroundImage: 'linear-gradient(135deg, rgba(22, 166, 75, 0.31) 0%, rgba(16, 160, 114, 0.52) 100%)'
+  backgroundImage: 'none'
 };
 
 const cardStyle = {

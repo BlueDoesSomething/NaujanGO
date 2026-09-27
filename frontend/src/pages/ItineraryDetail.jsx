@@ -1377,7 +1377,7 @@ const ItineraryDetail = () => {
 
 const styles = {
   page: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: 'transparent',
     minHeight: '100vh',
     paddingBottom: '3rem'
   },

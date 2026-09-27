@@ -22,7 +22,7 @@ export default function PaymentRedirect() {
   }, [searchParams, navigate]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="flex items-center justify-center p-4" style={{ minHeight: '100vh' }}>
       <div className="bg-white rounded-lg shadow-xl p-8 max-w-md w-full text-center">
         <div className="mb-6">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-200 border-t-blue-600 mx-auto"></div>

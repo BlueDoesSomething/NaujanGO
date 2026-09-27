@@ -78,7 +78,7 @@ const OAuthCallback = () => {
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: '100vh',
-      backgroundColor: '#f8f9fa'
+      backgroundColor: 'transparent'
     }}>
       <div style={{
         textAlign: 'center',

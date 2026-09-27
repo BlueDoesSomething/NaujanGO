@@ -779,7 +779,7 @@ END:VCALENDAR`;
 const styles = {
   container: {
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%)',
+    background: 'transparent',
     paddingBottom: 'clamp(2rem, 5vw, 3rem)',
     overflowX: 'hidden'
   },

@@ -1,6 +1,6 @@
 .ad-page {
   min-height: 100vh;
-  background: radial-gradient(circle at 8% 8%, #eefbf3 0%, #f6fbff 50%, #ffffff 100%);
+  background: transparent;
   color: #122026;
   padding-bottom: 28px;
 }

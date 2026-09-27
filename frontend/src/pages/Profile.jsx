@@ -747,7 +747,7 @@ const saveButton = {
 const pageStyle = {
   /* Responsive Change: fluid spacing and safer overflow on all devices */
   minHeight: '100vh',
-  background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%)',
+  background: 'transparent',
   paddingBottom: 'clamp(2rem, 5vw, 3rem)',
   position: 'relative',
   overflowX: 'hidden'

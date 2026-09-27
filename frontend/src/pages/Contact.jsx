@@ -180,7 +180,7 @@ const Contact = () => {
 
 const pageStyle = {
   /* Responsive Change: allow sections to scale naturally across devices */
-  backgroundColor: '#ffffff',
+  backgroundColor: 'transparent',
   minHeight: '100vh'
 };
 

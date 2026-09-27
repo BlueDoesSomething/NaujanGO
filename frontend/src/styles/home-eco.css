@@ -45,34 +45,6 @@
   box-shadow: 0 0 8px rgba(74, 222, 128, 0.6);
 }
 
-/* Floating leaves */
-.eco-home .floating-leaves {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  overflow: hidden;
-}
-.eco-home .floating-leaf {
-  position: absolute;
-  top: 0;
-  color: #22c55e;
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0;
-  display: inline-flex;
-  animation-name: leafFloat;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-}
-@keyframes leafFloat {
-  0%   { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-  10%  { opacity: 0.15; }
-  90%  { opacity: 0.15; }
-  100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
-}
-[data-theme="light"] .eco-home .floating-leaf { color: #059669; }
-
 /* ============ HERO STAGE ============ */
 .eco-home .hero-section {
   position: relative;
@@ -1854,7 +1826,6 @@
 
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .eco-home .floating-leaf,
   .eco-home .stage-progress::before,
   .eco-home .hero-gradient-orb,
   .eco-home .shimmer::after,

@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import api from '../api';
-import Icons from '../components/Icons';
+import Icons from '../components/Icons'; 
 import './About.css';
 import { aboutCopy } from './about/aboutTranslations';
 

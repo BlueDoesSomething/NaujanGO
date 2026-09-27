@@ -49,7 +49,7 @@ const pageStyle = {
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
-  background: 'linear-gradient(135deg, #fef9c3 0%, #dcfce7 100%)',
+  background: 'transparent',
   padding: '2rem'
 };
 

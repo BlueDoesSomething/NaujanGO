@@ -2914,8 +2914,9 @@
 /* Page-level gradient backgrounds that resist overrides */
 [data-theme="dark"] .attractions-page[style*="linear-gradient"],
 [data-theme="dark"] .hotels-page[style*="linear-gradient"],
-[data-theme="dark"] .itinerary-builder-page[style*="linear-gradient"] {
-  background: #0f172a !important;
+[data-theme="dark"] .itinerary-builder-page[style*="linear-gradient"],
+[data-theme="dark"] .ad-page {
+  background: transparent !important;
 }
 
 /* Modern cards (Attractions grid/list views) */

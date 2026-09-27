@@ -3188,7 +3188,7 @@ export default function HotelDetail() {
 
 // Styles
 const pageStyle = {
-  backgroundColor: '#f0f9ff',
+  backgroundColor: 'transparent',
   minHeight: '100vh',
   paddingBottom: '3rem'
 };

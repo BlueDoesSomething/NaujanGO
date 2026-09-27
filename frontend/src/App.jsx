@@ -4,6 +4,7 @@ import { useLanguage } from './context/LanguageContext.jsx';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import MobileBottomNav from './components/MobileBottomNav.jsx';
+import FloatingLeaves from './components/FloatingLeaves.jsx';
 import DashboardLayout from './components/DashboardLayout.jsx';
 import Home from './pages/Home.jsx';
 import Attractions from './pages/Attractions.jsx';
@@ -252,6 +253,7 @@ const App = () => {
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <AnnouncementBar />
           <Navbar />
+          <FloatingLeaves />
           <main key={`lang-content-${language}`} style={{ flexGrow: 1, width: '100%' }}>
             <Routes>
               <Route path="/" element={<HomeWithRedirect />} />

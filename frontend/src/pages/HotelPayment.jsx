@@ -517,7 +517,7 @@ const subtitleStyle = {
 };
 
 const pageStyle = {
-  backgroundColor: '#f8f9fa',
+  backgroundColor: 'transparent',
   minHeight: '100vh',
   paddingBottom: '3rem'
 };
