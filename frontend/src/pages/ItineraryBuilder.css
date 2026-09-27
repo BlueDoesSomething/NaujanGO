@@ -415,6 +415,174 @@
   transition: transform 0.4s ease;
 }
 
+/* --- Itinerary Builder page-level light-mode card styles -------- */
+.itinerary-builder-page {
+  --ib-primary: #22c55e;
+  --ib-primary-dark: #16a34a;
+  --ib-secondary: #06b6d4;
+  --ib-accent: #fbbf24;
+  --ib-success: #22c55e;
+  --ib-warning: #fbbf24;
+  --ib-error: #ef4444;
+  --ib-text: #e8edf3;
+  --ib-text-secondary: #8899aa;
+  --ib-text-muted: #5a6f85;
+  --ib-border: #1e3a5f;
+  --ib-border-light: #243b5c;
+  --ib-bg-card: #152238;
+  --ib-bg-card-hover: #1a2d47;
+  --ib-bg-input: #1a2d47;
+  --ib-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --ib-shadow-large: 0 8px 40px rgba(0,0,0,0.4);
+}
+
+[data-theme="light"] .itinerary-builder-page {
+  --ib-text: #1f2937;
+  --ib-text-secondary: #475569;
+  --ib-text-muted: #94a3b8;
+  --ib-border: #d1d5db;
+  --ib-border-light: #e5e7eb;
+  --ib-bg-card: #ffffff;
+  --ib-bg-card-hover: #f8fafc;
+  --ib-bg-input: #ffffff;
+  --ib-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  --ib-shadow-large: 0 8px 24px rgba(0,0,0,0.1);
+  --ib-primary: #16a34a;
+  --ib-primary-dark: #15803d;
+  --ib-error: #dc2626;
+}
+.ib-card {
+  background: #152238;
+  border: 1px solid #1e3a5f;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+}
+
+.ib-input {
+  background: #1a2d47;
+  border: 1px solid #1e3a5f;
+  color: #e8edf3;
+}
+
+.ib-select {
+  background: #1a2d47;
+  border: 1px solid #1e3a5f;
+  color: #e8edf3;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7%2010l5%205%205-5'%20stroke='%238899aa'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+.ib-breakdown-item {
+  padding: 9px 11px;
+  border-radius: 8px;
+  background: #1a2d47;
+  border: 1px solid #1e3a5f;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.ib-budget-input {
+  width: 100px;
+  padding: 7px 10px;
+  border: 1px solid #1e3a5f;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8edf3;
+  background: #152238;
+  text-align: right;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+[data-theme="light"] .ib-card {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(148, 163, 184, 0.22);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+[data-theme="light"] .ib-card h3,
+[data-theme="light"] .ib-card h4,
+[data-theme="light"] .ib-card h2,
+[data-theme="light"] .ib-card strong {
+  color: #1f2937;
+}
+
+[data-theme="light"] .ib-card span,
+[data-theme="light"] .ib-card label,
+[data-theme="light"] .ib-card small,
+[data-theme="light"] .ib-card p {
+  color: #475569;
+}
+
+[data-theme="light"] .ib-card > div {
+  border-color: #e5e7eb;
+}
+
+[data-theme="light"] .ib-input,
+[data-theme="light"] .ib-input:focus {
+  background: #fff;
+  border-color: #d1d5db;
+  color: #1f2937;
+}
+
+[data-theme="light"] .ib-select,
+[data-theme="light"] .ib-select:focus {
+  background: #fff;
+  border-color: #d1d5db;
+  color: #1f2937;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20viewBox='0%200%2024%2024'%3E%3Cpath%20d='M7%2010l5%205%205-5'%20stroke='%236b7280'%20stroke-width='2'%20stroke-linecap='round'%20stroke-linejoin='round'%20fill='none'/%3E%3C/svg%3E");
+}
+
+[data-theme="light"] .ib-breakdown-item {
+  background: #f8fafc;
+  border-color: #e5e7eb;
+}
+
+[data-theme="light"] .ib-budget-input {
+  background: #fff;
+  border-color: #d1d5db;
+  color: #1f2937;
+}
+
+[data-theme="light"] .ib-breakdown-item.fare {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+[data-theme="light"] .ib-budget-input.fare {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+
+[data-theme="light"] .ib-breakdown-item.total {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+}
+
+[data-theme="light"] .empty-state {
+  border-color: rgba(22, 163, 74, 0.3);
+  background: rgba(22, 163, 74, 0.04);
+}
+
+[data-theme="light"] .empty-state .location-icon {
+  background: rgba(22, 163, 74, 0.12);
+  border-color: rgba(22, 163, 74, 0.3);
+}
+
+[data-theme="light"] .empty-state p {
+  color: #374151;
+}
+
+[data-theme="light"] .empty-state small {
+  color: #6b7280;
+}
+
 /* --- Animations ------------------------------------------------ */
 @keyframes itn-fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
@@ -583,4 +751,200 @@
 
 [data-theme="light"] .itinerary-attraction-card:hover {
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+}
+
+.saved-filter-grid .custom-dropdown-trigger,
+.itinerary-filter-grid .custom-dropdown-trigger {
+  background: #1a2d47 !important;
+  border: 1px solid #1e3a5f !important;
+  color: #e8edf3 !important;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+
+[data-theme="light"] .saved-filter-grid .custom-dropdown-trigger,
+[data-theme="light"] .itinerary-filter-grid .custom-dropdown-trigger {
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+  color: #1f2937 !important;
+}
+
+.custom-dropdown-menu {
+  background: #152238 !important;
+  border: 1px solid #1e3a5f !important;
+  border-radius: 8px;
+}
+
+[data-theme="light"] .custom-dropdown-menu {
+  background: #ffffff !important;
+  border-color: #d1d5db !important;
+}
+
+.custom-dropdown-menu .custom-dropdown-option {
+  color: #e8edf3 !important;
+}
+
+[data-theme="light"] .custom-dropdown-menu .custom-dropdown-option {
+  color: #1f2937 !important;
+}
+
+[data-theme="light"] .custom-dropdown-menu .custom-dropdown-option:hover,
+[data-theme="light"] .custom-dropdown-menu .custom-dropdown-option.is-active {
+  background: #f0fdf4 !important;
+  color: #166534 !important;
+}
+
+.custom-dropdown-menu .custom-dropdown-option:hover {
+  background: #1e3a5f !important;
+  color: #e8edf3 !important;
+}
+
+.custom-dropdown-menu .custom-dropdown-option.is-active,
+.custom-dropdown-menu .custom-dropdown-option[aria-selected="true"] {
+  background: #16a34a !important;
+  color: #ffffff !important;
+}
+
+[data-theme="light"] .custom-dropdown-menu .custom-dropdown-option.is-active,
+[data-theme="light"] .custom-dropdown-menu .custom-dropdown-option[aria-selected="true"] {
+  background: #f0fdf4 !important;
+  color: #16a34a !important;
+}
+
+.saved-filter-grid .custom-dropdown-trigger:hover,
+.itinerary-filter-grid .custom-dropdown-trigger:hover {
+  background: #1e3a5f !important;
+  border-color: #059669 !important;
+}
+
+[data-theme="light"] .saved-filter-grid .custom-dropdown-trigger:hover,
+[data-theme="light"] .itinerary-filter-grid .custom-dropdown-trigger:hover {
+  background: #f0fdf4 !important;
+  border-color: #059669 !important;
+}
+
+/* ---- Comprehensive light-mode overrides (override inline styles via !important) ---- */
+
+[data-theme="light"] .itinerary-builder-page .ib-name-input,
+[data-theme="light"] .itinerary-builder-page textarea.ib-desc-input,
+[data-theme="light"] .itinerary-builder-page input[type="date"] {
+  background: #fff !important;
+  border-color: #d1d5db !important;
+  color: #1f2937 !important;
+}
+
+[data-theme="light"] .itinerary-builder-page input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.4);
+}
+
+[data-theme="light"] .itinerary-builder-page .ib-days-container {
+  background: transparent !important;
+  border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .ib-stats-bar {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(148, 163, 184, 0.2) !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .ib-day-tabs {
+  background: rgba(255, 255, 255, 0.85) !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .ib-day-tabs button {
+  background: transparent !important;
+  color: #64748b !important;
+  border-color: transparent !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .ib-day-tabs button[style*="background: #16a34a"],
+[data-theme="light"] .itinerary-builder-page .ib-day-tabs button[style*="background:#16a34a"],
+[data-theme="light"] .itinerary-builder-page .ib-day-content {
+  background: transparent !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .ib-card,
+[data-theme="light"] .itinerary-builder-page .ib-day-content > .ib-card,
+[data-theme="light"] .ib-itinerary-header {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(148, 163, 184, 0.22) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .ib-card h4,
+[data-theme="light"] .itinerary-builder-page .ib-card h3,
+[data-theme="light"] .itinerary-builder-page .ib-card strong {
+  color: #1f2937 !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .ib-card span,
+[data-theme="light"] .itinerary-builder-page .ib-card label,
+[data-theme="light"] .itinerary-builder-page .ib-card small {
+  color: #475569 !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .ib-stats-bar .ib-stat,
+[data-theme="light"] .itinerary-builder-page .ib-stats-bar > div {
+  background: #f8fafc !important;
+  border-color: #e5e7eb !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .days-container,
+[data-theme="light"] .itinerary-builder-page [class*="daysContainer"],
+[data-theme="light"] .itinerary-builder-page .ib-days-container {
+  background: transparent !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .add-day-btn,
+[data-theme="light"] .itinerary-builder-page button[style*="addDayBtn"] {
+  background: rgba(22, 163, 74, 0.08) !important;
+  border: 1px dashed rgba(22, 163, 74, 0.35) !important;
+  color: #16a34a !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .day-item,
+[data-theme="light"] .itinerary-builder-page .ib-day-item {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(148, 163, 184, 0.22) !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .right-column,
+[data-theme="light"] .itinerary-builder-page .saved-section {
+  background: transparent !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .saved-itinerary-item,
+[data-theme="light"] .itinerary-builder-page .saved-list > div {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(148, 163, 184, 0.22) !important;
+  color: #1f2937 !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .saved-itinerary-item h4,
+[data-theme="light"] .itinerary-builder-page .saved-itinerary-item strong {
+  color: #1f2937 !important;
+}
+
+[data-theme="light"] .itinerary-builder-page .saved-itinerary-item p,
+[data-theme="light"] .itinerary-builder-page .saved-itinerary-item span {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .itn-saved-item-card {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(148, 163, 184, 0.22) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06) !important;
+}
+
+[data-theme="light"] .itn-saved-item-card h4 {
+  color: #1f2937 !important;
+}
+
+[data-theme="light"] .itn-saved-item-card p {
+  color: #64748b !important;
+}
+
+[data-theme="light"] .itn-saved-item-card span {
+  color: #475569 !important;
 }

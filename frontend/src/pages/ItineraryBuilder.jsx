@@ -15,27 +15,27 @@ import './ItineraryBuilder.css';
 const API_BASE_URL = getApiBaseUrl();
 import { weatherService } from '../services/weatherService';
 
-// Unified Theme System
+// Unified Theme System — uses CSS custom properties for light/dark switching
 const THEME = {
-  primary: '#22c55e',
-  primaryDark: '#16a34a',
-  secondary: '#06b6d4',
-  accent: '#fbbf24',
-  success: '#22c55e',
-  warning: '#fbbf24',
-  error: '#ef4444',
+  primary: 'var(--ib-primary, #22c55e)',
+  primaryDark: 'var(--ib-primary-dark, #16a34a)',
+  secondary: 'var(--ib-secondary, #06b6d4)',
+  accent: 'var(--ib-accent, #fbbf24)',
+  success: 'var(--ib-success, #22c55e)',
+  warning: 'var(--ib-warning, #fbbf24)',
+  error: 'var(--ib-error, #ef4444)',
   background: 'transparent',
   surface: 'transparent',
-  text: '#e8edf3',
-  textSecondary: '#8899aa',
-  textMuted: '#5a6f85',
-  border: '#1e3a5f',
-  borderLight: '#243b5c',
-  bgCard: '#152238',
-  bgCardHover: '#1a2d47',
-  bgInput: '#1a2d47',
-  shadow: '0 4px 24px rgba(0,0,0,0.3)',
-  shadowLarge: '0 8px 40px rgba(0,0,0,0.4)'
+  text: 'var(--ib-text, #e8edf3)',
+  textSecondary: 'var(--ib-text-secondary, #8899aa)',
+  textMuted: 'var(--ib-text-muted, #5a6f85)',
+  border: 'var(--ib-border, #1e3a5f)',
+  borderLight: 'var(--ib-border-light, #243b5c)',
+  bgCard: 'var(--ib-bg-card, #152238)',
+  bgCardHover: 'var(--ib-bg-card-hover, #1a2d47)',
+  bgInput: 'var(--ib-bg-input, #1a2d47)',
+  shadow: 'var(--ib-shadow, 0 4px 24px rgba(0,0,0,0.3))',
+  shadowLarge: 'var(--ib-shadow-large, 0 8px 40px rgba(0,0,0,0.4))'
 };
 
 export const MINUTES_BY_TIME_OF_DAY = {
@@ -1060,7 +1060,6 @@ const ItineraryBuilder = () => {
                       <CustomDropdown
                         value={sidebarMinRating}
                         fullWidth
-                        triggerStyle={styles.sidebarFilterSelect}
                         options={[
                           { value: 0, label: t('filter_rating_any') },
                           { value: 4, label: `4${t('filter_stars_suffix')}` },
@@ -1075,7 +1074,6 @@ const ItineraryBuilder = () => {
                       <CustomDropdown
                         value={sidebarSort}
                         fullWidth
-                        triggerStyle={styles.sidebarFilterSelect}
                         options={[
                           { value: 'popular', label: t('sort_popular') },
                           { value: 'rated', label: t('sort_highest_rated') },
@@ -1283,22 +1281,24 @@ const ItineraryBuilder = () => {
 
         <div style={lowerLayoutStyle}>
           <div style={leftColumnStyle}>
-          <div style={itineraryHeaderStyle}>
+          <div className="ib-itinerary-header" style={itineraryHeaderStyle}>
             <input
               type="text"
               placeholder={t('itinerary_name_placeholder')}
               value={itinerary.name}
               onChange={(e) => setItinerary(prev => ({ ...prev, name: e.target.value }))}
+              className="ib-name-input"
               style={nameInputStyle}
             />
             <textarea
               placeholder={t('description_optional')}
               value={itinerary.description}
               onChange={(e) => setItinerary(prev => ({ ...prev, description: e.target.value }))}
+              className="ib-desc-input"
               style={styles.descriptionInput}
             />
             
-            <div style={dateInputsStyle}>
+            <div className="ib-date-inputs" style={dateInputsStyle}>
               <div>
                 <label style={styles.label}>{t('start_date')}</label>
                 <input
@@ -1333,7 +1333,7 @@ const ItineraryBuilder = () => {
               </div>
             )}
             
-            <div style={statsBarStyle}>
+            <div className="ib-stats-bar" style={statsBarStyle}>
               <div style={styles.stat}>
                 <span style={styles.statLabel}>{t('distance')}</span>
                 <span style={styles.statValue}>
@@ -1366,8 +1366,8 @@ const ItineraryBuilder = () => {
           </div>
           
           {/* Day Planning */}
-          <div ref={dayPlannerRef} style={styles.daysContainer}>
-            <div style={styles.dayTabs}>
+            <div ref={dayPlannerRef} className="ib-days-container" style={styles.daysContainer}>
+              <div className="ib-day-tabs" style={styles.dayTabs}>
               {Object.keys(itemsByDay).map(day => (
                 <button
                   key={day}
@@ -1392,14 +1392,14 @@ const ItineraryBuilder = () => {
               )}
             </div>
             
-            <div ref={budgetPanelRef} style={dayContentStyle}>
-              <div style={styles.dayBudgetPanel}>
+            <div ref={budgetPanelRef} className="ib-day-content" style={dayContentStyle}>
+              <div className="ib-card" style={styles.dayBudgetPanel}>
                 <div style={styles.dayBudgetHeaderRow}>
                   <h4 style={styles.dayBudgetTitle}>Day {currentDay} — Estimated Budget</h4>
                   <span style={styles.autoCalcBadge}>⚡ Auto-suggested</span>
                 </div>
                 <div style={dayBudgetBreakdownRowStyle}>
-                   <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle, backgroundColor: 'rgba(34, 197, 94, 0.08)', borderColor: 'rgba(34, 197, 94, 0.25)' }}>
+                   <div className="ib-breakdown-item fare" style={budgetBreakdownItemResponsiveStyle}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       <Icons.RouteIcon size={14} color={THEME.primary} /> Fare
                     </span>
@@ -1410,10 +1410,11 @@ const ItineraryBuilder = () => {
                         fareOverriddenRef.current[currentDay] = true;
                         setFarePerDay(prev => ({ ...prev, [currentDay]: parseFloat(e.target.value) || 0 }));
                       }}
-                      style={{ ...styles.budgetInlineInput, ...budgetBreakdownInputResponsiveStyle, borderColor: 'rgba(34, 197, 94, 0.25)', backgroundColor: 'rgba(34, 197, 94, 0.08)', color: THEME.primary }}
+                      className="ib-budget-input fare"
+                      style={budgetBreakdownInputResponsiveStyle}
                     />
                   </div>
-                  <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle }}>
+                  <div className="ib-breakdown-item" style={budgetBreakdownItemResponsiveStyle}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       <Icons.UtensilsIcon size={14} color={THEME.textSecondary} /> Food
                     </span>
@@ -1421,10 +1422,11 @@ const ItineraryBuilder = () => {
                       type="number" min="0" step="1"
                       value={foodPerDay[currentDay] !== undefined ? foodPerDay[currentDay] : DEFAULT_FOOD}
                       onChange={(e) => setFoodPerDay(prev => ({ ...prev, [currentDay]: parseFloat(e.target.value) || 0 }))}
-                      style={{ ...styles.budgetInlineInput, ...budgetBreakdownInputResponsiveStyle }}
+                      className="ib-budget-input"
+                      style={budgetBreakdownInputResponsiveStyle}
                     />
                   </div>
-                  <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle }}>
+                  <div className="ib-breakdown-item" style={budgetBreakdownItemResponsiveStyle}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                       <Icons.SparklesIcon size={14} color={THEME.textSecondary} /> Other
                     </span>
@@ -1432,10 +1434,11 @@ const ItineraryBuilder = () => {
                       type="number" min="0" step="1"
                       value={otherPerDay[currentDay] !== undefined ? otherPerDay[currentDay] : DEFAULT_OTHER}
                       onChange={(e) => setOtherPerDay(prev => ({ ...prev, [currentDay]: parseFloat(e.target.value) || 0 }))}
-                      style={{ ...styles.budgetInlineInput, ...budgetBreakdownInputResponsiveStyle }}
+                      className="ib-budget-input"
+                      style={budgetBreakdownInputResponsiveStyle}
                     />
                   </div>
-                   <div style={{ ...styles.dayBudgetBreakdownItem, ...budgetBreakdownItemResponsiveStyle, gridColumn: isTiny ? '1' : isMobile ? 'span 2' : 'span 3', backgroundColor: 'rgba(34, 197, 94, 0.08)', borderColor: 'rgba(34, 197, 94, 0.25)' }}>
+                   <div className="ib-breakdown-item total" style={{ ...budgetBreakdownItemResponsiveStyle, gridColumn: isTiny ? '1' : isMobile ? 'span 2' : 'span 3' }}>
                      <span style={{ fontWeight: 700 }}>Total Estimated</span>
                      <strong style={{ color: THEME.primary, fontSize: isTiny ? '1.3rem' : '1rem' }}>₱{currentDayBudget.estimatedNeed.toFixed(2)}</strong>
                   </div>
@@ -1443,7 +1446,7 @@ const ItineraryBuilder = () => {
               </div>
 
               {(itemsByDay[currentDay] || []).length === 0 ? (
-                <div style={styles.emptyDay}>
+                <div className="empty-state" style={styles.emptyDay}>
                   <Icons.LocationIcon size={48} color={THEME.textSecondary} />
                   <p style={{marginTop: '1rem'}}>{t('no_items_planned')}</p>
                   <p style={styles.emptyDayHint}>{t('select_attractions_hint')}</p>
@@ -1690,7 +1693,7 @@ const ItineraryBuilder = () => {
 
         {/* Step 2 right rail */}
         <div style={rightPanelStyle}>
-          <div style={summaryCardStyle}>
+          <div className="ib-card" style={summaryCardStyle}>
             <h3>Trip Summary</h3>
             <div style={styles.summaryItem}>
               <span style={{display:'flex',alignItems:'center',gap:'8px'}}>
@@ -1744,7 +1747,7 @@ const ItineraryBuilder = () => {
             </button>
           </div>
 
-          <div style={savedListStyle}>
+          <div className="ib-card" style={savedListStyle}>
               <div className="saved-itinerary-header-row">
               <h3>Saved Itineraries ({activeItinerariesCount})</h3>
               { /* saved filters toggle removed to preserve original layout */ }
@@ -1775,7 +1778,6 @@ const ItineraryBuilder = () => {
                 <CustomDropdown
                   value={savedStatusFilter}
                   fullWidth
-                  triggerStyle={styles.savedFilterSelect}
                   title={t('admin_filter_by_status')}
                   options={[
                     { value: 'all', label: 'All Statuses' },
@@ -1787,7 +1789,6 @@ const ItineraryBuilder = () => {
                 <CustomDropdown
                   value={savedSort}
                   fullWidth
-                  triggerStyle={styles.savedFilterSelect}
                   title={t('admin_sort_itineraries')}
                   options={[
                     { value: 'recent', label: 'Most Recent' },
@@ -1982,8 +1983,8 @@ const styles = {
     alignItems: 'center',
     padding: '1.25rem 1.5rem',
     borderRadius: '16px',
-    background: 'var(--bg-card, #152238)',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    background: THEME.bgCard,
+    border: '1px solid #1e3a5f',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))'
   },
   plannerGuideCardMobile: {
@@ -1994,8 +1995,8 @@ const styles = {
     alignItems: 'flex-start',
     padding: '1.25rem 1.5rem',
     borderRadius: '16px',
-    background: 'var(--bg-card, #152238)',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    background: THEME.bgCard,
+    border: '1px solid #1e3a5f',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))'
   },
   plannerGuideCopy: {
@@ -2029,7 +2030,7 @@ const styles = {
     maxWidth: '64ch'
   },
   plannerGuideButton: {
-    border: `1px solid ${THEME.border}`,
+    border: `1px solid #1e3a5f`,
     backgroundColor: THEME.bgCard,
     color: THEME.text,
     borderRadius: '999px',
@@ -2049,18 +2050,18 @@ const styles = {
     boxShadow: '0 4px 14px rgba(34, 197, 94, 0.15)'
   },
   sidebar: {
-    backgroundColor: 'var(--bg-card, #152238)',
+    backgroundColor: THEME.bgCard,
     borderRadius: '16px',
     height: 'fit-content',
     position: 'sticky',
     top: '2rem',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
     overflow: 'hidden',
-    border: '1px solid var(--border-color, #1e3a5f)'
+    border: '1px solid #1e3a5f'
   },
   tabs: {
     display: 'flex',
-    borderBottom: '2px solid var(--border-color, #1e3a5f)',
+    borderBottom: '2px solid #1e3a5f',
     gap: 0
   },
   tab: {
@@ -2113,7 +2114,7 @@ const styles = {
     border: '1px solid rgba(34, 197, 94, 0.25)',
     borderRadius: '20px',
     overflow: 'hidden',
-    background: 'var(--bg-card, #152238)',
+    background: THEME.bgCard,
     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(34, 197, 94, 0.15)',
     position: 'relative',
     animation: 'itn-fadeInUp 0.5s ease forwards'
@@ -2143,8 +2144,8 @@ const styles = {
     marginTop: 'auto',
     padding: '14px',
     borderRadius: '12px',
-    backgroundColor: 'var(--bg-input, #1a2d47)',
-    border: '1px solid var(--border-color, #1e3a5f)'
+    backgroundColor: THEME.bgInput,
+    border: '1px solid #1e3a5f'
   },
   dayActionHeader: {
     display: 'flex',
@@ -2183,7 +2184,7 @@ const styles = {
   dayActionButton: {
     padding: '8px 14px',
     borderRadius: '999px',
-    border: `1px solid ${THEME.border}`,
+    border: `1px solid #1e3a5f`,
     backgroundColor: 'transparent',
     color: THEME.textSecondary,
     cursor: 'pointer',
@@ -2241,8 +2242,8 @@ const styles = {
     gap: '8px'
   },
   chipButton: {
-    border: `1px solid ${THEME.border}`,
-    backgroundColor: 'var(--bg-input, #1a2d47)',
+    border: `1px solid #1e3a5f`,
+    backgroundColor: THEME.bgInput,
     color: THEME.textSecondary,
     borderRadius: '999px',
     padding: '6px 14px',
@@ -2289,8 +2290,8 @@ const styles = {
     marginBottom: '16px',
     padding: '16px',
     borderRadius: '12px',
-    backgroundColor: 'var(--bg-input, #1a2d47)',
-    border: '1px solid var(--border-color, #1e3a5f)'
+    backgroundColor: THEME.bgInput,
+    border: '1px solid #1e3a5f'
   },
   templatesIntroTitle: {
     margin: '0 0 4px 0',
@@ -2345,9 +2346,9 @@ const styles = {
     width: '100%',
     textAlign: 'left',
     padding: '16px',
-    border: `1px solid ${THEME.border}`,
+    border: `1px solid #1e3a5f`,
     borderRadius: '16px',
-    backgroundColor: 'var(--bg-card, #152238)',
+    backgroundColor: THEME.bgCard,
     cursor: 'pointer',
     boxShadow: THEME.shadow,
     position: 'relative',
@@ -2366,7 +2367,7 @@ const styles = {
     marginTop: '8px',
     padding: '4px 10px',
     borderRadius: '999px',
-    backgroundColor: 'var(--bg-input, #1a2d47)',
+    backgroundColor: THEME.bgInput,
     color: THEME.textSecondary,
     fontSize: '11px',
     fontWeight: 700
@@ -2408,8 +2409,8 @@ const styles = {
     gap: '4px',
     padding: '4px 8px',
     borderRadius: '999px',
-    backgroundColor: 'var(--bg-input, #1a2d47)',
-    border: `1px solid ${THEME.border}`,
+    backgroundColor: THEME.bgInput,
+    border: `1px solid #1e3a5f`,
     fontSize: '11px'
   },
   templateAttractionList: {
@@ -2451,22 +2452,22 @@ const styles = {
     gap: '20px'
   },
   itineraryHeader: {
-    backgroundColor: 'var(--bg-card, #152238)',
+    backgroundColor: THEME.bgCard,
     padding: '28px',
     borderRadius: '16px',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
-    border: '1px solid var(--border-color, #1e3a5f)'
+    border: '1px solid #1e3a5f'
   },
   nameInput: {
     width: '100%',
     padding: '14px 16px',
     fontSize: '20px',
     fontWeight: 700,
-    border: `1px solid ${THEME.border}`,
+    border: `1px solid #1e3a5f`,
     borderRadius: '10px',
     marginBottom: '12px',
     fontFamily: 'inherit',
-    backgroundColor: 'var(--bg-input, #1a2d47)',
+    backgroundColor: THEME.bgInput,
     color: THEME.text,
     outline: 'none',
     transition: 'border 0.2s'
@@ -2474,14 +2475,14 @@ const styles = {
   descriptionInput: {
     width: '100%',
     padding: '12px 16px',
-    border: `1px solid ${THEME.border}`,
+    border: `1px solid #1e3a5f`,
     borderRadius: '10px',
     marginBottom: '12px',
     minHeight: '80px',
     resize: 'vertical',
     fontFamily: 'inherit',
     fontSize: '14px',
-    backgroundColor: 'var(--bg-input, #1a2d47)',
+    backgroundColor: THEME.bgInput,
     color: THEME.text,
     outline: 'none'
   },
@@ -2531,12 +2532,12 @@ const styles = {
   dateInput: {
     width: '100%',
     padding: '10px 12px',
-    border: `1px solid ${THEME.border}`,
+    border: `1px solid #1e3a5f`,
     borderRadius: '10px',
     marginTop: '2px',
     fontFamily: 'inherit',
     fontSize: '13px',
-    backgroundColor: 'var(--bg-input, #1a2d47)',
+    backgroundColor: THEME.bgInput,
     color: THEME.text,
     outline: 'none'
   },
@@ -2547,8 +2548,8 @@ const styles = {
     marginBottom: '16px',
     padding: '16px',
     borderRadius: '12px',
-    backgroundColor: 'var(--bg-input, #1a2d47)',
-    border: '1px solid var(--border-color, #1e3a5f)'
+    backgroundColor: THEME.bgInput,
+    border: '1px solid #1e3a5f'
   },
   stat: {
     textAlign: 'center'
@@ -2571,16 +2572,16 @@ const styles = {
     gap: '6px'
   },
   daysContainer: {
-    backgroundColor: 'var(--bg-card, #152238)',
+    backgroundColor: THEME.bgCard,
     borderRadius: '16px',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
-    border: '1px solid var(--border-color, #1e3a5f)'
+    border: '1px solid #1e3a5f'
   },
   routeSummary: {
     marginBottom: '20px',
     borderRadius: '16px',
     overflow: 'hidden',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    border: '1px solid #1e3a5f',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))'
   },
   routeBanner: {
@@ -2640,8 +2641,8 @@ const styles = {
   routeStatsRow: {
     display: 'grid',
     gridTemplateColumns: 'repeat(4, 1fr)',
-    background: 'var(--bg-card, #152238)',
-    borderBottom: '1px solid var(--border-color, #1e3a5f)'
+    background: THEME.bgCard,
+    borderBottom: '1px solid #1e3a5f'
   },
   routeStatCard: {
     position: 'relative',
@@ -2649,11 +2650,11 @@ const styles = {
     alignItems: 'flex-start',
     gap: '12px',
     padding: '18px 16px 20px',
-    borderRight: '1px solid var(--border-color, #1e3a5f)'
+    borderRight: '1px solid #1e3a5f'
   },
   routeTimelineWrap: {
     padding: '16px 22px 18px',
-    background: 'var(--bg-input, #1a2d47)'
+    background: THEME.bgInput
   },
   routeTimelineHeader: {
     display: 'flex',
@@ -2707,8 +2708,8 @@ const styles = {
     gap: '10px',
     padding: '11px 12px 11px 14px',
     borderRadius: '12px',
-    background: 'var(--bg-card, #152238)',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    background: THEME.bgCard,
+    border: '1px solid #1e3a5f',
     overflow: 'hidden'
   },
   fareCardAccent: {
@@ -2766,23 +2767,23 @@ const styles = {
     color: THEME.textSecondary,
     marginTop: '16px',
     padding: '16px',
-    background: 'var(--bg-input, #1a2d47)',
+    background: THEME.bgInput,
     borderRadius: '12px',
-    border: '1px solid var(--border-color, #1e3a5f)'
+    border: '1px solid #1e3a5f'
   },
   dayTabs: {
     display: 'flex',
     gap: '8px',
     padding: '16px',
-    borderBottom: '1px solid var(--border-color, #1e3a5f)',
+    borderBottom: '1px solid #1e3a5f',
     overflowX: 'auto',
     flexWrap: 'wrap'
   },
   dayTab: {
     padding: '8px 16px',
-    border: `1px solid ${THEME.border}`,
+    border: `1px solid #1e3a5f`,
     borderRadius: '20px',
-    background: 'var(--bg-input, #1a2d47)',
+    background: THEME.bgInput,
     cursor: 'pointer',
     whiteSpace: 'nowrap',
     display: 'flex',
@@ -2841,8 +2842,8 @@ const styles = {
     marginBottom: '16px',
     padding: '18px',
     borderRadius: '12px',
-    border: '1px solid var(--border-color, #1e3a5f)',
-    backgroundColor: 'var(--bg-input, #1a2d47)'
+    border: '1px solid #1e3a5f',
+    backgroundColor: THEME.bgInput
   },
   dayBudgetHeaderRow: {
     display: 'flex',
@@ -2887,12 +2888,12 @@ const styles = {
   dayBudgetInput: {
     width: '100%',
     padding: '8px 10px',
-    border: `1px solid ${THEME.border}`,
+    border: `1px solid #1e3a5f`,
     borderRadius: '8px',
     fontSize: '13px',
     fontWeight: 600,
     color: THEME.text,
-    backgroundColor: 'var(--bg-card, #152238)'
+    backgroundColor: THEME.bgCard
   },
   dayBudgetBreakdownGrid: {
     display: 'grid',
@@ -2902,8 +2903,8 @@ const styles = {
   dayBudgetBreakdownItem: {
     padding: '9px 11px',
     borderRadius: '8px',
-    backgroundColor: 'var(--bg-card, #152238)',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    backgroundColor: THEME.bgInput,
+    border: '1px solid #1e3a5f',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -2931,9 +2932,9 @@ const styles = {
     display: 'flex',
     gap: '16px',
     padding: '16px',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    border: '1px solid #1e3a5f',
     borderRadius: '12px',
-    backgroundColor: 'var(--bg-input, #1a2d47)',
+    backgroundColor: THEME.bgInput,
     alignItems: 'flex-start',
     transition: 'all 0.2s'
   },
@@ -3011,12 +3012,12 @@ const styles = {
   budgetInlineInput: {
     width: '100px',
     padding: '7px 10px',
-    border: `1px solid ${THEME.border}`,
+    border: `1px solid #1e3a5f`,
     borderRadius: '8px',
     fontSize: '13px',
     fontWeight: 700,
     color: THEME.text,
-    backgroundColor: 'var(--bg-card, #152238)',
+    backgroundColor: THEME.bgCard,
     textAlign: 'right',
     fontFamily: 'inherit',
     lineHeight: '1.4'
@@ -3044,11 +3045,11 @@ const styles = {
     fontWeight: 700
   },
   mapContainer: {
-    background: 'var(--bg-card, #152238)',
+    background: THEME.bgCard,
     padding: '24px',
     borderRadius: '16px',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
-    border: '1px solid var(--border-color, #1e3a5f)'
+    border: '1px solid #1e3a5f'
   },
   actionButtons: {
     display: 'grid',
@@ -3112,26 +3113,26 @@ const styles = {
     top: '100px'
   },
   summaryCard: {
-    backgroundColor: 'var(--bg-card, #152238)',
+    backgroundColor: THEME.bgCard,
     borderRadius: '16px',
     padding: '24px',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
-    border: '1px solid var(--border-color, #1e3a5f)'
+    border: '1px solid #1e3a5f'
   },
   summaryItem: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '11px 0',
-    borderBottom: '1px solid var(--border-color, #1e3a5f)',
+    borderBottom: '1px solid #1e3a5f',
     fontSize: '13px'
   },
   savedList: {
-    backgroundColor: 'var(--bg-card, #152238)',
+    backgroundColor: THEME.bgCard,
     borderRadius: '16px',
     padding: '24px',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    border: '1px solid #1e3a5f',
     maxHeight: '480px',
     display: 'flex',
     flexDirection: 'column'
@@ -3140,10 +3141,10 @@ const styles = {
     width: '100%',
     padding: '10px 14px',
     borderRadius: '10px',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    border: '1px solid #1e3a5f',
     margin: '0 0 12px',
     fontSize: '13px',
-    background: 'var(--bg-input, #1a2d47)',
+    background: THEME.bgInput,
     color: THEME.text,
     fontFamily: 'inherit',
     outline: 'none',
@@ -3155,10 +3156,10 @@ const styles = {
     width: '100%',
     padding: '10px 2rem 10px 12px',
     borderRadius: '10px',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    border: '1px solid #1e3a5f',
     fontSize: '13px',
     marginBottom: '10px',
-    background: 'var(--bg-input, #1a2d47)',
+    background: THEME.bgInput,
     color: THEME.text,
     fontFamily: 'inherit'
   },
@@ -3167,7 +3168,7 @@ const styles = {
     top: '6px',
     right: '6px',
     border: 'none',
-    background: 'var(--bg-card, #152238)',
+    background: THEME.bgCard,
     borderRadius: '999px',
     width: '24px',
     height: '24px',
@@ -3179,9 +3180,9 @@ const styles = {
     width: '100%',
     padding: '8px 10px',
     borderRadius: '8px',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    border: '1px solid #1e3a5f',
     fontSize: '12px',
-    background: 'var(--bg-input, #1a2d47)',
+    background: THEME.bgInput,
     color: THEME.text,
     cursor: 'pointer',
     transition: 'border-color 0.2s ease'
@@ -3190,9 +3191,9 @@ const styles = {
     width: '100%',
     padding: '10px',
     borderRadius: '8px',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    border: '1px solid #1e3a5f',
     fontSize: '12px',
-    background: 'var(--bg-input, #1a2d47)',
+    background: THEME.bgInput,
     color: THEME.text,
     fontFamily: 'inherit',
     cursor: 'pointer',
@@ -3201,9 +3202,9 @@ const styles = {
   savedBudgetInput: {
     padding: '10px',
     borderRadius: '8px',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    border: '1px solid #1e3a5f',
     fontSize: '12px',
-    background: 'var(--bg-input, #1a2d47)',
+    background: THEME.bgInput,
     color: THEME.text,
     fontFamily: 'inherit',
     transition: 'all 0.2s ease'
@@ -3211,10 +3212,10 @@ const styles = {
   multiSelectDropdown: {
     width: '100%',
     padding: '6px 10px',
-    border: `1px solid ${THEME.border}`,
+    border: `1px solid #1e3a5f`,
     borderRadius: '8px',
     fontSize: '13px',
-    background: 'var(--bg-input, #1a2d47)',
+    background: THEME.bgInput,
     color: THEME.text,
     fontFamily: 'inherit',
     cursor: 'pointer',
@@ -3254,8 +3255,8 @@ const styles = {
     flexWrap: 'wrap'
   },
   pageBtn: {
-    border: `1px solid ${THEME.border}`,
-    background: 'var(--bg-input, #1a2d47)',
+    border: `1px solid #1e3a5f`,
+    background: THEME.bgInput,
     borderRadius: '6px',
     padding: '6px 12px',
     fontSize: '12px',
@@ -3275,8 +3276,8 @@ const styles = {
     fontFamily: 'inherit'
   },
   pageBtnDisabled: {
-    border: `1px solid ${THEME.border}`,
-    background: 'var(--bg-input, #1a2d47)',
+    border: `1px solid #1e3a5f`,
+    background: THEME.bgInput,
     color: THEME.textMuted,
     borderRadius: '6px',
     padding: '6px 12px',
@@ -3286,15 +3287,15 @@ const styles = {
   },
   skeletonList: { display: 'grid', gap: '12px' },
   skeletonCard: {
-    border: `1px solid ${THEME.border}`,
+    border: `1px solid #1e3a5f`,
     borderRadius: '12px',
     padding: '10px',
-    background: 'var(--bg-input, #1a2d47)'
+    background: THEME.bgInput
   },
   skeletonImage: {
     height: '90px',
     borderRadius: '8px',
-    background: 'linear-gradient(90deg, var(--bg-input, #1a2d47) 25%, var(--bg-card-hover, #1a2d47) 37%, var(--bg-input, #1a2d47) 63%)',
+    background: 'linear-gradient(90deg, #1a2d47 25%, var(--bg-card-hover, #1a2d47) 37%, #1a2d47 63%)',
     backgroundSize: '400% 100%',
     animation: 'itn-shimmer 1.5s infinite'
   },
@@ -3303,7 +3304,7 @@ const styles = {
     borderRadius: '6px',
     marginTop: '10px',
     width: '80%',
-    background: 'linear-gradient(90deg, var(--bg-input, #1a2d47) 25%, var(--bg-card-hover, #1a2d47) 37%, var(--bg-input, #1a2d47) 63%)',
+    background: 'linear-gradient(90deg, #1a2d47 25%, var(--bg-card-hover, #1a2d47) 37%, #1a2d47 63%)',
     backgroundSize: '400% 100%',
     animation: 'itn-shimmer 1.5s infinite'
   },
@@ -3312,12 +3313,12 @@ const styles = {
     borderRadius: '6px',
     marginTop: '8px',
     width: '52%',
-    background: 'linear-gradient(90deg, var(--bg-input, #1a2d47) 25%, var(--bg-card-hover, #1a2d47) 37%, var(--bg-input, #1a2d47) 63%)',
+    background: 'linear-gradient(90deg, #1a2d47 25%, var(--bg-card-hover, #1a2d47) 37%, #1a2d47 63%)',
     backgroundSize: '400% 100%',
     animation: 'itn-shimmer 1.5s infinite'
   },
   emptyAttractionsState: {
-    border: '1px dashed var(--border-color, #1e3a5f)',
+    border: '1px dashed #1e3a5f',
     borderRadius: '12px',
     padding: '14px',
     textAlign: 'center'
@@ -3352,7 +3353,7 @@ const styles = {
   },
   savedItem: {
     padding: '12px',
-    borderBottom: '1px solid var(--border-color, #1e3a5f)',
+    borderBottom: '1px solid #1e3a5f',
     cursor: 'pointer',
     display: 'flex',
     justifyContent: 'space-between',
@@ -3364,9 +3365,9 @@ const styles = {
     display: 'flex',
     gap: '12px',
     padding: '12px',
-    border: '1px solid var(--border-color, #1e3a5f)',
+    border: '1px solid #1e3a5f',
     borderRadius: '12px',
-    backgroundColor: 'var(--bg-input, #1a2d47)',
+    backgroundColor: THEME.bgInput,
     cursor: 'pointer',
     marginBottom: '10px',
     transition: 'all 0.2s'
@@ -3400,9 +3401,9 @@ const styles = {
     flexDirection: 'column',
     gap: '4px',
     padding: '9px',
-    backgroundColor: 'var(--bg-card, #152238)',
+    backgroundColor: THEME.bgCard,
     borderRadius: '8px',
-    border: '1px solid var(--border-color, #1e3a5f)'
+    border: '1px solid #1e3a5f'
   },
   savedMetaLabel: {
     fontSize: '10px',
