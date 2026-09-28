@@ -1000,7 +1000,7 @@
 /* Hazard glass card */
 .eco-hazard { background: var(--eco-card); border-color: var(--eco-border); display: flex; flex-direction: column; max-height: 420px; }
 [data-theme="light"] .eco-home .eco-hazard { background: var(--eco-card); border-color: var(--eco-border); }
-.eco-hazard > div { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: transparent !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
+.eco-hazard > div { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .eco-safety-ring-row {
   display: flex;
   align-items: center;

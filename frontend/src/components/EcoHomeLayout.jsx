@@ -841,6 +841,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               enableNotifications={!isGuest}
               compact={true}
               theme={isDark ? 'dark' : 'light'}
+              embedded={true}
             />
           </div>
           )}

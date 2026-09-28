@@ -22,7 +22,8 @@ const HazardAwareness = ({
   onHazardUpdate,
   style = {},
   compact = false,
-  theme = 'light'
+  theme = 'light',
+  embedded = false
 }) => {
   const { t } = useLanguage();
   const isDark = theme === 'dark';
@@ -367,7 +368,7 @@ const HazardAwareness = ({
   };
 
   const rootStyle = {
-    ...hazardAwarenessStyle,
+    ...(embedded ? {} : hazardAwarenessStyle),
     ...style,
     '--ha-bg': isDark ? 'rgba(20, 30, 40, 0.9)' : '#ffffff',
     '--ha-title': isDark ? '#a7f3d0' : '#1b5e20',
@@ -377,7 +378,8 @@ const HazardAwareness = ({
     '--ha-muted': isDark ? (compact ? '#9aa7b4' : '#6b7280') : '#999',
     '--ha-green': isDark ? '#86efac' : '#2e7d32',
     '--ha-item-bg': isDark ? (compact ? 'rgba(74, 222, 128, 0.07)' : 'rgba(255, 255, 255, 0.05)') : '#fafafa',
-    '--ha-item-bg-hover': isDark ? (compact ? 'rgba(74, 222, 128, 0.14)' : 'rgba(255, 255, 255, 0.12)') : '#f0fdf4'
+    '--ha-item-bg-hover': isDark ? (compact ? 'rgba(74, 222, 128, 0.14)' : 'rgba(255, 255, 255, 0.12)') : '#f0fdf4',
+    ...(embedded ? { padding: 0, border: 'none', borderRadius: 0, boxShadow: 'none', backgroundColor: 'transparent' } : {})
   };
 
   if (loading) {
