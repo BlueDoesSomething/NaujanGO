@@ -3291,7 +3291,7 @@ const styles = {
   },
   skeletonList: { display: 'grid', gap: '12px' },
   skeletonCard: {
-    border: `1px solid #1e3a5f`,
+    border: `1px solid ${THEME.border}`,
     borderRadius: '12px',
     padding: '10px',
     background: THEME.bgInput
@@ -3299,7 +3299,7 @@ const styles = {
   skeletonImage: {
     height: '90px',
     borderRadius: '8px',
-    background: 'linear-gradient(90deg, #1a2d47 25%, var(--bg-card-hover, #1a2d47) 37%, #1a2d47 63%)',
+    background: `linear-gradient(90deg, ${THEME.bgInput} 25%, ${THEME.bgCardHover} 37%, ${THEME.bgInput} 63%)`,
     backgroundSize: '400% 100%',
     animation: 'itn-shimmer 1.5s infinite'
   },
@@ -3308,7 +3308,7 @@ const styles = {
     borderRadius: '6px',
     marginTop: '10px',
     width: '80%',
-    background: 'linear-gradient(90deg, #1a2d47 25%, var(--bg-card-hover, #1a2d47) 37%, #1a2d47 63%)',
+    background: `linear-gradient(90deg, ${THEME.bgInput} 25%, ${THEME.bgCardHover} 37%, ${THEME.bgInput} 63%)`,
     backgroundSize: '400% 100%',
     animation: 'itn-shimmer 1.5s infinite'
   },
@@ -3317,7 +3317,7 @@ const styles = {
     borderRadius: '6px',
     marginTop: '8px',
     width: '52%',
-    background: 'linear-gradient(90deg, #1a2d47 25%, var(--bg-card-hover, #1a2d47) 37%, #1a2d47 63%)',
+    background: `linear-gradient(90deg, ${THEME.bgInput} 25%, ${THEME.bgCardHover} 37%, ${THEME.bgInput} 63%)`,
     backgroundSize: '400% 100%',
     animation: 'itn-shimmer 1.5s infinite'
   },
