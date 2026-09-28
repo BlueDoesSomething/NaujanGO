@@ -93,7 +93,7 @@ const ItineraryBuilder = () => {
 
   const lowerLayoutStyle = isMobile
     ? { display: 'grid', gridTemplateColumns: '1fr', gap: '24px', paddingTop: '24px' }
-    : { display: 'grid', gridTemplateColumns: '1fr 400px', gap: '24px', paddingTop: '24px', alignItems: 'start' };
+    : { display: 'grid', gridTemplateColumns: '1fr 400px', gap: '24px', paddingTop: '24px' };
 
   const leftColumnStyle = { display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 };
   
@@ -1752,7 +1752,6 @@ const ItineraryBuilder = () => {
           <div className="ib-card" style={savedListStyle}>
               <div className="saved-itinerary-header-row">
               <h3>Saved Itineraries ({activeItinerariesCount})</h3>
-              { /* saved filters toggle removed to preserve original layout */ }
             </div>
 
             <SearchInput
@@ -1775,7 +1774,6 @@ const ItineraryBuilder = () => {
             />
 
             <div id="savedItineraryFilters" className={`saved-filter-panel${showSavedFilters ? ' is-open' : ''}`}>
-              {/* Quick Filters Row */}
               <div className="saved-filter-grid">
                 <CustomDropdown
                   value={savedStatusFilter}
@@ -1801,7 +1799,6 @@ const ItineraryBuilder = () => {
                 />
               </div>
 
-              {/* Budget Range Section */}
               <div style={{marginTop: '10px', paddingTop: '10px', borderTop: '1px solid rgba(30, 58, 95, 0.3)'}}>
                 <label style={{fontSize: '0.8rem', fontWeight: '600', color: THEME.textSecondary, display: 'block', marginBottom: '6px'}}>Budget Range (₱)</label>
                 <div style={{display: 'flex', gap: '6px', alignItems: 'center'}}>
@@ -1830,72 +1827,74 @@ const ItineraryBuilder = () => {
               </div>
             </div>
 
-            <FilterChips
-              className="saved-active-chips"
-              chipClassName="saved-active-chip"
-              clearClassName="saved-clear-all"
-              chips={[
-                savedSearch ? { key: 'saved-q', label: `Search: ${savedSearch}`, onRemove: () => setSavedSearch('') } : null,
-                savedStatusFilter !== 'all' ? { key: 'saved-status', label: `Status: ${savedStatusFilter}`, onRemove: () => setSavedStatusFilter('all') } : null,
-                savedBudgetMin !== '' ? { key: 'saved-min', label: `Min: ${savedBudgetMin}`, onRemove: () => setSavedBudgetMin('') } : null,
-                savedBudgetMax !== '' ? { key: 'saved-max', label: `Max: ${savedBudgetMax}`, onRemove: () => setSavedBudgetMax('') } : null
-              ]}
-              onClearAll={() => {
-                setSavedSearch('');
-                setSavedStatusFilter('all');
-                setSavedBudgetMin('');
-                setSavedBudgetMax('');
-                setSavedSort('recent');
-              }}
-            />
+            <div style={{flex: 1, overflowY: 'auto', minHeight: 0}}>
+              <FilterChips
+                className="saved-active-chips"
+                chipClassName="saved-active-chip"
+                clearClassName="saved-clear-all"
+                chips={[
+                  savedSearch ? { key: 'saved-q', label: `Search: ${savedSearch}`, onRemove: () => setSavedSearch('') } : null,
+                  savedStatusFilter !== 'all' ? { key: 'saved-status', label: `Status: ${savedStatusFilter}`, onRemove: () => setSavedStatusFilter('all') } : null,
+                  savedBudgetMin !== '' ? { key: 'saved-min', label: `Min: ${savedBudgetMin}`, onRemove: () => setSavedBudgetMin('') } : null,
+                  savedBudgetMax !== '' ? { key: 'saved-max', label: `Max: ${savedBudgetMax}`, onRemove: () => setSavedBudgetMax('') } : null
+                ]}
+                onClearAll={() => {
+                  setSavedSearch('');
+                  setSavedStatusFilter('all');
+                  setSavedBudgetMin('');
+                  setSavedBudgetMax('');
+                  setSavedSort('recent');
+                }}
+              />
 
-            <p style={styles.savedResultsInfo}>{filteredSavedItineraries.length} matching itineraries</p>
-            {visibleSavedItineraries.map((saved, idx) => (
-              <div 
-                key={saved.itinerary_id} 
-                className="itn-saved-item-card"
-                style={savedItemCardStyle}
-                onClick={() => navigate(`/itinerary/${saved.itinerary_id}`)}
-              >
-                <div style={styles.savedItemNumber}>{idx + 1}</div>
-                <div style={styles.savedItemContent}>
-                  <h4 style={{margin: '0 0 4px 0', fontSize: '14px'}}>{saved.name}</h4>
-                  <p style={{fontSize: '0.8rem', color: THEME.textSecondary, margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '4px'}}>
-                    <Icons.CalendarIcon size={12} />
-                    {new Date(saved.created_at).toLocaleDateString()}
-                  </p>
-                  <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
-                    <span style={{display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', backgroundColor: 'rgba(251, 191, 36, 0.12)', border: '1px solid rgba(251, 191, 36, 0.25)', fontSize: '12px', fontWeight: 600, color: THEME.accent}}>
-                      <Icons.MoneyIcon size={11} />
-                      ₱{Number(saved.total_budget || 0).toFixed(2)}
-                    </span>
-                    <span style={{display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', backgroundColor: saved.status === 'published' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(99, 102, 241, 0.12)', border: `1px solid ${saved.status === 'published' ? 'rgba(34, 197, 94, 0.25)' : 'rgba(99, 102, 241, 0.25)'}`, fontSize: '12px', fontWeight: 600, color: saved.status === 'published' ? THEME.primary : '#818cf8', textTransform: 'capitalize'}}>
-                      <span style={{width: '6px', height: '6px', borderRadius: '50%', backgroundColor: saved.status === 'published' ? THEME.primary : '#818cf8'}} />
-                      {saved.status || 'draft'}
-                    </span>
+              <p style={styles.savedResultsInfo}>{filteredSavedItineraries.length} matching itineraries</p>
+              {visibleSavedItineraries.map((saved, idx) => (
+                <div 
+                  key={saved.itinerary_id} 
+                  className="itn-saved-item-card"
+                  style={savedItemCardStyle}
+                  onClick={() => navigate(`/itinerary/${saved.itinerary_id}`)}
+                >
+                  <div style={styles.savedItemNumber}>{idx + 1}</div>
+                  <div style={styles.savedItemContent}>
+                    <h4 style={{margin: '0 0 4px 0', fontSize: '14px'}}>{saved.name}</h4>
+                    <p style={{fontSize: '0.8rem', color: THEME.textSecondary, margin: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '4px'}}>
+                      <Icons.CalendarIcon size={12} />
+                      {new Date(saved.created_at).toLocaleDateString()}
+                    </p>
+                    <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
+                      <span style={{display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', backgroundColor: 'rgba(251, 191, 36, 0.12)', border: '1px solid rgba(251, 191, 36, 0.25)', fontSize: '12px', fontWeight: 600, color: THEME.accent}}>
+                        <Icons.MoneyIcon size={11} />
+                        ₱{Number(saved.total_budget || 0).toFixed(2)}
+                      </span>
+                      <span style={{display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', backgroundColor: saved.status === 'published' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(99, 102, 241, 0.12)', border: `1px solid ${saved.status === 'published' ? 'rgba(34, 197, 94, 0.25)' : 'rgba(99, 102, 241, 0.25)'}`, fontSize: '12px', fontWeight: 600, color: saved.status === 'published' ? THEME.primary : '#818cf8', textTransform: 'capitalize'}}>
+                        <span style={{width: '6px', height: '6px', borderRadius: '50%', backgroundColor: saved.status === 'published' ? THEME.primary : '#818cf8'}} />
+                        {saved.status || 'draft'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
-            {filteredSavedItineraries.length > SAVED_PER_PAGE && (
-              <div style={styles.savedPaginationWrap}>
-                <button
-                  style={savedPage === 1 ? styles.pageBtnDisabled : styles.pageBtn}
-                  disabled={savedPage === 1}
-                  onClick={() => setSavedPage(p => Math.max(1, p - 1))}
-                >
-                  Prev
-                </button>
-                <span style={{ fontSize: '0.82rem', color: THEME.textSecondary }}>Page {savedPage} of {savedTotalPages}</span>
-                <button
-                  style={savedPage === savedTotalPages ? styles.pageBtnDisabled : styles.pageBtn}
-                  disabled={savedPage === savedTotalPages}
-                  onClick={() => setSavedPage(p => Math.min(savedTotalPages, p + 1))}
-                >
-                  Next
-                </button>
-              </div>
-            )}
+              ))}
+              {filteredSavedItineraries.length > SAVED_PER_PAGE && (
+                <div style={styles.savedPaginationWrap}>
+                  <button
+                    style={savedPage === 1 ? styles.pageBtnDisabled : styles.pageBtn}
+                    disabled={savedPage === 1}
+                    onClick={() => setSavedPage(p => Math.max(1, p - 1))}
+                  >
+                    Prev
+                  </button>
+                  <span style={{ fontSize: '0.82rem', color: THEME.textSecondary }}>Page {savedPage} of {savedTotalPages}</span>
+                  <button
+                    style={savedPage === savedTotalPages ? styles.pageBtnDisabled : styles.pageBtn}
+                    disabled={savedPage === savedTotalPages}
+                    onClick={() => setSavedPage(p => Math.min(savedTotalPages, p + 1))}
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         </div>
@@ -3133,11 +3132,10 @@ const styles = {
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
     border: '1px solid #1e3a5f',
     borderLeft: '4px solid #22c55e',
-    maxHeight: '480px',
     display: 'flex',
     flexDirection: 'column',
+    flex: 1,
     width: '100%',
-    overflow: 'hidden',
     boxSizing: 'border-box'
   },
   savedSearchInput: {
