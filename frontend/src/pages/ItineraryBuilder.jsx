@@ -95,7 +95,7 @@ const ItineraryBuilder = () => {
     ? { display: 'grid', gridTemplateColumns: '1fr', gap: '24px', paddingTop: '24px' }
     : { display: 'grid', gridTemplateColumns: '1fr 400px', gap: '24px', paddingTop: '24px' };
 
-  const leftColumnStyle = { display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0 };
+  const leftColumnStyle = { display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0, flex: 1 };
   
   // Inner responsive grids (mobile / tiny overrides of the fixed desktop grids)
   const responsiveStyle = (cond, base, mobileOverride) => (cond ? { ...base, ...mobileOverride } : base);
@@ -2570,7 +2570,10 @@ const styles = {
     backgroundColor: THEME.bgCard,
     borderRadius: '16px',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
-    border: '1px solid #1e3a5f'
+    border: '1px solid #1e3a5f',
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column'
   },
   routeSummary: {
     marginBottom: '20px',
