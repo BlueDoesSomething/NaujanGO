@@ -1142,46 +1142,47 @@ const ItineraryBuilder = () => {
                   <p style={{ margin: 0, color: THEME.textSecondary }}>{t('no_attractions_found')}</p>
                 </div>
               ) : (
-                <div style={styles.attractionGrid}>
+                <div className="itinerary-attraction-grid" style={styles.attractionGrid}>
                   {visibleAttractions.map(attraction => (
                     <div key={attraction.id} className="itinerary-attraction-card" style={styles.attractionCard}>
-                      <img src={attraction.image_url} alt={attraction.name} className="itinerary-attraction-image" style={styles.attractionImage} />
-                      <div style={styles.attractionInfo}>
+                      <img src={attraction.image_url} alt={attraction.name} className="itinerary-attraction-image" />
+                      <button
+                        type="button"
+                        className="itinerary-attraction-fav-btn"
+                        title="Add to favorites"
+                        onClick={(e) => { e.stopPropagation(); }}
+                      >
+                        ♡
+                      </button>
+                      <div className="itinerary-attraction-overlay">
                         <h4>{highlightMatch(attraction.name, debouncedAttractionSearch)}</h4>
-                        <p style={styles.location}>
-                          <Icons.LocationIcon size={14} color={THEME.textSecondary} />
+                        <div className="atc-location">
+                          <Icons.LocationIcon size={12} color="rgba(255,255,255,0.75)" />
                           <span>{highlightMatch(attraction.location || '', debouncedAttractionSearch)}</span>
-                        </p>
-                        <p style={styles.sidebarMetaText}>
-                          {(parseFloat(attraction.avg_rating) || 0) > 0 ? `${Number(attraction.avg_rating).toFixed(1)}★` : t('no_reviews_yet')}
-                          {' • '}
-                          {(parseInt(attraction.review_count) || 0)} {t('reviews')}
-                        </p>
-
-                        <div style={styles.dayActionWrap}>
-                          <div style={styles.dayActionHeader}>
-                            <span style={styles.dayActionLabel}>{t('add_to_day')}</span>
-                            <span style={styles.dayActionHint}>Tap a day to add this place instantly</span>
-                          </div>
-                          <div style={styles.dayActionButtons}>
+                        </div>
+                        <div className="atc-rating">
+                          <span className="atc-star">★</span>
+                          {(parseFloat(attraction.avg_rating) || 0) > 0 ? Number(attraction.avg_rating).toFixed(1) : '—'}
+                          <span className="atc-review-count">({parseInt(attraction.review_count) || 0})</span>
+                        </div>
+                        <div className="itinerary-attraction-day-actions">
+                          <button
+                            type="button"
+                            className="atc-day-primary"
+                            onClick={(e) => { e.stopPropagation(); addToDay(attraction, currentDay); }}
+                          >
+                            + {t('day')} {currentDay}
+                          </button>
+                          {sortedDayNumbers.map((day) => (
                             <button
+                              key={day}
                               type="button"
-                              onClick={() => addToDay(attraction, currentDay)}
-                              style={styles.dayActionPrimaryButton}
+                              className={day === currentDay ? 'atc-day-btn-active' : 'atc-day-btn'}
+                              onClick={(e) => { e.stopPropagation(); addToDay(attraction, day); }}
                             >
-                              + {t('day')} {currentDay}
+                              {t('day')} {day}
                             </button>
-                            {sortedDayNumbers.map((day) => (
-                              <button
-                                key={day}
-                                type="button"
-                                onClick={() => addToDay(attraction, day)}
-                                style={day === currentDay ? styles.dayActionButtonActive : styles.dayActionButton}
-                              >
-                                {t('day')} {day}
-                              </button>
-                            ))}
-                          </div>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -2104,98 +2105,8 @@ const styles = {
     marginBottom: '20px'
   },
   attractionCard: {
-    display: 'flex',
-    flexDirection: 'column',
-    border: '1px solid rgba(34, 197, 94, 0.25)',
-    borderRadius: '20px',
-    overflow: 'hidden',
-    background: THEME.bgCard,
-    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(34, 197, 94, 0.15)',
-    position: 'relative',
-    animation: 'itn-fadeInUp 0.5s ease forwards'
-  },
-  attractionImage: {
-    width: '100%',
-    height: '200px',
-    objectFit: 'cover',
-    display: 'block',
-    flexShrink: 0
-  },
-  attractionInfo: {
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    padding: '16px'
-  },
-  location: {
-    fontSize: '12px',
-    color: THEME.textSecondary,
-    margin: '4px 0',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px'
-  },
-  dayActionWrap: {
-    marginTop: 'auto',
-    padding: '14px',
-    borderRadius: '12px',
-    backgroundColor: THEME.bgInput,
-    border: '1px solid #1e3a5f'
-  },
-  dayActionHeader: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-    marginBottom: '10px'
-  },
-  dayActionLabel: {
-    fontSize: '12px',
-    fontWeight: 700,
-    color: THEME.text,
-    textTransform: 'uppercase',
-    letterSpacing: '0.04em'
-  },
-  dayActionHint: {
-    fontSize: '11px',
-    color: THEME.textSecondary,
-    lineHeight: 1.4
-  },
-  dayActionButtons: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '8px'
-  },
-  dayActionPrimaryButton: {
-    padding: '8px 16px',
-    borderRadius: '999px',
-    border: 'none',
-    backgroundColor: THEME.primary,
-    color: '#fff',
-    cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: '13px',
-    boxShadow: '0 4px 12px rgba(34, 197, 94, 0.2)'
-  },
-  dayActionButton: {
-    padding: '8px 14px',
-    borderRadius: '999px',
-    border: `1px solid #1e3a5f`,
-    backgroundColor: 'transparent',
-    color: THEME.textSecondary,
-    cursor: 'pointer',
-    fontWeight: 600,
-    fontSize: '13px',
-    transition: 'all 0.2s'
-  },
-  dayActionButtonActive: {
-    padding: '8px 14px',
-    borderRadius: '999px',
-    border: `1px solid ${THEME.primary}`,
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
-    color: THEME.primary,
-    cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: '13px'
+    aspectRatio: '3 / 4',
+    minHeight: 0
   },
   filterHeaderRow: {
     display: 'flex',
