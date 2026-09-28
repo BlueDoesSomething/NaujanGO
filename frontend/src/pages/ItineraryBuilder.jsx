@@ -1193,7 +1193,7 @@ const ItineraryBuilder = () => {
               {!attractionsLoading && filteredAttractions.length > ATTR_PER_PAGE && (
                 <div style={styles.sidebarPaginationWrap}>
                   <button
-                    style={attractionsPage === 1 ? styles.pageBtnDisabled : styles.pageBtn}
+                    style={attractionsPage === 1 ? styles.pageNavBtnDisabled : styles.pageNavBtn}
                     disabled={attractionsPage === 1}
                     onClick={() => setAttractionsPage(p => Math.max(1, p - 1))}
                   >
@@ -1209,7 +1209,7 @@ const ItineraryBuilder = () => {
                     </button>
                   ))}
                   <button
-                    style={attractionsPage === attractionsTotalPages ? styles.pageBtnDisabled : styles.pageBtn}
+                    style={attractionsPage === attractionsTotalPages ? styles.pageNavBtnDisabled : styles.pageNavBtn}
                     disabled={attractionsPage === attractionsTotalPages}
                     onClick={() => setAttractionsPage(p => Math.min(attractionsTotalPages, p + 1))}
                   >
@@ -1285,6 +1285,10 @@ const ItineraryBuilder = () => {
         <div style={lowerLayoutStyle}>
           <div style={leftColumnStyle}>
           <div className="ib-itinerary-header" style={itineraryHeaderStyle}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+              <div style={{ width: '3px', height: '18px', background: '#22c55e', borderRadius: '2px', flexShrink: 0 }} />
+              <span style={{ fontSize: '16px', fontWeight: 600, color: THEME.text }}>Trip Details</span>
+            </div>
             <input
               type="text"
               placeholder={t('itinerary_name_placeholder')}
@@ -1450,7 +1454,9 @@ const ItineraryBuilder = () => {
 
               {(itemsByDay[currentDay] || []).length === 0 ? (
                 <div className="empty-state" style={styles.emptyDay}>
-                  <Icons.LocationIcon size={48} color={THEME.textSecondary} />
+                  <div className="empty-state-icon">
+                    <Icons.LocationIcon size={30} color="#22c55e" />
+                  </div>
                   <p style={{marginTop: '1rem'}}>{t('no_items_planned')}</p>
                   <p style={styles.emptyDayHint}>{t('select_attractions_hint')}</p>
                 </div>
@@ -1697,7 +1703,10 @@ const ItineraryBuilder = () => {
         {/* Step 2 right rail */}
         <div style={rightPanelStyle}>
           <div className="ib-card" style={summaryCardStyle}>
-            <h3>Trip Summary</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid #1e3a5f' }}>
+              <div style={{ width: '3px', height: '18px', background: '#22c55e', borderRadius: '2px', flexShrink: 0 }} />
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>Trip Summary</h3>
+            </div>
             <div style={styles.summaryItem}>
               <span style={{display:'flex',alignItems:'center',gap:'8px'}}>
                 <Icons.CalendarIcon size={16} color={THEME.textSecondary} />
@@ -1752,7 +1761,10 @@ const ItineraryBuilder = () => {
 
           <div className="ib-card" style={savedListStyle}>
               <div className="saved-itinerary-header-row">
-              <h3>Saved Itineraries ({activeItinerariesCount})</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', paddingBottom: '10px', borderBottom: '1px solid #1e3a5f' }}>
+                <div style={{ width: '3px', height: '18px', background: '#06b6d4', borderRadius: '2px', flexShrink: 0 }} />
+                <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700 }}>Saved Itineraries ({activeItinerariesCount})</h3>
+              </div>
             </div>
 
             <SearchInput
@@ -1879,7 +1891,7 @@ const ItineraryBuilder = () => {
               {filteredSavedItineraries.length > SAVED_PER_PAGE && (
                 <div style={styles.savedPaginationWrap}>
                   <button
-                    style={savedPage === 1 ? styles.pageBtnDisabled : styles.pageBtn}
+                    style={savedPage === 1 ? styles.pageNavBtnDisabled : styles.pageNavBtn}
                     disabled={savedPage === 1}
                     onClick={() => setSavedPage(p => Math.max(1, p - 1))}
                   >
@@ -1887,7 +1899,7 @@ const ItineraryBuilder = () => {
                   </button>
                   <span style={{ fontSize: '0.82rem', color: THEME.textSecondary }}>Page {savedPage} of {savedTotalPages}</span>
                   <button
-                    style={savedPage === savedTotalPages ? styles.pageBtnDisabled : styles.pageBtn}
+                    style={savedPage === savedTotalPages ? styles.pageNavBtnDisabled : styles.pageNavBtn}
                     disabled={savedPage === savedTotalPages}
                     onClick={() => setSavedPage(p => Math.min(savedTotalPages, p + 1))}
                   >
@@ -2362,7 +2374,8 @@ const styles = {
     padding: '28px',
     borderRadius: '16px',
     boxShadow: 'var(--shadow, 0 4px 24px rgba(0,0,0,0.3))',
-    border: '1px solid #1e3a5f'
+    border: '1px solid #1e3a5f',
+    borderLeft: '4px solid #22c55e'
   },
   nameInput: {
     width: '100%',
@@ -3172,6 +3185,52 @@ const styles = {
   pageBtn: {
     border: `1px solid #1e3a5f`,
     background: THEME.bgInput,
+    borderRadius: '50%',
+    width: '36px',
+    height: '36px',
+    padding: 0,
+    fontSize: '12px',
+    cursor: 'pointer',
+    color: THEME.textSecondary,
+    fontFamily: 'inherit',
+    transition: 'all 0.2s',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  pageBtnActive: {
+    border: `1px solid ${THEME.primary}`,
+    background: THEME.primary,
+    color: '#fff',
+    borderRadius: '50%',
+    width: '36px',
+    height: '36px',
+    padding: 0,
+    fontSize: '12px',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  pageBtnDisabled: {
+    border: `1px solid #1e3a5f`,
+    background: THEME.bgInput,
+    color: THEME.textMuted,
+    borderRadius: '50%',
+    width: '36px',
+    height: '36px',
+    padding: 0,
+    fontSize: '12px',
+    cursor: 'not-allowed',
+    fontFamily: 'inherit',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  pageNavBtn: {
+    border: `1px solid #1e3a5f`,
+    background: THEME.bgInput,
     borderRadius: '6px',
     padding: '6px 12px',
     fontSize: '12px',
@@ -3180,17 +3239,7 @@ const styles = {
     fontFamily: 'inherit',
     transition: 'all 0.2s'
   },
-  pageBtnActive: {
-    border: `1px solid ${THEME.primary}`,
-    background: THEME.primary,
-    color: '#fff',
-    borderRadius: '6px',
-    padding: '6px 12px',
-    fontSize: '12px',
-    cursor: 'pointer',
-    fontFamily: 'inherit'
-  },
-  pageBtnDisabled: {
+  pageNavBtnDisabled: {
     border: `1px solid #1e3a5f`,
     background: THEME.bgInput,
     color: THEME.textMuted,
