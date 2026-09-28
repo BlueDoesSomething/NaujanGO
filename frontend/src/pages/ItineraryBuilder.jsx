@@ -86,10 +86,9 @@ const ItineraryBuilder = () => {
   const rightPanelStyle = {
     display: 'flex',
     flexDirection: 'column',
-    gap: '1rem',
+    gap: '20px',
     minWidth: 0,
-    overflow: 'hidden',
-    ...(isWide ? { position: 'sticky', top: '2rem', height: 'fit-content' } : {})
+    overflow: 'hidden'
   };
 
   const lowerLayoutStyle = isMobile
@@ -100,6 +99,7 @@ const ItineraryBuilder = () => {
   
   // Inner responsive grids (mobile / tiny overrides of the fixed desktop grids)
   const responsiveStyle = (cond, base, mobileOverride) => (cond ? { ...base, ...mobileOverride } : base);
+  
   const dateInputsStyle = responsiveStyle(isMobile, styles.dateInputs, { gridTemplateColumns: '1fr', gap: '0.75rem' });
   const statsBarStyle = responsiveStyle(isMobile, styles.statsBar, { gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' });
   const routeStatsRowStyle = responsiveStyle(isMobile, styles.routeStatsRow, { gridTemplateColumns: 'repeat(2, 1fr)' });
@@ -1935,20 +1935,19 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
-    marginBottom: '4px',
-    flexWrap: 'wrap',
-    padding: '24px 0 16px'
+    marginBottom: '8px',
+    padding: '24px 0 12px'
   },
   stepBadge: {
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
-    padding: '4px 14px',
+    padding: '5px 14px',
     borderRadius: '20px',
     background: THEME.primary,
     color: '#fff',
-    fontSize: '11px',
+    fontSize: '12px',
     fontWeight: 700,
     letterSpacing: '0.06em',
     textTransform: 'uppercase',
@@ -1959,10 +1958,11 @@ const styles = {
     fontSize: '22px',
     fontWeight: 800,
     color: THEME.text,
-    letterSpacing: '-0.01em'
+    letterSpacing: '-0.01em',
+    lineHeight: 1.3
   },
   stepSubtitle: {
-    margin: '0 0 0 90px',
+    margin: '4px 0 0 0',
     fontSize: '13px',
     color: THEME.textSecondary,
     lineHeight: 1.5
