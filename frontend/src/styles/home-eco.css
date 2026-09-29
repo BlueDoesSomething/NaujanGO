@@ -642,12 +642,23 @@
   .thumb-name { font-size: 10px; }
   .ts-list { gap: 6px; }
   .ts-row { padding: 8px 10px; }
+  .eco-hero-head .hero-stats {
+    gap: 12px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  .eco-hero-head .hero-stat b { font-size: 22px; }
+  .eco-hero-head .hero-stat span { font-size: 10px; letter-spacing: 1px; }
+  .eco-hero-head .hero-stat-divider { height: 24px; }
 }
 @media (max-width: 400px) {
   .featured-stage { height: 350px; }
   .stage-name { font-size: 21px; }
   .info-name { font-size: 19px; }
   .thumb-card { flex: 0 0 92px; height: 70px; }
+  .eco-hero-head .hero-stats { gap: 8px; }
+  .eco-hero-head .hero-stat b { font-size: 20px; }
+  .eco-hero-head .hero-stat span { font-size: 9px; letter-spacing: 0.8px; }
 }
 
 /* ============ SEARCH ============ */
