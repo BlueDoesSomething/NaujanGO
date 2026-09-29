@@ -133,22 +133,14 @@
 /* --- Filter panel ---------------------------------------------- */
 .itinerary-filter-panel,
 .saved-filter-panel {
-  display: grid;
-  grid-template-rows: 0fr;
+  display: none;
   opacity: 0;
-  transition: grid-template-rows 0.25s ease, opacity 0.25s ease;
-  margin-top: 0.25rem;
-}
-
-.itinerary-filter-panel > *,
-.saved-filter-panel > * {
-  overflow: hidden;
-  min-height: 0;
+  margin-top: 0;
 }
 
 .itinerary-filter-panel.is-open,
 .saved-filter-panel.is-open {
-  grid-template-rows: 1fr;
+  display: block;
   opacity: 1;
   margin-top: 1rem;
 }
@@ -156,15 +148,10 @@
 @media (min-width: 769px) {
   .itinerary-filter-panel,
   .saved-filter-panel {
-    grid-template-rows: 1fr !important;
+    display: block !important;
     opacity: 1 !important;
     overflow: visible !important;
-    display: block !important;
     margin-top: 1rem !important;
-  }
-  .itinerary-filter-panel > *,
-  .saved-filter-panel > * {
-    overflow: visible;
   }
 }
 
