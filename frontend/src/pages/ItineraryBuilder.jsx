@@ -1020,6 +1020,15 @@ const ItineraryBuilder = () => {
                   loadingClassName="itinerary-search-loading"
                 />
 
+                <button
+                  type="button"
+                  className="ib-mobile-filter-toggle"
+                  onClick={() => setShowSidebarFilters(v => !v)}
+                >
+                  <Icons.Filter size={18} />
+                  {showSidebarFilters ? t('hide_filters') || 'Hide Filters' : t('filters_button') || 'Filters'}
+                </button>
+
                 { /* left sidebar toggle removed to keep original layout */ }
 
                 <div id="itinerarySidebarFilters" className={`itinerary-filter-panel${showSidebarFilters ? ' is-open' : ''}`}>
@@ -1785,6 +1794,15 @@ const ItineraryBuilder = () => {
               itemClassName="saved-search-item"
               loadingClassName="saved-search-loading"
             />
+
+            <button
+              type="button"
+              className="ib-mobile-filter-toggle"
+              onClick={() => setShowSavedFilters(v => !v)}
+            >
+              <Icons.Filter size={18} />
+              {showSavedFilters ? t('hide_filters') || 'Hide Filters' : t('filters_button') || 'Filters'}
+            </button>
 
             <div id="savedItineraryFilters" className={`saved-filter-panel${showSavedFilters ? ' is-open' : ''}`}>
               <div className="saved-filter-grid">

@@ -2,6 +2,38 @@
    ItineraryBuilder — Dark-navy glass design system
    ================================================================ */
 
+/* --- Mobile filter toggle (hidden on desktop) ------------------- */
+.ib-mobile-filter-toggle {
+  display: none !important;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  border: 1px solid var(--ib-border, #1e3a5f);
+  background: var(--ib-bg-card, #152238);
+  color: var(--ib-text, #e8edf3);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  width: 100%;
+  justify-content: center;
+}
+
+.ib-mobile-filter-toggle:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+
+[data-theme="light"] .ib-mobile-filter-toggle {
+  background: rgba(255,255,255,0.92);
+  border-color: #d1d5db;
+  color: #1f2937;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
 /* --- Search & Filter shell ------------------------------------- */
 .itinerary-search-shell {
   display: flex;
@@ -677,7 +709,11 @@
 
   .itinerary-builder-page .sidebarPaginationWrap,
   .itinerary-builder-page .savedPaginationWrap {
-    display: none;
+    display: none !important;
+  }
+
+  .itinerary-builder-page .ib-mobile-filter-toggle {
+    display: flex !important;
   }
 
   .step-desc {
