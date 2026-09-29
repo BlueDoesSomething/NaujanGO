@@ -1026,7 +1026,7 @@ const ItineraryBuilder = () => {
                   onClick={() => setShowSidebarFilters(v => !v)}
                 >
                   <Icons.Filter size={18} />
-                  {showSidebarFilters ? t('hide_filters') || 'Hide Filters' : t('filters_button') || 'Filters'}
+                  {t('filters_button') || 'Filters'}
                 </button>
 
                 { /* left sidebar toggle removed to keep original layout */ }
@@ -1801,7 +1801,7 @@ const ItineraryBuilder = () => {
               onClick={() => setShowSavedFilters(v => !v)}
             >
               <Icons.Filter size={18} />
-              {showSavedFilters ? t('hide_filters') || 'Hide Filters' : t('filters_button') || 'Filters'}
+              {t('filters_button') || 'Filters'}
             </button>
 
             <div id="savedItineraryFilters" className={`saved-filter-panel${showSavedFilters ? ' is-open' : ''}`}>
