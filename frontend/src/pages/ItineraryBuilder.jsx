@@ -1191,7 +1191,7 @@ const ItineraryBuilder = () => {
               )}
 
               {!attractionsLoading && filteredAttractions.length > ATTR_PER_PAGE && (
-                <div style={styles.sidebarPaginationWrap}>
+                <div className="sidebarPaginationWrap" style={styles.sidebarPaginationWrap}>
                   <button
                     style={attractionsPage === 1 ? styles.pageNavBtnDisabled : styles.pageNavBtn}
                     disabled={attractionsPage === 1}
@@ -1889,7 +1889,7 @@ const ItineraryBuilder = () => {
                 </div>
               ))}
               {filteredSavedItineraries.length > SAVED_PER_PAGE && (
-                <div style={styles.savedPaginationWrap}>
+                <div className="savedPaginationWrap" style={styles.savedPaginationWrap}>
                   <button
                     style={savedPage === 1 ? styles.pageNavBtnDisabled : styles.pageNavBtn}
                     disabled={savedPage === 1}
