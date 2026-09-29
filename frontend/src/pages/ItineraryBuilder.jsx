@@ -2117,7 +2117,6 @@ const styles = {
     marginBottom: '20px'
   },
   attractionCard: {
-    aspectRatio: '3 / 4',
     minHeight: 0
   },
   filterHeaderRow: {
