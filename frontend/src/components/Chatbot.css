@@ -44,9 +44,9 @@
   --quick-action-hover-border: #22c55e;
   --quick-action-hover-bg: rgba(34, 197, 94, 0.08);
   --header-bg: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #16a34a 100%);
-  --header-glass: rgba(255, 255, 255, 0.28);
-  --header-glass-border: rgba(255, 255, 255, 0.4);
-  --header-glass-hover: rgba(255, 255, 255, 0.38);
+  --header-glass: rgba(255, 255, 255, 0.18);
+  --header-glass-border: rgba(255, 255, 255, 0.25);
+  --header-glass-hover: rgba(255, 255, 255, 0.28);
   --scrollbar-thumb: #1e3a5f;
   --input-focus-shadow: rgba(34, 197, 94, 0.12);
   --send-shadow: rgba(34, 197, 94, 0.35);
@@ -62,6 +62,7 @@
   --header-padding: 20px 20px 16px;
   --input-padding: 16px 20px 20px;
   --logo-size: 48px;
+  --action-btn-height: 48px;
   --quick-action-padding: 12px 6px;
   --quick-action-icon: 22px;
   --quick-action-text: 10px;
@@ -108,9 +109,9 @@
   --quick-action-hover-border: #16a34a;
   --quick-action-hover-bg: rgba(22, 163, 74, 0.06);
   --header-bg: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #16a34a 100%);
-  --header-glass: rgba(255, 255, 255, 0.32);
-  --header-glass-border: rgba(255, 255, 255, 0.45);
-  --header-glass-hover: rgba(255, 255, 255, 0.42);
+  --header-glass: rgba(255, 255, 255, 0.22);
+  --header-glass-border: rgba(255, 255, 255, 0.3);
+  --header-glass-hover: rgba(255, 255, 255, 0.32);
   --scrollbar-thumb: #c8d3e0;
   --input-focus-shadow: rgba(22, 163, 74, 0.15);
   --send-shadow: rgba(22, 163, 74, 0.3);
@@ -250,7 +251,7 @@
   gap: 12px;
   position: relative;
   z-index: 2;
-  margin-bottom: 0;
+  margin-bottom: 16px;
 }
 
 .chatbot-logo {
@@ -270,8 +271,9 @@
 }
 
 .chatbot-logo svg {
-  width: calc(var(--logo-size) * 0.54);
-  height: calc(var(--logo-size) * 0.54);
+  width: 26px;
+  height: 26px;
+  color: white;
 }
 
 .chatbot-title-group {
@@ -353,10 +355,9 @@
 }
 
 .chatbot-action-button {
-  flex: 0 1 auto;
-  width: 48px;
-  min-width: 48px;
-  height: 48px;
+  flex: 1;
+  min-width: 52px;
+  height: var(--action-btn-height);
   background: var(--header-glass);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -372,7 +373,7 @@
   font-weight: 600;
   position: relative;
   overflow: hidden;
-  padding: 0;
+  padding: 0 8px;
 }
 
 .chatbot-action-button::before {
@@ -406,6 +407,7 @@
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+  flex-shrink: 0;
   position: relative;
   z-index: 1;
 }
@@ -416,16 +418,15 @@
   letter-spacing: 0.5px;
 }
 
-/* Agent toggle — compact icon-only like other buttons */
+/* Agent toggle — wider than other buttons (flex 1.5) */
 .agent-toggle-btn {
-  flex: 0 1 auto;
-  width: 48px;
-  min-width: 48px;
-  padding: 0;
+  flex: 1.5;
+  min-width: 85px;
+  padding: 0 10px;
   flex-direction: column;
-  gap: 0;
-  height: 48px;
-  min-height: 48px;
+  gap: 2px;
+  height: auto;
+  min-height: 52px;
 }
 
 .agent-toggle-label {
@@ -433,25 +434,24 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
+  gap: 2px;
 }
 
 .agent-toggle-label .agent-icon-wrap {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .agent-toggle-label .agent-label {
-  font-size: 7px;
-  font-weight: 700;
+  font-size: 9px;
+  font-weight: 600;
   letter-spacing: 0.3px;
   opacity: 0.85;
   text-transform: uppercase;
   position: relative;
   z-index: 1;
   white-space: nowrap;
-  line-height: 1;
 }
 
 .agent-toggle-label .agent-dot {
@@ -845,52 +845,74 @@
 /* ==========================================================
    QUICK ACTIONS (collapsible dropdown)
    ========================================================== */
-.quick-actions-bar {
+.quick-actions {
   background: var(--chat-bg);
   border-top: 1px solid var(--border-color);
-  flex-shrink: 0;
   transition: background 0.3s ease, border-color 0.3s ease;
+  flex-shrink: 0;
 }
 
 .quick-actions-bar--hidden {
   display: none;
 }
 
-.quick-actions-toggle {
-  position: relative;
-  width: 100%;
+.quick-actions-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 0;
-  margin-top: -1px;
-  background: none;
-  border: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px var(--container-padding) 10px;
   cursor: pointer;
-  color: var(--text-secondary);
-  transition: color 0.2s ease;
+  user-select: none;
+  transition: background 0.2s ease;
+  min-height: 44px;
 }
 
-.quick-actions-toggle::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 1px;
-  height: 8px;
-  background: currentColor;
-  opacity: 0.6;
+.quick-actions-header:hover {
+  background: var(--bg-input);
+}
+
+.quick-actions-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quick-actions-label .label-dot {
+  width: 5px;
+  height: 5px;
+  background: var(--accent-green);
+  border-radius: 50%;
+}
+
+.quick-actions-toggle {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 8px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  color: var(--text-secondary);
 }
 
 .quick-actions-toggle:hover {
+  background: var(--bg-input-alt);
+  border-color: var(--accent-green);
   color: var(--accent-green);
 }
 
 .quick-actions-toggle svg {
-  width: 12px;
-  height: 12px;
-  margin-top: 8px;
+  width: 14px;
+  height: 14px;
   stroke: currentColor;
   fill: none;
   stroke-width: 2.5;
@@ -899,12 +921,8 @@
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.quick-actions-toggle svg.arrow-up {
-  transform: rotate(180deg);
-}
-
-.quick-actions-toggle svg.arrow-down {
-  transform: rotate(0deg);
+.quick-actions-toggle.collapsed svg {
+  transform: rotate(-90deg);
 }
 
 .quick-actions-content {
@@ -912,13 +930,13 @@
   overflow: hidden;
   transition: max-height 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s ease, padding 0.3s ease;
   opacity: 1;
-  padding: 0 20px 16px;
+  padding: 0 var(--container-padding) 16px;
 }
 
 .quick-actions-content.collapsed {
   max-height: 0;
   opacity: 0;
-  padding: 0 20px;
+  padding: 0 var(--container-padding);
 }
 
 .quick-actions-grid {
@@ -941,6 +959,7 @@
   color: var(--text-secondary);
   position: relative;
   overflow: hidden;
+  min-height: 60px;
 }
 
 .quick-action-btn::before {
@@ -1025,7 +1044,7 @@
 
 .chatbot-input-area textarea {
   width: 100%;
-  padding: 12px 16px;
+  padding: 14px 16px;
   background: var(--bg-input);
   border: 1px solid var(--border-color);
   border-radius: 16px;
@@ -1652,6 +1671,7 @@
     --header-padding: 14px 14px 12px;
     --input-padding: 12px 14px 14px;
     --logo-size: 40px;
+    --action-btn-height: 42px;
     --quick-action-padding: 10px 4px;
     --quick-action-icon: 18px;
     --quick-action-text: 9px;
@@ -1675,9 +1695,7 @@
   .chatbot-header-actions { gap: 5px; }
 
   .chatbot-action-button {
-    width: 42px;
-    min-width: 42px;
-    height: 42px;
+    min-width: 44px;
     font-size: 14px;
   }
 
@@ -1736,9 +1754,6 @@
   .chatbot-header-actions { gap: 6px; }
 
   .chatbot-action-button {
-    width: 46px;
-    min-width: 46px;
-    height: 44px;
     font-size: 16px;
   }
 
@@ -1790,9 +1805,6 @@
   .chatbot-header-actions { gap: 6px; }
 
   .chatbot-action-button {
-    width: 48px;
-    min-width: 48px;
-    height: 44px;
     font-size: 16px;
   }
 
@@ -1831,6 +1843,7 @@
     --container-padding: 12px;
     --input-padding: 10px 16px 12px;
     --logo-size: 38px;
+    --action-btn-height: 38px;
   }
 
   .chatbot-container {
@@ -1851,9 +1864,6 @@
   .chatbot-header-actions { gap: 5px; }
 
   .chatbot-action-button {
-    width: 40px;
-    min-width: 40px;
-    height: 38px;
     font-size: 14px;
   }
 
@@ -1937,8 +1947,8 @@
   .voice-button:hover { transform: none; }
   .voice-button:active { transform: scale(0.95); }
 
-  .quick-actions-toggle:hover { background: none; }
-  .quick-actions-toggle:active { color: var(--accent-green); }
+  .quick-actions-toggle:hover { background: var(--bg-input); }
+  .quick-actions-toggle:active { background: var(--bg-input-alt); }
 }
 
 /* ===== Reduced Motion ===== */
