@@ -837,11 +837,13 @@
 }
 
 .quick-actions-toggle {
+  position: relative;
   width: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding: 8px 0 4px;
+  padding: 0;
+  margin-top: -1px;
   background: none;
   border: none;
   cursor: pointer;
@@ -849,13 +851,26 @@
   transition: color 0.2s ease;
 }
 
+.quick-actions-toggle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  height: 10px;
+  background: currentColor;
+  opacity: 0.45;
+}
+
 .quick-actions-toggle:hover {
   color: var(--accent-green);
 }
 
 .quick-actions-toggle svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
+  margin-top: 10px;
   stroke: currentColor;
   fill: none;
   stroke-width: 2.5;
