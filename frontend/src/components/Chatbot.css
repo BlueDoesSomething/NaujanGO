@@ -250,7 +250,7 @@
   gap: 12px;
   position: relative;
   z-index: 2;
-  margin-bottom: 16px;
+  margin-bottom: 0;
 }
 
 .chatbot-logo {
@@ -416,15 +416,15 @@
   letter-spacing: 0.5px;
 }
 
-/* Agent toggle — vertical layout */
+/* Agent toggle — compact icon-only like other buttons */
 .agent-toggle-btn {
   flex: 0 1 auto;
-  width: auto;
-  min-width: 72px;
-  padding: 0 8px;
+  width: 48px;
+  min-width: 48px;
+  padding: 0;
   flex-direction: column;
-  gap: 2px;
-  height: auto;
+  gap: 0;
+  height: 48px;
   min-height: 48px;
 }
 
@@ -432,24 +432,26 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  gap: 1px;
 }
 
 .agent-toggle-label .agent-icon-wrap {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
 .agent-toggle-label .agent-label {
-  font-size: 9px;
-  font-weight: 600;
+  font-size: 7px;
+  font-weight: 700;
   letter-spacing: 0.3px;
   opacity: 0.85;
   text-transform: uppercase;
   position: relative;
   z-index: 1;
   white-space: nowrap;
+  line-height: 1;
 }
 
 .agent-toggle-label .agent-dot {
