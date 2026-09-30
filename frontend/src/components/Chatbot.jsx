@@ -1659,20 +1659,16 @@ const Chatbot = ({ language }) => {
         <div ref={messagesEndRef} />
       </div>
       <div className={`quick-actions ${showHistory ? 'quick-actions-bar--hidden' : ''}`}>
-        <div className="quick-actions-header" onClick={() => setShowQuickActions((v) => !v)}>
-          <div className="quick-actions-label">
-            <span className="label-dot"></span>
-            Quick Actions
-          </div>
-          <button
-            className={`quick-actions-toggle ${showQuickActions ? '' : 'collapsed'}`}
-            title="Toggle Quick Actions"
-            aria-label="Toggle Quick Actions"
-            onClick={(e) => { e.stopPropagation(); setShowQuickActions((v) => !v); }}
-          >
-            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
-          </button>
-        </div>
+        <button
+          className="quick-actions-toggle"
+          title="Toggle Quick Actions"
+          aria-label="Toggle Quick Actions"
+          onClick={() => setShowQuickActions((v) => !v)}
+        >
+          <svg viewBox="0 0 24 24" className={showQuickActions ? 'arrow-up' : 'arrow-down'}>
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
         <div className={`quick-actions-content ${showQuickActions ? '' : 'collapsed'}`}>
           <div className="quick-actions-grid">
             {currentQuickActions.map((action, idx) => (
