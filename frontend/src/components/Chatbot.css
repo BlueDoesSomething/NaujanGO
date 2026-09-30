@@ -1639,22 +1639,16 @@
   }
 
   .chatbot-header {
-    padding: 16px 16px 12px;
+    padding: 14px 16px 12px;
   }
 
   .chatbot-header-actions {
-    gap: 6px;
+    display: none !important;
   }
 
-  .chatbot-action-button {
-    min-width: 48px;
-    height: 42px;
-    font-size: 16px;
-  }
-
-  .agent-toggle-btn {
-    min-width: 80px;
-    min-height: 46px;
+  .chatbot-close-button {
+    width: 34px;
+    height: 34px;
   }
 
   .quick-actions-grid {
