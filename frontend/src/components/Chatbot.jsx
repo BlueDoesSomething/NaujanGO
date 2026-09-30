@@ -388,12 +388,60 @@ const Chatbot = ({ language }) => {
     de: "Hotels"
   };
 
+  const diningQuickAction = {
+    en: "Dining",
+    es: "Restaurantes",
+    tl: "Kainan",
+    zh: "美食",
+    ja: "レストラン",
+    ko: "음식점",
+    fr: "Restaurants",
+    de: "Restaurants"
+  };
+
+  const transportQuickAction = {
+    en: "Transport",
+    es: "Transporte",
+    tl: "Transportasyon",
+    zh: "交通",
+    ja: "交通",
+    ko: "교통",
+    fr: "Transport",
+    de: "Transport"
+  };
+
+  const helpQuickAction = {
+    en: "Help",
+    es: "Ayuda",
+    tl: "Tulong",
+    zh: "帮助",
+    ja: "ヘルプ",
+    ko: "도움말",
+    fr: "Aide",
+    de: "Hilfe"
+  };
+
   const currentQuickActions = [
     ...(quickActions[chatbotLanguage] || quickActions.en),
     {
       icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 11h18v10H3z"></path><path d="M7 11V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v4"></path><line x1="3" y1="16" x2="21" y2="16"></line></svg>,
       text: hotelQuickAction[chatbotLanguage] || hotelQuickAction.en,
       action: "hotels"
+    },
+    {
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"></path><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"></path><line x1="6" y1="1" x2="6" y2="4"></line><line x1="10" y1="1" x2="10" y2="4"></line><line x1="14" y1="1" x2="14" y2="4"></line></svg>,
+      text: diningQuickAction[chatbotLanguage] || diningQuickAction.en,
+      action: "dining"
+    },
+    {
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg>,
+      text: transportQuickAction[chatbotLanguage] || transportQuickAction.en,
+      action: "transport"
+    },
+    {
+      icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>,
+      text: helpQuickAction[chatbotLanguage] || helpQuickAction.en,
+      action: "help"
     }
   ];
 
@@ -452,7 +500,10 @@ const Chatbot = ({ language }) => {
         hotels: "Show me budget-friendly hotels and accommodations in Naujan near the main attractions",
         booking: "How can I book accommodations and activities in Naujan?",
         photo_tips: "What are the best photo spots and photography tips in Naujan?",
-        safety: "What safety tips should I know when visiting Naujan?"
+        safety: "What safety tips should I know when visiting Naujan?",
+        dining: "Where can I eat in Naujan? Show me the best local restaurants and Filipino cuisine",
+        transport: "How do I get around Naujan? What are the transportation options available?",
+        help: "What can you help me with? Tell me about Naujan attractions, hotels, weather, and trip planning"
       },
       es: {
         show_map: "Muéstrame el mapa interactivo de Naujan con atracciones, hoteles y rutas",
@@ -462,7 +513,10 @@ const Chatbot = ({ language }) => {
         hotels: "Muéstrame hoteles y alojamientos económicos en Naujan cerca de las principales atracciones",
         booking: "¿Cómo puedo reservar alojamientos y actividades en Naujan?",
         photo_tips: "¿Cuáles son los mejores lugares para fotografiar y consejos de fotografía en Naujan?",
-        safety: "¿Qué consejos de seguridad debo tener en cuenta al visitar Naujan?"
+        safety: "¿Qué consejos de seguridad debo tener en cuenta al visitar Naujan?",
+        dining: "¿Dónde puedo comer en Naujan? Muéstrame los mejores restaurantes locales y cocina filipina",
+        transport: "¿Cómo me muevo por Naujan? ¿Cuáles son las opciones de transporte disponibles?",
+        help: "¿Con qué puedes ayudarme? Cuéntame sobre las atracciones, hoteles, clima y planificación de viajes de Naujan"
       },
       tl: {
         show_map: "Ipakita sa akin ang interactive na mapa ng Naujan na may attractions, hotel, at ruta",
@@ -472,7 +526,10 @@ const Chatbot = ({ language }) => {
         hotels: "Ipakita ang mga budget-friendly na hotel at accommodation sa Naujan malapit sa mga pangunahing attractions",
         booking: "Paano ako makakapag-book ng accommodation at activities sa Naujan?",
         photo_tips: "Ano ang mga pinakamagandang photo spots at mga tips sa pagkuha ng litrato sa Naujan?",
-        safety: "Anong mga safety tips ang dapat kong malaman kapag bumibisita sa Naujan?"
+        safety: "Anong mga safety tips ang dapat kong malaman kapag bumibisita sa Naujan?",
+        dining: "Saan ako kumakain sa Naujan? Ipakita ang mga pinakamagandang lokal na restaurant at Filipino cuisine",
+        transport: "Paano ako magkikilos sa Naujan? Ano ang mga opsyon sa transportasyon na available?",
+        help: "Ano ang maitutulong ko sa iyo? Sabihin ang tungkol sa mga atraksyon, hotel, panahon, at pagpaplano ng biyahe sa Naujan"
       },
       zh: {
         show_map: "给我看瑙汉的互动地图，包括景点、酒店和路线",
@@ -482,7 +539,10 @@ const Chatbot = ({ language }) => {
         hotels: "给我看瑙詹靠近主要景点的经济型酒店和住宿",
         booking: "我如何在瑙汉预订住宿和活动？",
         photo_tips: "瑙詹有哪些最佳拍照地点和摄影技巧？",
-        safety: "访问瑙詹时我应该知道哪些安全提示？"
+        safety: "访问瑙詹时我应该知道哪些安全提示？",
+        dining: "我在瑙詹可以在哪里吃饭？给我看最好的当地餐厅和菲律宾美食",
+        transport: "我在瑙詹怎么出行？有哪些交通方式可用？",
+        help: "你能帮我什么？告诉我瑙詹的景点、酒店、天气和行程规划"
       },
       ja: {
         show_map: "ナウハンの観光地、ホテル、ルートが見えるインタラクティブマップを見せて",
@@ -492,7 +552,10 @@ const Chatbot = ({ language }) => {
         hotels: "主要観光地の近くにあるナウジャンの手頃なホテルや宿泊施設を見せて",
         booking: "ナウジャンで宿泊やアクティビティを予約するにはどうすればいいですか？",
         photo_tips: "ナウジャンのベストな写真スポットと撮影のコツは？",
-        safety: "ナウジャンを訪れる際に知っておくべき安全上のヒントは？"
+        safety: "ナウジャンを訪れる際に知っておくべき安全上のヒントは？",
+        dining: "ナウジャンではどこで食べられますか？最善の地元のレストランとフィリピン料理を見せて",
+        transport: "ナウジャンではどのように移動できますか？利用可能な交通手段は何ですか？",
+        help: "何を手伝いますか？ナウジャンの観光地、ホテル、天気、旅行計画について教えて"
       },
       ko: {
         show_map: "나우한의 관광지, 호텔, 경로가 보이는 인터랙티브 지도를 보여주세요",
@@ -502,7 +565,10 @@ const Chatbot = ({ language }) => {
         hotels: "주요 관광지 근처의 저렴한 나우한 호텔과 숙박 시설을 보여주세요",
         booking: "나우한에서 숙소와 액티비티를 어떻게 예약하나요?",
         photo_tips: "나우한의 최고의 사진 명소와 촬영 팁은 무엇인가요?",
-        safety: "나우한을 방문할 때 알아야 할 안전 팁은 무엇인가요?"
+        safety: "나우한을 방문할 때 알아야 할 안전 팁은 무엇인가요?",
+        dining: "나우한에서 어디서 먹을 수 있나요? 최고의 현지 레스토랑과 필리핀 요리를 보여주세요",
+        transport: "나우한에서는 어떻게 이동하나요? 어떤 교통 수단이 있나요?",
+        help: "무엇을 도와드릴까요? 나우한의 관광지, 호텔, 날씨, 여행 계획에 대해 알려드릴게요"
       },
       fr: {
         show_map: "Montrez-moi la carte interactive de Naujan avec les attractions, hôtels et itinéraires",
@@ -512,7 +578,10 @@ const Chatbot = ({ language }) => {
         hotels: "Montrez-moi des hôtels et hébergements abordables à Naujan près des principales attractions",
         booking: "Comment puis-je réserver un hébergement et des activités à Naujan?",
         photo_tips: "Quels sont les meilleurs endroits pour prendre des photos et les conseils photo à Naujan?",
-        safety: "Quels conseils de sécurité dois-je connaître lors de ma visite à Naujan?"
+        safety: "Quels conseils de sécurité dois-je connaître lors de ma visite à Naujan?",
+        dining: "Où puis-je manger à Naujan? Montrez-moi les meilleurs restaurants locaux et la cuisine philippine",
+        transport: "Comment se déplacer à Naujan? Quels sont les moyens de transport disponibles?",
+        help: "En quoi puis-je vous aider? Parlez-moi des attractions, hôtels, météo et planification de voyage à Naujan"
       },
       de: {
         show_map: "Zeig mir die interaktive Karte von Naujan mit Sehenswürdigkeiten, Hotels und Routen",
@@ -522,7 +591,10 @@ const Chatbot = ({ language }) => {
         hotels: "Zeig mir günstige Hotels und Unterkünfte in Naujan in der Nähe der wichtigsten Sehenswürdigkeiten",
         booking: "Wie kann ich Unterkünfte und Aktivitäten in Naujan buchen?",
         photo_tips: "Was sind die besten Fotospots und Fototipps in Naujan?",
-        safety: "Welche Sicherheitstipps sollte ich bei einem Besuch in Naujan beachten?"
+        safety: "Welche Sicherheitstipps sollte ich bei einem Besuch in Naujan beachten?",
+        dining: "Wo kann ich in Naujan essen? Zeig mir die besten lokalen Restaurants und philippinische Küche",
+        transport: "Wie komme ich mich in Naujan fort? Welche Transportmöglichkeiten gibt es?",
+        help: "Wobei kann ich helfen? Erzähle mir über die Sehenswürdigkeiten, Hotels, das Wetter und die Reiseplanung in Naujan"
       }
     };
 
@@ -1206,18 +1278,27 @@ const Chatbot = ({ language }) => {
   return (
     <div className="chatbot-container">
       <div className="chatbot-header">
-        <div className="header-content">
-          <div className="header-icon">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <div className="chatbot-header-top">
+          <div className="chatbot-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
             </svg>
           </div>
-          <div>
-            <div className="header-title">{getText('assistant')}</div>
-            <div className="header-status">{isTyping ? getText('typing') : getText('online')}</div>
+          <div className="chatbot-title-group">
+            <div className="chatbot-title">{getText('assistant')}</div>
+            <div className="chatbot-status">
+              <span className="chatbot-status-dot"></span>
+              <span>{isTyping ? getText('typing') : getText('online')}</span>
+            </div>
           </div>
+          <button onClick={toggleChatbot} aria-label={getText('close')} className="chatbot-close-button">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
-        <div className="header-actions">
+        <div className="chatbot-header-actions">
           <div className="language-selector-container">
             <button
               onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
@@ -1259,7 +1340,7 @@ const Chatbot = ({ language }) => {
               className="chatbot-action-button"
               title="View conversation history"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                 <polyline points="14 2 14 8 20 8"></polyline>
                 <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -1282,20 +1363,20 @@ const Chatbot = ({ language }) => {
                 }
               }}
               aria-pressed={agentMode}
-              className={`chatbot-action-button ${(agentMode || startingAgentConversation) ? 'active' : ''}`}
+              className={`chatbot-action-button agent-toggle-btn ${(agentMode || startingAgentConversation) ? 'active' : ''}`}
               title={startingAgentConversation ? 'Starting human agent chat...' : (agentMode ? 'Disable agent chat' : 'Switch to human agent chat')}
               aria-label={startingAgentConversation ? 'Starting human agent chat' : (agentMode ? 'Human agent chat enabled' : 'Human agent chat disabled')}
               disabled={startingAgentConversation}
             >
-              <span className="agent-human-logo" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <span className="agent-toggle-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M4 21v-2a4 4 0 0 1 4-4h0" />
                   <circle cx="8" cy="7" r="3" />
                   <rect x="13" y="6" width="6" height="6" rx="1" />
                   <path d="M16 12v2" />
                   <path d="M13 9h6" />
                 </svg>
-                <span className={`demo-dot ${(agentMode || startingAgentConversation) ? 'on' : 'off'}`} style={{ width: 12, height: 12, borderRadius: 12, display: 'inline-block', background: (agentMode || startingAgentConversation) ? '#22c55e' : '#9ca3af' }} />
+                <span>{agentMode ? 'Human' : 'AI Mode'}</span>
               </span>
             </button>
           )}
@@ -1305,32 +1386,48 @@ const Chatbot = ({ language }) => {
               className="chatbot-action-button"
               title="Open moderation panel"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 <circle cx="18" cy="6" r="3"></circle>
               </svg>
             </button>
           )}
           <button onClick={startNewConversation} aria-label={t('chatbot_new_conversation')} className="chatbot-action-button" title={t('chatbot_new_conversation')}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <line x1="12" y1="5" x2="12" y2="19"></line>
               <line x1="5" y1="12" x2="19" y2="12"></line>
             </svg>
           </button>
           <button onClick={clearChat} aria-label={t('chatbot_clear_chat')} className="chatbot-action-button" title={t('chatbot_clear_chat')}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
             </svg>
           </button>
-          <button onClick={toggleChatbot} aria-label={getText('close')} className="chatbot-close-button">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
         </div>
       </div>
+
+      {/* Welcome Banner */}
+      {messages.length <= 1 && !showHistory && (
+        <div className="chatbot-welcome-banner">
+          <div className="welcome-icon">👋</div>
+          <div className="welcome-body">
+            <div className="welcome-title">{getText('assistant')}</div>
+            <div className="welcome-text">{getText('welcome')}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Human Agent Mode Banner */}
+      {agentMode && (
+        <div className="chatbot-mode-banner">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          <span>Connected to a human agent — replies may take a moment</span>
+        </div>
+      )}
 
       {/* Conversation History Panel */}
       {showHistory && isLoggedIn && (
@@ -1478,68 +1575,75 @@ const Chatbot = ({ language }) => {
 
       <div className={`chatbot-messages ${showHistory ? 'chatbot-messages--hidden' : ''}`}>
         {messages.map((msg, idx) => (
-          <div key={idx} className={`chatbot-message-wrapper ${msg.sender} ${msg.sender === 'human' ? 'chatbot-message-wrapper--human' : ''}`}>
-            <div className={`chatbot-message-row ${msg.sender === 'human' ? 'chatbot-message-row--human' : ''}`}>
-              {msg.sender === 'human' && (
-                <div className="chatbot-avatar chatbot-avatar--human" aria-hidden="true" title="Agent">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <div key={idx} className={`chatbot-message ${msg.sender}`}>
+            {msg.sender !== 'user' && (
+              <div className="message-avatar" aria-hidden="true">
+                {msg.sender === 'human' ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
                     <circle cx="12" cy="7" r="4"></circle>
                   </svg>
-                </div>
-              )}
-              <div className={`chatbot-message-content ${msg.sender === 'user' ? 'chatbot-message-content--user' : ''}`}>
-                <div className={`chatbot-message ${msg.sender} ${msg.isFallback ? 'fallback' : ''} ${msg.isError ? 'error' : ''}`}>
-                  {typeof msg.text === 'object' && msg.text.text ? (
-                    <>
-                      <div>{msg.text.text}</div>
-                      {msg.text.actions && msg.text.actions.length > 0 && (
-                        <div className="message-actions">
-                          {msg.text.actions.map((action, aIdx) => (
-                            <button
-                              key={aIdx}
-                              className="message-action-btn"
-                              onClick={() => handleQuickAction(action.action)}
-                              title={action.text}
-                            >
-                              <span className="action-emoji">{action.icon}</span>
-                              <span>{action.text}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    msg.text
-                  )}
-                </div>
-                <div className={`message-meta ${msg.sender === 'user' ? 'message-meta--user' : ''}`}>
-                  <div className="message-timestamp">{formatTime(msg.timestamp)}</div>
-                  {msg.isAgentConversation && msg.sender === 'user' && msg.deliveryStatus && (
-                    <div className={`message-status message-status--${msg.deliveryStatus}`}>
-                      {msg.deliveryStatus === 'sent' && 'Sent'}
-                      {msg.deliveryStatus === 'delivered' && 'Delivered'}
-                      {msg.deliveryStatus === 'seen' && 'Seen'}
-                    </div>
-                  )}
-                </div>
+                ) : (
+                  <span>🤖</span>
+                )}
+              </div>
+            )}
+            <div className="message-content">
+              <div className={`chatbot-message-text ${msg.isFallback ? 'fallback' : ''} ${msg.isError ? 'error' : ''}`}>
+                {typeof msg.text === 'object' && msg.text.text ? (
+                  <>
+                    <div>{msg.text.text}</div>
+                    {msg.text.actions && msg.text.actions.length > 0 && (
+                      <div className="message-actions">
+                        {msg.text.actions.map((action, aIdx) => (
+                          <button
+                            key={aIdx}
+                            className="message-action-btn"
+                            onClick={() => handleQuickAction(action.action)}
+                            title={action.text}
+                          >
+                            <span className="action-emoji">{action.icon}</span>
+                            <span>{action.text}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  msg.text
+                )}
+              </div>
+              <div className={`message-meta ${msg.sender === 'user' ? 'message-meta--user' : ''}`}>
+                <div className="message-timestamp">{formatTime(msg.timestamp)}</div>
+                {msg.isAgentConversation && msg.sender === 'user' && msg.deliveryStatus && (
+                  <div className={`message-status message-status--${msg.deliveryStatus}`}>
+                    {msg.deliveryStatus === 'sent' && 'Sent'}
+                    {msg.deliveryStatus === 'delivered' && 'Delivered'}
+                    {msg.deliveryStatus === 'seen' && 'Seen'}
+                  </div>
+                )}
               </div>
             </div>
           </div>
         ))}
         {isTyping && (
-          <div className="chatbot-message-wrapper bot">
-            <div className="chatbot-message bot typing-indicator">
-              <span></span>
-              <span></span>
-              <span></span>
+          <div className="chatbot-message bot">
+            <div className="message-avatar">
+              <span>🤖</span>
+            </div>
+            <div className="typing-indicator">
+              <div className="typing-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
             </div>
           </div>
         )}
         {showSuggestions && messages.length <= 1 && !isTyping && (
           <div className="chatbot-suggestions">
             <div className="suggestions-title">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display: 'inline', marginRight: '6px'}}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{display: 'inline', marginRight: '6px'}}>
                 <circle cx="12" cy="12" r="10"></circle>
                 <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
                 <line x1="12" y1="17" x2="12.01" y2="17"></line>

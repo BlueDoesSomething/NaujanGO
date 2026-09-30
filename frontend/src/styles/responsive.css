@@ -1728,21 +1728,25 @@ img, video, svg {
   }
 
   .chatbot-container {
-    width: calc(100vw - 24px) !important;
-    max-width: 420px;
-    right: 12px !important;
-    bottom: 88px !important;
-    max-height: calc(100vh - 100px) !important;
+    width: calc(100vw - 40px) !important;
+    max-width: 400px !important;
+    right: 20px !important;
+    bottom: 96px !important;
+    max-height: calc(100vh - 120px) !important;
+    border-radius: 20px !important;
   }
 }
 
 @media (max-width: 480px) {
   .chatbot-container {
-    width: calc(100vw - 16px) !important;
-    right: 8px !important;
-    left: 8px !important;
-    bottom: 80px !important;
-    max-height: calc(100svh - 90px) !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    right: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    border-radius: 0 !important;
+    border: none !important;
   }
 }
 
