@@ -188,6 +188,8 @@ const Chatbot = ({ language }) => {
   const [agentMode, setAgentMode] = useState(false);
   const [agentGreetingSent, setAgentGreetingSent] = useState(false);
   const [startingAgentConversation, setStartingAgentConversation] = useState(false);
+  const [agentName, setAgentName] = useState('');
+  const [showQuickActions, setShowQuickActions] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [interimText, setInterimText] = useState('');
   const [voiceError, setVoiceError] = useState('');
@@ -895,8 +897,12 @@ const Chatbot = ({ language }) => {
             // avoid duplicate: if last message matches text+sender, skip
             const last = prev[prev.length - 1];
             if (last && last.sender === m.sender && last.text === m.text) return prev;
-            const sender = (m.sender || 'user').toLowerCase();
-            return [...prev, {
+          const sender = (m.sender || 'user').toLowerCase();
+          if (sender === 'human') {
+            const name = m.agent_name || m.sender_name || m.display_name;
+            if (name) setAgentName(name);
+          }
+          return [...prev, {
               sender,
               text: m.text || m.response_text || '',
               timestamp: new Date(m.sent_at || Date.now()),
@@ -1288,7 +1294,13 @@ const Chatbot = ({ language }) => {
             <div className="chatbot-title">{getText('assistant')}</div>
             <div className="chatbot-status">
               <span className="chatbot-status-dot"></span>
-              <span>{isTyping ? getText('typing') : getText('online')}</span>
+              <span>
+                {isTyping
+                  ? getText('typing')
+                  : agentMode
+                    ? `Online · ${agentName || 'Agent'} (Agent)`
+                    : 'Online · AI Assistant'}
+              </span>
             </div>
           </div>
           <button onClick={toggleChatbot} aria-label={getText('close')} className="chatbot-close-button">
@@ -1358,25 +1370,26 @@ const Chatbot = ({ language }) => {
                 if (agentMode) {
                   setAgentMode(false);
                   setAgentGreetingSent(false);
+                  setAgentName('');
                 } else {
                   startAgentConversation();
                 }
               }}
               aria-pressed={agentMode}
-              className={`chatbot-action-button agent-toggle-btn ${(agentMode || startingAgentConversation) ? 'active' : ''}`}
+              className={`chatbot-action-button agent-toggle-btn ${(agentMode || startingAgentConversation) ? 'human-mode' : ''}`}
               title={startingAgentConversation ? 'Starting human agent chat...' : (agentMode ? 'Disable agent chat' : 'Switch to human agent chat')}
               aria-label={startingAgentConversation ? 'Starting human agent chat' : (agentMode ? 'Human agent chat enabled' : 'Human agent chat disabled')}
               disabled={startingAgentConversation}
             >
               <span className="agent-toggle-label">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M4 21v-2a4 4 0 0 1 4-4h0" />
-                  <circle cx="8" cy="7" r="3" />
-                  <rect x="13" y="6" width="6" height="6" rx="1" />
-                  <path d="M16 12v2" />
-                  <path d="M13 9h6" />
-                </svg>
-                <span>{agentMode ? 'Human' : 'AI Mode'}</span>
+                <span className="agent-icon-wrap">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                  </svg>
+                  <span className="agent-dot"></span>
+                </span>
+                <span className="agent-label">{agentMode ? 'Human' : 'AI Mode'}</span>
               </span>
             </button>
           )}
@@ -1412,22 +1425,17 @@ const Chatbot = ({ language }) => {
         <div className="chatbot-welcome-banner">
           <div className="welcome-icon">👋</div>
           <div className="welcome-body">
-            <div className="welcome-title">{getText('assistant')}</div>
-            <div className="welcome-text">{getText('welcome')}</div>
+            <div className="welcome-title">Welcome to Naujan!</div>
+            <div className="welcome-text">I'm your travel assistant. Ask me about attractions, weather, or let me plan your trip.</div>
           </div>
         </div>
       )}
 
       {/* Human Agent Mode Banner */}
-      {agentMode && (
-        <div className="chatbot-mode-banner">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-          <span>Connected to a human agent — replies may take a moment</span>
-        </div>
-      )}
+      <div className={`chatbot-mode-banner ${agentMode ? 'visible' : ''}`}>
+        <span className="mode-dot"></span>
+        <span>Connected to Human Agent{agentName ? ` · ${agentName}` : ''}</span>
+      </div>
 
       {/* Conversation History Panel */}
       {showHistory && isLoggedIn && (
@@ -1576,19 +1584,13 @@ const Chatbot = ({ language }) => {
       <div className={`chatbot-messages ${showHistory ? 'chatbot-messages--hidden' : ''}`}>
         {messages.map((msg, idx) => (
           <div key={idx} className={`chatbot-message ${msg.sender}`}>
-            {msg.sender !== 'user' && (
-              <div className="message-avatar" aria-hidden="true">
-                {msg.sender === 'human' ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                ) : (
-                  <span>🤖</span>
-                )}
-              </div>
-            )}
             <div className="message-content">
+              {msg.sender === 'human' && (
+                <div className="agent-badge">
+                  <span className="badge-dot"></span>
+                  {agentName || 'Agent'} · Human Agent
+                </div>
+              )}
               <div className={`chatbot-message-text ${msg.isFallback ? 'fallback' : ''} ${msg.isError ? 'error' : ''}`}>
                 {typeof msg.text === 'object' && msg.text.text ? (
                   <>
@@ -1613,31 +1615,22 @@ const Chatbot = ({ language }) => {
                   msg.text
                 )}
               </div>
-              <div className={`message-meta ${msg.sender === 'user' ? 'message-meta--user' : ''}`}>
-                <div className="message-timestamp">{formatTime(msg.timestamp)}</div>
-                {msg.isAgentConversation && msg.sender === 'user' && msg.deliveryStatus && (
-                  <div className={`message-status message-status--${msg.deliveryStatus}`}>
-                    {msg.deliveryStatus === 'sent' && 'Sent'}
-                    {msg.deliveryStatus === 'delivered' && 'Delivered'}
-                    {msg.deliveryStatus === 'seen' && 'Seen'}
-                  </div>
-                )}
-              </div>
             </div>
+            <div className="message-time">{formatTime(msg.timestamp)}</div>
+            {msg.isAgentConversation && msg.sender === 'user' && msg.deliveryStatus && (
+              <div className={`message-status message-status--${msg.deliveryStatus}`}>
+                {msg.deliveryStatus === 'sent' && 'Sent'}
+                {msg.deliveryStatus === 'delivered' && 'Delivered'}
+                {msg.deliveryStatus === 'seen' && 'Seen'}
+              </div>
+            )}
           </div>
         ))}
         {isTyping && (
-          <div className="chatbot-message bot">
-            <div className="message-avatar">
-              <span>🤖</span>
-            </div>
-            <div className="typing-indicator">
-              <div className="typing-dots">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-            </div>
+          <div className="typing-indicator">
+            <div className="typing-dot"></div>
+            <div className="typing-dot"></div>
+            <div className="typing-dot"></div>
           </div>
         )}
         {showSuggestions && messages.length <= 1 && !isTyping && (
@@ -1666,66 +1659,88 @@ const Chatbot = ({ language }) => {
         <div ref={messagesEndRef} />
       </div>
       <div className={`quick-actions-bar ${showHistory ? 'quick-actions-bar--hidden' : ''}`}>
-        {currentQuickActions.map((action, idx) => (
+        <div className="quick-actions-header" onClick={() => setShowQuickActions((v) => !v)}>
+          <div className="quick-actions-label">
+            <span className="label-dot"></span>
+            Quick Actions
+          </div>
           <button
-            key={idx}
-            className="quick-action-btn"
-            onClick={() => handleQuickAction(action.action)}
-            disabled={isTyping}
-            title={action.text}
+            className={`quick-actions-toggle ${showQuickActions ? '' : 'collapsed'}`}
+            title="Toggle Quick Actions"
+            aria-label="Toggle Quick Actions"
+            onClick={(e) => { e.stopPropagation(); setShowQuickActions((v) => !v); }}
           >
-            <span className="action-icon">{action.icon}</span>
-            <span className="action-text">{action.text}</span>
+            <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
           </button>
-        ))}
+        </div>
+        <div className={`quick-actions-content ${showQuickActions ? '' : 'collapsed'}`}>
+          <div className="quick-actions-grid">
+            {currentQuickActions.map((action, idx) => (
+              <button
+                key={idx}
+                className="quick-action-btn"
+                onClick={() => handleQuickAction(action.action)}
+                disabled={isTyping}
+                title={action.text}
+              >
+                <span className="action-icon">{action.icon}</span>
+                <span className="action-text">{action.text}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
       <div className="chatbot-input-area">
-        <textarea
-          ref={inputRef}
-          value={inputText}
-          onChange={handleInputChange}
-          onKeyPress={handleKeyPress}
-          placeholder={isListening ? (interimText || t('chatbot_listening')) : getText('placeholder')}
-          rows={2}
-          disabled={isTyping}
-        />
-        <button 
-          onClick={toggleVoiceRecognition}
-          className={`voice-button ${isListening ? 'listening' : ''}`}
-          aria-label={t('chatbot_voice_input')}
-          disabled={isTyping}
-          title={isListening ? t('chatbot_stop_recording_title') : t('chatbot_start_recording')}
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-            <line x1="12" y1="19" x2="12" y2="23"></line>
-            <line x1="8" y1="23" x2="16" y2="23"></line>
-          </svg>
-        </button>
-        <button 
-          onClick={handleSendMessage} 
-          className={`send-button ${agentMode ? 'human-send' : ''}`} 
-          aria-label={agentMode ? 'Send to human agent' : (t('send_message') || 'Send message')}
-          disabled={!inputText.trim() || isTyping}
-        >
-          {isTyping && !agentMode ? (
+        <div className="input-wrapper">
+          <textarea
+            ref={inputRef}
+            value={inputText}
+            onChange={handleInputChange}
+            onKeyPress={handleKeyPress}
+            placeholder={isListening ? (interimText || t('chatbot_listening')) : getText('placeholder')}
+            rows={1}
+            disabled={isTyping}
+          />
+        </div>
+        <div className="input-actions">
+          <button 
+            onClick={toggleVoiceRecognition}
+            className={`voice-button ${isListening ? 'listening' : ''}`}
+            aria-label={t('chatbot_voice_input')}
+            disabled={isTyping}
+            title={isListening ? t('chatbot_stop_recording_title') : t('chatbot_start_recording')}
+          >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+              <line x1="12" y1="19" x2="12" y2="23"></line>
+              <line x1="8" y1="23" x2="16" y2="23"></line>
             </svg>
-          ) : agentMode ? (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 12h16"></path>
-              <path d="M13 5l7 7-7 7"></path>
-            </svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
-          )}
-        </button>
+          </button>
+          <button 
+            onClick={handleSendMessage} 
+            className={`send-button ${agentMode ? 'human-send' : ''}`} 
+            aria-label={agentMode ? 'Send to human agent' : (t('send_message') || 'Send message')}
+            disabled={!inputText.trim() || isTyping}
+          >
+            {isTyping && !agentMode ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            ) : agentMode ? (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 12h16"></path>
+                <path d="M13 5l7 7-7 7"></path>
+              </svg>
+            ) : (
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"></line>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
       {voiceError && (
         <div className="voice-error">

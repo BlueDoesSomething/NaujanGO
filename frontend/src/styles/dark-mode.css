@@ -115,9 +115,7 @@
 [data-theme="dark"] .dashboard-main,
 [data-theme="dark"] .user-info,
 [data-theme="dark"] .slide,
-[data-theme="dark"] .slide-overlay,
-[data-theme="dark"] .chatbot-body,
-[data-theme="dark"] .chatbot-input-container {
+[data-theme="dark"] .slide-overlay {
   background: #1e293b !important;
   color: #f1f5f9 !important;
 }
@@ -279,56 +277,11 @@
 }
 
 /* ── 7. Chatbot ─────────────────────────────────────────── */
-/* Chatbot uses its own dark-navy prototype theme (Chatbot.css).
-   These overrides reinforce the same colors in app dark mode. */
-[data-theme="dark"] .chatbot-container {
-  background: #152238;
-  border: 1px solid #1e3a5f;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
-}
+/* Chatbot uses its own CSS variable theme system (Chatbot.css).
+   Dark is default; light applies via [data-theme="light"] .chatbot-container
+   or .light-mode class. No overrides needed here. */
 
-[data-theme="dark"] .chatbot-header {
-  background: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #16a34a 100%);
-}
-
-[data-theme="dark"] .chatbot-messages,
-[data-theme="dark"] .chat-messages {
-  background: #152238;
-}
-
-[data-theme="dark"] .chatbot-input-area,
-[data-theme="dark"] .chat-input-area {
-  background: #0f1f35;
-  border-top: 1px solid #1e3a5f;
-}
-
-[data-theme="dark"] .chatbot-input,
-[data-theme="dark"] .chat-input {
-  background: #1a2d47;
-  border-color: #1e3a5f;
-  color: #e2e8f0;
-}
-
-[data-theme="dark"] .bot-message {
-  background: #1e293b;
-  color: #f1f5f9;
-  border: 1px solid #334155;
-}
-
-[data-theme="dark"] .quick-actions button,
-[data-theme="dark"] .suggestion-chip {
-  background: #1e293b;
-  border-color: #334155;
-  color: #f1f5f9;
-}
-
-[data-theme="dark"] .quick-actions button:hover,
-[data-theme="dark"] .suggestion-chip:hover {
-  background: #334155;
-  border-color: #16a34a;
-}
-
-/* â”€â”€ 8. Admin Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── 8. Admin Dashboard ── */
 [data-theme="dark"] .gov-dashboard {
   background: #0f172a;
   color: #f1f5f9;
@@ -1599,82 +1552,10 @@
 
 /* ─────────────────────────────────────────────────────────
    40. CHATBOT - comprehensive coverage
-   Chatbot uses its own dark-navy prototype theme (Chatbot.css).
-   These reinforce the same colors in app dark mode.
+   Chatbot uses its own CSS variable theme system (Chatbot.css).
+   Dark is default; light applies via [data-theme="light"] .chatbot-container
+   or .light-mode class. No overrides needed here.
    ───────────────────────────────────────────────────────── */
-[data-theme="dark"] .chatbot-container,
-[data-theme="dark"] .chatbot-popup {
-  background: #152238 !important;
-}
-
-[data-theme="dark"] .chatbot-messages,
-[data-theme="dark"] .chat-messages,
-[data-theme="dark"] .chatbot-body {
-  background: #152238 !important;
-}
-
-[data-theme="dark"] .chatbot-input-area,
-[data-theme="dark"] .chat-input-area,
-[data-theme="dark"] .chatbot-input-container {
-  background: #0f1f35 !important;
-  border-color: #1e3a5f !important;
-}
-
-[data-theme="dark"] .chatbot-input,
-[data-theme="dark"] .chat-input,
-[data-theme="dark"] .chatbot-input input,
-[data-theme="dark"] .chat-input input {
-  background: #1a2d47 !important;
-  border-color: #1e3a5f !important;
-  color: #e2e8f0 !important;
-}
-
-[data-theme="dark"] .user-message,
-[data-theme="dark"] .chat-user-message {
-  background: #16a34a !important;
-  color: #ffffff !important;
-}
-
-[data-theme="dark"] .bot-message,
-[data-theme="dark"] .chat-bot-message {
-  background: #1a2d47 !important;
-  color: #e2e8f0 !important;
-  border-color: #1e3a5f !important;
-}
-
-[data-theme="dark"] .chatbot-typing,
-[data-theme="dark"] .typing-indicator {
-  background: #1a2d47 !important;
-  color: #cbd5e1 !important;
-}
-
-[data-theme="dark"] .suggestion-chip,
-[data-theme="dark"] .quick-actions button,
-[data-theme="dark"] .chatbot-suggestions button {
-  background: #1a2d47 !important;
-  border-color: #1e3a5f !important;
-  color: #cbd5e1 !important;
-}
-
-[data-theme="dark"] .suggestion-chip:hover,
-[data-theme="dark"] .quick-actions button:hover,
-[data-theme="dark"] .chatbot-suggestions button:hover {
-  background: rgba(22, 163, 74, 0.15) !important;
-  border-color: #16a34a !important;
-  color: #4ade80 !important;
-}
-
-[data-theme="dark"] .chatbot-action-btn,
-[data-theme="dark"] .chatbot-send-btn {
-  background: #16a34a !important;
-  color: #ffffff !important;
-}
-
-[data-theme="dark"] .chatbot-welcome,
-[data-theme="dark"] .welcome-message {
-  background: #152238 !important;
-  color: #e2e8f0 !important;
-}
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    41. USER DASHBOARD (logged-in home)
@@ -2706,211 +2587,9 @@
 
 /* ════════════════════════════════════════════════
    55. CHATBOT - remaining uncovered selectors
+   Chatbot uses its own CSS variable theme system (Chatbot.css).
+   No overrides needed here.
    ════════════════════════════════════════════════ */
-
-/* Header icon */
-[data-theme="dark"] .header-icon {
-  background: rgba(255, 255, 255, 0.12) !important;
-  border-color: rgba(255, 255, 255, 0.18) !important;
-}
-
-/* Bot message bubbles (class .chatbot-message.bot vs .bot-message) */
-[data-theme="dark"] .chatbot-message.bot {
-  background: #1a2d47 !important;
-  color: #e2e8f0 !important;
-  border-color: #1e3a5f !important;
-}
-
-[data-theme="dark"] .chatbot-message.bot.fallback {
-  background: rgba(234, 179, 8, 0.12) !important;
-  border-color: rgba(234, 179, 8, 0.3) !important;
-  color: #fbbf24 !important;
-}
-
-[data-theme="dark"] .chatbot-message.bot.error {
-  background: rgba(239, 68, 68, 0.12) !important;
-  border-color: rgba(239, 68, 68, 0.3) !important;
-  color: #fca5a5 !important;
-}
-
-/* Quick actions bar */
-[data-theme="dark"] .quick-actions-bar {
-  background: #0f1f35 !important;
-  border-color: #1e3a5f !important;
-}
-
-[data-theme="dark"] .quick-action-btn {
-  background: #1a2d47 !important;
-  border-color: #1e3a5f !important;
-  color: #cbd5e1 !important;
-}
-
-[data-theme="dark"] .quick-action-btn:hover {
-  background: rgba(22, 163, 74, 0.12) !important;
-  border-color: #16a34a !important;
-  color: #4ade80 !important;
-}
-
-[data-theme="dark"] .action-text {
-  color: #cbd5e1 !important;
-}
-
-/* Textarea inside chatbot */
-[data-theme="dark"] .chatbot-input-area textarea {
-  background: #1a2d47 !important;
-  border-color: #1e3a5f !important;
-  color: #e2e8f0 !important;
-}
-
-[data-theme="dark"] .chatbot-input-area textarea:focus {
-  background: #1a2d47 !important;
-  border-color: #16a34a !important;
-}
-
-[data-theme="dark"] .chatbot-input-area textarea:disabled {
-  background: rgba(255, 255, 255, 0.04) !important;
-  color: #94a3b8 !important;
-}
-
-/* Suggestions area */
-[data-theme="dark"] .chatbot-suggestions {
-  background: rgba(22, 163, 74, 0.08) !important;
-  border-color: rgba(22, 163, 74, 0.15) !important;
-}
-
-[data-theme="dark"] .suggestions-title {
-  color: #4ade80 !important;
-}
-
-[data-theme="dark"] .suggestion-chip {
-  background: #1a2d47 !important;
-  color: #cbd5e1 !important;
-  border-color: #1e3a5f !important;
-}
-
-[data-theme="dark"] .suggestion-chip:hover {
-  background: rgba(22, 163, 74, 0.15) !important;
-  border-color: #16a34a !important;
-}
-
-/* Language dropdown */
-[data-theme="dark"] .language-dropdown {
-  background: #1a2d47 !important;
-  border-color: #1e3a5f !important;
-}
-
-[data-theme="dark"] .language-option {
-  background: #1a2d47 !important;
-  color: #e2e8f0 !important;
-}
-
-[data-theme="dark"] .language-option:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-}
-
-[data-theme="dark"] .language-option.active {
-  background: rgba(22, 163, 74, 0.14) !important;
-  color: #4ade80 !important;
-}
-
-/* History panel */
-[data-theme="dark"] .chatbot-history-panel {
-  background: #0f1f35 !important;
-  border-color: #1e3a5f !important;
-}
-
-[data-theme="dark"] .history-header {
-  background: #152238 !important;
-  border-color: #1e3a5f !important;
-}
-
-[data-theme="dark"] .history-header h3 {
-  color: #4ade80 !important;
-}
-
-[data-theme="dark"] .history-item {
-  background: #1a2d47 !important;
-  border-color: #1e3a5f !important;
-  color: #e2e8f0 !important;
-}
-
-[data-theme="dark"] .history-item:hover {
-  background: #1a2d47 !important;
-  border-color: #16a34a !important;
-}
-
-[data-theme="dark"] .history-item--agent {
-  background: linear-gradient(180deg, rgba(22, 163, 74, 0.08) 0%, #1a2d47 100%) !important;
-}
-
-[data-theme="dark"] .history-item--ai {
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.06) 0%, #1a2d47 100%) !important;
-}
-
-[data-theme="dark"] .history-date {
-  color: #cbd5e1 !important;
-}
-
-[data-theme="dark"] .history-count {
-  color: #94a3b8 !important;
-}
-
-[data-theme="dark"] .history-loading,
-[data-theme="dark"] .history-empty {
-  color: #94a3b8 !important;
-}
-
-/* Moderation panel */
-[data-theme="dark"] .chatbot-moderation-panel {
-  background: #1a2d47 !important;
-  border-color: #1e3a5f !important;
-}
-
-[data-theme="dark"] .moderation-header h3 {
-  color: #e2e8f0 !important;
-}
-
-[data-theme="dark"] .moderation-item {
-  background: #0f1f35 !important;
-  border-color: #1e3a5f !important;
-}
-
-[data-theme="dark"] .moderation-text {
-  color: #e2e8f0 !important;
-}
-
-[data-theme="dark"] .moderation-reply-box {
-  background: #0f1f35 !important;
-  border-color: #1e3a5f !important;
-}
-
-[data-theme="dark"] .moderation-reply-input {
-  background: #1a2d47 !important;
-  color: #e2e8f0 !important;
-  border-color: #1e3a5f !important;
-}
-
-[data-theme="dark"] .moderation-reply-cancel {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #cbd5e1 !important;
-}
-
-[data-theme="dark"] .moderation-reply-cancel:hover {
-  background: rgba(255, 255, 255, 0.14) !important;
-}
-
-/* Chatbot scrollbar */
-[data-theme="dark"] .chatbot-messages::-webkit-scrollbar-track {
-  background: transparent !important;
-}
-
-[data-theme="dark"] .chatbot-messages::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.3) !important;
-}
-
-[data-theme="dark"] .chatbot-messages::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.45) !important;
-}
 
 /* ════════════════════════════════════════════════
    56. REMAINING WHITE ELEMENTS - comprehensive sweep
