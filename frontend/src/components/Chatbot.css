@@ -298,6 +298,9 @@
   font-size: var(--header-status-size);
   color: rgba(255, 255, 255, 0.9);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chatbot-status-dot {
@@ -318,10 +321,11 @@
 .chatbot-close-button {
   width: 36px;
   height: 36px;
-  background: var(--header-glass);
+  min-width: 36px;
+  background: rgba(255, 255, 255, 0.28);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid var(--header-glass-border);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   border-radius: 10px;
   color: white;
   display: flex;
@@ -349,8 +353,9 @@
 }
 
 .chatbot-action-button {
-  flex: 1;
-  min-width: 52px;
+  flex: 0 1 auto;
+  width: 48px;
+  min-width: 48px;
   height: 48px;
   background: var(--header-glass);
   backdrop-filter: blur(10px);
@@ -367,7 +372,7 @@
   font-weight: 600;
   position: relative;
   overflow: hidden;
-  padding: 0 8px;
+  padding: 0;
 }
 
 .chatbot-action-button::before {
@@ -413,13 +418,14 @@
 
 /* Agent toggle — vertical layout */
 .agent-toggle-btn {
-  flex: 1.5;
-  min-width: 85px;
-  padding: 0 10px;
+  flex: 0 1 auto;
+  width: auto;
+  min-width: 72px;
+  padding: 0 8px;
   flex-direction: column;
   gap: 2px;
   height: auto;
-  min-height: 52px;
+  min-height: 48px;
 }
 
 .agent-toggle-label {
@@ -443,6 +449,7 @@
   text-transform: uppercase;
   position: relative;
   z-index: 1;
+  white-space: nowrap;
 }
 
 .agent-toggle-label .agent-dot {
@@ -858,7 +865,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   transition: color 0.2s ease;
 }
 
@@ -869,9 +876,9 @@
   left: 50%;
   transform: translateX(-50%);
   width: 1px;
-  height: 6px;
+  height: 8px;
   background: currentColor;
-  opacity: 0.45;
+  opacity: 0.6;
 }
 
 .quick-actions-toggle:hover {
@@ -879,9 +886,9 @@
 }
 
 .quick-actions-toggle svg {
-  width: 10px;
-  height: 10px;
-  margin-top: 6px;
+  width: 12px;
+  height: 12px;
+  margin-top: 8px;
   stroke: currentColor;
   fill: none;
   stroke-width: 2.5;
@@ -1664,22 +1671,22 @@
   .chatbot-header-actions { gap: 5px; }
 
   .chatbot-action-button {
-    min-width: 44px;
+    width: 42px;
+    min-width: 42px;
     height: 42px;
     font-size: 14px;
-    padding: 0 6px;
   }
 
   .chatbot-action-button svg { width: 16px; height: 16px; }
 
   .agent-toggle-btn {
-    min-width: 70px;
+    min-width: 64px;
     min-height: 42px;
   }
 
   .agent-toggle-label .agent-label { font-size: 8px; }
 
-  .chatbot-close-button { width: 32px; height: 32px; }
+  .chatbot-close-button { width: 32px; height: 32px; min-width: 32px; }
 
   .quick-actions-grid { gap: 5px; }
   .chatbot-message { max-width: 90%; }
@@ -1725,20 +1732,20 @@
   .chatbot-header-actions { gap: 6px; }
 
   .chatbot-action-button {
-    min-width: 48px;
+    width: 46px;
+    min-width: 46px;
     height: 44px;
     font-size: 16px;
-    padding: 0 6px;
   }
 
   .chatbot-action-button svg { width: 18px; height: 18px; }
 
   .agent-toggle-btn {
-    min-width: 80px;
-    min-height: 46px;
+    min-width: 68px;
+    min-height: 44px;
   }
 
-  .chatbot-close-button { width: 34px; height: 34px; }
+  .chatbot-close-button { width: 34px; height: 34px; min-width: 34px; }
 
   .quick-actions-grid { gap: 6px; }
 
@@ -1779,20 +1786,20 @@
   .chatbot-header-actions { gap: 6px; }
 
   .chatbot-action-button {
+    width: 48px;
     min-width: 48px;
     height: 44px;
     font-size: 16px;
-    padding: 0 6px;
   }
 
   .chatbot-action-button svg { width: 18px; height: 18px; }
 
   .agent-toggle-btn {
-    min-width: 80px;
-    min-height: 46px;
+    min-width: 72px;
+    min-height: 44px;
   }
 
-  .chatbot-close-button { width: 34px; height: 34px; }
+  .chatbot-close-button { width: 34px; height: 34px; min-width: 34px; }
 }
 
 /* ===== Tablets (769px - 1024px) ===== */
@@ -1840,20 +1847,20 @@
   .chatbot-header-actions { gap: 5px; }
 
   .chatbot-action-button {
-    min-width: 44px;
+    width: 40px;
+    min-width: 40px;
     height: 38px;
     font-size: 14px;
-    padding: 0 6px;
   }
 
   .chatbot-action-button svg { width: 16px; height: 16px; }
 
   .agent-toggle-btn {
-    min-width: 70px;
+    min-width: 60px;
     min-height: 38px;
   }
 
-  .chatbot-close-button { width: 32px; height: 32px; }
+  .chatbot-close-button { width: 32px; height: 32px; min-width: 32px; }
 
   .chatbot-messages { gap: 10px; }
   .chatbot-message { max-width: 80%; }
