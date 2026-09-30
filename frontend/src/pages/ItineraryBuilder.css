@@ -51,7 +51,7 @@
 
 .search-input-icon {
   position: absolute;
-  left: 16px;
+  left: 24px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-muted, #5a6f85);
@@ -64,7 +64,7 @@
   width: 100%;
   border: 1px solid var(--border-color, #1e3a5f);
   border-radius: 12px;
-  padding: 10px 40px 10px 46px;
+  padding: 10px 40px 10px 56px;
   font-size: 14px;
   background: var(--bg-input, #1a2d47);
   color: var(--text-primary, #e8edf3);
