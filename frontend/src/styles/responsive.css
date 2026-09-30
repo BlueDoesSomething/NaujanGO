@@ -1714,50 +1714,6 @@ img, video, svg {
   }
 }
 
-/* ==================== CHATBOT RESPONSIVE ==================== */
-@media (max-width: 768px) {
-  .chatbot-widget-wrapper {
-    bottom: 20px;
-    right: 16px;
-  }
-
-  .chatbot-widget {
-    width: 56px;
-    height: 56px;
-    font-size: 26px;
-  }
-
-  .chatbot-container {
-    width: calc(100vw - 40px) !important;
-    max-width: 400px !important;
-    right: 20px !important;
-    bottom: 96px !important;
-    max-height: calc(100vh - 120px) !important;
-    border-radius: 20px !important;
-  }
-}
-
-@media (max-width: 480px) {
-  .chatbot-container {
-    width: 100vw !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
-    right: 0 !important;
-    left: 0 !important;
-    bottom: 0 !important;
-    border-radius: 0 !important;
-    border: none !important;
-  }
-}
-
-/* Landscape mode: chatbot avoids blocking content */
-@media (max-width: 768px) and (orientation: landscape) {
-  .chatbot-container {
-    max-height: calc(100vh - 80px) !important;
-    bottom: 72px !important;
-  }
-}
-
 /* ==================== ANNOUNCEMENT BAR RESPONSIVE ==================== */
 @media (max-width: 768px) {
   .announcement-bar {
