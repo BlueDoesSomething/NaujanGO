@@ -2091,7 +2091,7 @@ const styles = {
     gap: 0
   },
   tab: {
-    flex: 1,
+    flex: 'none',
     padding: '12px 24px',
     border: 'none',
     borderBottom: '3px solid transparent',
@@ -2108,7 +2108,7 @@ const styles = {
     transition: 'all 0.2s'
   },
   tabActive: {
-    flex: 1,
+    flex: 'none',
     padding: '12px 24px',
     border: 'none',
     borderBottom: `3px solid ${THEME.primary}`,
