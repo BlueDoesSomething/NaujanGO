@@ -208,7 +208,6 @@ const Attractions = () => {
   return (
     <div className="attractions-page">
       <HeroSlideshow
-        className="attractions-hero"
         title={t('discover_naujan')}
         subtitle={`${Array.isArray(attractions) ? attractions.length : 0} ${t('attractions')} ${t('in_oriental_mindoro')}`}
         height="470px"

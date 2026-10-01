@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getApiBaseUrl } from '../api';
 import { loadCachedSetting, saveCachedSetting } from '../utils/siteSettingsCache';
+import './HeroSlideshow.css';
 
 const DEFAULT_IMAGES = [
   'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80',
@@ -63,7 +64,7 @@ const HeroSlideshow = ({ title, subtitle, height = '500px', images: customImages
   const prevSlide = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
 
   return (
-    <div className={`hero-slideshow ${className}`.trim()} style={{ ...styles.heroContainer, height }}>
+    <div className={`hero-slideshow ng-hero ${className}`.trim()} style={{ ...styles.heroContainer, height }}>
       {images.map((image, index) => (
         <div
           key={index}
