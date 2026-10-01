@@ -500,13 +500,13 @@ a.navbar-link.active,
   font-weight: 600;
   font-size: 0.875rem;
   transition: all 0.3s ease;
-  max-width: 220px;
-  min-width: 0;
+  max-width: 200px;
+  overflow: hidden;
 }
 
 .account-name {
   color: #ffffff;
-  max-width: 120px;
+  max-width: 110px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -527,15 +527,15 @@ a.navbar-link.active,
 
 .account-alert-badge {
   position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #f59e0b;
-  border: 2px solid rgba(10, 14, 23, 0.85);
+  top: -4px;
+  left: -4px;
+  color: #facc15;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
   pointer-events: none;
-  z-index: 1;
+  z-index: 2;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.45);
 }
 
 .dropdown-arrow {
@@ -1904,9 +1904,6 @@ a.navbar-link.active,
 }
 [data-theme="light"] .account-name {
   color: #0f172a;
-}
-[data-theme="light"] .account-alert-badge {
-  border-color: rgba(15, 23, 42, 0.85);
 }
 [data-theme="light"] .dropdown-arrow {
   color: #0f172a;
