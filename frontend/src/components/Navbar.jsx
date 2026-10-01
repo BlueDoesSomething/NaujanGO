@@ -452,7 +452,7 @@ const Navbar = () => {
                         className="account-avatar-img"
                       />
                       {needsDemographics && (
-                        <span className="account-alert-badge" aria-label="Profile incomplete">!</span>
+                        <span className="account-alert-badge" aria-label="Profile incomplete" />
                       )}
                     </span>
                   ) : (
@@ -461,7 +461,7 @@ const Navbar = () => {
                         {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
                       </span>
                       {needsDemographics && (
-                        <span className="account-alert-badge" aria-label="Profile incomplete">!</span>
+                        <span className="account-alert-badge" aria-label="Profile incomplete" />
                       )}
                     </span>
                   )}
@@ -477,6 +477,11 @@ const Navbar = () => {
                     role="menu"
                     aria-label="Account options"
                   >
+                    {user?.username && (
+                      <li className="dropdown-username-header" role="none">
+                        {user.username}
+                      </li>
+                    )}
                     <li className="dropdown-item" role="none">
                       <Link
                         to="/profile"

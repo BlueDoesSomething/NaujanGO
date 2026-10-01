@@ -527,15 +527,15 @@ a.navbar-link.active,
 
 .account-alert-badge {
   position: absolute;
-  top: -4px;
-  left: -4px;
-  color: #facc15;
-  font-size: 14px;
-  font-weight: 800;
-  line-height: 1;
+  top: -3px;
+  right: -3px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f59e0b;
+  border: 2px solid rgba(10, 14, 23, 0.85);
   pointer-events: none;
   z-index: 2;
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.45);
 }
 
 .dropdown-arrow {
@@ -560,7 +560,6 @@ a.navbar-link.active,
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: pulse 2s ease-in-out infinite;
 }
 
 .account-avatar-img {
@@ -569,7 +568,6 @@ a.navbar-link.active,
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid white;
-  animation: pulse 2s ease-in-out infinite;
 }
 
 @keyframes pulse {
@@ -1393,22 +1391,58 @@ a.navbar-link.active,
 
   .navbar-container {
     max-width: 1320px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.75rem;
   }
 
   .nav-content {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    position: static;
+    transform: none;
+    min-width: 0;
   }
 
   .navbar-links {
+    justify-content: center;
     gap: 0.35rem;
+    flex-wrap: nowrap;
   }
 
   .navbar-link {
     padding: 0.5rem 0.85rem;
     font-size: 0.9rem;
+    white-space: nowrap;
   }
+
+  .navbar-actions {
+    min-width: 0;
+  }
+}
+
+/* Avatar-only account button below ~1200px so long names never collide */
+@media (max-width: 1200px) {
+  .account-name {
+    display: none;
+  }
+
+  .account-button {
+    padding: 0.4rem 0.6rem;
+    gap: 0.35rem;
+  }
+}
+
+/* Dropdown username header (shown when name is hidden on the button) */
+.dropdown-username-header {
+  padding: 0.65rem 1rem 0.35rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #0f172a;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* [Responsive Change] Large desktops: 1441px+ */
