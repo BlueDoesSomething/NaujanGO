@@ -37,8 +37,9 @@ const Profile = () => {
   const datePickerTriggerRef = useRef(null);
   const datePickerPopupRef = useRef(null);
 
-  // Check if gender/visitor type are still at defaults (user hasn't actively chosen)
+  // Reminder only for OAuth users who skipped registration and never chose gender/visitor type
   const needsDemographics =
+    user?.is_oauth_user === true &&
     (!formData.gender || formData.gender === 'prefer_not_to_say') &&
     (!formData.userType || formData.userType === 'foreigner');
 
@@ -571,12 +572,7 @@ const Profile = () => {
               </div>
 
               <div style={inputGroup}>
-                <label style={labelStyle}>
-                  Gender
-                  {(!formData.gender || formData.gender === 'prefer_not_to_say') && (
-                    <span style={notSetBadge}>Not set</span>
-                  )}
-                </label>
+                <label style={labelStyle}>Gender</label>
                 <select
                   name="gender"
                   value={formData.gender}
@@ -592,12 +588,7 @@ const Profile = () => {
               </div>
 
               <div style={inputGroup}>
-                <label style={labelStyle}>
-                  Visitor Type
-                  {(!formData.userType || formData.userType === 'foreigner') && (
-                    <span style={notSetBadge}>Not set</span>
-                  )}
-                </label>
+                <label style={labelStyle}>Visitor Type</label>
                 <select
                   name="userType"
                   value={formData.userType}
@@ -1104,19 +1095,6 @@ const demographicsBannerDismiss = {
   justifyContent: 'center',
   cursor: 'pointer',
   transition: 'background-color 0.2s'
-};
-
-const notSetBadge = {
-  marginLeft: '0.5rem',
-  padding: '0.15rem 0.5rem',
-  backgroundColor: '#fef3c7',
-  color: '#d97706',
-  borderRadius: '6px',
-  fontSize: '0.7rem',
-  fontWeight: '600',
-  textTransform: 'uppercase',
-  letterSpacing: '0.3px',
-  whiteSpace: 'nowrap'
 };
 
 const formSection = {

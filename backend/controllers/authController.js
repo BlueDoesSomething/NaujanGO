@@ -183,6 +183,7 @@ const mapUserRow = (row) => ({
   phone: row.phone ?? row.phone_number ?? null,
   gender: row.gender || null,
   user_type: row.user_type || null,
+  is_oauth_user: row.password_hash === 'oauth_no_password',
   // Serialize date_of_birth using LOCAL time parts so timezone offset never shifts the stored date
   date_of_birth: (() => {
     if (!row.date_of_birth) return null;
@@ -257,7 +258,7 @@ router.post('/oauth-login', async (req, res) => {
     const selectLang = lang ? `${lang} AS preferred_language` : `'en' AS preferred_language`;
 
     const [rows] = await db.promise().query(
-      `SELECT user_id, username, email, ${selectLang} FROM users WHERE user_id = ?`,
+      `SELECT user_id, username, email, password_hash, ${selectLang} FROM users WHERE user_id = ?`,
       [decoded.user_id]
     );
 
@@ -930,6 +931,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
         profile_picture, 
         gender,
         user_type,
+        password_hash,
         ${selectLang} 
       FROM users 
       WHERE user_id = ?`,
