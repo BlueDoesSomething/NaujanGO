@@ -279,7 +279,7 @@ export default function Hotels() {
 
   if (authLoading) {
     return (
-      <div style={pageStyle}>
+      <div className="hotels-page" style={pageStyle}>
         <div style={{ textAlign: 'center', padding: '50px' }}>
           <p>{t('loading') || 'Loading...'}</p>
         </div>
@@ -290,7 +290,7 @@ export default function Hotels() {
   // Show login reminder for logged-out users
   if (!isLoggedIn) {
     return (
-      <div style={pageStyle}>
+      <div className="hotels-page" style={pageStyle}>
         {/* Hero Header */}
         <HeroSlideshow 
           title={t('accommodation')}
@@ -752,7 +752,6 @@ export default function Hotels() {
 
 const pageStyle = {
   minHeight: '100vh',
-  background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%)',
   paddingBottom: '2rem'
 }
 

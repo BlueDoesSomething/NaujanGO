@@ -746,6 +746,10 @@
   }
 }
 
+/* Page background (matches Home eco theme) */
+.itinerary-builder-page { background: #f3f9f5; }
+html[data-theme="dark"] .itinerary-builder-page { background: #07120c !important; }
+
 /* --- Itinerary Builder page-level light-mode card styles -------- */
 .itinerary-builder-page {
   --ib-primary: #22c55e;

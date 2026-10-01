@@ -58,8 +58,11 @@
   font-style: italic;
 }
 
-/* Dark mode: eco canvas + dark chrome (light cards stay readable) */
-[data-theme="dark"] .hotels-page { background: transparent !important; }
+/* Page background (matches Home eco theme) */
+.hotels-page { background: #f3f9f5; }
+html[data-theme="dark"] .hotels-page { background: #07120c !important; }
+
+/* Dark mode: dark chrome (light cards stay readable) */
 [data-theme="dark"] .hotels-filters {
   background-color: rgba(255, 255, 255, 0.06) !important;
   border-color: rgba(255, 255, 255, 0.1) !important;

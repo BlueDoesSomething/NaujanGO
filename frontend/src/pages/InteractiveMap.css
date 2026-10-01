@@ -2,9 +2,13 @@
 
 .imap-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #f0f9ff 100%);
+  background: #f3f9f5;
   overflow-x: hidden;
   max-width: 100%;
+}
+
+html[data-theme="dark"] .imap-container {
+  background: #07120c !important;
 }
 
 /* ── Main layout ── */

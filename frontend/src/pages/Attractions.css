@@ -4,7 +4,7 @@
    ──────────────────────────────────────────────────────────── */
 
 .attractions-page {
-  --ng-bg: #f8fafc;
+  --ng-bg: #f3f9f5;
   --ng-bg-glow:
     radial-gradient(52% 38% at 12% -2%, rgba(16, 185, 129, 0.1), transparent 62%),
     radial-gradient(44% 30% at 88% 0%, rgba(14, 165, 233, 0.08), transparent 60%);
@@ -61,7 +61,7 @@
 }
 
 html[data-theme="dark"] .attractions-page {
-  --ng-bg: #0f172a;
+  --ng-bg: #07120c;
   --ng-bg-glow:
     radial-gradient(52% 38% at 12% -2%, rgba(16, 185, 129, 0.16), transparent 62%),
     radial-gradient(44% 30% at 88% 0%, rgba(14, 165, 233, 0.13), transparent 60%);
