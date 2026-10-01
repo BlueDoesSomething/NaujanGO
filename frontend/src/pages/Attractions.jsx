@@ -7,7 +7,7 @@ import Icons from '../components/Icons';
 import { weatherService } from '../services/weatherService';
 import './Attractions.css';
 
-const ATTRACTIONS_PER_PAGE = 10;
+const ATTRACTIONS_PER_PAGE = 12;
 
 const ATTRACTION_FALLBACK_IMAGES = [
   'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=1200&q=80',
