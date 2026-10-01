@@ -525,19 +525,6 @@ a.navbar-link.active,
   display: flex;
 }
 
-.account-alert-badge {
-  position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #f59e0b;
-  border: 2px solid rgba(10, 14, 23, 0.85);
-  pointer-events: none;
-  z-index: 2;
-}
-
 .dropdown-arrow {
   flex-shrink: 0;
 }
@@ -2055,8 +2042,10 @@ body.menu-open .chatbot-container {
    NAVBAR FIXES — appended LAST so they beat the Responsive Map
    ══════════════════════════════════════════════════════════ */
 
-/* 1. Grid layout 1025-1440px — structural overlap fix */
-@media (min-width: 1025px) and (max-width: 1440px) {
+/* 1. GRID layout for ALL desktop widths — structural overlap fix.
+      The Responsive Map uses absolute-centered nav above 1024px; the
+      grid makes the two sides in-flow siblings so they cannot collide. */
+@media (min-width: 769px) {
   .navbar-container {
     display: grid !important;
     grid-template-columns: auto minmax(0, 1fr) auto !important;
@@ -2068,18 +2057,23 @@ body.menu-open .chatbot-container {
     left: auto !important;
     transform: none !important;
     min-width: 0;
+    max-width: 100%;
+    justify-content: center;
   }
   .navbar-links {
     justify-content: center;
     flex-wrap: nowrap;
+    width: max-content;
+    margin: 0 auto;
   }
   .navbar-actions {
     min-width: 0;
+    margin-left: 0;
   }
 }
 
-/* 2. Avatar-only account button below 1200px */
-@media (max-width: 1200px) {
+/* 2. Long usernames never collide: hide name on the button below 1500px */
+@media (max-width: 1500px) {
   .account-name {
     display: none !important;
   }
@@ -2087,6 +2081,13 @@ body.menu-open .chatbot-container {
     padding: 0.4rem 0.6rem;
     gap: 0.35rem;
     max-width: none;
+  }
+}
+
+/* 2b. Above 1500px (roomy), still cap the name hard */
+@media (min-width: 1501px) {
+  .account-name {
+    max-width: 90px !important;
   }
 }
 
@@ -2103,16 +2104,16 @@ body.menu-open .chatbot-container {
   text-overflow: ellipsis;
 }
 
-/* 4. Alert badge — solid amber dot at avatar top-right */
+/* 4. Alert badge — bare yellow '!' at avatar top-left, no border/box */
 .account-alert-badge {
   position: absolute;
-  top: -3px;
-  right: -3px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #f59e0b !important;
-  border: 2px solid rgba(10, 14, 23, 0.85);
+  top: -8px;
+  left: -7px;
+  color: #facc15;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1;
   pointer-events: none;
   z-index: 2;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
 }

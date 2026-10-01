@@ -452,7 +452,7 @@ const Navbar = () => {
                         className="account-avatar-img"
                       />
                       {needsDemographics && (
-                        <span className="account-alert-badge" aria-label="Profile incomplete" />
+                        <span className="account-alert-badge" aria-label="Profile incomplete">!</span>
                       )}
                     </span>
                   ) : (
@@ -461,7 +461,7 @@ const Navbar = () => {
                         {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
                       </span>
                       {needsDemographics && (
-                        <span className="account-alert-badge" aria-label="Profile incomplete" />
+                        <span className="account-alert-badge" aria-label="Profile incomplete">!</span>
                       )}
                     </span>
                   )}
