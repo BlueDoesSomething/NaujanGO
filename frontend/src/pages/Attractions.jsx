@@ -311,38 +311,37 @@ const Attractions = () => {
         <div className="attr-grid">
           {paged.map(a => {
             const rating = parseFloat(a.avg_rating) || 0;
+            const reviews = parseInt(a.review_count, 10) || 0;
             return (
-              <div key={a.id} className="attr-card" onClick={() => openAttraction(a)}>
-                <div className="attr-card-media">
-                  <img src={a.image_url || getAttractionFallbackImage(a)} alt={a.name} className="attr-card-img" loading="lazy" />
-                  <button
-                    type="button"
-                    className={`attr-heart${favs[a.id] ? ' attr-heart--on' : ''}`}
-                    aria-label="Favorite"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFavs(f => ({ ...f, [a.id]: !f[a.id] }));
-                    }}
-                  >
-                    <Icons.Heart size={15} filled={!!favs[a.id]} />
-                  </button>
-                  <div className="attr-card-shade" />
-                  {rating > 0 && (
-                    <span className="attr-rating-badge">
-                      <span className="attr-rating-star">★</span>
-                      <span>{rating.toFixed(1)}</span>
-                    </span>
-                  )}
-                </div>
-                <div className="attr-card-body">
-                  <h3 className="attr-card-title">{a.name}</h3>
-                  <p className="attr-card-location"><Icons.Location size={12} /> {a.location}</p>
+              <article key={a.id} className="attr-card" onClick={() => openAttraction(a)}>
+                <img src={a.image_url || getAttractionFallbackImage(a)} alt={a.name} className="attr-card-img" loading="lazy" />
+                <div className="attr-card-shade" />
+                <button
+                  type="button"
+                  className={`attr-heart${favs[a.id] ? ' attr-heart--on' : ''}`}
+                  aria-label="Favorite"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFavs(f => ({ ...f, [a.id]: !f[a.id] }));
+                  }}
+                >
+                  <Icons.Heart size={15} filled={!!favs[a.id]} />
+                </button>
+                <div className="attr-card-content">
+                  <div>
+                    <h3 className="attr-card-title">{a.name}</h3>
+                    <p className="attr-card-location"><Icons.Location size={12} /> {a.location}</p>
+                  </div>
+                  <span className="attr-rating-badge">
+                    <span className="attr-rating-star">★</span>
+                    <span>{rating > 0 ? rating.toFixed(1) : '-'} ({reviews})</span>
+                  </span>
                   <span className="attr-glass-btn">
                     <span className="attr-glass-label">{t('view_details')}</span>
                     <span className="attr-glass-chevron"><Icons.ChevronRight size={13} /></span>
                   </span>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
