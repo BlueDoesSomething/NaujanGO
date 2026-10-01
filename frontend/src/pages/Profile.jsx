@@ -33,8 +33,29 @@ const Profile = () => {
   const [pickerPos, setPickerPos] = useState({ top: 0, left: 0, width: 300 });
   const [messages, setMessages] = useState([]);
   const [messagesLoading, setMessagesLoading] = useState(true);
+  const [demographicsDismissed, setDemographicsDismissed] = useState(false);
   const datePickerTriggerRef = useRef(null);
   const datePickerPopupRef = useRef(null);
+
+  // Check if gender/visitor type are still at defaults (user hasn't actively chosen)
+  const needsDemographics =
+    (!formData.gender || formData.gender === 'prefer_not_to_say') &&
+    (!formData.userType || formData.userType === 'foreigner');
+
+  // Load dismissal state from localStorage
+  useEffect(() => {
+    if (user?.user_id) {
+      const dismissed = localStorage.getItem(`demographics_reminder_${user.user_id}`);
+      setDemographicsDismissed(dismissed === 'true');
+    }
+  }, [user?.user_id]);
+
+  const dismissDemographicsReminder = () => {
+    setDemographicsDismissed(true);
+    if (user?.user_id) {
+      localStorage.setItem(`demographics_reminder_${user.user_id}`, 'true');
+    }
+  };
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -340,6 +361,47 @@ const Profile = () => {
             </div>
           )}
 
+          {/* Demographics Reminder Banner */}
+          {needsDemographics && !demographicsDismissed && (
+            <div style={demographicsBanner}>
+              <div style={demographicsBannerIcon}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="12" y1="8" x2="12" y2="12"></line>
+                  <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+              </div>
+              <div style={demographicsBannerBody}>
+                <strong style={demographicsBannerTitle}>Complete your profile</strong>
+                <p style={demographicsBannerText}>
+                  Please set your <strong>Gender</strong> and <strong>Visitor Type</strong> so we can personalize your experience and improve NaujanGO for everyone.
+                </p>
+              </div>
+              <div style={demographicsBannerActions}>
+                <button
+                  style={demographicsBannerBtn}
+                  onClick={() => {
+                    setIsEditing(true);
+                    const el = document.querySelector('select[name="gender"]');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }}
+                >
+                  Set Now
+                </button>
+                <button
+                  style={demographicsBannerDismiss}
+                  onClick={dismissDemographicsReminder}
+                  aria-label="Dismiss reminder"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div style={formSection}>
             <h3 style={sectionTitle}>Personal Information</h3>
             <div style={formGrid}>
@@ -509,7 +571,12 @@ const Profile = () => {
               </div>
 
               <div style={inputGroup}>
-                <label style={labelStyle}>Gender</label>
+                <label style={labelStyle}>
+                  Gender
+                  {(!formData.gender || formData.gender === 'prefer_not_to_say') && (
+                    <span style={notSetBadge}>Not set</span>
+                  )}
+                </label>
                 <select
                   name="gender"
                   value={formData.gender}
@@ -525,7 +592,12 @@ const Profile = () => {
               </div>
 
               <div style={inputGroup}>
-                <label style={labelStyle}>Visitor Type</label>
+                <label style={labelStyle}>
+                  Visitor Type
+                  {(!formData.userType || formData.userType === 'foreigner') && (
+                    <span style={notSetBadge}>Not set</span>
+                  )}
+                </label>
                 <select
                   name="userType"
                   value={formData.userType}
@@ -954,6 +1026,97 @@ const messageStyle = {
   fontSize: '0.95rem',
   fontWeight: '500',
   border: '1px solid rgba(110, 231, 183, 0.5)'
+};
+
+const demographicsBanner = {
+  margin: 'clamp(1rem, 3vw, 1.5rem) clamp(1rem, 3vw, 2rem)',
+  padding: '1rem 1.25rem',
+  backgroundColor: '#fffbeb',
+  border: '1px solid #fcd34d',
+  borderRadius: '12px',
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: '0.875rem'
+};
+
+const demographicsBannerIcon = {
+  width: '40px',
+  height: '40px',
+  minWidth: '40px',
+  borderRadius: '10px',
+  backgroundColor: '#fef3c7',
+  color: '#d97706',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexShrink: 0
+};
+
+const demographicsBannerBody = {
+  flex: 1,
+  minWidth: 0
+};
+
+const demographicsBannerTitle = {
+  display: 'block',
+  fontSize: '0.95rem',
+  fontWeight: '700',
+  color: '#92400e',
+  marginBottom: '0.25rem'
+};
+
+const demographicsBannerText = {
+  margin: 0,
+  fontSize: '0.85rem',
+  color: '#a16207',
+  lineHeight: '1.5'
+};
+
+const demographicsBannerActions = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem',
+  flexShrink: 0
+};
+
+const demographicsBannerBtn = {
+  padding: '0.5rem 1rem',
+  backgroundColor: '#d97706',
+  color: 'white',
+  border: 'none',
+  borderRadius: '8px',
+  fontSize: '0.85rem',
+  fontWeight: '600',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+  transition: 'background-color 0.2s'
+};
+
+const demographicsBannerDismiss = {
+  width: '32px',
+  height: '32px',
+  borderRadius: '8px',
+  border: '1px solid #fcd34d',
+  backgroundColor: 'transparent',
+  color: '#a16207',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  cursor: 'pointer',
+  transition: 'background-color 0.2s'
+};
+
+const notSetBadge = {
+  marginLeft: '0.5rem',
+  padding: '0.15rem 0.5rem',
+  backgroundColor: '#fef3c7',
+  color: '#d97706',
+  borderRadius: '6px',
+  fontSize: '0.7rem',
+  fontWeight: '600',
+  textTransform: 'uppercase',
+  letterSpacing: '0.3px',
+  whiteSpace: 'nowrap'
 };
 
 const formSection = {

@@ -181,6 +181,8 @@ const mapUserRow = (row) => ({
   first_name: row.first_name,
   last_name: row.last_name,
   phone: row.phone ?? row.phone_number ?? null,
+  gender: row.gender || null,
+  user_type: row.user_type || null,
   // Serialize date_of_birth using LOCAL time parts so timezone offset never shifts the stored date
   date_of_birth: (() => {
     if (!row.date_of_birth) return null;
@@ -926,6 +928,8 @@ router.get('/profile', authenticateToken, async (req, res) => {
         ${selectPhone}, 
         date_of_birth, 
         profile_picture, 
+        gender,
+        user_type,
         ${selectLang} 
       FROM users 
       WHERE user_id = ?`,
