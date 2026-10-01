@@ -517,6 +517,30 @@ a.navbar-link.active,
   flex-shrink: 0;
 }
 
+.account-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+}
+
+.account-alert-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+  border: 2px solid #ffffff;
+  pointer-events: none;
+  z-index: 1;
+}
+
 .dropdown-arrow {
   flex-shrink: 0;
 }
@@ -1883,6 +1907,9 @@ a.navbar-link.active,
 }
 [data-theme="light"] .account-name {
   color: #0f172a;
+}
+[data-theme="light"] .account-alert-badge {
+  border-color: #f8fafc;
 }
 [data-theme="light"] .dropdown-arrow {
   color: #0f172a;
