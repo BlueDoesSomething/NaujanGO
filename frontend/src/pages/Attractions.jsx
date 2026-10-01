@@ -30,14 +30,6 @@ const getLatLon = (attraction) => {
   return { lat, lon };
 };
 
-const StarRating = ({ value }) => (
-  <span style={{ display: 'inline-flex', gap: 1 }}>
-    {[1, 2, 3, 4, 5].map(star => (
-      <span key={star} style={{ color: star <= Math.round(value) ? '#f59e0b' : '#d1d5db', fontSize: 13 }}>★</span>
-    ))}
-  </span>
-);
-
 const Pagination = ({ current, total, onChange, totalItems, perPage, t }) => {
   if (total <= 1) {
     return (
@@ -93,6 +85,7 @@ const Attractions = () => {
   const [filterMinRating, setFilterMinRating] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [weatherData, setWeatherData] = useState({});
+  const [favs, setFavs] = useState({});
 
   const debounceRef = useRef(null);
 
@@ -181,15 +174,21 @@ const Attractions = () => {
   const totalPages = Math.max(1, Math.ceil(filteredAttractions.length / perPage));
   const paged = filteredAttractions.slice((currentPage - 1) * perPage, currentPage * perPage);
 
+  const openAttraction = (a) => navigate(`/attractions/${a.id}`, { state: { attraction: a } });
+
   if (loading) {
     return (
-      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
-        <div className="skeleton-card" style={{ width: 320 }}>
-          <div className="skeleton-img" />
-          <div style={{ padding: 16 }}>
-            <div className="skeleton-line" style={{ height: 14, marginBottom: 8 }} />
-            <div className="skeleton-line" style={{ height: 12, width: '70%' }} />
-          </div>
+      <div className="attractions-page">
+        <div className="attr-skeleton-grid">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="attr-skeleton-card">
+              <div className="skeleton-img" />
+              <div style={{ padding: 14 }}>
+                <div className="skeleton-line" style={{ height: 12, marginBottom: 8 }} />
+                <div className="skeleton-line" style={{ height: 10, width: '70%' }} />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
@@ -197,21 +196,22 @@ const Attractions = () => {
 
   if (error) {
     return (
-      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', padding: 24 }}>
-        <div style={{ background: '#fff', border: '1px solid #fecaca', borderRadius: 12, padding: 16, maxWidth: 600 }}>
-          <h3 style={{ margin: '0 0 8px' }}>{t('error')}</h3>
-          <p style={{ margin: 0 }}>{error}</p>
+      <div className="attractions-page" style={{ display: 'grid', placeItems: 'center', padding: 24 }}>
+        <div className="attr-error">
+          <h3>{t('error')}</h3>
+          <p>{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="attractions-page" style={{ minHeight: '100vh', paddingBottom: 32 }}>
+    <div className="attractions-page">
       <HeroSlideshow
+        className="attractions-hero"
         title={t('discover_naujan')}
         subtitle={`${Array.isArray(attractions) ? attractions.length : 0} ${t('attractions')} ${t('in_oriental_mindoro')}`}
-        height="450px"
+        height="470px"
         showControls={false}
       />
 
@@ -293,132 +293,100 @@ const Attractions = () => {
         </div>
       </div>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 2rem', background: 'rgba(255,255,255,0.45)' }}>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button style={view === 'grid' ? { ...viewButton, ...activeViewButton } : viewButton} onClick={() => setView('grid')}>{t('view_grid')}</button>
-          <button style={view === 'list' ? { ...viewButton, ...activeViewButton } : viewButton} onClick={() => setView('list')}>{t('view_list')}</button>
+      <div className="attr-toolbar">
+        <div className="attr-view-toggle">
+          <button className={`attr-view-btn${view === 'grid' ? ' attr-view-btn--active' : ''}`} onClick={() => setView('grid')}>{t('view_grid')}</button>
+          <button className={`attr-view-btn${view === 'list' ? ' attr-view-btn--active' : ''}`} onClick={() => setView('list')}>{t('view_list')}</button>
         </div>
-        <div className="results-summary"><strong>{filteredAttractions.length}</strong>{t('attractions_found_count')}</div>
+        <div className="attr-results"><strong>{filteredAttractions.length}</strong>{t('attractions_found_count')}</div>
       </div>
 
       {filteredAttractions.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-          <div className="empty-state-icon"><Icons.Search size={36} /></div>
-          <h3>{t('no_attractions_found')}</h3>
-          <p>{t('no_attractions_try_again')}</p>
+        <div className="attr-empty">
+          <div className="attr-empty-icon"><Icons.Search size={34} /></div>
+          <h3 className="attr-empty-title">{t('no_attractions_found')}</h3>
+          <p className="attr-empty-sub">{t('no_attractions_try_again')}</p>
         </div>
       ) : view === 'grid' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(min(300px,100%),1fr))', gap: 24, padding: 24 }}>
-          {paged.map(a => (
-            <div key={a.id} style={modernCardStyle} className="modern-card" onClick={() => navigate(`/attractions/${a.id}`, { state: { attraction: a } })}>
-              <div style={cardImageContainer}>
-                <img src={a.image_url || getAttractionFallbackImage(a)} alt={a.name} style={cardImageStyle} className="card-image" loading="lazy" />
+        <div className="attr-grid">
+          {paged.map(a => {
+            const rating = parseFloat(a.avg_rating) || 0;
+            return (
+              <div key={a.id} className="attr-card" onClick={() => openAttraction(a)}>
+                <div className="attr-card-media">
+                  <img src={a.image_url || getAttractionFallbackImage(a)} alt={a.name} className="attr-card-img" loading="lazy" />
+                  <button
+                    type="button"
+                    className={`attr-heart${favs[a.id] ? ' attr-heart--on' : ''}`}
+                    aria-label="Favorite"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFavs(f => ({ ...f, [a.id]: !f[a.id] }));
+                    }}
+                  >
+                    <Icons.Heart size={15} filled={!!favs[a.id]} />
+                  </button>
+                  <div className="attr-card-shade" />
+                  {rating > 0 && (
+                    <span className="attr-rating-badge">
+                      <span className="attr-rating-star">★</span>
+                      <span>{rating.toFixed(1)}</span>
+                    </span>
+                  )}
+                </div>
+                <div className="attr-card-body">
+                  <h3 className="attr-card-title">{a.name}</h3>
+                  <p className="attr-card-location"><Icons.Location size={12} /> {a.location}</p>
+                  <span className="attr-glass-btn">
+                    <span className="attr-glass-label">{t('view_details')}</span>
+                    <span className="attr-glass-chevron"><Icons.ChevronRight size={13} /></span>
+                  </span>
+                </div>
               </div>
-              <div style={cardContent}>
-                <h3 style={cardTitle}>{a.name}</h3>
-                <p style={cardLocation}><Icons.Location size={14} /> {a.location}</p>
-                <p style={cardDescription}>{a.description?.substring(0, 120)}...</p>
-                {(parseFloat(a.avg_rating) || 0) > 0 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <StarRating value={parseFloat(a.avg_rating)} />
-                    <span style={{ fontSize: 12, color: 'var(--theme-faint)' }}>{Number(a.avg_rating).toFixed(1)} ({a.review_count || 0})</span>
-                  </div>
-                )}
-                {(parseInt(a.review_count, 10) || 0) > 0 && (
-                  <p style={{ margin: '0.45rem 0 0', fontSize: 12, color: 'var(--theme-muted)', fontWeight: 600 }}>
-                    {a.review_count} {t('reviews_label')}
-                  </p>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
-        <div style={{ maxWidth: 1000, margin: '0 auto', padding: 24 }}>
-          {paged.map((a, idx) => (
-            <div key={a.id} style={listCardStyle} className="list-card" onClick={() => navigate(`/attractions/${a.id}`, { state: { attraction: a } })}>
-              <div style={{ position: 'absolute', top: 10, left: 10, background: '#16a34a', color: '#fff', borderRadius: 8, padding: '2px 8px', fontSize: 12, fontWeight: 700 }}>
-                #{(currentPage - 1) * ATTRACTIONS_PER_PAGE + idx + 1}
-              </div>
-              <div style={{ width: 240, minHeight: 180, overflow: 'hidden', borderRadius: '10px 0 0 10px' }}>
-                <img src={a.image_url || getAttractionFallbackImage(a)} alt={a.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-              </div>
-              <div style={listContentStyle}>
-                <h3 style={listTitleStyle}>{a.name}</h3>
-                <p style={listLocationStyle}><Icons.Location size={13} /> {a.location}</p>
-                <p style={listDescriptionStyle}>{a.description?.substring(0, 180)}{a.description?.length > 180 ? '...' : ''}</p>
-                <p style={{ margin: '0.55rem 0 0', fontSize: 12, color: 'var(--theme-muted)', fontWeight: 600 }}>
-                  {(parseInt(a.review_count, 10) || 0)} {t('reviews_label')}
-                  {(parseFloat(a.avg_rating) || 0) > 0 ? ` • ${Number(a.avg_rating).toFixed(1)}★` : ''}
-                </p>
-                {weatherData[a.id] && (
-                  <div style={{ marginTop: 8, display: 'inline-flex', gap: 6, background: 'var(--theme-chip-bg, #e0f2fe)', color: '#0369a1', borderRadius: 20, padding: '3px 10px', fontSize: 12 }}>
-                    <span>{weatherData[a.id].temperature}°C</span>
-                    <span>{weatherData[a.id].condition}</span>
+        <div className="attr-list">
+          {paged.map((a, idx) => {
+            const rating = parseFloat(a.avg_rating) || 0;
+            const reviews = parseInt(a.review_count, 10) || 0;
+            return (
+              <div key={a.id} className="attr-list-card" onClick={() => openAttraction(a)}>
+                <div className="attr-list-rank">#{(currentPage - 1) * ATTRACTIONS_PER_PAGE + idx + 1}</div>
+                <div className="attr-list-media">
+                  <img src={a.image_url || getAttractionFallbackImage(a)} alt={a.name} loading="lazy" />
+                </div>
+                <div className="attr-list-body">
+                  <h3 className="attr-list-title">{a.name}</h3>
+                  <p className="attr-list-location"><Icons.Location size={13} /> {a.location}</p>
+                  <p className="attr-list-desc">{a.description?.substring(0, 180)}{a.description?.length > 180 ? '...' : ''}</p>
+                  <div className="attr-list-meta">
+                    {rating > 0 && <span className="attr-list-chip"><span className="attr-rating-star">★</span> {rating.toFixed(1)}</span>}
+                    {reviews > 0 && <span className="attr-list-chip">{reviews} {t('reviews_label')}</span>}
+                    {weatherData[a.id] && (
+                      <span className="attr-list-chip attr-list-chip--weather">{weatherData[a.id].temperature}°C • {weatherData[a.id].condition}</span>
+                    )}
                   </div>
-                )}
+                  <span className="attr-glass-btn attr-glass-btn--sm">
+                    <span className="attr-glass-label">{t('view_details')}</span>
+                    <span className="attr-glass-chevron"><Icons.ChevronRight size={13} /></span>
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       <Pagination current={currentPage} total={totalPages} onChange={setCurrentPage} totalItems={filteredAttractions.length} perPage={perPage} t={t} />
       {totalPages > 1 && (
-          <div className="load-more-wrap">
+        <div className="load-more-wrap">
           <button className="load-more-btn" onClick={() => setCurrentPage(p => Math.min(p + 1, totalPages))}>{t('load_more')}</button>
         </div>
       )}
     </div>
   );
 };
-
-const viewButton = {
-  padding: '0.6rem 1rem',
-  border: '1px solid #d1d5db',
-  borderRadius: 8,
-  background: '#fff',
-  cursor: 'pointer',
-  fontWeight: 700,
-  color: '#374151'
-};
-
-const activeViewButton = {
-  background: '#16a34a',
-  color: '#fff',
-  borderColor: '#16a34a'
-};
-
-const modernCardStyle = {
-  backgroundColor: 'rgba(255,255,255,0.75)',
-  borderRadius: 16,
-  overflow: 'hidden',
-  boxShadow: '0 8px 24px rgba(0,0,0,0.1)',
-  cursor: 'pointer',
-  border: '1px solid rgba(255,255,255,0.35)'
-};
-
-const cardImageContainer = { overflow: 'hidden' };
-const cardImageStyle = { width: '100%', height: 240, objectFit: 'cover' };
-const cardContent = { padding: '1rem 1.1rem 1.2rem' };
-const cardTitle = { margin: 0, fontSize: '1.08rem', color: 'var(--theme-title)' };
-const cardLocation = { margin: '0.45rem 0', color: 'var(--theme-faint)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 };
-const cardDescription = { margin: '0 0 0.5rem', color: 'var(--theme-muted)', fontSize: 14, lineHeight: 1.5 };
-
-const listCardStyle = {
-  display: 'flex',
-  position: 'relative',
-  background: 'var(--theme-surface)',
-  borderRadius: 12,
-  overflow: 'hidden',
-  border: '1px solid rgba(255,255,255,0.4)',
-  marginBottom: 16,
-  cursor: 'pointer'
-};
-
-const listContentStyle = { padding: '1rem 1.2rem', flex: 1 };
-const listTitleStyle = { margin: 0, fontSize: '1.1rem', color: 'var(--theme-title-ink)' };
-const listLocationStyle = { margin: '0.4rem 0', display: 'flex', alignItems: 'center', gap: 6, color: 'var(--theme-faint)', fontSize: 13 };
-const listDescriptionStyle = { margin: 0, color: 'var(--theme-muted)', lineHeight: 1.5, fontSize: 14 };
 
 export default Attractions;
