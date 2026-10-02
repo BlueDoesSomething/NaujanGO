@@ -1641,7 +1641,8 @@ export default function HotelDetail() {
 
                             let background = 'white';
                             let color = '#1b5e20';
-                            let border = '1px solid #c8e6c9';
+                            let borderWidth = '1px';
+                            let borderColor = '#c8e6c9';
                             let boxShadow = 'none';
                             if (isPast) {
                               background = '#f5f5f5';
@@ -1651,7 +1652,8 @@ export default function HotelDetail() {
                               // dates are obvious even without a confirm footer.
                               background = '#2e7d32';
                               color = '#ffffff';
-                              border = '2px solid #1b5e20';
+                              borderWidth = '2px';
+                              borderColor = '#1b5e20';
                               boxShadow = '0 2px 6px rgba(46, 125, 50, 0.45)';
                             } else if (inRange) {
                               background = '#c8e6c9';
@@ -1673,7 +1675,9 @@ export default function HotelDetail() {
                                   ...calDay,
                                   background,
                                   color,
-                                  border,
+                                  borderStyle: 'solid',
+                                  borderWidth,
+                                  borderColor,
                                   boxShadow,
                                   cursor: isSelectable ? 'pointer' : 'not-allowed',
                                   opacity: isPast ? 0.55 : 1
@@ -4128,7 +4132,9 @@ const calLegend = {
   color: '#2d3748',
   padding: '0.75rem 0.9rem',
   background: '#f8fdf7',
-  border: '1px solid #c8e6c9',
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderColor: '#c8e6c9',
   borderRadius: '8px'
 };
 
