@@ -191,8 +191,9 @@ export const fetchHotels = () => {
   return apiClient.get('/hotels');
 };
 
-export const fetchHotelCalendar = (hotelId, start, end) => {
-  return apiClient.get(`/hotels/${hotelId}/calendar`, { params: { start, end } });
+export const fetchHotelCalendar = (hotelId, start, end, roomId) => {
+  const params = roomId ? { start, end, room_id: roomId } : { start, end };
+  return apiClient.get(`/hotels/${hotelId}/calendar`, { params });
 };
 
 export const createHotelBooking = (bookingData) => {

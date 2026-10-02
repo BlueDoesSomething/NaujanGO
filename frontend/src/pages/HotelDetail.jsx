@@ -236,6 +236,7 @@ export default function HotelDetail() {
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [calendarError, setCalendarError] = useState('');
   const [calendarRange, setCalendarRange] = useState({ start: null, end: null });
+  const [calendarRoomId, setCalendarRoomId] = useState(null);
   
   const [bookingForm, setBookingForm] = useState({
     checkIn: '',
@@ -307,7 +308,7 @@ export default function HotelDetail() {
         const start = toCalendarDateKey(calendarMonth);
         const monthEnd = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0);
         const end = toCalendarDateKey(monthEnd);
-        const response = await fetchHotelCalendar(id, start, end);
+        const response = await fetchHotelCalendar(id, start, end, calendarRoomId);
         if (cancelled) return;
         const days = Array.isArray(response.data?.days) ? response.data.days : [];
         const byDate = {};
@@ -329,7 +330,7 @@ export default function HotelDetail() {
     return () => {
       cancelled = true;
     };
-  }, [showCalendar, calendarMonth, id]);
+  }, [showCalendar, calendarMonth, calendarRoomId, id]);
 
   const maxGuestsAllowed = 100;
 
@@ -526,12 +527,22 @@ export default function HotelDetail() {
   const openCalendar = () => {
     setCalendarRange({ start: null, end: null });
     setCalendarError('');
+    // Default the room-type selector to the room the guest already picked.
+    setCalendarRoomId(bookingForm.selectedRoomId ? Number(bookingForm.selectedRoomId) : null);
     setShowCalendar(true);
   };
 
   const changeCalendarMonth = (delta) => {
     setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
     setCalendarRange({ start: null, end: null });
+  };
+
+  const handleCalendarRoomChange = (event) => {
+    const value = event.target.value;
+    setCalendarRoomId(value ? Number(value) : null);
+    // Availability differs per room type, so any half-picked range is invalid.
+    setCalendarRange({ start: null, end: null });
+    setCalendarError('');
   };
 
   const isCalendarDayBookable = (dateKey) => {
@@ -576,7 +587,18 @@ export default function HotelDetail() {
   const handleUseCalendarDates = () => {
     const { start, end } = calendarRange;
     if (!start || !end) return;
-    setBookingForm((prev) => ({ ...prev, checkIn: start, checkOut: end }));
+    // The dropdown in the calendar modal is authoritative for the room choice:
+    // a picked type is written into the booking form, "All room types" clears it.
+    const pickedRoom = calendarRoomId
+      ? rooms.find((room) => Number(room.room_id) === Number(calendarRoomId))
+      : null;
+    setBookingForm((prev) => ({
+      ...prev,
+      checkIn: start,
+      checkOut: end,
+      selectedRoomId: pickedRoom ? Number(pickedRoom.room_id) : null,
+      selectedRoomType: pickedRoom ? pickedRoom.room_type_name : null
+    }));
     setShowCalendar(false);
     handleBookNow();
   };
@@ -1806,6 +1828,28 @@ export default function HotelDetail() {
             </div>
 
             <div style={calBody}>
+              {rooms.length > 0 && (
+                <div style={calRoomRow}>
+                  <label htmlFor="calendar-room-type" style={calRoomLabel}>
+                    Select Room Type:
+                  </label>
+                  <select
+                    id="calendar-room-type"
+                    value={calendarRoomId != null ? String(calendarRoomId) : ''}
+                    onChange={handleCalendarRoomChange}
+                    style={calRoomSelect}
+                  >
+                    <option value="">All room types</option>
+                    {rooms
+                      .filter((room) => room.is_active)
+                      .map((room) => (
+                        <option key={room.room_id} value={room.room_id}>
+                          {room.room_type_name}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
               <div style={calNavRow}>
                 <button style={calNavBtn} onClick={() => changeCalendarMonth(-1)} aria-label={t('prev')}>
                   &#8249;
@@ -4056,6 +4100,33 @@ const calBody = {
   flexDirection: 'column',
   gap: '1rem',
   backgroundColor: '#fafafa'
+};
+
+const calRoomRow = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.75rem'
+};
+
+const calRoomLabel = {
+  fontSize: '0.9rem',
+  fontWeight: 700,
+  color: '#1b5e20',
+  whiteSpace: 'nowrap'
+};
+
+const calRoomSelect = {
+  flex: 1,
+  minWidth: 0,
+  padding: '0.55rem 0.75rem',
+  border: '2px solid #c8e6c9',
+  borderRadius: '10px',
+  fontSize: '0.95rem',
+  fontWeight: 600,
+  color: '#1b5e20',
+  backgroundColor: '#ffffff',
+  cursor: 'pointer',
+  outline: 'none'
 };
 
 const calNavRow = {

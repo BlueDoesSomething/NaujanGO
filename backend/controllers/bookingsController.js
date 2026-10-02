@@ -233,14 +233,17 @@ export const createHotelBooking = async (req, res) => {
 
       // Per-date enforcement: owner-closed dates and per-date room overrides.
       // Uses the same helper as the public calendar so guests can never book
-      // something the calendar shows as closed or unavailable.
+      // something the calendar shows as closed or unavailable. When a room type
+      // is selected the helper returns room-type-aware counts, so the numbers
+      // shown in the calendar are exactly what is enforced here.
       try {
         const availabilityDays = await fetchHotelAvailabilityDays(
           connection,
           hotel_id,
           checkInKey,
           subtractOneDay(checkOutKey),
-          totalRooms
+          totalRooms,
+          room_id ? { roomId: room_id } : {}
         );
 
         const closedDay = availabilityDays.find((day) => day.closed === 1);

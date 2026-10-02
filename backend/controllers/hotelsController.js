@@ -374,10 +374,11 @@ export const getHotelAvailability = async (req, res) => {
 const CALENDAR_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 // Public per-date availability calendar for guests.
-// GET /api/hotels/:id/calendar?start=YYYY-MM-DD&end=YYYY-MM-DD
+// GET /api/hotels/:id/calendar?start=YYYY-MM-DD&end=YYYY-MM-DD[&room_id=<room type>]
+// With room_id, per-day counts are min(hotel-level, room-type-level) inventory.
 export const getHotelCalendar = async (req, res) => {
   const { id } = req.params;
-  const { start, end } = req.query;
+  const { start, end, room_id: roomIdParam } = req.query;
 
   if (!start || !end || !CALENDAR_DATE_PATTERN.test(String(start)) || !CALENDAR_DATE_PATTERN.test(String(end))) {
     return res.status(400).json({ error: 'start and end dates are required (YYYY-MM-DD)' });
@@ -405,15 +406,31 @@ export const getHotelCalendar = async (req, res) => {
       return res.status(404).json({ error: 'Hotel not found' });
     }
 
+    let room = null;
+    if (roomIdParam !== undefined && roomIdParam !== '') {
+      if (!/^\d+$/.test(String(roomIdParam))) {
+        return res.status(400).json({ error: 'room_id must be a positive integer' });
+      }
+      const [roomRows] = await db.promise().query(
+        'SELECT room_id, room_type_name FROM rooms WHERE room_id = ? AND hotel_id = ? AND is_active = 1',
+        [Number(roomIdParam), id]
+      );
+      if (roomRows.length === 0) {
+        return res.status(404).json({ error: 'Room not found for this hotel' });
+      }
+      room = roomRows[0];
+    }
+
     const days = await fetchHotelAvailabilityDays(
       db.promise(),
       id,
       start,
       end,
-      hotel[0].rooms_total || 0
+      hotel[0].rooms_total || 0,
+      room ? { roomId: room.room_id } : {}
     );
 
-    return res.json({ success: true, start, end, days });
+    return res.json({ success: true, start, end, room, days });
   } catch (error) {
     console.error('Error fetching hotel calendar:', error);
     return res.status(500).json({ error: 'Failed to fetch calendar' });
