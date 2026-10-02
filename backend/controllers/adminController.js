@@ -1221,6 +1221,74 @@ router.delete('/attractions/:id', async (req, res) => {
   }
 });
 
+// ── Business legitimacy verification (permit / DOT / PhilGEPS) ──────────────
+// GET /api/admin/business-profiles?status=pending|verified|rejected
+router.get('/business-profiles', async (req, res) => {
+  try {
+    const status = ['pending', 'verified', 'rejected'].includes(req.query.status)
+      ? req.query.status
+      : null;
+
+    const [profiles] = await db.promise().query(
+      `SELECT bp.id, bp.owner_id, bp.business_name, bp.business_email, bp.business_phone,
+              bp.business_address, bp.tax_id, bp.verification_status, bp.rejection_reason,
+              bp.verified_at, bp.updated_at,
+              bp.business_permit_no, bp.business_permit_expiry, bp.business_permit_file,
+              bp.dot_no, bp.dot_expiry, bp.dot_file,
+              bp.philgeps_no, bp.philgeps_expiry, bp.philgeps_file,
+              u.username, u.email, u.first_name, u.last_name
+       FROM business_profiles bp
+       JOIN users u ON u.user_id = bp.owner_id
+       ${status ? 'WHERE bp.verification_status = ?' : ''}
+       ORDER BY FIELD(bp.verification_status, 'pending', 'rejected', 'verified'), bp.updated_at DESC`,
+      status ? [status] : []
+    );
+
+    res.json({ success: true, data: profiles });
+  } catch (error) {
+    console.error('Get business profiles error:', error);
+    res.status(500).json({ error: 'Failed to fetch business profiles' });
+  }
+});
+
+// PUT /api/admin/business-profiles/:id/verification
+router.put('/business-profiles/:id/verification', async (req, res) => {
+  const { verification_status, rejection_reason } = req.body;
+
+  if (!['pending', 'verified', 'rejected'].includes(verification_status)) {
+    return res.status(400).json({ error: 'verification_status must be pending, verified or rejected' });
+  }
+  if (verification_status === 'rejected' && !String(rejection_reason || '').trim()) {
+    return res.status(400).json({ error: 'A rejection reason is required' });
+  }
+
+  try {
+    const [result] = await db.promise().query(
+      `UPDATE business_profiles
+       SET verification_status = ?,
+           rejection_reason = ?,
+           verified_at = CASE WHEN ? = 'verified' THEN NOW() ELSE NULL END,
+           updated_at = NOW()
+       WHERE id = ?`,
+      [
+        verification_status,
+        verification_status === 'rejected' ? String(rejection_reason).trim() : null,
+        verification_status,
+        req.params.id
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Business profile not found' });
+    }
+
+    res.json({ success: true, verification_status });
+  } catch (error) {
+    console.error('Verify business profile error:', error);
+    res.status(500).json({ error: 'Failed to update verification' });
+  }
+});
+
 // Get all hotels with owners
 router.get('/hotels', async (req, res) => {
   try {

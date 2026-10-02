@@ -2,6 +2,7 @@ import jwt from 'jsonwebtoken';
 import db from '../db.js';
 import { getUserColumns } from '../services/userSchema.js';
 import { JWT_SECRET } from '../config/security.js';
+import { computeAuthorization } from '../utils/legitimacy.js';
 
 // Middleware to verify JWT token and extract user
 export const authenticateToken = async (req, res, next) => {
@@ -93,6 +94,42 @@ export const requireAdmin = requireRole('admin');
 
 // Middleware to check if user is owner or admin
 export const requireOwnerOrAdmin = requireRole('owner', 'admin');
+
+// Owner routes that are part of the FULL dashboard only. Limited owners
+// (missing permit/DOT-or-PhilGEPS, or not yet admin-verified) can only manage
+// their hotel listings and business profile.
+export const requireFullAuthorization = async (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  if (req.user.role === 'admin') {
+    return next();
+  }
+
+  try {
+    const [rows] = await db.promise().query(
+      `SELECT business_permit_no, dot_no, philgeps_no, verification_status
+       FROM business_profiles WHERE owner_id = ? LIMIT 1`,
+      [req.user.user_id]
+    );
+
+    const { authorization, missing_requirements } = computeAuthorization(rows[0] || null);
+
+    if (authorization !== 'full') {
+      return res.status(403).json({
+        error: 'Complete your business requirements (business permit plus DOT accreditation or PhilGEPS, admin-verified) to access this section',
+        code: 'insufficient_authorization',
+        missing_requirements
+      });
+    }
+
+    return next();
+  } catch (error) {
+    console.error('Authorization check failed:', error);
+    return res.status(500).json({ error: 'Failed to verify authorization' });
+  }
+};
 
 // Middleware to check if user is authenticated (any role)
 export const requireAuth = (req, res, next) => {

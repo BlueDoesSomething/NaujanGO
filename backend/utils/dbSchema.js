@@ -49,3 +49,41 @@ export const ensureHotelPolicySchema = async () => {
     console.error('Schema ensure (hotel policies) failed:', error.message);
   }
 };
+
+// Legitimacy & accreditation (migration 042): business permit / DOT / PhilGEPS
+// details on business_profiles. The table itself is created here too so a fresh
+// database works before migrations are applied by hand.
+export const ensureBusinessLegitimacySchema = async () => {
+  try {
+    await db.promise().query(
+      `CREATE TABLE IF NOT EXISTS \`business_profiles\` (
+        \`id\` INT(11) PRIMARY KEY AUTO_INCREMENT,
+        \`owner_id\` INT(11) NOT NULL UNIQUE,
+        \`business_name\` VARCHAR(255) DEFAULT NULL,
+        \`business_email\` VARCHAR(255) DEFAULT NULL,
+        \`business_phone\` VARCHAR(20) DEFAULT NULL,
+        \`business_address\` TEXT DEFAULT NULL,
+        \`tax_id\` VARCHAR(100) DEFAULT NULL,
+        \`bank_account\` VARCHAR(255) DEFAULT NULL,
+        \`bank_name\` VARCHAR(255) DEFAULT NULL,
+        \`verification_status\` ENUM('pending','verified','rejected') DEFAULT 'pending',
+        \`rejection_reason\` TEXT DEFAULT NULL,
+        \`verified_at\` TIMESTAMP NULL DEFAULT NULL,
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        \`updated_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (\`owner_id\`) REFERENCES \`users\`(\`user_id\`) ON DELETE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+    );
+    await ensureColumn('business_profiles', 'business_permit_no', 'VARCHAR(150) NULL DEFAULT NULL AFTER `bank_name`');
+    await ensureColumn('business_profiles', 'business_permit_expiry', 'DATE NULL DEFAULT NULL AFTER `business_permit_no`');
+    await ensureColumn('business_profiles', 'business_permit_file', 'VARCHAR(500) NULL DEFAULT NULL AFTER `business_permit_expiry`');
+    await ensureColumn('business_profiles', 'dot_no', 'VARCHAR(150) NULL DEFAULT NULL AFTER `business_permit_file`');
+    await ensureColumn('business_profiles', 'dot_expiry', 'DATE NULL DEFAULT NULL AFTER `dot_no`');
+    await ensureColumn('business_profiles', 'dot_file', 'VARCHAR(500) NULL DEFAULT NULL AFTER `dot_expiry`');
+    await ensureColumn('business_profiles', 'philgeps_no', 'VARCHAR(150) NULL DEFAULT NULL AFTER `dot_file`');
+    await ensureColumn('business_profiles', 'philgeps_expiry', 'DATE NULL DEFAULT NULL AFTER `philgeps_no`');
+    await ensureColumn('business_profiles', 'philgeps_file', 'VARCHAR(500) NULL DEFAULT NULL AFTER `philgeps_expiry`');
+  } catch (error) {
+    console.error('Schema ensure (business legitimacy) failed:', error.message);
+  }
+};

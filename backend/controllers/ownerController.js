@@ -4,10 +4,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import db from '../db.js';
-import { authenticateToken, requireOwnerOrAdmin } from '../middleware/auth.js';
+import { authenticateToken, requireOwnerOrAdmin, requireFullAuthorization } from '../middleware/auth.js';
 import { syncBookingPaymentStatus } from '../utils/paymentSync.js';
 import { balanceOf } from '../utils/paymentAmounts.js';
 import { parsePolicyFields } from '../utils/policyFields.js';
+import { computeAuthorization, LEGITIMACY_FIELDS } from '../utils/legitimacy.js';
 
 const router = express.Router();
 
@@ -47,6 +48,32 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     if (!file.mimetype.startsWith('image/')) {
       return cb(new Error('Only image uploads are allowed'));
+    }
+    return cb(null, true);
+  }
+});
+
+// Permit / accreditation document uploads (business permit, DOT, PhilGEPS).
+const permitUploadDir = path.join(__dirname, '..', 'uploads', 'permits');
+
+if (!fs.existsSync(permitUploadDir)) {
+  fs.mkdirSync(permitUploadDir, { recursive: true });
+}
+
+const permitUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, permitUploadDir),
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      const name = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}${ext}`;
+      cb(null, name);
+    }
+  }),
+  limits: { fileSize: 6 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowed.includes(file.mimetype)) {
+      return cb(new Error('Only JPG, PNG, WEBP or PDF documents are allowed'));
     }
     return cb(null, true);
   }
@@ -164,6 +191,14 @@ const listDateKeys = (startKey, endKey) => {
 // All owner routes require authentication and owner or admin role
 router.use(authenticateToken);
 router.use(requireOwnerOrAdmin);
+
+// Full-authorization areas: reservations, payments, reviews, analytics and
+// overview stats. Limited owners (incomplete/ unverified requirements) are
+// restricted to hotel listing management + business profile below.
+router.use(
+  ['/bookings', '/payments', '/reviews', '/analytics', '/dashboard/stats'],
+  requireFullAuthorization
+);
 
 // Get owner's hotels
 router.get('/hotels', async (req, res) => {
@@ -1366,17 +1401,25 @@ router.get('/profile', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Get business profile
+    // Get business profile (including legitimacy & accreditation details)
     const [businessProfiles] = await db.promise().query(
-      'SELECT id, business_name, business_email, business_phone, business_address, tax_id, bank_name, verification_status FROM business_profiles WHERE owner_id = ?',
+      `SELECT id, business_name, business_email, business_phone, business_address, tax_id, bank_name,
+              verification_status, rejection_reason, verified_at,
+              business_permit_no, business_permit_expiry, business_permit_file,
+              dot_no, dot_expiry, dot_file,
+              philgeps_no, philgeps_expiry, philgeps_file
+       FROM business_profiles WHERE owner_id = ?`,
       [userId]
     );
 
     const businessProfile = businessProfiles.length > 0 ? businessProfiles[0] : null;
+    const { authorization, missing_requirements } = computeAuthorization(businessProfile);
 
     res.json({
       ...users[0],
-      businessProfile
+      businessProfile,
+      authorization,
+      missing_requirements
     });
   } catch (error) {
     console.error('Get profile error:', error);
@@ -1400,24 +1443,48 @@ router.put('/profile', async (req, res) => {
 
     // Check if business profile exists
     const [existingProfiles] = await db.promise().query(
-      'SELECT id FROM business_profiles WHERE owner_id = ?',
+      'SELECT * FROM business_profiles WHERE owner_id = ?',
       [userId]
     );
 
+    // Legitimacy fields are sent as-is (snake_case); empty strings become NULL.
+    const legitimacyUpdates = {};
+    let legitimacyChanged = false;
+    for (const key of LEGITIMACY_FIELDS) {
+      if (req.body[key] === undefined) continue;
+      const value = req.body[key] === '' || req.body[key] === null ? null : String(req.body[key]).trim() || null;
+      legitimacyUpdates[key] = value;
+      const previous = existingProfiles.length > 0 ? existingProfiles[0][key] : null;
+      if ((value ?? null) !== (previous ?? null)) legitimacyChanged = true;
+    }
+
+    // Changing submitted documents/numbers puts the profile back in review so
+    // admin re-verifies before badges / full access are granted again.
+    const resetVerification = legitimacyChanged
+      ? ", verification_status = 'pending', verified_at = NULL, rejection_reason = NULL"
+      : '';
+
     if (existingProfiles.length > 0) {
       // Update existing business profile
+      const legitimacySet = Object.keys(legitimacyUpdates)
+        .map((key) => `${key} = ?`)
+        .join(', ');
+      const legitimacyParams = Object.values(legitimacyUpdates);
       await db.promise().query(
-        `UPDATE business_profiles 
-         SET business_name = ?, business_email = ?, business_phone = ?, business_address = ?, tax_id = ?, bank_name = ?, updated_at = NOW()
+        `UPDATE business_profiles
+         SET business_name = ?, business_email = ?, business_phone = ?, business_address = ?, tax_id = ?, bank_name = ?${legitimacySet ? ', ' + legitimacySet : ''}${resetVerification}, updated_at = NOW()
          WHERE owner_id = ?`,
-        [businessName, businessEmail, businessPhone, businessAddress, taxId, bankName, userId]
+        [businessName, businessEmail, businessPhone, businessAddress, taxId, bankName, ...legitimacyParams, userId]
       );
     } else {
       // Create new business profile
+      const legitimacyCols = Object.keys(legitimacyUpdates);
+      const baseCols = ['owner_id', 'business_name', 'business_email', 'business_phone', 'business_address', 'tax_id', 'bank_name'];
+      const cols = [...baseCols, ...legitimacyCols];
+      const placeholders = cols.map(() => '?').join(', ');
       await db.promise().query(
-        `INSERT INTO business_profiles (owner_id, business_name, business_email, business_phone, business_address, tax_id, bank_name)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-        [userId, businessName, businessEmail, businessPhone, businessAddress, taxId, bankName]
+        `INSERT INTO business_profiles (${cols.join(', ')}) VALUES (${placeholders})`,
+        [userId, businessName, businessEmail, businessPhone, businessAddress, taxId, bankName, ...Object.values(legitimacyUpdates)]
       );
     }
 
@@ -1429,6 +1496,14 @@ router.put('/profile', async (req, res) => {
     console.error('Update profile error:', error);
     res.status(500).json({ error: 'Failed to update profile' });
   }
+});
+
+// Upload a legitimacy document (business permit / DOT accreditation / PhilGEPS)
+router.post('/profile/upload', permitUpload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: 'No document uploaded' });
+  }
+  res.json({ url: `/uploads/permits/${req.file.filename}`, name: req.file.originalname });
 });
 
 // Get payment statistics

@@ -3,6 +3,7 @@ import { execute } from '../db.js';
 import { getTranslationsForEntities } from '../services/translations.js';
 import { getTranslationWithFallback } from '../services/machineTranslate.js';
 import { fetchHotelAvailabilityDays } from '../utils/hotelAvailability.js';
+import { attachHotelLegitimacy, attachHotelLegitimacyList } from '../utils/legitimacy.js';
 
 let hotelsHasImageUrls;
 let hotelsHasAllowedPaymentMethods;
@@ -209,7 +210,8 @@ export const getHotels = async (req, res) => {
     
     // Map rows first to get aliased field names and numeric conversions
     const mappedRows = mapHotelRows(rows);
-    
+    await attachHotelLegitimacyList(mappedRows);
+
     return res.json({
       success: true,
       data: mappedRows || [],
@@ -252,6 +254,7 @@ export const getHotels = async (req, res) => {
 
   // Apply translations if non-English locale requested
   let finalData = rows || [];
+  await attachHotelLegitimacyList(finalData);
   if (language && language !== 'en' && finalData.length > 0) {
     const ids = finalData.map(h => h.id);
     const translationsMap = await getTranslationsForEntities('hotels', ids, ['name', 'description'], language);
@@ -300,7 +303,8 @@ export const getHotelById = async (req, res) => {
     }
 
     let hotel = mapHotelRows(rows)[0];
-    
+    await attachHotelLegitimacy(hotel);
+
     // Apply translations if non-English locale requested
     if (language && language !== 'en') {
       const tr = (await getTranslationsForEntities('hotels', [hotel.id], ['name', 'description'], language))[String(hotel.id)] || {}; // Convert ID to string for map lookup
@@ -326,7 +330,7 @@ export const getHotelById = async (req, res) => {
         return res.status(404).json({ error: 'Hotel not found' });
       }
 
-      return res.json(mapHotelRows(rows)[0]);
+      return res.json(await attachHotelLegitimacy(mapHotelRows(rows)[0]));
     } catch (fallbackError) {
       console.error('Error fetching hotel (fallback query):', fallbackError);
       if (fallbackError.code === 'ER_BAD_FIELD_ERROR') {
@@ -345,7 +349,7 @@ export const getHotelById = async (req, res) => {
             return res.status(404).json({ error: 'Hotel not found' });
           }
 
-          return res.json(mapHotelRows(rows)[0]);
+          return res.json(await attachHotelLegitimacy(mapHotelRows(rows)[0]));
         } catch (finalError) {
           console.error('Error fetching hotel (final fallback query):', finalError);
           return res.status(500).json({ error: 'Failed to fetch hotel' });

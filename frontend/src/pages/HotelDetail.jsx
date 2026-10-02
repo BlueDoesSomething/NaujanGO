@@ -912,6 +912,27 @@ export default function HotelDetail() {
         </div>
       </div>
 
+      {/* Legitimacy & accreditation badges (verified items only) */}
+      {hotel.legitimacy && (hotel.legitimacy.business_permit || hotel.legitimacy.dot || hotel.legitimacy.philgeps) ? (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', margin: '0 0 1rem' }}>
+          {hotel.legitimacy.business_permit && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', fontWeight: 800, padding: '0.3rem 0.7rem', borderRadius: '999px', background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0' }}>
+              <Icons.Shield size={14} /> {t('badge_business_permit')}
+            </span>
+          )}
+          {hotel.legitimacy.dot && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', fontWeight: 800, padding: '0.3rem 0.7rem', borderRadius: '999px', background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe' }}>
+              <Icons.ShieldCheck size={14} /> {t('badge_dot')}
+            </span>
+          )}
+          {hotel.legitimacy.philgeps && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', fontWeight: 800, padding: '0.3rem 0.7rem', borderRadius: '999px', background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a' }}>
+              <Icons.Document size={14} /> {t('badge_philgeps')}
+            </span>
+          )}
+        </div>
+      ) : null}
+
       <div style={contentGrid} className="hotel-detail-content">
         {/* Left Column */}
         <div style={leftColumn}>
@@ -1509,10 +1530,25 @@ export default function HotelDetail() {
               </div>
             </div>
 
-            <button style={bookNowButton} onClick={handleBookNow} disabled={isSoldOut}>
-              <Icons.Booking size={20} />
-              {isSoldOut ? t('button_sold_out') : isLoggedIn ? t('book_now') : t('login_to_book')}
-            </button>
+            {hotel.booking_enabled === false ? (
+              <div style={{
+                padding: '0.85rem 1rem',
+                borderRadius: '10px',
+                border: '1px solid #fde68a',
+                background: '#fffbeb',
+                color: '#92400e',
+                fontSize: '0.85rem',
+                fontWeight: 700,
+                textAlign: 'center'
+              }}>
+                {t('listing_only_notice')}
+              </div>
+            ) : (
+              <button style={bookNowButton} onClick={handleBookNow} disabled={isSoldOut}>
+                <Icons.Booking size={20} />
+                {isSoldOut ? t('button_sold_out') : isLoggedIn ? t('book_now') : t('login_to_book')}
+              </button>
+            )}
 
             <button style={contactButton} onClick={() => isLoggedIn ? setShowContactModal(true) : navigate('/login')}>
               <Icons.Chat size={18} />

@@ -5,6 +5,7 @@ import db from '../db.js';
 import { JWT_SECRET } from '../config/security.js';
 import { fetchHotelAvailabilityDays, toDateOnlyKey, subtractOneDay } from '../utils/hotelAvailability.js';
 import { PAYMENT_OPTIONS, dueNow, balanceOf, statusAfterPayment, MIN_GATEWAY_AMOUNT } from '../utils/paymentAmounts.js';
+import { getHotelLegitimacy } from '../utils/legitimacy.js';
 
 const EXTERNAL_CHECKOUT_METHODS = ['card', 'gcash', 'grabpay', 'qrph', 'paypal'];
 
@@ -189,6 +190,22 @@ export const createHotelBooking = async (req, res) => {
       error: 'You must read and agree to the booking, refund and cancellation policies before continuing',
       code: 'policy_agreement_required'
     });
+  }
+
+  // Listing-only establishments: owners without complete, admin-verified
+  // requirements (permit + DOT-or-PhilGEPS) may promote their hotels but not
+  // accept reservations.
+  if (hotel_id) {
+    const { ok, map } = await getHotelLegitimacy([hotel_id]);
+    if (ok) {
+      const info = map.get(Number(hotel_id));
+      if (!info || !info.booking_enabled) {
+        return res.status(403).json({
+          error: 'This establishment is currently listed for promotion only and is not accepting reservations',
+          code: 'listing_only'
+        });
+      }
+    }
   }
 
   const checkInKey = toDateOnlyKey(check_in);

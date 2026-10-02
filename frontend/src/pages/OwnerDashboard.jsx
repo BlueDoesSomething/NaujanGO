@@ -165,9 +165,23 @@ const OwnerDashboard = () => {
       business_address: '',
       tax_id: '',
       bank_name: '',
-      bank_account: ''
+      bank_account: '',
+      business_permit_no: '',
+      business_permit_expiry: '',
+      business_permit_file: '',
+      dot_no: '',
+      dot_expiry: '',
+      dot_file: '',
+      philgeps_no: '',
+      philgeps_expiry: '',
+      philgeps_file: ''
     });
     const [profileEditing, setProfileEditing] = useState(false);
+    // Full vs limited dashboard authorization (legitimacy requirements)
+    const [authorization, setAuthorization] = useState('full');
+    const [missingRequirements, setMissingRequirements] = useState([]);
+    const [profileStatus, setProfileStatus] = useState({ verification_status: 'pending', rejection_reason: '' });
+    const [docUploading, setDocUploading] = useState('');
   
     // Availability Calendar State
     const [selectedHotelForCalendar, setSelectedHotelForCalendar] = useState(null);
@@ -250,31 +264,60 @@ const OwnerDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [statsRes, hotelsRes, bookingsRes, roomsRes, profileRes] = await Promise.all([
-        api.get('/owner/dashboard/stats'),
+      const [hotelsRes, roomsRes, profileRes] = await Promise.all([
         api.get('/owner/hotels'),
-        api.get('/owner/bookings'),
         api.get('/owner/rooms'),
         api.get('/owner/profile')
       ]);
-      setStats(statsRes.data);
       setHotels(hotelsRes.data);
-      setBookings(bookingsRes.data);
       setRooms(roomsRes.data);
-      
+
+      const profileData = profileRes.data || {};
+      const bp = profileData.businessProfile;
+
       // Load business profile if it exists
-      if (profileRes.data.businessProfile) {
+      if (bp) {
         setBusinessProfile({
-          business_name: profileRes.data.businessProfile.business_name || user?.first_name || user?.username || '',
-          business_email: profileRes.data.businessProfile.business_email || user?.email || '',
-          business_phone: profileRes.data.businessProfile.business_phone || user?.phone || '',
-          business_address: profileRes.data.businessProfile.business_address || '',
-          tax_id: profileRes.data.businessProfile.tax_id || '',
-          bank_name: profileRes.data.businessProfile.bank_name || '',
-          bank_account: ''
+          business_name: bp.business_name || user?.first_name || user?.username || '',
+          business_email: bp.business_email || user?.email || '',
+          business_phone: bp.business_phone || user?.phone || '',
+          business_address: bp.business_address || '',
+          tax_id: bp.tax_id || '',
+          bank_name: bp.bank_name || '',
+          bank_account: '',
+          business_permit_no: bp.business_permit_no || '',
+          business_permit_expiry: bp.business_permit_expiry ? String(bp.business_permit_expiry).slice(0, 10) : '',
+          business_permit_file: bp.business_permit_file || '',
+          dot_no: bp.dot_no || '',
+          dot_expiry: bp.dot_expiry ? String(bp.dot_expiry).slice(0, 10) : '',
+          dot_file: bp.dot_file || '',
+          philgeps_no: bp.philgeps_no || '',
+          philgeps_expiry: bp.philgeps_expiry ? String(bp.philgeps_expiry).slice(0, 10) : '',
+          philgeps_file: bp.philgeps_file || ''
         });
       }
-      
+      setProfileStatus({
+        verification_status: bp?.verification_status || 'pending',
+        rejection_reason: bp?.rejection_reason || ''
+      });
+
+      // Admins always get the full dashboard; owners depend on legitimacy.
+      const authz = user?.role === 'admin' ? 'full' : (profileData.authorization || 'limited');
+      setAuthorization(authz);
+      setMissingRequirements(profileData.missing_requirements || []);
+
+      if (authz === 'full') {
+        const [statsRes, bookingsRes] = await Promise.all([
+          api.get('/owner/dashboard/stats'),
+          api.get('/owner/bookings')
+        ]);
+        setStats(statsRes.data);
+        setBookings(bookingsRes.data);
+      } else {
+        setStats(null);
+        setBookings([]);
+      }
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -347,7 +390,17 @@ const OwnerDashboard = () => {
         businessAddress: businessProfile.business_address,
         taxId: businessProfile.tax_id,
         bankName: businessProfile.bank_name,
-        bankAccount: businessProfile.bank_account
+        bankAccount: businessProfile.bank_account,
+        // Legitimacy & accreditation details
+        business_permit_no: businessProfile.business_permit_no,
+        business_permit_expiry: businessProfile.business_permit_expiry,
+        business_permit_file: businessProfile.business_permit_file,
+        dot_no: businessProfile.dot_no,
+        dot_expiry: businessProfile.dot_expiry,
+        dot_file: businessProfile.dot_file,
+        philgeps_no: businessProfile.philgeps_no,
+        philgeps_expiry: businessProfile.philgeps_expiry,
+        philgeps_file: businessProfile.philgeps_file
       };
 
       const res = await api.put('/owner/profile', payload);
@@ -362,6 +415,125 @@ const OwnerDashboard = () => {
       console.error('Error saving business profile:', error);
       alert(error.response?.data?.error || 'Failed to save business profile');
     }
+  };
+
+  const handleDocumentUpload = async (field, file) => {
+    if (!file) return;
+    setDocUploading(field);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await api.post('/owner/profile/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      setBusinessProfile((prev) => ({ ...prev, [field]: res.data.url }));
+    } catch (error) {
+      console.error('Document upload failed:', error);
+      alert(error.response?.data?.error || 'Document upload failed');
+    } finally {
+      setDocUploading('');
+    }
+  };
+
+  const missingLabel = (key) =>
+    key === 'business_permit'
+      ? t('missing_business_permit')
+      : key === 'dot_or_philgeps'
+        ? t('missing_dot_or_philgeps')
+        : t('missing_verification');
+
+  // One legitimacy document group (number + expiry + file upload)
+  const docGroup = (label, numberLabel, noKey, expiryKey, fileKey) => {
+    const submitted = Boolean(businessProfile[noKey] || businessProfile[fileKey]);
+    const isVerified = profileStatus.verification_status === 'verified';
+    const inputStyle = {
+      width: '100%',
+      padding: '0.75rem',
+      border: '1px solid #c8e6c9',
+      borderRadius: '8px',
+      fontSize: '0.95rem',
+      background: profileEditing ? 'white' : '#f8fdf7'
+    };
+
+    return (
+      <div style={{ gridColumn: '1 / -1', border: '1px solid #c8e6c9', borderRadius: '10px', padding: '1.1rem 1.25rem', background: '#fbfffb' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
+          <span style={{ fontWeight: 800, color: '#1B5E20', fontSize: '0.95rem' }}>{label}</span>
+          {submitted && (
+            <span style={{
+              fontSize: '0.72rem',
+              fontWeight: 800,
+              padding: '0.25rem 0.6rem',
+              borderRadius: '999px',
+              background: isVerified ? '#dcfce7' : profileStatus.verification_status === 'rejected' ? '#fee2e2' : '#fef3c7',
+              color: isVerified ? '#166534' : profileStatus.verification_status === 'rejected' ? '#991b1b' : '#92400e'
+            }}>
+              {isVerified
+                ? t('verification_verified')
+                : profileStatus.verification_status === 'rejected'
+                  ? t('verification_rejected')
+                  : t('verification_pending')}
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+          <div>
+            <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#2d3748', display: 'block', marginBottom: '0.5rem' }}>
+              {numberLabel}
+            </label>
+            <input
+              type="text"
+              value={businessProfile[noKey]}
+              onChange={(e) => setBusinessProfile({ ...businessProfile, [noKey]: e.target.value })}
+              disabled={!profileEditing}
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#2d3748', display: 'block', marginBottom: '0.5rem' }}>
+              {t('field_doc_expiry')}
+            </label>
+            <input
+              type="date"
+              value={businessProfile[expiryKey]}
+              onChange={(e) => setBusinessProfile({ ...businessProfile, [expiryKey]: e.target.value })}
+              disabled={!profileEditing}
+              style={inputStyle}
+            />
+          </div>
+          <div>
+            <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#2d3748', display: 'block', marginBottom: '0.5rem' }}>
+              {t('upload_document')}
+            </label>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              {businessProfile[fileKey] ? (
+                <a
+                  href={businessProfile[fileKey]}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1B5E20', wordBreak: 'break-all' }}
+                >
+                  {t('document_uploaded')}
+                </a>
+              ) : (
+                <span style={{ fontSize: '0.85rem', color: '#9ca3af' }}>—</span>
+              )}
+              {profileEditing && (
+                <label className="gov-btn-ghost" style={{ cursor: 'pointer', margin: 0, padding: '0.4rem 0.7rem', fontSize: '0.8rem' }}>
+                  {docUploading === fileKey ? '…' : t('upload_document')}
+                  <input
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.webp,.pdf"
+                    style={{ display: 'none' }}
+                    onChange={(e) => handleDocumentUpload(fileKey, e.target.files?.[0])}
+                  />
+                </label>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const parseImageUrls = (value) => {
@@ -770,6 +942,19 @@ const OwnerDashboard = () => {
     { id: 'archive', label: 'Archive', icon: <Icons.Archive size={22} /> }
   ];
 
+  // Limited authorization: incomplete/ unverified legitimacy requirements
+  // restricts the dashboard to hotel listing management + business profile.
+  const isLimitedOwner = authorization !== 'full' && user?.role !== 'admin';
+  const visibleOwnerModules = isLimitedOwner
+    ? ownerModules.filter((module) => module.id === 'hotels' || module.id === 'profile')
+    : ownerModules;
+
+  useEffect(() => {
+    if (isLimitedOwner && !['hotels', 'profile'].includes(activeTab)) {
+      setActiveTab('hotels');
+    }
+  }, [isLimitedOwner, activeTab]);
+
   const isCurrentUser = (userId) => String(userId) === String(user?.user_id);
   
     const ownerHotelIds = new Set(hotels.map((hotel) => hotel.hotel_id));
@@ -1030,7 +1215,7 @@ const OwnerDashboard = () => {
             </button>
           </div>
           <nav className="gov-nav">
-            {ownerModules.map((module, index) => {
+            {visibleOwnerModules.map((module, index) => {
               const isActive = activeTab === module.id;
               return (
                 <button
@@ -1214,6 +1399,25 @@ const OwnerDashboard = () => {
             <h1 className="gov-page-title">
               <Icons.Hotel size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> My Hotels
             </h1>
+
+            {isLimitedOwner && (
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                alignItems: 'flex-start',
+                marginBottom: '1.5rem',
+                padding: '0.9rem 1.25rem',
+                borderRadius: '10px',
+                border: '1px solid #fde68a',
+                background: '#fffbeb',
+                color: '#92400e',
+                fontSize: '0.9rem',
+                fontWeight: 600
+              }}>
+                <Icons.Shield size={20} style={{ flexShrink: 0, marginTop: '0.1rem' }} />
+                <span>{t('access_limited_banner')}</span>
+              </div>
+            )}
 
             {hotels.length === 0 ? (
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
@@ -3013,7 +3217,56 @@ const OwnerDashboard = () => {
                     {profileEditing ? 'Cancel' : 'Edit Profile'}
                   </button>
                 </div>
-              
+
+                {/* Verification status & authorization banner */}
+                <div style={{
+                  display: 'flex',
+                  gap: '0.85rem',
+                  alignItems: 'flex-start',
+                  marginBottom: '1.5rem',
+                  padding: '1rem 1.25rem',
+                  borderRadius: '10px',
+                  border: '1px solid',
+                  borderColor: profileStatus.verification_status === 'verified' && !isLimitedOwner
+                    ? '#bbf7d0'
+                    : profileStatus.verification_status === 'rejected'
+                      ? '#fecaca'
+                      : '#fde68a',
+                  background: profileStatus.verification_status === 'verified' && !isLimitedOwner
+                    ? '#f0fdf4'
+                    : profileStatus.verification_status === 'rejected'
+                      ? '#fef2f2'
+                      : '#fffbeb'
+                }}>
+                  <Icons.Shield size={24} style={{ flexShrink: 0, marginTop: '0.1rem', color: '#1B5E20' }} />
+                  <div>
+                    <div style={{ fontWeight: 800, color: '#1B5E20', fontSize: '0.95rem' }}>
+                      {profileStatus.verification_status === 'verified'
+                        ? t('verification_verified')
+                        : profileStatus.verification_status === 'rejected'
+                          ? t('verification_rejected')
+                          : t('verification_pending')}
+                      {' — '}
+                      {isLimitedOwner ? t('requirements_incomplete') : t('requirements_complete')}
+                    </div>
+                    {isLimitedOwner && missingRequirements.length > 0 && (
+                      <div style={{ fontSize: '0.85rem', color: '#92400e', marginTop: '0.35rem' }}>
+                        {t('requirements_missing_label')}{missingRequirements.map(missingLabel).join(', ')}
+                      </div>
+                    )}
+                    {profileStatus.verification_status === 'rejected' && profileStatus.rejection_reason && (
+                      <div style={{ fontSize: '0.85rem', color: '#991b1b', marginTop: '0.35rem' }}>
+                        {profileStatus.rejection_reason}
+                      </div>
+                    )}
+                    {!isLimitedOwner && (
+                      <div style={{ fontSize: '0.82rem', color: '#4b5563', marginTop: '0.35rem' }}>
+                        {t('legitimacy_hint')}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
                   <div>
                     <label style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2d3748', display: 'block', marginBottom: '0.5rem' }}>
@@ -3151,6 +3404,18 @@ const OwnerDashboard = () => {
                       }}
                     />
                   </div>
+
+                  {/* Legitimacy & Accreditation */}
+                  <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
+                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1B5E20', borderBottom: '2px solid #e5e7eb', paddingBottom: '0.4rem' }}>
+                      <Icons.Shield size={18} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />
+                      {t('legitimacy_section')}
+                    </div>
+                    <div style={{ fontSize: '0.82rem', color: '#6b7280', marginTop: '0.4rem' }}>{t('legitimacy_hint')}</div>
+                  </div>
+                  {docGroup(t('field_business_permit_no'), t('field_business_permit_no'), 'business_permit_no', 'business_permit_expiry', 'business_permit_file')}
+                  {docGroup(t('field_dot_no'), t('field_dot_no'), 'dot_no', 'dot_expiry', 'dot_file')}
+                  {docGroup(t('field_philgeps_no'), t('field_philgeps_no'), 'philgeps_no', 'philgeps_expiry', 'philgeps_file')}
                 </div>
               
                 {profileEditing && (

@@ -290,6 +290,9 @@ const AdminDashboard = () => {
   const [ownerAssignments, setOwnerAssignments] = useState({});
   const [ownerAssigning, setOwnerAssigning] = useState({});
   const [activeReport, setActiveReport] = useState('booking-trends');
+  // Business legitimacy verification (permit / DOT / PhilGEPS)
+  const [businessProfiles, setBusinessProfiles] = useState([]);
+  const [businessProfilesLoading, setBusinessProfilesLoading] = useState(false);
   const [reportsLoading, setReportsLoading] = useState(false);
   const [analyticsData, setAnalyticsData] = useState({ dailyTrends: [], monthlyTrends: [], hotelPerformance: [] });
   const [editingUser, setEditingUser] = useState(null);
@@ -1830,6 +1833,42 @@ const AdminDashboard = () => {
     loadChatbotData();
   }, [activeModule, chatbotData]);
 
+  const loadBusinessProfiles = async () => {
+    setBusinessProfilesLoading(true);
+    try {
+      const res = await api.get('/admin/business-profiles');
+      setBusinessProfiles(res.data.data || []);
+    } catch (error) {
+      console.error('Failed to load business profiles:', error);
+      alert(error.response?.data?.error || 'Failed to load business profiles');
+    } finally {
+      setBusinessProfilesLoading(false);
+    }
+  };
+
+  const verifyBusinessProfile = async (id, status) => {
+    let rejection_reason = null;
+    if (status === 'rejected') {
+      rejection_reason = window.prompt(t('admin_rejection_reason'));
+      if (!rejection_reason || !rejection_reason.trim()) return;
+    }
+    try {
+      await api.put(`/admin/business-profiles/${id}/verification`, {
+        verification_status: status,
+        rejection_reason: rejection_reason && rejection_reason.trim()
+      });
+      await loadBusinessProfiles();
+    } catch (error) {
+      console.error('Verification update failed:', error);
+      alert(error.response?.data?.error || 'Failed to update verification');
+    }
+  };
+
+  useEffect(() => {
+    if (activeModule !== 'business-verification') return;
+    loadBusinessProfiles();
+  }, [activeModule]);
+
   useEffect(() => {
     const openConversationId = location.state?.openConversationId;
     if (activeModule !== 'chatbot' || !openConversationId || !chatbotData?.conversations?.length) return;
@@ -2145,6 +2184,7 @@ const AdminDashboard = () => {
   const modules = [
     { id: 'overview', label: 'Overview', icon: <Icons.ChartPie size={22} /> },
     { id: 'users', label: 'Users', icon: <Icons.User size={22} /> },
+    { id: 'business-verification', label: 'Business Verification', icon: <Icons.Shield size={22} /> },
     { id: 'bookings', label: 'Bookings', icon: <Icons.Calendar size={22} /> },
     { id: 'hotels', label: 'Hotels', icon: <Icons.Hotel size={22} /> },
     { id: 'itineraries', label: 'Itineraries', icon: <Icons.Route size={22} /> },
@@ -2443,6 +2483,89 @@ const AdminDashboard = () => {
           })()}
 
           {/* Users */}
+          {/* Business Verification (legitimacy & accreditation) */}
+          {activeModule === 'business-verification' && (
+            <div>
+              <h1 className="gov-page-title">
+                <Icons.Shield size={32} style={{ verticalAlign: 'middle' }} /> {t('admin_business_verification')}
+              </h1>
+              <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '0 0 1.5rem' }}>{t('legitimacy_hint')}</p>
+
+              <div className="gov-table-wrap">
+                <table className="gov-table" style={{ fontSize: '0.875rem' }}>
+                  <thead>
+                    <tr>
+                      <th>Owner</th>
+                      <th>Business</th>
+                      <th>{t('field_business_permit_no')}</th>
+                      <th>{t('field_dot_no')}</th>
+                      <th>{t('field_philgeps_no')}</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {businessProfilesLoading ? (
+                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>…</td></tr>
+                    ) : businessProfiles.length === 0 ? (
+                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>No business profiles yet.</td></tr>
+                    ) : businessProfiles.map((bp) => (
+                      <tr key={bp.id}>
+                        <td>
+                          <div style={{ fontWeight: 700 }}>{bp.first_name} {bp.last_name}</div>
+                          <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>{bp.email}</div>
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{bp.business_name || '—'}</div>
+                          <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>{bp.business_phone || bp.business_email || ''}</div>
+                        </td>
+                        {[['business_permit_no', 'business_permit_expiry', 'business_permit_file'], ['dot_no', 'dot_expiry', 'dot_file'], ['philgeps_no', 'philgeps_expiry', 'philgeps_file']].map(([noKey, expKey, fileKey]) => (
+                          <td key={noKey}>
+                            <div style={{ fontWeight: 600 }}>{bp[noKey] || '—'}</div>
+                            {bp[expKey] && <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{t('field_doc_expiry')}: {String(bp[expKey]).slice(0, 10)}</div>}
+                            {bp[fileKey] && (
+                              <a href={bp[fileKey]} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', fontWeight: 700 }}>{t('document_uploaded')}</a>
+                            )}
+                          </td>
+                        ))}
+                        <td>
+                          <span style={{
+                            fontSize: '0.72rem', fontWeight: 800, padding: '0.25rem 0.6rem', borderRadius: '999px',
+                            background: bp.verification_status === 'verified' ? '#dcfce7' : bp.verification_status === 'rejected' ? '#fee2e2' : '#fef3c7',
+                            color: bp.verification_status === 'verified' ? '#166534' : bp.verification_status === 'rejected' ? '#991b1b' : '#92400e'
+                          }}>
+                            {bp.verification_status === 'verified' ? t('verification_verified') : bp.verification_status === 'rejected' ? t('verification_rejected') : t('verification_pending')}
+                          </span>
+                          {bp.verification_status === 'rejected' && bp.rejection_reason && (
+                            <div style={{ fontSize: '0.75rem', color: '#991b1b', marginTop: '0.25rem' }}>{bp.rejection_reason}</div>
+                          )}
+                        </td>
+                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <button
+                            className="gov-btn-primary"
+                            style={{ marginRight: '0.5rem', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                            onClick={() => verifyBusinessProfile(bp.id, 'verified')}
+                            disabled={bp.verification_status === 'verified'}
+                          >
+                            {t('admin_verify')}
+                          </button>
+                          <button
+                            className="gov-btn-ghost"
+                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                            onClick={() => verifyBusinessProfile(bp.id, 'rejected')}
+                            disabled={bp.verification_status === 'rejected'}
+                          >
+                            {t('admin_reject')}
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           {activeModule === 'users' && (
             <div>
               <h1 className="gov-page-title">

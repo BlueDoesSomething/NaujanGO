@@ -438,6 +438,25 @@ export default function Hotels() {
                   </div>
                 </div>
                 <p style={cardLocation}><Icons.Location size={16} /> {hotel.location}</p>
+                {hotel.legitimacy && (hotel.legitimacy.business_permit || hotel.legitimacy.dot || hotel.legitimacy.philgeps) ? (
+                  <div style={badgesRow}>
+                    {hotel.legitimacy.business_permit && (
+                      <span style={{ ...legitimacyBadge, background: '#ecfdf5', color: '#065f46', borderColor: '#a7f3d0' }}>
+                        <Icons.Shield size={12} /> {t('badge_business_permit')}
+                      </span>
+                    )}
+                    {hotel.legitimacy.dot && (
+                      <span style={{ ...legitimacyBadge, background: '#eff6ff', color: '#1e40af', borderColor: '#bfdbfe' }}>
+                        <Icons.ShieldCheck size={12} /> {t('badge_dot')}
+                      </span>
+                    )}
+                    {hotel.legitimacy.philgeps && (
+                      <span style={{ ...legitimacyBadge, background: '#fffbeb', color: '#92400e', borderColor: '#fde68a' }}>
+                        <Icons.Document size={12} /> {t('badge_philgeps')}
+                      </span>
+                    )}
+                  </div>
+                ) : null}
                 <p style={cardDescription}>{truncateText(hotel.description)}</p>
                 
                 <div style={priceContainer}>
@@ -994,6 +1013,25 @@ const cardDescription = {
   display: '-webkit-box',
   WebkitLineClamp: 3,
   WebkitBoxOrient: 'vertical'
+}
+
+// Legitimacy & accreditation badges (verified items only, per hotel owner)
+const badgesRow = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '0.4rem',
+  margin: '0.5rem 0 0'
+}
+
+const legitimacyBadge = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '0.3rem',
+  fontSize: '0.7rem',
+  fontWeight: 800,
+  padding: '0.22rem 0.55rem',
+  borderRadius: '999px',
+  border: '1px solid'
 }
 
 const priceContainer = {
