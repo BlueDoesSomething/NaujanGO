@@ -529,15 +529,6 @@ export default function HotelDetail() {
     setShowBookingModal(true);
   };
 
-  // Opens the Book Now modal with the inline availability calendar.
-  // Intentionally not login-gated: checking availability stays public and
-  // handleSubmitBooking prompts for login at confirm time. Range/error are
-  // reset by the showBookingModal close effect, covering every open path.
-  const openCalendar = () => {
-    setBookingError('');
-    setShowBookingModal(true);
-  };
-
   const changeCalendarMonth = (delta) => {
     setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
     setCalendarRange({ start: null, end: null });
@@ -1444,11 +1435,6 @@ export default function HotelDetail() {
               )}
             </div>
 
-            <button style={calendarButton} onClick={openCalendar}>
-              <Icons.Calendar size={18} />
-              {t('availability_check_availability')}
-            </button>
-
             <div style={contactSection}>
               <div style={contactItem}>
                 <Icons.Phone size={18} />
@@ -1656,14 +1642,20 @@ export default function HotelDetail() {
                             let background = 'white';
                             let color = '#1b5e20';
                             let border = '1px solid #c8e6c9';
+                            let boxShadow = 'none';
                             if (isPast) {
                               background = '#f5f5f5';
                               color = '#9ca3af';
                             } else if (isSelected) {
-                              background = '#e8f5e9';
-                              border = '2px solid #2e7d32';
+                              // Check-in / check-out: solid green so the picked
+                              // dates are obvious even without a confirm footer.
+                              background = '#2e7d32';
+                              color = '#ffffff';
+                              border = '2px solid #1b5e20';
+                              boxShadow = '0 2px 6px rgba(46, 125, 50, 0.45)';
                             } else if (inRange) {
-                              background = '#f0faf2';
+                              background = '#c8e6c9';
+                              color = '#1b5e20';
                             } else if (isClosed) {
                               background = '#ffcccc';
                               color = '#c62828';
@@ -1682,6 +1674,7 @@ export default function HotelDetail() {
                                   background,
                                   color,
                                   border,
+                                  boxShadow,
                                   cursor: isSelectable ? 'pointer' : 'not-allowed',
                                   opacity: isPast ? 0.55 : 1
                                 }}
@@ -1707,7 +1700,7 @@ export default function HotelDetail() {
                             {t('available_label')}
                           </span>
                           <span style={calLegendItem}>
-                            <span style={{ ...calSwatch, background: '#e8f5e9', border: '2px solid #2e7d32' }} />
+                            <span style={{ ...calSwatch, background: '#2e7d32', border: '2px solid #1b5e20' }} />
                             Selected
                           </span>
                           <span style={calLegendItem}>
@@ -3914,24 +3907,6 @@ const contactButton = {
   alignItems: 'center',
   justifyContent: 'center',
   gap: '0.75rem'
-};
-
-const calendarButton = {
-  width: '100%',
-  background: '#f0fdf4',
-  color: '#16a34a',
-  border: '2px solid #86efac',
-  borderRadius: '12px',
-  padding: '0.85rem 1rem',
-  fontSize: '0.95rem',
-  fontWeight: '700',
-  cursor: 'pointer',
-  marginBottom: '1.5rem',
-  transition: 'all 0.3s ease',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '0.5rem'
 };
 
 const infoText = {
