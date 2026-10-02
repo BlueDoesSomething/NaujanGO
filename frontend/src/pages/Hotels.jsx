@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { createHotelBooking, fetchHotels, processPayment, startPaymentCheckout } from '../api'
 import Icons from '../components/Icons'
 import HeroSlideshow from '../components/HeroSlideshow'
+import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy'
 import './Hotels.css'
 
 export default function Hotels() {
@@ -22,6 +23,7 @@ export default function Hotels() {
   const [receiptData, setReceiptData] = useState(null)
   const [paymentStatus, setPaymentStatus] = useState(null) // 'processing', 'success', 'failed'
   const [checkoutState, setCheckoutState] = useState(null)
+  const [policyAgreed, setPolicyAgreed] = useState(false)
   const [searchQuery, setSearchQuery] = useState(location.state?.destination || '')
 
   const getErrorMessage = (value) => {
@@ -69,6 +71,7 @@ export default function Hotels() {
     setBookingError('')
     setReceiptData(null)
     setCheckoutState(null)
+    setPolicyAgreed(false)
     setShowBookingModal(true)
   }
 
@@ -144,6 +147,11 @@ export default function Hotels() {
     return Number((selectedHotel.pricePerNight * nights * bookingForm.rooms).toFixed(2))
   }, [selectedHotel, nights, bookingForm.rooms])
 
+  const policyLines = useMemo(
+    () => buildPolicyLines(selectedHotel, { checkIn: bookingForm.checkIn, showBalance: false, t }),
+    [selectedHotel, bookingForm.checkIn, t]
+  )
+
   const handleFormChange = (field, value) => {
     setBookingForm(prev => ({ ...prev, [field]: value }))
   }
@@ -164,6 +172,10 @@ export default function Hotels() {
     }
     if (bookingForm.payNow && bookingForm.paymentMethod === 'gcash' && !bookingForm.customerPhone) {
       setBookingError('Please provide your phone number.')
+      return
+    }
+    if (!policyAgreed) {
+      setBookingError(t('agree_policies_checkbox'))
       return
     }
 
@@ -187,6 +199,7 @@ export default function Hotels() {
         special_requests: bookingForm.specialRequests,
         payment_method: bookingForm.paymentMethod,
         pay_now: isExternalCheckout ? false : bookingForm.payNow,
+        policy_agreed: policyAgreed,
         customer_name: bookingForm.customerName,
         customer_email: bookingForm.customerEmail,
         customer_phone: bookingForm.customerPhone,
@@ -594,6 +607,33 @@ export default function Hotels() {
                 />
               </div>
 
+              {/* Booking policies — shown before payment confirmation */}
+              <div>
+                <label style={inputLabel}>{t('booking_policies_title')}</label>
+                <div style={{ border: '1.5px solid #c8e6c9', borderRadius: '10px', background: '#f8fdf7', padding: '1rem 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+                  {policyLines.map((line, idx) => {
+                    const IconComp = Icons[POLICY_LINE_ICONS[line.icon] || 'Info']
+                    return (
+                      <div key={idx} style={{ display: 'flex', gap: '0.65rem', alignItems: 'flex-start', fontSize: '0.86rem', color: '#374151', lineHeight: 1.5 }}>
+                        <span style={{ flexShrink: 0, width: 26, height: 26, borderRadius: '50%', background: '#e8f5e9', color: '#2E7D32', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <IconComp size={14} />
+                        </span>
+                        <span>{line.text}</span>
+                      </div>
+                    )
+                  })}
+                  <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginTop: '0.35rem', paddingTop: '0.85rem', borderTop: '1px dashed #c8e6c9', cursor: 'pointer', fontSize: '0.88rem', color: '#1B5E20', fontWeight: 600, lineHeight: 1.45 }}>
+                    <input
+                      type="checkbox"
+                      checked={policyAgreed}
+                      onChange={(e) => setPolicyAgreed(e.target.checked)}
+                      style={{ marginTop: '2px', width: '16px', height: '16px', accentColor: '#2E7D32', flexShrink: 0 }}
+                    />
+                    <span>{t('agree_policies_checkbox')}</span>
+                  </label>
+                </div>
+              </div>
+
               <div style={summaryCard}>
                 <div style={summaryRow}>
                   <span>{t('nights') || 'Nights'}</span>
@@ -671,7 +711,7 @@ export default function Hotels() {
               <button style={ghostButton} onClick={() => setShowBookingModal(false)} disabled={isSubmitting}>
                 {t('cancel')}
               </button>
-              <button style={primaryButton} onClick={handleSubmitBooking} disabled={isSubmitting || !!checkoutState}>
+              <button style={primaryButton} onClick={handleSubmitBooking} disabled={isSubmitting || !!checkoutState || !policyAgreed}>
                 {isSubmitting ? t('processing') : t('confirm_booking')}
               </button>
             </div>

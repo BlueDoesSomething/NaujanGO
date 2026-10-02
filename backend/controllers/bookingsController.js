@@ -8,13 +8,26 @@ import { PAYMENT_OPTIONS, dueNow, balanceOf, statusAfterPayment, MIN_GATEWAY_AMO
 
 const EXTERNAL_CHECKOUT_METHODS = ['card', 'gcash', 'grabpay', 'qrph', 'paypal'];
 
-// Balance must be settled 1 day before check-in (display deadline only).
-const balanceDueAt = (checkInKey) => {
+// Balance deadline is display-only: N days before check-in (hotel-configurable,
+// default 1; frozen into the booking's policy_snapshot at creation time).
+const balanceDueAt = (checkInKey, daysBefore = 1) => {
   if (!checkInKey) return null;
   const date = new Date(`${checkInKey}T00:00:00`);
   if (Number.isNaN(date.getTime())) return null;
-  date.setDate(date.getDate() - 1);
+  const days = Number.isFinite(Number(daysBefore)) ? Math.max(0, Math.trunc(Number(daysBefore))) : 1;
+  date.setDate(date.getDate() - days);
   return toDateOnlyKey(date);
+};
+
+const parsePolicySnapshot = (value) => {
+  if (!value) return null;
+  if (typeof value === 'object') return value;
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' ? parsed : null;
+  } catch (error) {
+    return null;
+  }
 };
 
 const getUserIdFromToken = (req) => {
@@ -103,6 +116,7 @@ const mapReceipt = (booking, payment, amountPaid = 0) => {
   const total = Number(booking.total_amount) || 0;
   const paid = Number(amountPaid) || 0;
   const paymentOption = booking.payment_option || 'full';
+  const snapshot = parsePolicySnapshot(booking.policy_snapshot);
   return {
     receipt_number: booking.receipt_number,
     booking_reference: booking.booking_reference || null,
@@ -126,11 +140,12 @@ const mapReceipt = (booking, payment, amountPaid = 0) => {
     payment_option: paymentOption,
     amount_paid: paid,
     balance_due: balanceOf(total, paid, booking.payment_status),
-    balance_due_at: balanceDueAt(toDateOnlyKey(booking.check_in)),
+    balance_due_at: snapshot?.balance_due_at || balanceDueAt(toDateOnlyKey(booking.check_in), snapshot?.balance_due_days),
     payment_reference: payment?.transaction_reference || null,
     payment_provider: payment?.provider || null,
     card_last4: payment?.card_last4 || null,
-    status: booking.status
+    status: booking.status,
+    policy_snapshot: snapshot
   };
 };
 
@@ -152,6 +167,7 @@ export const createHotelBooking = async (req, res) => {
     payment_method = 'pay_at_property',
     payment_option = 'full',
     pay_now = true,
+    policy_agreed = false,
     customer_name,
     customer_email,
     customer_phone,
@@ -164,6 +180,15 @@ export const createHotelBooking = async (req, res) => {
 
   if (!hotel_name || !check_in || !check_out) {
     return res.status(400).json({ error: 'Hotel, check-in, and check-out are required' });
+  }
+
+  // Policy visibility: the guest must have acknowledged the booking, refund
+  // and cancellation policies shown before the payment confirmation step.
+  if (policy_agreed !== true && policy_agreed !== 'true') {
+    return res.status(400).json({
+      error: 'You must read and agree to the booking, refund and cancellation policies before continuing',
+      code: 'policy_agreement_required'
+    });
   }
 
   const checkInKey = toDateOnlyKey(check_in);
@@ -216,6 +241,7 @@ export const createHotelBooking = async (req, res) => {
   let amountDueNow = null;
 
   const connection = await db.promise().getConnection();
+  let hotelRow = null;
   try {
     await connection.beginTransaction();
 
@@ -238,7 +264,10 @@ export const createHotelBooking = async (req, res) => {
       }
 
       const [hotel] = await connection.query(
-        'SELECT rooms_total, allowed_payment_methods, reservation_fee FROM hotels WHERE hotel_id = ? FOR UPDATE',
+        `SELECT rooms_total, allowed_payment_methods, reservation_fee,
+                cancellation_type, free_cancellation_days, custom_policy_text,
+                house_rules, check_in_time, check_out_time, balance_due_days
+         FROM hotels WHERE hotel_id = ? FOR UPDATE`,
         [hotel_id]
       );
 
@@ -248,7 +277,8 @@ export const createHotelBooking = async (req, res) => {
         return res.status(404).json({ error: 'Hotel not found' });
       }
 
-      amountDueNow = dueNow(payment_option, totalAmount, hotel[0].reservation_fee);
+      hotelRow = hotel[0];
+      amountDueNow = dueNow(payment_option, totalAmount, hotelRow.reservation_fee);
       if (amountDueNow === null) {
         await connection.rollback();
         connection.release();
@@ -407,10 +437,36 @@ export const createHotelBooking = async (req, res) => {
 
     if (pay_now) paymentStatus = statusAfterPayment(totalAmount, amountDueNow);
 
+    // Freeze the policy terms the guest agreed to at booking time, so later
+    // owner edits never rewrite existing bookings.
+    let policySnapshotValue = null;
+    if (hotelRow) {
+      const balanceDays = hotelRow.balance_due_days === null || hotelRow.balance_due_days === undefined
+        ? 1
+        : Number(hotelRow.balance_due_days);
+      policySnapshotValue = JSON.stringify({
+        cancellation_type: hotelRow.cancellation_type || 'free_until',
+        free_cancellation_days: hotelRow.free_cancellation_days === null || hotelRow.free_cancellation_days === undefined
+          ? 1
+          : Number(hotelRow.free_cancellation_days),
+        custom_policy_text: hotelRow.custom_policy_text || null,
+        house_rules: hotelRow.house_rules || null,
+        check_in_time: hotelRow.check_in_time ? String(hotelRow.check_in_time).slice(0, 5) : '14:00',
+        check_out_time: hotelRow.check_out_time ? String(hotelRow.check_out_time).slice(0, 5) : '12:00',
+        reservation_fee: hotelRow.reservation_fee === null || hotelRow.reservation_fee === undefined || hotelRow.reservation_fee === ''
+          ? null
+          : Number(hotelRow.reservation_fee),
+        balance_due_days: balanceDays,
+        balance_due_at: balanceDueAt(checkInKey, balanceDays),
+        payment_option,
+        agreed_at: new Date().toISOString()
+      });
+    }
+
     const [result] = await connection.query(
       `INSERT INTO hotel_bookings
-        (user_id, hotel_id, hotel_name, hotel_location, price_per_night, currency, check_in, check_out, nights, rooms, guests, special_requests, status, payment_status, payment_method, payment_option, total_amount, receipt_number, customer_name, customer_email, customer_phone, room_id, room_type_name, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (user_id, hotel_id, hotel_name, hotel_location, price_per_night, currency, check_in, check_out, nights, rooms, guests, special_requests, status, payment_status, payment_method, payment_option, total_amount, receipt_number, customer_name, customer_email, customer_phone, room_id, room_type_name, expires_at, policy_snapshot)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
         hotel_id || null,
@@ -435,7 +491,8 @@ export const createHotelBooking = async (req, res) => {
         customer_phone || null,
         room_id || null,           // NEW: Room selection (optional)
         selectedRoom?.room_type_name || room_type_name || null,    // Use DB value if available, fall back to param
-        pay_now ? null : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ')
+        pay_now ? null : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' '),
+        policySnapshotValue
       ]
     );
 
@@ -514,18 +571,24 @@ export const getHotelBookings = async (req, res) => {
       const paidByBooking = {};
       paidRows.forEach((row) => { paidByBooking[row.booking_id] = Number(row.amount_paid) || 0; });
 
-      // Reservation-fee lookups for computing the first instalment
+      // Reservation-fee + balance-deadline lookups (fallback for legacy rows
+      // without a policy_snapshot)
       const hotelIds = [...new Set(rows.map((row) => row.hotel_id).filter(Boolean))];
       let feeByHotel = {};
+      let balanceDaysByHotel = {};
       if (hotelIds.length > 0) {
         try {
           const [feeRows] = await db.promise().query(
-            'SELECT hotel_id, reservation_fee FROM hotels WHERE hotel_id IN (?)',
+            'SELECT hotel_id, reservation_fee, balance_due_days FROM hotels WHERE hotel_id IN (?)',
             [hotelIds]
           );
-          feeRows.forEach((row) => { feeByHotel[row.hotel_id] = row.reservation_fee; });
+          feeRows.forEach((row) => {
+            feeByHotel[row.hotel_id] = row.reservation_fee;
+            balanceDaysByHotel[row.hotel_id] = row.balance_due_days;
+          });
         } catch (feeErr) {
           feeByHotel = {};
+          balanceDaysByHotel = {};
         }
       }
 
@@ -533,7 +596,10 @@ export const getHotelBookings = async (req, res) => {
         const paid = paidByBooking[row.booking_id] || 0;
         row.amount_paid = paid;
         row.balance_due = balanceOf(row.total_amount, paid, row.payment_status);
-        row.balance_due_at = balanceDueAt(toDateOnlyKey(row.check_in));
+        const snapshot = parsePolicySnapshot(row.policy_snapshot);
+        row.policy_snapshot = snapshot;
+        const balanceDays = snapshot?.balance_due_days ?? balanceDaysByHotel[row.hotel_id] ?? 1;
+        row.balance_due_at = snapshot?.balance_due_at || balanceDueAt(toDateOnlyKey(row.check_in), balanceDays);
         row.payment_option = row.payment_option || 'full';
         // What a "Pay now" action should charge: the balance once anything has
         // been paid, otherwise the first instalment chosen at booking time.

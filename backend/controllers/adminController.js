@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { spawn } from 'child_process';
 import db from '../db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { parsePolicyFields } from '../utils/policyFields.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -1339,6 +1340,16 @@ router.post('/hotels', async (req, res) => {
       insertValues.splice(10, 0, parsedImageUrls ?? null);
     }
 
+    // Policy / house-rule fields (is_active handled above via normalizeIsActive)
+    const policyResult = parsePolicyFields({ ...req.body, is_active: undefined });
+    if (policyResult.error) {
+      return res.status(400).json({ error: policyResult.error });
+    }
+    Object.entries(policyResult.fields).forEach(([column, value]) => {
+      insertColumns.push(column);
+      insertValues.push(value);
+    });
+
     const [result] = await db.promise().query(
       `INSERT INTO hotels
         (${insertColumns.join(', ')})
@@ -1412,6 +1423,16 @@ router.put('/hotels/:id', async (req, res) => {
       fields.push('is_active = ?');
       values.push(normalizedStatus);
     }
+
+    // Policy / house-rule fields (is_active handled above via normalizeIsActive)
+    const policyResult = parsePolicyFields({ ...req.body, is_active: undefined });
+    if (policyResult.error) {
+      return res.status(400).json({ error: policyResult.error });
+    }
+    Object.entries(policyResult.fields).forEach(([column, value]) => {
+      fields.push(`${column} = ?`);
+      values.push(value);
+    });
 
     if (fields.length === 0) {
       return res.status(400).json({ error: 'No fields provided for update' });

@@ -6,6 +6,7 @@ import { fetchHotelBookings, fetchHotelReceipt, modifyHotelBooking } from '../ap
 import * as api from '../api';
 import HeroSlideshow from '../components/HeroSlideshow';
 import { getApiBaseUrl } from '../api';
+import { buildPolicyLines } from '../utils/bookingPolicy';
 
 export default function BookingHistory() {
   const navigate = useNavigate();
@@ -116,6 +117,32 @@ export default function BookingHistory() {
 
     const totalAmount = `${receipt.currency} ${Number(receipt.total_amount || 0).toLocaleString()}`;
     const issuedAt = new Date(receipt.issued_at).toLocaleString();
+    const escapeHtml = (value) => String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+    // Policy terms frozen on the booking at creation time.
+    const snapshot = receipt.policy_snapshot;
+    let policySection = '';
+    if (snapshot) {
+      const lines = buildPolicyLines(snapshot, {
+        checkIn: receipt.check_in,
+        balanceDueAt: snapshot.balance_due_at || null,
+        showBalance: Number(receipt.balance_due) > 0,
+        t
+      });
+      const items = lines.map((line) => `<li>${escapeHtml(line.text)}</li>`).join('');
+      const agreed = snapshot.agreed_at
+        ? ` <span class="policy-agreed">(${t('receipt_agreed_at')} ${escapeHtml(new Date(snapshot.agreed_at).toLocaleString())})</span>`
+        : '';
+      policySection = `
+      <div class="section">
+        <h3>${escapeHtml(t('receipt_policies_title'))}${agreed}</h3>
+        <ul class="policy-list">${items}</ul>
+      </div>`;
+    }
 
     return `<!doctype html>
 <html lang="en">
@@ -199,6 +226,21 @@ export default function BookingHistory() {
       border-radius: 10px;
       padding: 14px 16px;
       color: #6b4f00;
+    }
+    .policy-list {
+      margin: 0;
+      padding-left: 20px;
+      color: #374151;
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+    .policy-list li {
+      margin-bottom: 4px;
+    }
+    .policy-agreed {
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: #6b7280;
     }
     .footer {
       margin-top: 18px;
@@ -298,6 +340,8 @@ export default function BookingHistory() {
           </div>
         </div>
       </div>
+
+      ${policySection}
 
       <div class="notes">
         Keep this receipt for your records. Issued on ${issuedAt}.

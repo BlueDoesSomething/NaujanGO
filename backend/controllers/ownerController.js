@@ -7,6 +7,7 @@ import db from '../db.js';
 import { authenticateToken, requireOwnerOrAdmin } from '../middleware/auth.js';
 import { syncBookingPaymentStatus } from '../utils/paymentSync.js';
 import { balanceOf } from '../utils/paymentAmounts.js';
+import { parsePolicyFields } from '../utils/policyFields.js';
 
 const router = express.Router();
 
@@ -271,14 +272,20 @@ router.post('/hotels', async (req, res) => {
     reservationFeeValue = fee;
   }
 
+  const policyResult = parsePolicyFields(req.body);
+  if (policyResult.error) {
+    return res.status(400).json({ error: policyResult.error });
+  }
+  const policy = policyResult.fields;
+
   const connection = await db.promise().getConnection();
   try {
     await connection.beginTransaction();
 
     const [result] = await connection.query(
       `INSERT INTO hotels
-        (name, location, description, price_per_night, currency, rating, amenities, image_url, image_urls, allowed_payment_methods, reservation_fee, map_url, contact_phone, contact_email, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        (name, location, description, price_per_night, currency, rating, amenities, image_url, image_urls, allowed_payment_methods, reservation_fee, map_url, contact_phone, contact_email, is_active, cancellation_type, free_cancellation_days, custom_policy_text, house_rules, check_in_time, check_out_time, balance_due_days)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         name,
         location,
@@ -293,7 +300,15 @@ router.post('/hotels', async (req, res) => {
         reservationFeeValue,
         map_url || null,
         contact_phone || null,
-        contact_email || null
+        contact_email || null,
+        policy.is_active ?? 1,
+        policy.cancellation_type ?? 'free_until',
+        policy.free_cancellation_days ?? 1,
+        policy.custom_policy_text ?? null,
+        policy.house_rules ?? null,
+        policy.check_in_time ?? '14:00',
+        policy.check_out_time ?? '12:00',
+        policy.balance_due_days ?? 1
       ]
     );
 
@@ -607,6 +622,15 @@ router.put('/hotels/:hotelId', async (req, res) => {
         values.push(fee);
       }
     }
+
+    const policyResult = parsePolicyFields(req.body);
+    if (policyResult.error) {
+      return res.status(400).json({ error: policyResult.error });
+    }
+    Object.entries(policyResult.fields).forEach(([column, value]) => {
+      fields.push(`${column} = ?`);
+      values.push(value);
+    });
 
     // Handle amenities (convert to JSON if needed)
     if (amenities !== undefined) {

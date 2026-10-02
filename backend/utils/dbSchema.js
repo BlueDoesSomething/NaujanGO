@@ -34,3 +34,18 @@ export const ensureFlexiblePaymentSchema = async () => {
     console.error('Schema ensure (flexible payments) failed:', error.message);
   }
 };
+
+export const ensureHotelPolicySchema = async () => {
+  try {
+    await ensureColumn('hotels', 'cancellation_type', "ENUM('free_until','partial','non_refundable') NOT NULL DEFAULT 'free_until' AFTER `reservation_fee`");
+    await ensureColumn('hotels', 'free_cancellation_days', 'INT NULL DEFAULT 1 AFTER `cancellation_type`');
+    await ensureColumn('hotels', 'custom_policy_text', 'TEXT NULL AFTER `free_cancellation_days`');
+    await ensureColumn('hotels', 'house_rules', 'TEXT NULL AFTER `custom_policy_text`');
+    await ensureColumn('hotels', 'check_in_time', "TIME NOT NULL DEFAULT '14:00' AFTER `house_rules`");
+    await ensureColumn('hotels', 'check_out_time', "TIME NOT NULL DEFAULT '12:00' AFTER `check_in_time`");
+    await ensureColumn('hotels', 'balance_due_days', 'INT NULL DEFAULT 1 AFTER `check_out_time`');
+    await ensureColumn('hotel_bookings', 'policy_snapshot', 'TEXT NULL AFTER `payment_option`');
+  } catch (error) {
+    console.error('Schema ensure (hotel policies) failed:', error.message);
+  }
+};

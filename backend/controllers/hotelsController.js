@@ -153,9 +153,22 @@ const mapHotelRows = (rows) => rows.map(hotel => {
     reservation_fee: hotel.reservation_fee === null || hotel.reservation_fee === undefined || hotel.reservation_fee === ''
       ? null
       : Number(hotel.reservation_fee),
+    cancellation_type: hotel.cancellation_type || 'free_until',
+    free_cancellation_days: hotel.free_cancellation_days === null || hotel.free_cancellation_days === undefined
+      ? 1
+      : Number(hotel.free_cancellation_days),
+    custom_policy_text: hotel.custom_policy_text || null,
+    house_rules: hotel.house_rules || null,
+    check_in_time: hotel.check_in_time ? String(hotel.check_in_time).slice(0, 5) : '14:00',
+    check_out_time: hotel.check_out_time ? String(hotel.check_out_time).slice(0, 5) : '12:00',
+    balance_due_days: hotel.balance_due_days === null || hotel.balance_due_days === undefined
+      ? 1
+      : Number(hotel.balance_due_days),
     rating: parseFloat(hotel.rating) || 0
   };
 });
+
+const POLICY_COLUMNS = 'cancellation_type, free_cancellation_days, custom_policy_text, house_rules, check_in_time, check_out_time, balance_due_days';
 
 const getHotelPriceExpression = () => `
   COALESCE(
@@ -184,7 +197,7 @@ export const getHotels = async (req, res) => {
     [rows] = await db.promise().query(
       `SELECT h.hotel_id as id, h.name, h.location, h.description, h.price_per_night as pricePerNight,
               ${getHotelPriceExpression()} as derivedPricePerNight,
-              h.currency, h.rating, h.rooms_total, h.rooms_available, h.amenities, h.image_url as image_url, ${imageUrlsSelect}, ${paymentMethodsSelect}, ${reservationFeeSelect}, h.map_url as map,
+              h.currency, h.rating, h.rooms_total, h.rooms_available, h.amenities, h.image_url as image_url, ${imageUrlsSelect}, ${paymentMethodsSelect}, ${reservationFeeSelect}, h.cancellation_type, h.free_cancellation_days, h.custom_policy_text, h.house_rules, h.check_in_time, h.check_out_time, h.balance_due_days, h.map_url as map,
               h.latitude, h.longitude, h.contact_phone as phone, h.contact_email as email,
               COUNT(r.review_id) as reviewCount
        FROM hotels h
@@ -275,7 +288,7 @@ export const getHotelById = async (req, res) => {
     const [rows] = await db.promise().query(
       `SELECT hotel_id as id, name, location, description, price_per_night as pricePerNight,
               ${getHotelPriceExpression()} as derivedPricePerNight,
-              currency, rating, rooms_total, rooms_available, amenities, image_url as image_url, ${imageUrlsSelect}, ${paymentMethodsSelect}, ${reservationFeeSelect}, map_url as map,
+              currency, rating, rooms_total, rooms_available, amenities, image_url as image_url, ${imageUrlsSelect}, ${paymentMethodsSelect}, ${reservationFeeSelect}, ${POLICY_COLUMNS}, map_url as map,
               latitude, longitude, contact_phone as phone, contact_email as email
        FROM hotels h
        WHERE hotel_id = ? AND (is_active = 1 OR is_active IS NULL)`,

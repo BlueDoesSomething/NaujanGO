@@ -9,6 +9,7 @@ import LeafletMap from '../components/LeafletMap';
 import Icons from '../components/Icons';
 import HeroSlideshow from '../components/HeroSlideshow';
 import RoomManagement from '../components/RoomManagement';
+import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
 
 const API_BASE_URL = getApiBaseUrl() + '/api';
 
@@ -254,6 +255,7 @@ export default function HotelDetail() {
   });
   const [bookingError, setBookingError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [policyAgreed, setPolicyAgreed] = useState(false);
   const [slowConnection, setSlowConnection] = useState(false);
   const [pendingBookingId, setPendingBookingId] = useState(null);
 
@@ -502,9 +504,16 @@ export default function HotelDetail() {
   let selectedBalanceDueAt = null;
   if (selectedBalanceDue > 0 && bookingForm.checkIn) {
     const d = new Date(`${bookingForm.checkIn}T00:00:00`);
-    d.setDate(d.getDate() - 1);
+    const balanceDays = Number.isFinite(Number(hotel?.balance_due_days)) ? Math.max(0, Number(hotel.balance_due_days)) : 1;
+    d.setDate(d.getDate() - balanceDays);
     selectedBalanceDueAt = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
+  const policyLines = buildPolicyLines(hotel, {
+    checkIn: bookingForm.checkIn,
+    balanceDueAt: selectedBalanceDueAt,
+    showBalance: selectedBalanceDue > 0,
+    t
+  });
   const paymentOptionChoices = [
     { value: 'reservation', title: 'Reservation fee', subtitle: 'Secure the booking now, pay the rest later', available: reservationFeeUsable },
     { value: 'half', title: 'Half payment', subtitle: 'Pay 50% now, balance before check-in', available: true },
@@ -561,6 +570,7 @@ export default function HotelDetail() {
       return;
     }
     setBookingError('');
+    setPolicyAgreed(false);
     setShowBookingModal(true);
   };
 
@@ -700,6 +710,11 @@ export default function HotelDetail() {
       }
     }
 
+    if (!policyAgreed) {
+      setBookingError(t('agree_policies_checkbox'));
+      return;
+    }
+
     if (!navigator.onLine) {
       setBookingError(t('no_internet_connection'));
       return;
@@ -732,6 +747,7 @@ export default function HotelDetail() {
         payment_method: bookingForm.paymentMethod,
         payment_option: selectedPaymentOption,
         pay_now: false,
+        policy_agreed: policyAgreed,
         customer_name: bookingForm.customerName,
         customer_email: bookingForm.customerEmail,
         customer_phone: toPhilippineE164(bookingForm.customerPhone),
@@ -1921,6 +1937,33 @@ export default function HotelDetail() {
                 />
               </div>
 
+              {/* Booking policies — shown before payment confirmation */}
+              <div style={sectionDivider}>
+                <h3 style={sectionHeading}><Icons.ShieldCheck size={17} /> {t('booking_policies_title')}</h3>
+              </div>
+              <div style={{ border: '1.5px solid #c8e6c9', borderRadius: '10px', background: '#f8fdf7', padding: '1rem 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem', marginBottom: '1.5rem' }}>
+                {policyLines.map((line, idx) => {
+                  const IconComp = Icons[POLICY_LINE_ICONS[line.icon] || 'Info'];
+                  return (
+                    <div key={idx} style={{ display: 'flex', gap: '0.65rem', alignItems: 'flex-start', fontSize: '0.86rem', color: '#374151', lineHeight: 1.5 }}>
+                      <span style={{ flexShrink: 0, width: 26, height: 26, borderRadius: '50%', background: '#e8f5e9', color: '#2E7D32', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <IconComp size={14} />
+                      </span>
+                      <span>{line.text}</span>
+                    </div>
+                  );
+                })}
+                <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginTop: '0.35rem', paddingTop: '0.85rem', borderTop: '1px dashed #c8e6c9', cursor: 'pointer', fontSize: '0.88rem', color: '#1B5E20', fontWeight: 600, lineHeight: 1.45 }}>
+                  <input
+                    type="checkbox"
+                    checked={policyAgreed}
+                    onChange={(e) => setPolicyAgreed(e.target.checked)}
+                    style={{ marginTop: '2px', width: '16px', height: '16px', accentColor: '#2E7D32', flexShrink: 0 }}
+                  />
+                  <span>{t('agree_policies_checkbox')}</span>
+                </label>
+              </div>
+
               {slowConnection && !checkoutState && (
                 <div style={{
                   background: '#fef3cd',
@@ -2000,9 +2043,9 @@ export default function HotelDetail() {
                 <span style={{display:'flex',alignItems:'center',gap:'0.5rem', lineHeight: 1.2}}><Icons.X size={15} /> {t('cancel_button')}</span>
               </button>
               <button
-                style={isSubmitting ? confirmBtnDisabled : confirmBtnEnhanced}
+                style={isSubmitting || !policyAgreed ? confirmBtnDisabled : confirmBtnEnhanced}
                 onClick={handleSubmitBooking}
-                disabled={isSubmitting || !!checkoutState}
+                disabled={isSubmitting || !!checkoutState || !policyAgreed}
               >
                 {slowConnection ? (
                   <span style={{display:'flex',alignItems:'center',gap:'0.5rem', lineHeight: 1.2}}><Icons.Clock size={15} /> {t('button_connecting_slow')}</span>

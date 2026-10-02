@@ -217,7 +217,14 @@ const AdminDashboard = () => {
     map_url: '',
     contact_phone: '',
     contact_email: '',
-    is_active: 1
+    is_active: 1,
+    cancellation_type: 'free_until',
+    free_cancellation_days: 1,
+    balance_due_days: 1,
+    check_in_time: '14:00',
+    check_out_time: '12:00',
+    house_rules: '',
+    custom_policy_text: ''
   };
   const emptyAttractionForm = {
     name: '',
@@ -1578,7 +1585,14 @@ const AdminDashboard = () => {
       map_url: hotel.map_url || '',
       contact_phone: hotel.contact_phone || '',
       contact_email: hotel.contact_email || '',
-      is_active: hotel.is_active ? 1 : 0
+      is_active: hotel.is_active ? 1 : 0,
+      cancellation_type: hotel.cancellation_type || 'free_until',
+      free_cancellation_days: hotel.free_cancellation_days ?? 1,
+      balance_due_days: hotel.balance_due_days ?? 1,
+      check_in_time: hotel.check_in_time ? String(hotel.check_in_time).slice(0, 5) : '14:00',
+      check_out_time: hotel.check_out_time ? String(hotel.check_out_time).slice(0, 5) : '12:00',
+      house_rules: hotel.house_rules || '',
+      custom_policy_text: hotel.custom_policy_text || ''
     });
   };
 
@@ -1599,7 +1613,14 @@ const AdminDashboard = () => {
         map_url: hotelForm.map_url,
         contact_phone: hotelForm.contact_phone,
         contact_email: hotelForm.contact_email,
-        is_active: hotelForm.is_active ? 1 : 0
+        is_active: hotelForm.is_active ? 1 : 0,
+        cancellation_type: hotelForm.cancellation_type || 'free_until',
+        free_cancellation_days: hotelForm.free_cancellation_days === '' || hotelForm.free_cancellation_days == null ? 1 : Number(hotelForm.free_cancellation_days),
+        balance_due_days: hotelForm.balance_due_days === '' || hotelForm.balance_due_days == null ? 1 : Number(hotelForm.balance_due_days),
+        check_in_time: hotelForm.check_in_time || '14:00',
+        check_out_time: hotelForm.check_out_time || '12:00',
+        house_rules: (hotelForm.house_rules || '').trim() || null,
+        custom_policy_text: (hotelForm.custom_policy_text || '').trim() || null
       };
 
       await api.put(`/admin/hotels/${editingHotel.hotel_id}`, payload);
@@ -1634,7 +1655,14 @@ const AdminDashboard = () => {
         map_url: hotelForm.map_url,
         contact_phone: hotelForm.contact_phone,
         contact_email: hotelForm.contact_email,
-        is_active: hotelForm.is_active ? 1 : 0
+        is_active: hotelForm.is_active ? 1 : 0,
+        cancellation_type: hotelForm.cancellation_type || 'free_until',
+        free_cancellation_days: hotelForm.free_cancellation_days === '' || hotelForm.free_cancellation_days == null ? 1 : Number(hotelForm.free_cancellation_days),
+        balance_due_days: hotelForm.balance_due_days === '' || hotelForm.balance_due_days == null ? 1 : Number(hotelForm.balance_due_days),
+        check_in_time: hotelForm.check_in_time || '14:00',
+        check_out_time: hotelForm.check_out_time || '12:00',
+        house_rules: (hotelForm.house_rules || '').trim() || null,
+        custom_policy_text: (hotelForm.custom_policy_text || '').trim() || null
       };
 
       await api.post('/admin/hotels', payload);
@@ -2846,6 +2874,93 @@ const AdminDashboard = () => {
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Map URL</span>
                             <input type="text" value={hotelForm.map_url} onChange={(e) => setHotelForm({ ...hotelForm, map_url: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} placeholder="https://maps.google.com/..." />
+                          </label>
+                        </div>
+                      </div>
+                      {/* Policies */}
+                      <div>
+                        <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>{t('policies_section')}</div>
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('cancellation_type_label')}</span>
+                            <select
+                              value={hotelForm.cancellation_type}
+                              onChange={(e) => setHotelForm({ ...hotelForm, cancellation_type: e.target.value })}
+                              className="gov-input"
+                              style={{ borderRadius:'8px', cursor:'pointer' }}
+                            >
+                              <option value="free_until">{t('cancellation_free_until')}</option>
+                              <option value="partial">{t('cancellation_partial')}</option>
+                              <option value="non_refundable">{t('cancellation_nonrefundable')}</option>
+                            </select>
+                          </label>
+                          {hotelForm.cancellation_type !== 'non_refundable' && (
+                            <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                              <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('free_cancel_days_label')}</span>
+                              <input
+                                type="number"
+                                min="0"
+                                max="60"
+                                value={hotelForm.free_cancellation_days}
+                                onChange={(e) => setHotelForm({ ...hotelForm, free_cancellation_days: e.target.value })}
+                                className="gov-input"
+                                style={{ borderRadius:'8px' }}
+                              />
+                            </label>
+                          )}
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('balance_due_days_label')}</span>
+                            <input
+                              type="number"
+                              min="0"
+                              max="30"
+                              value={hotelForm.balance_due_days}
+                              onChange={(e) => setHotelForm({ ...hotelForm, balance_due_days: e.target.value })}
+                              className="gov-input"
+                              style={{ borderRadius:'8px' }}
+                            />
+                          </label>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('checkin_time_label')}</span>
+                            <input
+                              type="time"
+                              value={hotelForm.check_in_time}
+                              onChange={(e) => setHotelForm({ ...hotelForm, check_in_time: e.target.value })}
+                              className="gov-input"
+                              style={{ borderRadius:'8px' }}
+                            />
+                          </label>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('checkout_time_label')}</span>
+                            <input
+                              type="time"
+                              value={hotelForm.check_out_time}
+                              onChange={(e) => setHotelForm({ ...hotelForm, check_out_time: e.target.value })}
+                              className="gov-input"
+                              style={{ borderRadius:'8px' }}
+                            />
+                          </label>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('house_rules_label')}</span>
+                            <textarea
+                              rows="2"
+                              value={hotelForm.house_rules}
+                              onChange={(e) => setHotelForm({ ...hotelForm, house_rules: e.target.value })}
+                              className="gov-input"
+                              style={{ borderRadius:'8px', resize:'vertical' }}
+                              placeholder={t('house_rules_placeholder')}
+                            />
+                          </label>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('custom_policy_label')}</span>
+                            <textarea
+                              rows="2"
+                              value={hotelForm.custom_policy_text}
+                              onChange={(e) => setHotelForm({ ...hotelForm, custom_policy_text: e.target.value })}
+                              className="gov-input"
+                              style={{ borderRadius:'8px', resize:'vertical' }}
+                              placeholder={t('custom_policy_placeholder')}
+                            />
                           </label>
                         </div>
                       </div>

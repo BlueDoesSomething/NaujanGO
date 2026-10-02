@@ -28,6 +28,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { fetchHotelBookings, startPaymentCheckout, getPaymentHistory, getApiBaseUrl, getCsrfToken } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import Icons from '../components/Icons';
+import { policyLinesFromSnapshot, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
 
 const getPaymentMethods = (t) => [
   { 
@@ -110,12 +112,24 @@ const HotelPayment = () => {
   const [paymentMethod, setPaymentMethod] = useState('paypal');
   const [checkoutState, setCheckoutState] = useState(null);
   const [slowConnection, setSlowConnection] = useState(false);
-    const [manualStatus, setManualStatus] = useState('');
-    const [manualStatusLoading, setManualStatusLoading] = useState(false);
-    const [manualStatusError, setManualStatusError] = useState('');
-    const [manualStatusSuccess, setManualStatusSuccess] = useState('');
+  const [manualStatus, setManualStatus] = useState('');
+  const [manualStatusLoading, setManualStatusLoading] = useState(false);
+  const [manualStatusError, setManualStatusError] = useState('');
+  const [manualStatusSuccess, setManualStatusSuccess] = useState('');
+  const [policyAgreed, setPolicyAgreed] = useState(false);
 
   const safeBookingId = useMemo(() => Number(bookingId), [bookingId]);
+
+  // Policy terms frozen on the booking at creation time (legacy rows have none).
+  const policyLines = useMemo(
+    () => policyLinesFromSnapshot(booking?.policy_snapshot, {
+      checkIn: booking?.check_in,
+      balanceDueAt: booking?.balance_due_at,
+      showBalance: Number(booking?.balance_due) > 0,
+      t
+    }),
+    [booking, t]
+  );
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -182,6 +196,8 @@ const HotelPayment = () => {
   }, [booking, safeBookingId]);
 
   const handleCheckout = async () => {
+    if (policyLines.length > 0 && !policyAgreed) return;
+
     if (!booking) return;
 
     if (['bank_transfer', 'pay_at_property'].includes(paymentMethod)) {
@@ -405,10 +421,39 @@ const HotelPayment = () => {
                     </div>
                   ) : null}
 
+                  {/* Booking policies — final agreement before paying */}
+                  {policyLines.length > 0 && (
+                    <div style={{ marginTop: '1rem', border: '1.5px solid #c8e6c9', borderRadius: '10px', background: '#f8fdf7', padding: '1rem 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        {t('booking_policies_title')}
+                      </div>
+                      {policyLines.map((line, idx) => {
+                        const IconComp = Icons[POLICY_LINE_ICONS[line.icon] || 'Info'];
+                        return (
+                          <div key={idx} style={{ display: 'flex', gap: '0.65rem', alignItems: 'flex-start', fontSize: '0.86rem', color: '#374151', lineHeight: 1.5 }}>
+                            <span style={{ flexShrink: 0, width: 26, height: 26, borderRadius: '50%', background: '#e8f5e9', color: '#2E7D32', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <IconComp size={14} />
+                            </span>
+                            <span>{line.text}</span>
+                          </div>
+                        );
+                      })}
+                      <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginTop: '0.35rem', paddingTop: '0.85rem', borderTop: '1px dashed #c8e6c9', cursor: 'pointer', fontSize: '0.88rem', color: '#1B5E20', fontWeight: 600, lineHeight: 1.45 }}>
+                        <input
+                          type="checkbox"
+                          checked={policyAgreed}
+                          onChange={(e) => setPolicyAgreed(e.target.checked)}
+                          style={{ marginTop: '2px', width: '16px', height: '16px', accentColor: '#2E7D32', flexShrink: 0 }}
+                        />
+                        <span>{t('agree_policies_checkbox')}</span>
+                      </label>
+                    </div>
+                  )}
+
                   <button
-                    style={{ ...primaryButtonStyle, ...(checkoutState?.status === 'loading' ? { opacity: 0.7, cursor: 'not-allowed' } : {}) }}
+                    style={{ ...primaryButtonStyle, ...(checkoutState?.status === 'loading' || (policyLines.length > 0 && !policyAgreed) ? { opacity: 0.7, cursor: 'not-allowed' } : {}) }}
                     onClick={handleCheckout}
-                    disabled={checkoutState?.status === 'loading'}
+                    disabled={checkoutState?.status === 'loading' || (policyLines.length > 0 && !policyAgreed)}
                   >
                     {checkoutState?.status === 'loading'
                       ? (slowConnection ? (t('button_connecting_slow') || '\u23f3 Connecting (slow network)\u2026') : (t('processing') || '\u23f3 Processing...'))

@@ -378,11 +378,13 @@ app.get('/', (req, res) => {
 });
 
 import { initSocket } from './socket.js';
-import { ensureFlexiblePaymentSchema } from './utils/dbSchema.js';
+import { ensureFlexiblePaymentSchema, ensureHotelPolicySchema } from './utils/dbSchema.js';
 
 // Flexible payment options: make sure reservation_fee / payment_option /
 // payment_status('partial') exist before any request can hit them.
 await ensureFlexiblePaymentSchema();
+// Cancellation policy / house rules / balance deadline columns (migration 041).
+await ensureHotelPolicySchema();
 
 if (USE_HTTPS) {
   // selfsigned is a dev-only dependency, imported lazily so production builds
