@@ -565,6 +565,14 @@ export default function HotelDetail() {
     setCalendarError('');
     const { start, end } = calendarRange;
 
+    // Clicking a selected date (check-in or check-out) unselects everything.
+    if (dateKey === start || dateKey === end) {
+      setCalendarRange({ start: null, end: null });
+      setBookingForm((prev) => ({ ...prev, checkIn: '', checkOut: '' }));
+      setBookingError('');
+      return;
+    }
+
     // First pick (or restart) sets the check-in date; the form's dates clear
     // until a full range is picked so inputs and calendar never disagree.
     if (!start || end || dateKey < start) {
