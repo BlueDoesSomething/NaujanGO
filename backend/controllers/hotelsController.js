@@ -6,6 +6,7 @@ import { fetchHotelAvailabilityDays } from '../utils/hotelAvailability.js';
 
 let hotelsHasImageUrls;
 let hotelsHasAllowedPaymentMethods;
+let hotelsHasReservationFee;
 
 const hasImageUrlsColumn = async () => {
   if (hotelsHasImageUrls !== undefined) return hotelsHasImageUrls;
@@ -27,6 +28,17 @@ const hasAllowedPaymentMethodsColumn = async () => {
     hotelsHasAllowedPaymentMethods = false;
   }
   return hotelsHasAllowedPaymentMethods;
+};
+
+const hasReservationFeeColumn = async () => {
+  if (hotelsHasReservationFee !== undefined) return hotelsHasReservationFee;
+  try {
+    const [rows] = await db.promise().query("SHOW COLUMNS FROM hotels LIKE 'reservation_fee'");
+    hotelsHasReservationFee = rows.length > 0;
+  } catch (error) {
+    hotelsHasReservationFee = false;
+  }
+  return hotelsHasReservationFee;
 };
 
 const DEFAULT_PAYMENT_METHODS = ['card', 'gcash', 'paypal', 'bank_transfer', 'pay_at_property'];
@@ -138,6 +150,9 @@ const mapHotelRows = (rows) => rows.map(hotel => {
     })(),
     rooms_available: Number(hotel.rooms_available) || 0,
     rooms_total: Number(hotel.rooms_total) || 0,
+    reservation_fee: hotel.reservation_fee === null || hotel.reservation_fee === undefined || hotel.reservation_fee === ''
+      ? null
+      : Number(hotel.reservation_fee),
     rating: parseFloat(hotel.rating) || 0
   };
 });
@@ -162,12 +177,14 @@ export const getHotels = async (req, res) => {
   try {
     const includeImageUrls = await hasImageUrlsColumn();
     const includeAllowedPaymentMethods = await hasAllowedPaymentMethodsColumn();
+    const includeReservationFee = await hasReservationFeeColumn();
     const imageUrlsSelect = includeImageUrls ? 'h.image_urls' : 'NULL as image_urls';
     const paymentMethodsSelect = includeAllowedPaymentMethods ? 'h.allowed_payment_methods' : 'NULL as allowed_payment_methods';
+    const reservationFeeSelect = includeReservationFee ? 'h.reservation_fee' : 'NULL as reservation_fee';
     [rows] = await db.promise().query(
       `SELECT h.hotel_id as id, h.name, h.location, h.description, h.price_per_night as pricePerNight,
               ${getHotelPriceExpression()} as derivedPricePerNight,
-              h.currency, h.rating, h.rooms_total, h.rooms_available, h.amenities, h.image_url as image_url, ${imageUrlsSelect}, ${paymentMethodsSelect}, h.map_url as map,
+              h.currency, h.rating, h.rooms_total, h.rooms_available, h.amenities, h.image_url as image_url, ${imageUrlsSelect}, ${paymentMethodsSelect}, ${reservationFeeSelect}, h.map_url as map,
               h.latitude, h.longitude, h.contact_phone as phone, h.contact_email as email,
               COUNT(r.review_id) as reviewCount
        FROM hotels h
@@ -251,14 +268,16 @@ export const getHotelById = async (req, res) => {
     const language = req.language || 'en';
     const includeImageUrls = await hasImageUrlsColumn();
     const includeAllowedPaymentMethods = await hasAllowedPaymentMethodsColumn();
+    const includeReservationFee = await hasReservationFeeColumn();
     const imageUrlsSelect = includeImageUrls ? 'image_urls' : 'NULL as image_urls';
     const paymentMethodsSelect = includeAllowedPaymentMethods ? 'allowed_payment_methods' : 'NULL as allowed_payment_methods';
+    const reservationFeeSelect = includeReservationFee ? 'reservation_fee' : 'NULL as reservation_fee';
     const [rows] = await db.promise().query(
       `SELECT hotel_id as id, name, location, description, price_per_night as pricePerNight,
               ${getHotelPriceExpression()} as derivedPricePerNight,
-              currency, rating, rooms_total, rooms_available, amenities, image_url as image_url, ${imageUrlsSelect}, ${paymentMethodsSelect}, map_url as map,
+              currency, rating, rooms_total, rooms_available, amenities, image_url as image_url, ${imageUrlsSelect}, ${paymentMethodsSelect}, ${reservationFeeSelect}, map_url as map,
               latitude, longitude, contact_phone as phone, contact_email as email
-       FROM hotels
+       FROM hotels h
        WHERE hotel_id = ? AND (is_active = 1 OR is_active IS NULL)`,
       [req.params.id]
     );
@@ -285,7 +304,7 @@ export const getHotelById = async (req, res) => {
           ${getHotelPriceExpression()} as derivedPricePerNight,
           currency, rating, rooms_total, rooms_available, amenities, image_url as image_url, map_url as map,
                 latitude, longitude, contact_phone as phone, contact_email as email
-         FROM hotels
+         FROM hotels h
          WHERE hotel_id = ?`,
         [req.params.id]
       );

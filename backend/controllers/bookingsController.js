@@ -4,6 +4,18 @@ import db from '../db.js';
 
 import { JWT_SECRET } from '../config/security.js';
 import { fetchHotelAvailabilityDays, toDateOnlyKey, subtractOneDay } from '../utils/hotelAvailability.js';
+import { PAYMENT_OPTIONS, dueNow, balanceOf, statusAfterPayment, MIN_GATEWAY_AMOUNT } from '../utils/paymentAmounts.js';
+
+const EXTERNAL_CHECKOUT_METHODS = ['card', 'gcash', 'grabpay', 'qrph', 'paypal'];
+
+// Balance must be settled 1 day before check-in (display deadline only).
+const balanceDueAt = (checkInKey) => {
+  if (!checkInKey) return null;
+  const date = new Date(`${checkInKey}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setDate(date.getDate() - 1);
+  return toDateOnlyKey(date);
+};
 
 const getUserIdFromToken = (req) => {
   // Check for token in HttpOnly cookie FIRST (more secure)
@@ -86,8 +98,11 @@ const fetchBooking = async (bookingId) => {
   return rows[0] || null;
 };
 
-const mapReceipt = (booking, payment) => {
+const mapReceipt = (booking, payment, amountPaid = 0) => {
   if (!booking) return null;
+  const total = Number(booking.total_amount) || 0;
+  const paid = Number(amountPaid) || 0;
+  const paymentOption = booking.payment_option || 'full';
   return {
     receipt_number: booking.receipt_number,
     booking_reference: booking.booking_reference || null,
@@ -108,6 +123,10 @@ const mapReceipt = (booking, payment) => {
     currency: booking.currency,
     payment_status: booking.payment_status,
     payment_method: booking.payment_method,
+    payment_option: paymentOption,
+    amount_paid: paid,
+    balance_due: balanceOf(total, paid, booking.payment_status),
+    balance_due_at: balanceDueAt(toDateOnlyKey(booking.check_in)),
     payment_reference: payment?.transaction_reference || null,
     payment_provider: payment?.provider || null,
     card_last4: payment?.card_last4 || null,
@@ -131,6 +150,7 @@ export const createHotelBooking = async (req, res) => {
     rooms = 1,
     special_requests = '',
     payment_method = 'pay_at_property',
+    payment_option = 'full',
     pay_now = true,
     customer_name,
     customer_email,
@@ -184,8 +204,16 @@ export const createHotelBooking = async (req, res) => {
   const totalAmount = Number((price * nights * numRooms).toFixed(2));
   const receiptNumber = generateReceiptNumber();
 
+  if (!PAYMENT_OPTIONS.includes(payment_option)) {
+    return res.status(400).json({
+      error: `Invalid payment option '${payment_option}'`,
+      payment_options: PAYMENT_OPTIONS
+    });
+  }
+
   const bookingStatus = 'pending';
-  const paymentStatus = pay_now ? 'paid' : 'unpaid';
+  let paymentStatus = 'unpaid';
+  let amountDueNow = null;
 
   const connection = await db.promise().getConnection();
   try {
@@ -210,7 +238,7 @@ export const createHotelBooking = async (req, res) => {
       }
 
       const [hotel] = await connection.query(
-        'SELECT rooms_total, allowed_payment_methods FROM hotels WHERE hotel_id = ? FOR UPDATE',
+        'SELECT rooms_total, allowed_payment_methods, reservation_fee FROM hotels WHERE hotel_id = ? FOR UPDATE',
         [hotel_id]
       );
 
@@ -218,6 +246,13 @@ export const createHotelBooking = async (req, res) => {
         await connection.rollback();
         connection.release();
         return res.status(404).json({ error: 'Hotel not found' });
+      }
+
+      amountDueNow = dueNow(payment_option, totalAmount, hotel[0].reservation_fee);
+      if (amountDueNow === null) {
+        await connection.rollback();
+        connection.release();
+        return res.status(400).json({ error: 'Reservation fee is not available for this booking' });
       }
 
       const totalRooms = hotel[0].rooms_total || 0;
@@ -352,10 +387,30 @@ export const createHotelBooking = async (req, res) => {
       }
     }
 
+    // Bookings without hotel_id (legacy path): no reservation fee to apply.
+    if (amountDueNow === null) {
+      amountDueNow = dueNow(payment_option, totalAmount, null);
+      if (amountDueNow === null) {
+        await connection.rollback();
+        connection.release();
+        return res.status(400).json({ error: 'Reservation fee is not available for this booking' });
+      }
+    }
+
+    if (EXTERNAL_CHECKOUT_METHODS.includes(payment_method) && amountDueNow < MIN_GATEWAY_AMOUNT) {
+      await connection.rollback();
+      connection.release();
+      return res.status(400).json({
+        error: `The selected payment option is below the ${MIN_GATEWAY_AMOUNT} minimum for online payments. Choose a higher option or pay at the property.`
+      });
+    }
+
+    if (pay_now) paymentStatus = statusAfterPayment(totalAmount, amountDueNow);
+
     const [result] = await connection.query(
       `INSERT INTO hotel_bookings
-        (user_id, hotel_id, hotel_name, hotel_location, price_per_night, currency, check_in, check_out, nights, rooms, guests, special_requests, status, payment_status, payment_method, total_amount, receipt_number, customer_name, customer_email, customer_phone, room_id, room_type_name, expires_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (user_id, hotel_id, hotel_name, hotel_location, price_per_night, currency, check_in, check_out, nights, rooms, guests, special_requests, status, payment_status, payment_method, payment_option, total_amount, receipt_number, customer_name, customer_email, customer_phone, room_id, room_type_name, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
         hotel_id || null,
@@ -372,6 +427,7 @@ export const createHotelBooking = async (req, res) => {
         bookingStatus,
         paymentStatus,
         payment_method,
+        payment_option,
         totalAmount,
         receiptNumber,
         customer_name || null,
@@ -402,7 +458,7 @@ export const createHotelBooking = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         bookingId,
-        totalAmount,
+        amountDueNow,
         currency,
         payment_method,
         isDeferredPayment ? 'manual' : 'simulated',
@@ -423,7 +479,7 @@ export const createHotelBooking = async (req, res) => {
     connection.release();
 
     const booking = await fetchBooking(bookingId);
-    const receipt = mapReceipt(booking, paymentRecord);
+    const receipt = mapReceipt(booking, paymentRecord, pay_now ? amountDueNow : 0);
 
     res.status(201).json({ booking, receipt });
   } catch (err) {
@@ -443,6 +499,53 @@ export const getHotelBookings = async (req, res) => {
       `SELECT * FROM hotel_bookings WHERE user_id = ? ORDER BY created_at DESC`,
       [userId]
     );
+
+    // Attach paid/balance per booking in one pass so the dashboard can show
+    // progress and offer "Pay balance" without extra round-trips.
+    if (rows.length > 0) {
+      const ids = rows.map((row) => row.booking_id);
+      const [paidRows] = await db.promise().query(
+        `SELECT booking_id, COALESCE(SUM(CASE WHEN status = 'succeeded' THEN amount END), 0) AS amount_paid
+         FROM hotel_payments
+         WHERE booking_id IN (?)
+         GROUP BY booking_id`,
+        [ids]
+      );
+      const paidByBooking = {};
+      paidRows.forEach((row) => { paidByBooking[row.booking_id] = Number(row.amount_paid) || 0; });
+
+      // Reservation-fee lookups for computing the first instalment
+      const hotelIds = [...new Set(rows.map((row) => row.hotel_id).filter(Boolean))];
+      let feeByHotel = {};
+      if (hotelIds.length > 0) {
+        try {
+          const [feeRows] = await db.promise().query(
+            'SELECT hotel_id, reservation_fee FROM hotels WHERE hotel_id IN (?)',
+            [hotelIds]
+          );
+          feeRows.forEach((row) => { feeByHotel[row.hotel_id] = row.reservation_fee; });
+        } catch (feeErr) {
+          feeByHotel = {};
+        }
+      }
+
+      rows.forEach((row) => {
+        const paid = paidByBooking[row.booking_id] || 0;
+        row.amount_paid = paid;
+        row.balance_due = balanceOf(row.total_amount, paid, row.payment_status);
+        row.balance_due_at = balanceDueAt(toDateOnlyKey(row.check_in));
+        row.payment_option = row.payment_option || 'full';
+        // What a "Pay now" action should charge: the balance once anything has
+        // been paid, otherwise the first instalment chosen at booking time.
+        if (paid > 0 || row.balance_due <= 0) {
+          row.amount_due_now = row.balance_due;
+        } else {
+          const firstDue = dueNow(row.payment_option, row.total_amount, feeByHotel[row.hotel_id] ?? null);
+          row.amount_due_now = firstDue !== null ? firstDue : row.balance_due;
+        }
+      });
+    }
+
     res.json(rows);
   } catch (err) {
     console.error('Fetch hotel bookings error:', err);
@@ -504,7 +607,14 @@ export const getHotelBookingReceipt = async (req, res) => {
     );
     const payment = payments[0] || null;
 
-    const receipt = mapReceipt(booking, payment);
+    const [paidRows] = await db.promise().query(
+      `SELECT COALESCE(SUM(CASE WHEN status = 'succeeded' THEN amount END), 0) AS amount_paid
+       FROM hotel_payments WHERE booking_id = ?`,
+      [booking.booking_id]
+    );
+    const amountPaid = Number(paidRows[0]?.amount_paid) || 0;
+
+    const receipt = mapReceipt(booking, payment, amountPaid);
     res.json(receipt);
   } catch (err) {
     console.error('Fetch hotel receipt error:', err);

@@ -242,6 +242,7 @@ export default function HotelDetail() {
     guests: 2,
     rooms: 1,
     paymentMethod: 'card',
+    paymentOption: 'full',
     payNow: true,
     cardLast4: '',
     specialRequests: '',
@@ -475,6 +476,40 @@ export default function HotelDetail() {
     ? hotel.allowed_payment_methods
     : DEFAULT_ALLOWED_PAYMENT_METHODS;
   const paymentMethodOptions = getPaymentMethodOptions(t).filter((option) => allowedPaymentMethods.includes(option.value));
+
+  // Flexible payment option (reservation fee / half / full) — mirrors backend
+  // utils/paymentAmounts.js dueNow() so the card amounts match what the
+  // server will charge at checkout.
+  const modalNights = bookingForm.checkIn && bookingForm.checkOut
+    ? Math.max(0, Math.ceil((new Date(bookingForm.checkOut) - new Date(bookingForm.checkIn)) / (1000 * 60 * 60 * 24)))
+    : 0;
+  const modalSelectedRoom = rooms.find((r) => r.room_id === bookingForm.selectedRoomId);
+  const modalPricePerNight = modalSelectedRoom ? modalSelectedRoom.price_per_night : hotel?.pricePerNight;
+  const bookingTotal = Number((modalPricePerNight || 0)) * modalNights * (bookingForm.rooms || 1);
+  const reservationFee = hotel?.reservation_fee;
+  const reservationFeeUsable = reservationFee != null && Number(reservationFee) > 0;
+  const reservationFeeValid = reservationFeeUsable && (bookingTotal <= 0 || Number(reservationFee) < bookingTotal);
+  const selectedPaymentOption =
+    bookingForm.paymentOption === 'reservation' && !reservationFeeValid ? 'full' : (bookingForm.paymentOption || 'full');
+  const computeDueNow = (option) => {
+    if (!bookingTotal || bookingTotal <= 0) return null;
+    if (option === 'half') return Math.ceil(bookingTotal / 2);
+    if (option === 'reservation') return reservationFeeValid ? Number(reservationFee) : null;
+    return bookingTotal;
+  };
+  const selectedDueNow = computeDueNow(selectedPaymentOption);
+  const selectedBalanceDue = selectedDueNow !== null ? Math.max(bookingTotal - selectedDueNow, 0) : 0;
+  let selectedBalanceDueAt = null;
+  if (selectedBalanceDue > 0 && bookingForm.checkIn) {
+    const d = new Date(`${bookingForm.checkIn}T00:00:00`);
+    d.setDate(d.getDate() - 1);
+    selectedBalanceDueAt = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  const paymentOptionChoices = [
+    { value: 'reservation', title: 'Reservation fee', subtitle: 'Secure the booking now, pay the rest later', available: reservationFeeValid },
+    { value: 'half', title: 'Half payment', subtitle: 'Pay 50% now, balance before check-in', available: bookingTotal > 0 },
+    { value: 'full', title: 'Full payment', subtitle: 'Pay the total amount now', available: bookingTotal > 0 }
+  ].filter((choice) => choice.available);
   const suitableRoomTypesForGuests = rooms.filter((room) => {
     const capacity = Number(room.capacity || 0);
     const quantityAvailable = Number(room.quantity_available || 0);
@@ -695,6 +730,7 @@ export default function HotelDetail() {
         rooms: bookingForm.rooms,
         special_requests: bookingForm.specialRequests,
         payment_method: bookingForm.paymentMethod,
+        payment_option: selectedPaymentOption,
         pay_now: false,
         customer_name: bookingForm.customerName,
         customer_email: bookingForm.customerEmail,
@@ -726,7 +762,10 @@ export default function HotelDetail() {
       setPendingBookingId(bookingId);
 
       if (isExternalCheckout) {
-        const totalAmount = Number((pricePerNight * nights * bookingForm.rooms).toFixed(2));
+        const fullTotal = Number((pricePerNight * nights * bookingForm.rooms).toFixed(2));
+        const dueNowAmount = selectedDueNow !== null
+          ? selectedDueNow
+          : fullTotal;
 
         // Show a slow-network warning after 7 s if the checkout API hasn't responded yet
         const slowTimer = setTimeout(() => setSlowConnection(true), 7000);
@@ -737,7 +776,7 @@ export default function HotelDetail() {
             startPaymentCheckout({
               booking_id: bookingId,
               payment_method: bookingForm.paymentMethod,
-              amount: totalAmount,
+              amount: dueNowAmount,
               currency: hotel.currency,
               customer_email: bookingForm.customerEmail,
               customer_phone: toPhilippineE164(bookingForm.customerPhone)
@@ -1794,6 +1833,50 @@ export default function HotelDetail() {
               <div style={sectionDivider}>
                 <h3 style={sectionHeading}><Icons.Money size={17} /> {t('modal_payment_details')}</h3>
               </div>
+
+              <div>
+                <label style={inputLabel}>Payment option</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.6rem' }}>
+                  {paymentOptionChoices.map((choice) => {
+                    const isSelected = selectedPaymentOption === choice.value;
+                    const due = computeDueNow(choice.value);
+                    return (
+                      <button
+                        key={choice.value}
+                        type="button"
+                        onClick={() => setBookingForm({ ...bookingForm, paymentOption: choice.value })}
+                        style={{
+                          border: isSelected ? '2px solid #2563eb' : '1px solid #d1d5db',
+                          background: isSelected ? '#eff6ff' : '#ffffff',
+                          borderRadius: '10px',
+                          padding: '0.7rem 0.8rem',
+                          textAlign: 'left',
+                          cursor: 'pointer',
+                          boxShadow: isSelected ? '0 1px 4px rgba(37, 99, 235, 0.18)' : 'none',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#111827' }}>{choice.title}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#6b7280', marginTop: '0.15rem', lineHeight: 1.3 }}>
+                          {choice.subtitle}
+                        </div>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#2563eb', marginTop: '0.35rem' }}>
+                          {due !== null
+                            ? `₱${due.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            : 'Enter dates'}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedDueNow !== null && selectedBalanceDue > 0 && (
+                  <div style={{ ...secureNote, marginTop: '0.55rem', color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.45rem 0.6rem' }}>
+                    <Icons.Money size={13} /> Balance of ₱{selectedBalanceDue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {selectedBalanceDueAt ? ` due by ${selectedBalanceDueAt}` : ''} (before check-in).
+                  </div>
+                )}
+              </div>
+
               <div style={modalGrid}>
                 <div style={{gridColumn: '1 / -1'}}>
                   <label style={inputLabel}>{t('form_payment_method')}</label>

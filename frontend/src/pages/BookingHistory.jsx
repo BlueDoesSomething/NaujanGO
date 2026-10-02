@@ -555,6 +555,42 @@ END:VCALENDAR`;
                 </div>
               </div>
 
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', margin: '0.35rem 0 0.1rem' }}>
+                <span style={{
+                  ...styles.statusBadge,
+                  backgroundColor:
+                    booking.payment_status === 'paid' ? '#16a34a' :
+                    booking.payment_status === 'partial' ? '#d97706' :
+                    booking.payment_status === 'pending' ? '#2563eb' :
+                    booking.payment_status === 'failed' ? '#dc2626' :
+                    '#6b7280',
+                  color: '#fff',
+                  fontSize: '11px',
+                  padding: '3px 9px'
+                }}>
+                  {booking.payment_status === 'partial' ? 'Partially paid' : (booking.payment_status || 'unpaid')}
+                </span>
+                {Number(booking.amount_paid) > 0 && Number(booking.balance_due) > 0 && (
+                  <span style={{ fontSize: '12px', color: '#4b5563', fontWeight: 600 }}>
+                    ₱{Number(booking.amount_paid).toLocaleString('en-PH', { minimumFractionDigits: 2 })} of ₱{Number(booking.total_amount).toLocaleString('en-PH', { minimumFractionDigits: 2 })}
+                    {booking.balance_due_at ? ` · balance due by ${formatDate(booking.balance_due_at)}` : ''}
+                  </span>
+                )}
+              </div>
+
+              {Number(booking.amount_paid) > 0 && Number(booking.balance_due) > 0 && (
+                <div style={{ margin: '0.35rem 0 0.5rem' }}>
+                  <div style={{ background: '#e5e7eb', borderRadius: '999px', height: '8px', overflow: 'hidden' }}>
+                    <div style={{
+                      background: '#16a34a',
+                      height: '100%',
+                      borderRadius: '999px',
+                      width: `${Math.min(100, (Number(booking.amount_paid) / Math.max(Number(booking.total_amount), 1)) * 100)}%`
+                    }} />
+                  </div>
+                </div>
+              )}
+
               <div style={styles.bookingDetails}>
                 <div style={styles.detailRow}>
                   <div style={styles.detailItem}>
@@ -627,6 +663,18 @@ END:VCALENDAR`;
                   )}
                 </div>
                 <div style={styles.actions}>
+                  {Number(booking.balance_due) > 0 && ['pending', 'confirmed'].includes(booking.status) && isUpcoming(booking.check_in) && (
+                    <button
+                      style={{ ...styles.actionBtn, backgroundColor: '#2563eb', color: '#fff', border: 'none' }}
+                      onClick={() => navigate(`/hotels/payment/${booking.booking_id}`)}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+                        <line x1="1" y1="10" x2="23" y2="10"></line>
+                      </svg>
+                      {Number(booking.amount_paid) > 0 ? 'Pay balance' : 'Complete payment'}
+                    </button>
+                  )}
                   {['pending', 'confirmed'].includes(booking.status) && isUpcoming(booking.check_in) && (
                     <button style={styles.actionBtn} onClick={() => openModifyModal(booking)}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

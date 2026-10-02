@@ -78,6 +78,7 @@ const OwnerDashboard = () => {
     image_url: '',
     image_urls: [],
     allowed_payment_methods: ['card', 'gcash', 'grabpay', 'qrph', 'paypal', 'bank_transfer', 'pay_at_property'],
+    reservation_fee: '',
     map_url: '',
     contact_phone: '',
     contact_email: '',
@@ -535,6 +536,7 @@ const OwnerDashboard = () => {
       allowed_payment_methods: Array.isArray(hotel.allowed_payment_methods) && hotel.allowed_payment_methods.length
         ? hotel.allowed_payment_methods
         : ['card', 'gcash', 'paypal', 'bank_transfer', 'pay_at_property'],
+      reservation_fee: hotel.reservation_fee ?? '',
       map_url: hotel.map_url || '',
       contact_phone: hotel.contact_phone || '',
       contact_email: hotel.contact_email || '',
@@ -561,6 +563,7 @@ const OwnerDashboard = () => {
         image_url: primaryImage,
         image_urls: imageUrls,
         allowed_payment_methods: hotelForm.allowed_payment_methods,
+        reservation_fee: hotelForm.reservation_fee === '' ? null : Number(hotelForm.reservation_fee),
         map_url: hotelForm.map_url,
         contact_phone: hotelForm.contact_phone,
         contact_email: hotelForm.contact_email,
@@ -607,6 +610,7 @@ const OwnerDashboard = () => {
         image_url: primaryImage,
         image_urls: imageUrls,
         allowed_payment_methods: hotelForm.allowed_payment_methods,
+        reservation_fee: hotelForm.reservation_fee === '' ? null : Number(hotelForm.reservation_fee),
         map_url: hotelForm.map_url,
         contact_phone: hotelForm.contact_phone,
         contact_email: hotelForm.contact_email,
@@ -1035,6 +1039,22 @@ const OwnerDashboard = () => {
           const pendPct = total > 0 ? Math.round((pending / total) * 100) : 0;
           const cancPct = total > 0 ? Math.round((cancelled / total) * 100) : 0;
           const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+          const outstanding = Number(stats.paymentStats?.outstanding || 0);
+          const collected = Number(stats.paymentStats?.collected || 0);
+          const partialBookings = Number(stats.paymentStats?.partial_bookings || 0);
+          const metricCards = [
+            { label: 'Hotels Managed', value: stats.hotelCount ?? 0, accent: '#16a34a', sub: 'Your property' },
+            { label: 'Total Bookings', value: total, accent: '#7c3aed', sub: 'All time' },
+            { label: 'Confirmed', value: confirmed, accent: '#2563eb', sub: `${confPct}% of total` },
+            { label: 'Pending', value: pending, accent: '#d97706', sub: 'Awaiting action' },
+            {
+              label: 'Outstanding balance',
+              value: outstanding,
+              prefix: '₱',
+              accent: '#dc2626',
+              sub: `₱${collected.toLocaleString()} collected${partialBookings > 0 ? ` · ${partialBookings} partial` : ''}`
+            },
+          ];
           return (
             <div>
               {/* Header */}
@@ -1047,15 +1067,10 @@ const OwnerDashboard = () => {
               </div>
 
               {/* Metric Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
-                {[
-                  { label: 'Hotels Managed', value: stats.hotelCount ?? 0, accent: '#16a34a', sub: 'Your property' },
-                  { label: 'Total Bookings', value: total, accent: '#7c3aed', sub: 'All time' },
-                  { label: 'Confirmed', value: confirmed, accent: '#2563eb', sub: `${confPct}% of total` },
-                  { label: 'Pending', value: pending, accent: '#d97706', sub: 'Awaiting action' },
-                ].map(({ label, value, accent, sub }) => (
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${metricCards.length}, 1fr)`, gap: '1rem', marginBottom: '1.25rem' }}>
+                {metricCards.map(({ label, value, accent, sub, prefix }) => (
                   <div key={label} style={{ background: '#fff', border: '1px solid #e5e7eb', borderTop: `3px solid ${accent}`, borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', lineHeight: 1, marginBottom: '0.35rem' }}>{Number(value).toLocaleString()}</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', lineHeight: 1, marginBottom: '0.35rem' }}>{prefix || ''}{Number(value).toLocaleString()}</div>
                     <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151' }}>{label}</div>
                     <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.2rem' }}>{sub}</div>
                   </div>
@@ -1339,6 +1354,20 @@ const OwnerDashboard = () => {
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Currency</span>
                           <input type="text" value={hotelForm.currency} onChange={(e) => setHotelForm({ ...hotelForm, currency: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
                         </label>
+                        <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                          <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Reservation Fee (₱)</span>
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={hotelForm.reservation_fee}
+                            onChange={(e) => setHotelForm({ ...hotelForm, reservation_fee: e.target.value })}
+                            className="gov-input"
+                            style={{ borderRadius:'8px' }}
+                            placeholder="Blank to disable"
+                          />
+                          <span style={{ fontSize:'0.72rem', color:'#6b7280' }}>Lets guests book by paying just this fee now. Leave blank to hide the option.</span>
+                        </label>
                         <div style={{ gridColumn:'1 / -1', display:'flex', flexDirection:'column', gap:'0.55rem' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Allowed Payment Methods</span>
                           <div style={{ display:'flex', flexWrap:'wrap', gap:'0.75rem 1rem' }}>
@@ -1583,7 +1612,29 @@ const OwnerDashboard = () => {
                           {new Date(booking.check_in).toLocaleDateString()} → {new Date(booking.check_out).toLocaleDateString()}
                         </td>
                         <td>
-                          ₱{parseFloat(booking.total_amount || 0).toLocaleString()}
+                          <div style={{ fontWeight: 700 }}>₱{parseFloat(booking.total_amount || 0).toLocaleString()}</div>
+                          <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>
+                            Paid ₱{parseFloat(booking.amount_paid || 0).toLocaleString()}
+                            {Number(booking.balance_due) > 0 ? ` · ₱${parseFloat(booking.balance_due).toLocaleString()} due` : ''}
+                          </div>
+                          {booking.payment_status && (
+                            <span style={{
+                              display: 'inline-block',
+                              fontSize: '0.7rem',
+                              fontWeight: 700,
+                              padding: '2px 7px',
+                              borderRadius: '999px',
+                              color: '#fff',
+                              marginTop: '0.15rem',
+                              background:
+                                booking.payment_status === 'paid' ? '#16a34a' :
+                                booking.payment_status === 'partial' ? '#d97706' :
+                                booking.payment_status === 'pending' ? '#2563eb' :
+                                booking.payment_status === 'failed' ? '#dc2626' : '#6b7280'
+                            }}>
+                              {booking.payment_status}
+                            </span>
+                          )}
                         </td>
                         <td>
                           <span className={`gov-badge-status gov-badge-status--${booking.status}`}>

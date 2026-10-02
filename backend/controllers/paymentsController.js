@@ -9,6 +9,27 @@ import { authenticateToken, requireAdmin, requireOwnerOrAdmin } from '../middlew
 const router = express.Router();
 import { JWT_SECRET } from '../config/security.js';
 import { FRONTEND_URL, WEBHOOK_BASE_URL } from '../config/publicUrls.js';
+import { balanceOf, dueNow, MIN_GATEWAY_AMOUNT } from '../utils/paymentAmounts.js';
+import { syncBookingPaymentStatus, fetchAmountPaid } from '../utils/paymentSync.js';
+
+// What this booking must pay right now: the remaining balance once anything has
+// been paid, otherwise the first instalment chosen at checkout (fee/half/full).
+const expectedDueAmount = async (booking, amountPaid) => {
+  if (amountPaid > 0) {
+    return balanceOf(booking.total_amount, amountPaid, booking.payment_status);
+  }
+  const [hotelRows] = await db.promise().query(
+    'SELECT reservation_fee FROM hotels WHERE hotel_id = ?',
+    [booking.hotel_id]
+  );
+  const firstDue = dueNow(
+    booking.payment_option || 'full',
+    booking.total_amount,
+    hotelRows[0]?.reservation_fee ?? null
+  );
+  if (firstDue !== null) return firstDue;
+  return balanceOf(booking.total_amount, 0, booking.payment_status);
+};
 // Treat 'sandbox' as real payments mode (uses provider test keys) so sandbox can exercise real provider flows
 const USE_REAL_PAYMENTS = process.env.PAYMENT_MODE === 'live' || process.env.PAYMENT_MODE === 'sandbox' || process.env.USE_REAL_PAYMENTS === 'true';
 
@@ -513,9 +534,9 @@ router.post('/checkout', async (req, res) => {
 
   console.log('🔵 Checkout request:', { booking_id, payment_method, amount, user_id: userId });
 
-  if (!booking_id || !payment_method || !amount) {
+  if (!booking_id || !payment_method) {
     console.error('🔴 Missing required fields in checkout request');
-    return res.status(400).json({ error: 'Booking ID, payment method, and amount are required' });
+    return res.status(400).json({ error: 'Booking ID and payment method are required' });
   }
 
   if (!isExternalCheckoutMethod(payment_method)) {
@@ -537,15 +558,29 @@ router.post('/checkout', async (req, res) => {
     const booking = bookings[0];
     console.log('✅ Booking found:', { booking_id, user_id: userId, total_amount: booking.total_amount });
 
-    // SECURITY: Validate amount against booking's actual total
-    const bookingAmount = parseFloat(booking.total_amount);
-    const submittedAmount = parseFloat(amount);
-    const amountDifference = Math.abs(submittedAmount - bookingAmount);
-    
-    if (amountDifference > 0.01) {
+    // SECURITY: the amount is whatever the booking still owes — first payment
+    // (reservation/half/full due) or the remaining balance. Never trust client.
+    if (booking.payment_status === 'paid' || booking.payment_status === 'refunded') {
+      return res.status(400).json({ error: 'Booking already paid' });
+    }
+
+    const amountPaid = await fetchAmountPaid(booking_id);
+    const expectedAmount = await expectedDueAmount(booking, amountPaid);
+
+    if (expectedAmount <= 0) {
+      return res.status(400).json({ error: 'Booking already paid' });
+    }
+    if (expectedAmount < MIN_GATEWAY_AMOUNT) {
+      return res.status(400).json({
+        error: `Remaining balance is below the ${MIN_GATEWAY_AMOUNT} minimum for online payments. Settle it at the property instead.`
+      });
+    }
+
+    const submittedAmount = amount == null || amount === '' ? null : parseFloat(amount);
+    if (submittedAmount !== null && Math.abs(submittedAmount - expectedAmount) > 0.01) {
       return res.status(400).json({ 
-        error: 'Amount mismatch. Expected ₱' + bookingAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-        expected_amount: bookingAmount,
+        error: 'Amount mismatch. Expected ₱' + expectedAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        expected_amount: expectedAmount,
         submitted_amount: submittedAmount
       });
     }
@@ -558,14 +593,10 @@ router.post('/checkout', async (req, res) => {
       });
     }
 
-    if (booking.payment_status === 'paid') {
-      return res.status(400).json({ error: 'Booking already paid' });
-    }
-
     const clientOrigin = req.headers.origin || FRONTEND_URL;
     const paymentResult = await processPayment({
       method: payment_method,
-      amount: bookingAmount,
+      amount: expectedAmount,
       currency,
       email: customer_email || booking.customer_email,
       phone: customer_phone || booking.customer_phone,
@@ -585,7 +616,7 @@ router.post('/checkout', async (req, res) => {
 
     const paymentInsert = await insertPaymentRecord({
       bookingId: booking_id,
-      amount: bookingAmount,
+      amount: expectedAmount,
       currency,
       method: payment_method,
       provider: paymentResult.provider,
@@ -596,32 +627,29 @@ router.post('/checkout', async (req, res) => {
     });
 
     if (paymentResult.status === 'succeeded') {
-      await db.promise().query(
-        `UPDATE hotel_bookings 
-         SET payment_status = 'paid',
-             payment_method = ?,
-             status = 'confirmed',
-             updated_at = NOW()
-         WHERE booking_id = ?`,
-        [payment_method, booking_id]
-      );
+      await syncBookingPaymentStatus(booking_id, { confirm: true, paymentMethod: payment_method });
     } else if (paymentResult.status === 'pending') {
-      await db.promise().query(
-        `UPDATE hotel_bookings 
-         SET payment_status = 'pending',
-             payment_method = ?,
-             status = 'pending',
-             updated_at = NOW()
-         WHERE booking_id = ?`,
-        [payment_method, booking_id]
-      );
+      // Only a first-time checkout may show pending; never downgrade a booking
+      // that has already collected part of the total.
+      if (booking.payment_status === 'unpaid') {
+        await db.promise().query(
+          `UPDATE hotel_bookings 
+           SET payment_status = 'pending',
+               payment_method = ?,
+               status = 'pending',
+               updated_at = NOW()
+           WHERE booking_id = ?`,
+          [payment_method, booking_id]
+        );
+      }
     } else if (paymentResult.status === 'failed') {
       await db.promise().query(
         `UPDATE hotel_bookings 
          SET payment_status = 'failed',
              payment_method = ?,
              updated_at = NOW()
-         WHERE booking_id = ?`,
+         WHERE booking_id = ?
+           AND payment_status NOT IN ('partial', 'paid')`,
         [payment_method, booking_id]
       );
     }
@@ -801,8 +829,8 @@ router.post('/process', async (req, res) => {
     customer_phone
   } = req.body;
 
-  if (!booking_id || !payment_method || !amount) {
-    return res.status(400).json({ error: 'Booking ID, payment method, and amount are required' });
+  if (!booking_id || !payment_method) {
+    return res.status(400).json({ error: 'Booking ID and payment method are required' });
   }
 
   try {
@@ -827,14 +855,28 @@ router.post('/process', async (req, res) => {
     }
 
     // Check if already paid
-    if (booking.payment_status === 'paid') {
+    if (booking.payment_status === 'paid' || booking.payment_status === 'refunded') {
       return res.status(400).json({ error: 'Booking already paid' });
     }
 
+    // Server-side amount: first payment (reservation/half/full) or balance.
+    const amountPaid = await fetchAmountPaid(booking_id);
+    const expectedAmount = await expectedDueAmount(booking, amountPaid);
+    if (expectedAmount <= 0) {
+      return res.status(400).json({ error: 'Booking already paid' });
+    }
+    const submittedProcessAmount = amount == null || amount === '' ? null : parseFloat(amount);
+    if (submittedProcessAmount !== null && Math.abs(submittedProcessAmount - expectedAmount) > 0.01) {
+      return res.status(400).json({
+        error: 'Amount mismatch. Expected ₱' + expectedAmount.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        expected_amount: expectedAmount,
+        submitted_amount: submittedProcessAmount
+      });
+    }
     // Process payment
     const paymentResult = await processPayment({
       method: payment_method,
-      amount: parseFloat(amount),
+      amount: expectedAmount,
       currency,
       cardLast4: card_last4,
       email: customer_email || booking.customer_email,
@@ -859,21 +901,14 @@ router.post('/process', async (req, res) => {
 
     // Update booking status if payment succeeded
     if (paymentResult.status === 'succeeded') {
-      await db.promise().query(
-        `UPDATE hotel_bookings 
-         SET payment_status = 'paid', 
-             payment_method = ?,
-             status = 'confirmed',
-             updated_at = NOW()
-         WHERE booking_id = ?`,
-        [payment_method, booking_id]
-      );
+      await syncBookingPaymentStatus(booking_id, { confirm: true, paymentMethod: payment_method });
     } else if (paymentResult.status === 'failed') {
       await db.promise().query(
         `UPDATE hotel_bookings 
          SET payment_status = 'failed',
              updated_at = NOW()
-         WHERE booking_id = ?`,
+         WHERE booking_id = ?
+           AND payment_status NOT IN ('partial', 'paid')`,
         [booking_id]
       );
     }
@@ -951,16 +986,11 @@ router.get('/success', async (req, res) => {
         }
         
         // Update payment and booking status
-        await Promise.all([
-          db.promise().query(
-            `UPDATE hotel_payments SET status = 'succeeded', updated_at = NOW() WHERE payment_id = ?`,
-            [payment.payment_id]
-          ),
-          db.promise().query(
-            `UPDATE hotel_bookings SET payment_status = 'paid', updated_at = NOW() WHERE booking_id = ?`,
-            [payment.booking_id]
-          )
-        ]);
+        await db.promise().query(
+          `UPDATE hotel_payments SET status = 'succeeded', updated_at = NOW() WHERE payment_id = ?`,
+          [payment.payment_id]
+        );
+        await syncBookingPaymentStatus(payment.booking_id);
         
         console.log(`✅ Payment Success: Booking ${payment.booking_id} confirmed`);
       } catch (error) {
@@ -1037,16 +1067,11 @@ router.get('/paypal/success', async (req, res) => {
         }
         
         // Update payment and booking status
-        await Promise.all([
-          db.promise().query(
-            `UPDATE hotel_payments SET status = 'succeeded', updated_at = NOW() WHERE payment_id = ?`,
-            [payment.payment_id]
-          ),
-          db.promise().query(
-            `UPDATE hotel_bookings SET payment_status = 'paid', updated_at = NOW() WHERE booking_id = ?`,
-            [payment.booking_id]
-          )
-        ]);
+        await db.promise().query(
+          `UPDATE hotel_payments SET status = 'succeeded', updated_at = NOW() WHERE payment_id = ?`,
+          [payment.payment_id]
+        );
+        await syncBookingPaymentStatus(payment.booking_id);
         
         console.log(`✅ PayPal Payment Success: Booking ${payment.booking_id} confirmed`);
       } catch (error) {
@@ -1130,7 +1155,7 @@ router.get('/gcash/success', async (req, res) => {
           ),
           // Booking remains pending until reference verification.
           db.promise().query(
-            `UPDATE hotel_bookings SET payment_status = 'pending', status = 'pending', updated_at = NOW() WHERE booking_id = ?`,
+            `UPDATE hotel_bookings SET payment_status = 'pending', status = 'pending', updated_at = NOW() WHERE booking_id = ? AND payment_status NOT IN ('partial', 'paid')`,
             [payment.booking_id]
           )
         ]);
@@ -1197,7 +1222,7 @@ router.get('/gcash/failed', async (req, res) => {
         
         // Update booking: keep as pending to allow retry, mark payment as failed
         await db.promise().query(
-          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ?`,
+          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ? AND payment_status NOT IN ('partial', 'paid')`,
           [payment.booking_id]
         );
         
@@ -1264,10 +1289,7 @@ router.get('/grabpay/success', async (req, res) => {
         );
 
         // Update booking: mark payment as paid
-        await db.promise().query(
-          `UPDATE hotel_bookings SET payment_status = 'paid', status = 'confirmed', updated_at = NOW() WHERE booking_id = ?`,
-          [payment.booking_id]
-        );
+        await syncBookingPaymentStatus(payment.booking_id, { confirm: true });
 
         console.log(`✅ GrabPay Payment Successful: Booking ${payment.booking_id} confirmed`);
       } catch (error) {
@@ -1332,7 +1354,7 @@ router.get('/grabpay/failed', async (req, res) => {
 
         // Update booking: keep as pending to allow retry
         await db.promise().query(
-          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ?`,
+          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ? AND payment_status NOT IN ('partial', 'paid')`,
           [payment.booking_id]
         );
 
@@ -1399,7 +1421,7 @@ router.get('/grabpay/failed', async (req, res) => {
 
         // Update booking: keep as pending to allow retry
         await db.promise().query(
-          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ?`,
+          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ? AND payment_status NOT IN ('partial', 'paid')`,
           [payment.booking_id]
         );
 
@@ -1471,10 +1493,7 @@ router.get('/qrph/success', async (req, res) => {
         );
 
         // Update booking: mark payment as paid
-        await db.promise().query(
-          `UPDATE hotel_bookings SET payment_status = 'paid', status = 'confirmed', updated_at = NOW() WHERE booking_id = ?`,
-          [payment.booking_id]
-        );
+        await syncBookingPaymentStatus(payment.booking_id, { confirm: true });
 
         console.log(`✅ QRPH Payment Successful: Booking ${payment.booking_id} confirmed`);
       } catch (error) {
@@ -1541,7 +1560,7 @@ router.get('/qrph/failed', async (req, res) => {
         
         // Update booking: keep as pending to allow retry, mark payment as failed
         await db.promise().query(
-          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ?`,
+          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ? AND payment_status NOT IN ('partial', 'paid')`,
           [payment.booking_id]
         );
         
@@ -1607,10 +1626,7 @@ router.get('/xendit/success', async (req, res) => {
         );
 
         // Update booking: mark payment as paid
-        await db.promise().query(
-          `UPDATE hotel_bookings SET payment_status = 'paid', status = 'confirmed', updated_at = NOW() WHERE booking_id = ?`,
-          [payment.booking_id]
-        );
+        await syncBookingPaymentStatus(payment.booking_id, { confirm: true });
 
         console.log(`✅ Xendit Payment Successful: Booking ${payment.booking_id} confirmed`);
       } catch (error) {
@@ -1675,7 +1691,7 @@ router.get('/xendit/failed', async (req, res) => {
         
         // Update booking: keep as pending to allow retry, mark payment as failed
         await db.promise().query(
-          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ?`,
+          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ? AND payment_status NOT IN ('partial', 'paid')`,
           [payment.booking_id]
         );
         
@@ -1868,7 +1884,8 @@ router.post('/:paymentId/submit-reference', async (req, res) => {
        SET payment_status = 'pending',
            status = CASE WHEN status = 'cancelled' THEN status ELSE 'pending' END,
            updated_at = NOW()
-       WHERE booking_id = ?`,
+       WHERE booking_id = ?
+         AND payment_status NOT IN ('partial', 'paid')`,
       [payment.booking_id]
     );
 
@@ -1999,14 +2016,7 @@ router.post('/:paymentId/verify-reference', authenticateToken, requireOwnerOrAdm
         [notes, req.user.user_id, paymentId]
       );
 
-      await db.promise().query(
-        `UPDATE hotel_bookings
-         SET payment_status = 'paid',
-             status = 'confirmed',
-             updated_at = NOW()
-         WHERE booking_id = ?`,
-        [payment.booking_id]
-      );
+      await syncBookingPaymentStatus(payment.booking_id, { confirm: true });
 
       await db.promise().query(
         `UPDATE hotels
@@ -2040,7 +2050,8 @@ router.post('/:paymentId/verify-reference', authenticateToken, requireOwnerOrAdm
        SET payment_status = 'failed',
            status = 'pending',
            updated_at = NOW()
-       WHERE booking_id = ?`,
+       WHERE booking_id = ?
+         AND payment_status NOT IN ('partial', 'paid')`,
       [payment.booking_id]
     );
 
@@ -2102,18 +2113,17 @@ router.post('/:paymentId/status', authenticateToken, requireAdmin, async (req, r
     );
     // Update booking status if needed
     if (status === 'succeeded') {
-      await db.promise().query(
-        `UPDATE hotel_bookings SET payment_status = 'paid', updated_at = NOW() WHERE booking_id = ?`,
-        [payment.booking_id]
-      );
+      await syncBookingPaymentStatus(payment.booking_id);
     } else if (status === 'failed') {
       await db.promise().query(
-        `UPDATE hotel_bookings SET payment_status = 'failed', updated_at = NOW() WHERE booking_id = ?`,
+        `UPDATE hotel_bookings SET payment_status = 'failed', updated_at = NOW() WHERE booking_id = ?
+           AND payment_status NOT IN ('partial', 'paid')`,
         [payment.booking_id]
       );
     } else if (status === 'pending') {
       await db.promise().query(
-        `UPDATE hotel_bookings SET payment_status = 'pending', updated_at = NOW() WHERE booking_id = ?`,
+        `UPDATE hotel_bookings SET payment_status = 'pending', updated_at = NOW() WHERE booking_id = ?
+           AND payment_status NOT IN ('partial', 'paid')`,
         [payment.booking_id]
       );
     } else if (status === 'refunded') {
@@ -2319,23 +2329,17 @@ router.post('/webhook/xendit', express.json(), async (req, res) => {
       
       // If payment succeeded, update booking
       if (internalStatus === 'succeeded') {
-        await db.promise().query(
-          `UPDATE hotel_bookings 
-           SET payment_status = 'paid',
-               status = 'confirmed',
-               updated_at = NOW()
-           WHERE booking_id = ?`,
-          [payment.booking_id]
-        );
+        await syncBookingPaymentStatus(payment.booking_id, { confirm: true });
         console.log(`✅ Xendit Payment Confirmed: Booking ${payment.booking_id}, Amount: ${amount} ${currency}`);
       } else if (internalStatus === 'failed') {
-        // Mark booking back to pending to allow retry
+        // Mark booking back to pending to allow retry (never downgrade partial/paid)
         await db.promise().query(
           `UPDATE hotel_bookings 
            SET payment_status = 'failed',
                status = 'pending',
                updated_at = NOW()
-           WHERE booking_id = ?`,
+           WHERE booking_id = ?
+             AND payment_status NOT IN ('partial', 'paid')`,
           [payment.booking_id]
         );
         console.log(`❌ Xendit Payment Failed: Booking ${payment.booking_id}`);
@@ -2382,13 +2386,7 @@ router.post('/webhook/:provider', async (req, res) => {
 
       // Update booking if payment succeeded
       if (status === 'succeeded') {
-        await db.promise().query(
-          `UPDATE hotel_bookings 
-           SET payment_status = 'paid',
-               updated_at = NOW()
-           WHERE booking_id = ?`,
-          [booking_id]
-        );
+        await syncBookingPaymentStatus(booking_id);
       }
     }
 
@@ -2519,10 +2517,7 @@ router.post('/webhook/paymongo', express.raw({ type: 'application/json' }), asyn
                 `UPDATE hotel_payments SET customer_reference_number = ?, reference_submitted_at = NOW(), reference_status = 'verified', status = 'succeeded', provider_response = ?, verified_at = NOW(), verified_by = NULL, paid_at = NOW(), updated_at = NOW() WHERE payment_id = ?`,
                 [possibleRef, JSON.stringify(sourceData), p.payment_id]
               );
-              await db.promise().query(
-                `UPDATE hotel_bookings SET payment_status = 'paid', status = 'confirmed', updated_at = NOW() WHERE booking_id = ?`,
-                [p.booking_id]
-              );
+              await syncBookingPaymentStatus(p.booking_id, { confirm: true });
               console.log(`Auto-verified payment ${p.payment_id} via PayMongo webhook (reference match)`);
             }
           }
@@ -2591,13 +2586,7 @@ const updatePaymentStatus = async (transactionRef, status, providerData) => {
     );
     
     if (payments.length > 0 && status === 'succeeded') {
-      await db.promise().query(
-        `UPDATE hotel_bookings 
-         SET payment_status = 'paid',
-             updated_at = NOW()
-         WHERE booking_id = ?`,
-        [payments[0].booking_id]
-      );
+      await syncBookingPaymentStatus(payments[0].booking_id);
     }
   } catch (err) {
     console.error('Error updating payment status:', err);

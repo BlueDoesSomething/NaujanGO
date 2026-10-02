@@ -5,6 +5,8 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 import db from '../db.js';
 import { authenticateToken, requireOwnerOrAdmin } from '../middleware/auth.js';
+import { syncBookingPaymentStatus } from '../utils/paymentSync.js';
+import { balanceOf } from '../utils/paymentAmounts.js';
 
 const router = express.Router();
 
@@ -231,6 +233,7 @@ router.post('/hotels', async (req, res) => {
     image_url,
     image_urls,
     allowed_payment_methods,
+    reservation_fee,
     map_url,
     contact_phone,
     contact_email
@@ -259,14 +262,23 @@ router.post('/hotels', async (req, res) => {
   const paymentMethodsCSV = parsePaymentMethodsInput(allowed_payment_methods);
   const primaryImage = image_url || (imageUrlsJSON ? JSON.parse(imageUrlsJSON)[0] : null);
 
+  let reservationFeeValue = null;
+  if (reservation_fee !== undefined && reservation_fee !== null && reservation_fee !== '') {
+    const fee = parseFloat(reservation_fee);
+    if (!Number.isFinite(fee) || fee < 0) {
+      return res.status(400).json({ error: 'Reservation fee must be a non-negative number' });
+    }
+    reservationFeeValue = fee;
+  }
+
   const connection = await db.promise().getConnection();
   try {
     await connection.beginTransaction();
 
     const [result] = await connection.query(
       `INSERT INTO hotels
-        (name, location, description, price_per_night, currency, rating, amenities, image_url, image_urls, allowed_payment_methods, map_url, contact_phone, contact_email, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+        (name, location, description, price_per_night, currency, rating, amenities, image_url, image_urls, allowed_payment_methods, reservation_fee, map_url, contact_phone, contact_email, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [
         name,
         location,
@@ -278,6 +290,7 @@ router.post('/hotels', async (req, res) => {
         primaryImage || null,
         imageUrlsJSON,
         paymentMethodsCSV,
+        reservationFeeValue,
         map_url || null,
         contact_phone || null,
         contact_email || null
@@ -356,7 +369,33 @@ router.get('/bookings', async (req, res) => {
     const params = [userId];
 
     const [bookings] = await db.promise().query(query, params);
-    res.json(bookings);
+
+    const bookingIds = bookings.map(b => b.booking_id);
+    let paidMap = {};
+    if (bookingIds.length) {
+      const [paidRows] = await db.promise().query(
+        `SELECT booking_id, SUM(CASE WHEN status = 'succeeded' THEN amount ELSE 0 END) AS paid
+         FROM hotel_payments
+         WHERE booking_id IN (?)
+         GROUP BY booking_id`,
+        [bookingIds]
+      );
+      paidMap = Object.fromEntries(paidRows.map(r => [r.booking_id, Number(r.paid) || 0]));
+    }
+
+    const enriched = bookings.map(b => {
+      const amount_paid = paidMap[b.booking_id] || 0;
+      const balance_due = balanceOf(b.total_amount, amount_paid, b.payment_status);
+      let balance_due_at = null;
+      if (balance_due > 0 && b.check_in) {
+        const d = new Date(`${b.check_in}T00:00:00`);
+        d.setDate(d.getDate() - 1);
+        balance_due_at = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      }
+      return { ...b, amount_paid, balance_due, balance_due_at };
+    });
+
+    res.json(enriched);
   } catch (error) {
     console.error('Get owner bookings error:', error);
     res.status(500).json({ error: 'Failed to fetch bookings' });
@@ -465,10 +504,35 @@ router.get('/dashboard/stats', async (req, res) => {
       `;
     const [recentBookings] = await db.promise().query(recentBookingsQuery, isAdmin ? [] : [userId]);
 
+    // Collected vs outstanding money across this owner's bookings
+    const [paymentStatsRows] = await db.promise().query(
+      `SELECT
+         COALESCE(SUM(COALESCE(paid.paid_amount, 0)), 0) AS collected,
+         COALESCE(SUM(CASE
+           WHEN b.status IN ('confirmed', 'pending') AND b.payment_status NOT IN ('paid', 'refunded')
+           THEN GREATEST(b.total_amount - COALESCE(paid.paid_amount, 0), 0)
+           ELSE 0
+         END), 0) AS outstanding,
+         COALESCE(SUM(CASE WHEN b.payment_status = 'partial' THEN 1 ELSE 0 END), 0) AS partial_bookings
+       FROM hotel_bookings b
+       LEFT JOIN (
+         SELECT booking_id, SUM(CASE WHEN status = 'succeeded' THEN amount ELSE 0 END) AS paid_amount
+         FROM hotel_payments
+         GROUP BY booking_id
+       ) paid ON paid.booking_id = b.booking_id
+       ${isAdmin ? '' : 'INNER JOIN hotel_owners ho ON b.hotel_id = ho.hotel_id'}`,
+      isAdmin ? [] : [userId]
+    );
+
     res.json({
       hotelCount: hotelCount[0].count,
       bookingStats: bookingStats[0],
-      recentBookings
+      recentBookings,
+      paymentStats: {
+        collected: Number(paymentStatsRows[0]?.collected) || 0,
+        outstanding: Number(paymentStatsRows[0]?.outstanding) || 0,
+        partial_bookings: Number(paymentStatsRows[0]?.partial_bookings) || 0
+      }
     });
   } catch (error) {
     console.error('Owner dashboard stats error:', error);
@@ -493,6 +557,7 @@ router.put('/hotels/:hotelId', async (req, res) => {
     image_url,
     image_urls,
     allowed_payment_methods,
+    reservation_fee,
     map_url,
     contact_phone,
     contact_email
@@ -528,6 +593,19 @@ router.put('/hotels/:hotelId', async (req, res) => {
     if (allowed_payment_methods !== undefined) {
       fields.push('allowed_payment_methods = ?');
       values.push(parsePaymentMethodsInput(allowed_payment_methods));
+    }
+    if (reservation_fee !== undefined) {
+      if (reservation_fee === null || reservation_fee === '') {
+        fields.push('reservation_fee = ?');
+        values.push(null);
+      } else {
+        const fee = parseFloat(reservation_fee);
+        if (!Number.isFinite(fee) || fee < 0) {
+          return res.status(400).json({ error: 'Reservation fee must be a non-negative number' });
+        }
+        fields.push('reservation_fee = ?');
+        values.push(fee);
+      }
     }
 
     // Handle amenities (convert to JSON if needed)
@@ -1597,10 +1675,7 @@ router.put('/payments/:paymentId/confirm', async (req, res) => {
       [paymentId]
     );
 
-    await db.promise().query(
-      `UPDATE hotel_bookings SET payment_status = 'paid', status = 'confirmed', updated_at = NOW() WHERE booking_id = ?`,
-      [payment.booking_id]
-    );
+    await syncBookingPaymentStatus(payment.booking_id, { confirm: true });
 
     res.json({ success: true, message: 'Payment confirmed successfully' });
   } catch (error) {
@@ -1651,7 +1726,8 @@ router.put('/payments/:paymentId/cancel', async (req, res) => {
     );
 
     await db.promise().query(
-      `UPDATE hotel_bookings SET payment_status = 'failed', updated_at = NOW() WHERE booking_id = ?`,
+      `UPDATE hotel_bookings SET payment_status = 'failed', updated_at = NOW() WHERE booking_id = ?
+         AND payment_status NOT IN ('partial', 'paid')`,
       [payment.booking_id]
     );
 
@@ -2228,6 +2304,7 @@ router.get('/hotels/:hotelId/reports/rooms', authenticateToken, async (req, res)
         SUM(CASE WHEN hb.status = 'confirmed' THEN 1 ELSE 0 END) as confirmed_bookings,
         SUM(CASE WHEN hb.status IN ('confirmed', 'pending') THEN hb.nights ELSE 0 END) as total_nights,
         SUM(CASE WHEN hb.status = 'confirmed' THEN hb.total_amount ELSE 0 END) as confirmed_revenue,
+        SUM(CASE WHEN hb.status = 'confirmed' THEN COALESCE((SELECT SUM(hp.amount) FROM hotel_payments hp WHERE hp.booking_id = hb.booking_id AND hp.status = 'succeeded'), 0) ELSE 0 END) as collected_revenue,
         AVG(CASE WHEN hb.status = 'confirmed' AND r.room_id IS NOT NULL THEN rev.rating ELSE NULL END) as average_rating,
         COUNT(CASE WHEN hb.status = 'confirmed' AND r.room_id IS NOT NULL THEN rev.review_id ELSE NULL END) as review_count
       FROM rooms r
@@ -2245,6 +2322,7 @@ router.get('/hotels/:hotelId/reports/rooms', authenticateToken, async (req, res)
       confirmed_bookings: 0,
       total_nights: 0,
       confirmed_revenue: 0,
+      collected_revenue: 0,
       average_occupancy_rate: 0
     };
 
@@ -2253,6 +2331,7 @@ router.get('/hotels/:hotelId/reports/rooms', authenticateToken, async (req, res)
       totals.confirmed_bookings += room.confirmed_bookings || 0;
       totals.total_nights += room.total_nights || 0;
       totals.confirmed_revenue += room.confirmed_revenue || 0;
+      totals.collected_revenue += room.collected_revenue || 0;
 
       const occupancy_nights = room.total_nights || 0;
       const occupancy_rate = (occupancy_nights / (room.quantity_available * 365)) * 100;
@@ -2266,6 +2345,7 @@ router.get('/hotels/:hotelId/reports/rooms', authenticateToken, async (req, res)
         confirmed_bookings: room.confirmed_bookings || 0,
         total_nights: room.total_nights || 0,
         confirmed_revenue: parseFloat(room.confirmed_revenue || 0),
+        collected_revenue: parseFloat(room.collected_revenue || 0),
         average_rating: room.average_rating ? parseFloat(room.average_rating).toFixed(2) : null,
         review_count: room.review_count || 0,
         occupancy_rate: occupancy_rate.toFixed(2)
@@ -2282,7 +2362,8 @@ router.get('/hotels/:hotelId/reports/rooms', authenticateToken, async (req, res)
       rooms: rooms_data,
       totals: {
         ...totals,
-        confirmed_revenue: parseFloat(totals.confirmed_revenue)
+        confirmed_revenue: parseFloat(totals.confirmed_revenue),
+        collected_revenue: parseFloat(totals.collected_revenue)
       }
     });
   } catch (error) {

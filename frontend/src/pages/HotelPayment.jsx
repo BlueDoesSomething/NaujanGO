@@ -209,7 +209,7 @@ const HotelPayment = () => {
         startPaymentCheckout({
           booking_id: booking.booking_id,
           payment_method: paymentMethod,
-          amount: booking.total_amount,
+          amount: booking.amount_due_now ?? booking.balance_due ?? booking.total_amount,
           currency: booking.currency,
           customer_email: booking.customer_email,
           customer_phone: booking.customer_phone
@@ -308,6 +308,28 @@ const HotelPayment = () => {
                   <div style={labelStyle}>{t('total_label') || 'Total'}</div>
                   <div style={valueStyle}>{formatCurrency(booking.total_amount, booking.currency)}</div>
                 </div>
+                {booking.payment_status !== 'paid' && booking.payment_status !== 'refunded' && (
+                  <>
+                    <div>
+                      <div style={labelStyle}>Amount due now</div>
+                      <div style={valueStyle}>
+                        {formatCurrency(booking.amount_due_now ?? booking.balance_due ?? booking.total_amount, booking.currency)}
+                      </div>
+                    </div>
+                    {Number(booking.amount_paid) > 0 && (
+                      <>
+                        <div>
+                          <div style={labelStyle}>Paid so far</div>
+                          <div style={valueStyle}>{formatCurrency(booking.amount_paid, booking.currency)}</div>
+                        </div>
+                        <div>
+                          <div style={labelStyle}>Balance due</div>
+                          <div style={valueStyle}>{formatCurrency(booking.balance_due, booking.currency)}</div>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
                 <div>
                   <div style={labelStyle}>{t('payment_status_label') || 'Payment Status'}</div>
                   <div style={valueStyle}>{t(booking.payment_status) || booking.payment_status}</div>
