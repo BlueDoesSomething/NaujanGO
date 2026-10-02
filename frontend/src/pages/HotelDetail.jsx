@@ -506,9 +506,9 @@ export default function HotelDetail() {
     selectedBalanceDueAt = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
   const paymentOptionChoices = [
-    { value: 'reservation', title: 'Reservation fee', subtitle: 'Secure the booking now, pay the rest later', available: reservationFeeValid },
-    { value: 'half', title: 'Half payment', subtitle: 'Pay 50% now, balance before check-in', available: bookingTotal > 0 },
-    { value: 'full', title: 'Full payment', subtitle: 'Pay the total amount now', available: bookingTotal > 0 }
+    { value: 'reservation', title: 'Reservation fee', subtitle: 'Secure the booking now, pay the rest later', available: reservationFeeUsable },
+    { value: 'half', title: 'Half payment', subtitle: 'Pay 50% now, balance before check-in', available: true },
+    { value: 'full', title: 'Full payment', subtitle: 'Pay the total amount now', available: true }
   ].filter((choice) => choice.available);
   const suitableRoomTypesForGuests = rooms.filter((room) => {
     const capacity = Number(room.capacity || 0);
@@ -1863,7 +1863,7 @@ export default function HotelDetail() {
                         <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#2563eb', marginTop: '0.35rem' }}>
                           {due !== null
                             ? `₱${due.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                            : 'Enter dates'}
+                            : modalNights > 0 ? 'Select room' : 'Enter dates'}
                         </div>
                       </button>
                     );
