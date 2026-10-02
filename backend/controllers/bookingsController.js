@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import db from '../db.js';
 
 import { JWT_SECRET } from '../config/security.js';
+import { fetchHotelAvailabilityDays, toDateOnlyKey, subtractOneDay } from '../utils/hotelAvailability.js';
 
 const getUserIdFromToken = (req) => {
   // Check for token in HttpOnly cookie FIRST (more secure)
@@ -145,6 +146,12 @@ export const createHotelBooking = async (req, res) => {
     return res.status(400).json({ error: 'Hotel, check-in, and check-out are required' });
   }
 
+  const checkInKey = toDateOnlyKey(check_in);
+  const checkOutKey = toDateOnlyKey(check_out);
+  if (!checkInKey || !checkOutKey) {
+    return res.status(400).json({ error: 'Check-in and check-out must be dates in YYYY-MM-DD format' });
+  }
+
   const checkInDate = new Date(check_in);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -222,6 +229,41 @@ export const createHotelBooking = async (req, res) => {
           error: `Payment method '${payment_method}' is not available for this hotel`,
           allowed_payment_methods: allowedMethods
         });
+      }
+
+      // Per-date enforcement: owner-closed dates and per-date room overrides.
+      // Uses the same helper as the public calendar so guests can never book
+      // something the calendar shows as closed or unavailable.
+      try {
+        const availabilityDays = await fetchHotelAvailabilityDays(
+          connection,
+          hotel_id,
+          checkInKey,
+          subtractOneDay(checkOutKey),
+          totalRooms
+        );
+
+        const closedDay = availabilityDays.find((day) => day.closed === 1);
+        if (closedDay) {
+          await connection.rollback();
+          connection.release();
+          return res.status(409).json({
+            error: `This hotel is closed for booking on ${closedDay.date}. Please choose different dates.`
+          });
+        }
+
+        const shortDay = availabilityDays.find((day) => day.available < numRooms);
+        if (shortDay) {
+          await connection.rollback();
+          connection.release();
+          return res.status(409).json({
+            error: `Not enough rooms available on ${shortDay.date} (${shortDay.available} left for your dates). Please adjust your dates or number of rooms.`
+          });
+        }
+      } catch (availabilityError) {
+        // Never block bookings if availability data cannot be read; the
+        // aggregate room checks below still apply.
+        console.error('Per-date availability check failed:', availabilityError);
       }
 
       // Check if a specific room type was selected

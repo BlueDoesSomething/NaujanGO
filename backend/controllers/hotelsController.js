@@ -2,6 +2,7 @@ import db from '../db.js';
 import { execute } from '../db.js';
 import { getTranslationsForEntities } from '../services/translations.js';
 import { getTranslationWithFallback } from '../services/machineTranslate.js';
+import { fetchHotelAvailabilityDays } from '../utils/hotelAvailability.js';
 
 let hotelsHasImageUrls;
 let hotelsHasAllowedPaymentMethods;
@@ -367,6 +368,55 @@ export const getHotelAvailability = async (req, res) => {
   } catch (error) {
     console.error('Error checking availability:', error);
     res.status(500).json({ error: 'Failed to check availability' });
+  }
+};
+
+const CALENDAR_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+// Public per-date availability calendar for guests.
+// GET /api/hotels/:id/calendar?start=YYYY-MM-DD&end=YYYY-MM-DD
+export const getHotelCalendar = async (req, res) => {
+  const { id } = req.params;
+  const { start, end } = req.query;
+
+  if (!start || !end || !CALENDAR_DATE_PATTERN.test(String(start)) || !CALENDAR_DATE_PATTERN.test(String(end))) {
+    return res.status(400).json({ error: 'start and end dates are required (YYYY-MM-DD)' });
+  }
+
+  const startMs = Date.parse(start);
+  const endMs = Date.parse(end);
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs)) {
+    return res.status(400).json({ error: 'Invalid date' });
+  }
+  if (endMs < startMs) {
+    return res.status(400).json({ error: 'end date must be on or after start date' });
+  }
+  if ((endMs - startMs) / 86400000 > 180) {
+    return res.status(400).json({ error: 'Date range cannot exceed 180 days' });
+  }
+
+  try {
+    const [hotel] = await db.promise().query(
+      'SELECT rooms_total FROM hotels WHERE hotel_id = ? AND (is_active = 1 OR is_active IS NULL)',
+      [id]
+    );
+
+    if (hotel.length === 0) {
+      return res.status(404).json({ error: 'Hotel not found' });
+    }
+
+    const days = await fetchHotelAvailabilityDays(
+      db.promise(),
+      id,
+      start,
+      end,
+      hotel[0].rooms_total || 0
+    );
+
+    return res.json({ success: true, start, end, days });
+  } catch (error) {
+    console.error('Error fetching hotel calendar:', error);
+    return res.status(500).json({ error: 'Failed to fetch calendar' });
   }
 };
 

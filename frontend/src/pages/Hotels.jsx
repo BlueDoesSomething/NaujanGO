@@ -433,13 +433,17 @@ export default function Hotels() {
                   <span style={priceNight}>{t('price_per_night') || '/night'}</span>
                 </div>
                 
-                <div style={availabilityText}>
+                <button
+                  type="button"
+                  style={availabilityText}
+                  onClick={() => navigate(`/hotels/${hotel.id}?calendar=1`)}
+                >
                   {Number.isFinite(Number(hotel.rooms_available))
                     ? Number(hotel.rooms_available) > 0
                       ? `${hotel.rooms_available} ${t('availability_rooms_pattern').split(' ').slice(1).join(' ')}`
                       : t('availability_sold_out')
                     : t('availability_check_availability')}
-                </div>
+                </button>
                 
                 <div style={amenitiesWrap}>
                   <span style={amenitiesLabel}>{t('amenities')}:</span>
@@ -988,7 +992,10 @@ const availabilityText = {
   background: 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)',
   borderRadius: '8px',
   width: 'fit-content',
-  border: '1px solid #86efac'
+  border: '1px solid #86efac',
+  fontFamily: 'inherit',
+  cursor: 'pointer',
+  transition: 'all 0.2s ease'
 }
 
 const amenitiesWrap = {

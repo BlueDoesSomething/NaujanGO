@@ -191,6 +191,10 @@ export const fetchHotels = () => {
   return apiClient.get('/hotels');
 };
 
+export const fetchHotelCalendar = (hotelId, start, end) => {
+  return apiClient.get(`/hotels/${hotelId}/calendar`, { params: { start, end } });
+};
+
 export const createHotelBooking = (bookingData) => {
   console.log('Creating booking with token:', getStoredToken() ? 'Token exists' : 'No token');
   return apiClient.post('/bookings/hotels', bookingData);

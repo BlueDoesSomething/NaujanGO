@@ -5,6 +5,7 @@ import {
   getCanReviewHotel,
   getHotelAvailability,
   getHotelAverageRating,
+  getHotelCalendar,
   getHotelById,
   getHotelReviews,
   getHotels,
@@ -17,6 +18,7 @@ const router = express.Router();
 router.get('/', getHotels);
 router.get('/:id', getHotelById);
 router.get('/:id/availability', getHotelAvailability);
+router.get('/:id/calendar', getHotelCalendar);
 router.get('/:id/rooms', getHotelRooms);  // Public rooms endpoint
 router.get('/:id/reviews', getHotelReviews);
 router.get('/:id/can-review', getCanReviewHotel);

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { fetchHotels, createHotelBooking, startPaymentCheckout, getApiBaseUrl } from '../api';
+import { fetchHotels, fetchHotelCalendar, createHotelBooking, startPaymentCheckout, getApiBaseUrl } from '../api';
 import * as api from '../api';
 import axios from 'axios';
 import LeafletMap from '../components/LeafletMap';
@@ -147,10 +147,57 @@ const formatAmenity = (a) => {
   }
 };
 
+const CALENDAR_LOCALES = {
+  en: 'en-US',
+  es: 'es-ES',
+  tl: 'fil-PH',
+  zh: 'zh-CN',
+  ja: 'ja-JP',
+  ko: 'ko-KR',
+  fr: 'fr-FR',
+  de: 'de-DE'
+};
+
+const getCalendarLocale = (language) => CALENDAR_LOCALES[language] || 'en-US';
+
+const toCalendarDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Sunday-first month grid with leading/trailing blanks (same shape as the owner calendar).
+const buildCalendarDays = (value) => {
+  const monthStart = new Date(value.getFullYear(), value.getMonth(), 1);
+  const monthEnd = new Date(value.getFullYear(), value.getMonth() + 1, 0);
+  const days = [];
+  for (let i = 0; i < monthStart.getDay(); i += 1) {
+    days.push(null);
+  }
+  for (let day = 1; day <= monthEnd.getDate(); day += 1) {
+    days.push(new Date(value.getFullYear(), value.getMonth(), day));
+  }
+  while (days.length % 7 !== 0) {
+    days.push(null);
+  }
+  return days;
+};
+
+// 2024-01-07 is a Sunday; offsets give Sun..Sat labels in the active locale.
+const getWeekdayLabels = (locale) => {
+  const labels = [];
+  for (let i = 0; i < 7; i += 1) {
+    labels.push(new Date(2024, 0, 7 + i).toLocaleDateString(locale, { weekday: 'short' }));
+  }
+  return labels;
+};
+
 export default function HotelDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const location = useLocation();
+  const { t, language } = useLanguage();
   const { isLoggedIn, user } = useAuth();
   
   const [hotel, setHotel] = useState(null);
@@ -180,6 +227,15 @@ export default function HotelDetail() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactForm, setContactForm] = useState({ subject: '', message: '' });
   const [contactMessage, setContactMessage] = useState('');
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const [calendarDays, setCalendarDays] = useState({});
+  const [calendarLoading, setCalendarLoading] = useState(false);
+  const [calendarError, setCalendarError] = useState('');
+  const [calendarRange, setCalendarRange] = useState({ start: null, end: null });
   
   const [bookingForm, setBookingForm] = useState({
     checkIn: '',
@@ -231,6 +287,49 @@ export default function HotelDetail() {
       }));
     }
   }, [user?.phone]);
+
+  // Auto-open the availability calendar when linked with ?calendar=1
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('calendar') === '1') {
+      setShowCalendar(true);
+    }
+  }, [location.search]);
+
+  // Load per-date availability for the visible month
+  useEffect(() => {
+    if (!showCalendar || !id) return undefined;
+    let cancelled = false;
+    const loadCalendar = async () => {
+      setCalendarLoading(true);
+      setCalendarError('');
+      try {
+        const start = toCalendarDateKey(calendarMonth);
+        const monthEnd = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0);
+        const end = toCalendarDateKey(monthEnd);
+        const response = await fetchHotelCalendar(id, start, end);
+        if (cancelled) return;
+        const days = Array.isArray(response.data?.days) ? response.data.days : [];
+        const byDate = {};
+        days.forEach((day) => {
+          byDate[day.date] = day;
+        });
+        setCalendarDays(byDate);
+      } catch (error) {
+        if (!cancelled) {
+          setCalendarError(error.response?.data?.error || t('availability_na'));
+        }
+      } finally {
+        if (!cancelled) {
+          setCalendarLoading(false);
+        }
+      }
+    };
+    loadCalendar();
+    return () => {
+      cancelled = true;
+    };
+  }, [showCalendar, calendarMonth, id]);
 
   const maxGuestsAllowed = 100;
 
@@ -422,6 +521,64 @@ export default function HotelDetail() {
     }
     setBookingError('');
     setShowBookingModal(true);
+  };
+
+  const openCalendar = () => {
+    setCalendarRange({ start: null, end: null });
+    setCalendarError('');
+    setShowCalendar(true);
+  };
+
+  const changeCalendarMonth = (delta) => {
+    setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
+    setCalendarRange({ start: null, end: null });
+  };
+
+  const isCalendarDayBookable = (dateKey) => {
+    const day = calendarDays[dateKey];
+    if (!day || day.closed === 1 || Number(day.available) <= 0) return false;
+    return dateKey >= toCalendarDateKey(new Date());
+  };
+
+  const handleCalendarDayClick = (dateKey) => {
+    if (!isCalendarDayBookable(dateKey)) return;
+
+    setCalendarError('');
+    const { start, end } = calendarRange;
+
+    // First pick (or restart) sets the check-in date.
+    if (!start || end || dateKey < start) {
+      setCalendarRange({ start: dateKey, end: null });
+      return;
+    }
+
+    // Second pick must leave every night in [start, dateKey) available.
+    const nights = [];
+    const cursor = new Date(`${start}T00:00:00`);
+    const limit = new Date(`${dateKey}T00:00:00`);
+    while (cursor < limit) {
+      nights.push(toCalendarDateKey(cursor));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    const allAvailable = nights.length > 0 && nights.every((key) => {
+      const day = calendarDays[key];
+      return day && day.closed !== 1 && Number(day.available) > 0;
+    });
+
+    if (!allAvailable) {
+      setCalendarRange({ start: dateKey, end: null });
+      return;
+    }
+
+    setCalendarRange({ start, end: dateKey });
+  };
+
+  const handleUseCalendarDates = () => {
+    const { start, end } = calendarRange;
+    if (!start || !end) return;
+    setBookingForm((prev) => ({ ...prev, checkIn: start, checkOut: end }));
+    setShowCalendar(false);
+    handleBookNow();
   };
 
   const handleSubmitBooking = async () => {
@@ -1257,7 +1414,12 @@ export default function HotelDetail() {
                 </div>
               )}
             </div>
-            
+
+            <button style={calendarButton} onClick={openCalendar}>
+              <Icons.Calendar size={18} />
+              {t('availability_check_availability')}
+            </button>
+
             <div style={contactSection}>
               <div style={contactItem}>
                 <Icons.Phone size={18} />
@@ -1623,6 +1785,151 @@ export default function HotelDetail() {
                 ) : (
                   <span style={{display:'flex',alignItems:'center',gap:'0.5rem', lineHeight: 1.2}}><Icons.Check size={15} /> {t('confirm_booking')}</span>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Availability Calendar Modal */}
+      {showCalendar && hotel && (
+        <div style={modalBackdrop}>
+          <div style={{ ...modalCard, maxWidth: '560px' }}>
+            <div style={modalHeader}>
+              <div>
+                <h2 style={modalTitle}>{t('availability_check_availability')}</h2>
+                <p style={modalSubtitle}>{hotel.name}</p>
+              </div>
+              <button style={modalClose} onClick={() => setShowCalendar(false)}>
+                <Icons.X size={20} />
+              </button>
+            </div>
+
+            <div style={calBody}>
+              <div style={calNavRow}>
+                <button style={calNavBtn} onClick={() => changeCalendarMonth(-1)} aria-label={t('prev')}>
+                  &#8249;
+                </button>
+                <div style={calMonthLabel}>
+                  {calendarMonth.toLocaleDateString(getCalendarLocale(language), { month: 'long', year: 'numeric' })}
+                </div>
+                <button style={calNavBtn} onClick={() => changeCalendarMonth(1)} aria-label={t('next')}>
+                  &#8250;
+                </button>
+              </div>
+
+              {calendarLoading ? (
+                <div style={calMessage}>{t('loading')}</div>
+              ) : calendarError ? (
+                <div style={{ ...calMessage, color: '#c62828' }}>{calendarError}</div>
+              ) : (
+                <>
+                  <div style={calGrid}>
+                    {getWeekdayLabels(getCalendarLocale(language)).map((label, idx) => (
+                      <div key={`wd-${idx}`} style={calWeekday}>{label}</div>
+                    ))}
+                    {buildCalendarDays(calendarMonth).map((date, idx) => {
+                      if (!date) return <div key={`empty-${idx}`} style={calDayEmpty} />;
+
+                      const dateKey = toCalendarDateKey(date);
+                      const day = calendarDays[dateKey];
+                      const todayKey = toCalendarDateKey(new Date());
+                      const isPast = dateKey < todayKey;
+                      const isClosed = day?.closed === 1;
+                      const isFull = !!day && Number(day.available) <= 0;
+                      const isSelectable = isCalendarDayBookable(dateKey);
+                      const isSelected = calendarRange.start === dateKey || calendarRange.end === dateKey;
+                      const inRange = !!calendarRange.start && !!calendarRange.end
+                        && dateKey > calendarRange.start && dateKey < calendarRange.end;
+
+                      let background = 'white';
+                      let color = '#1b5e20';
+                      let border = '1px solid #c8e6c9';
+                      if (isPast) {
+                        background = '#f5f5f5';
+                        color = '#9ca3af';
+                      } else if (isSelected) {
+                        background = '#e8f5e9';
+                        border = '2px solid #2e7d32';
+                      } else if (inRange) {
+                        background = '#f0faf2';
+                      } else if (isClosed) {
+                        background = '#ffcccc';
+                        color = '#c62828';
+                      } else if (isFull) {
+                        background = '#fff3cd';
+                        color = '#92400e';
+                      }
+
+                      return (
+                        <div
+                          key={dateKey}
+                          onClick={() => isSelectable && handleCalendarDayClick(dateKey)}
+                          title={day && day.price != null ? `₱${Number(day.price).toLocaleString()}` : undefined}
+                          style={{
+                            ...calDay,
+                            background,
+                            color,
+                            border,
+                            cursor: isSelectable ? 'pointer' : 'not-allowed',
+                            opacity: isPast ? 0.55 : 1
+                          }}
+                        >
+                          <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{date.getDate()}</div>
+                          {isClosed ? (
+                            <div style={{ fontSize: '0.65rem', fontWeight: 700 }}>Closed</div>
+                          ) : isFull ? (
+                            <div style={{ fontSize: '0.65rem', fontWeight: 700 }}>{t('availability_sold_out')}</div>
+                          ) : day ? (
+                            <div style={{ fontSize: '0.7rem', fontWeight: 600 }}>
+                              {Number(day.available)} {t('form_rooms').toLowerCase()}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div style={calLegend}>
+                    <span style={calLegendItem}>
+                      <span style={{ ...calSwatch, background: 'white', border: '1px solid #c8e6c9' }} />
+                      {t('available_label')}
+                    </span>
+                    <span style={calLegendItem}>
+                      <span style={{ ...calSwatch, background: '#e8f5e9', border: '2px solid #2e7d32' }} />
+                      Selected
+                    </span>
+                    <span style={calLegendItem}>
+                      <span style={{ ...calSwatch, background: '#fff3cd', border: '1px solid #f0e0a0' }} />
+                      {t('availability_sold_out')}
+                    </span>
+                    <span style={calLegendItem}>
+                      <span style={{ ...calSwatch, background: '#ffcccc', border: '1px solid #f5b5b5' }} />
+                      Closed
+                    </span>
+                    <span style={calLegendItem}>
+                      <span style={{ ...calSwatch, background: '#f5f5f5', border: '1px solid #ddd', opacity: 0.6 }} />
+                      Past
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <div style={modalFooter}>
+              <button style={cancelBtnEnhanced} onClick={() => setShowCalendar(false)}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', lineHeight: 1.2 }}>
+                  <Icons.X size={15} /> {t('cancel_button')}
+                </span>
+              </button>
+              <button
+                style={calendarRange.start && calendarRange.end ? confirmBtnEnhanced : confirmBtnDisabled}
+                onClick={handleUseCalendarDates}
+                disabled={!calendarRange.start || !calendarRange.end}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', lineHeight: 1.2 }}>
+                  <Icons.Calendar size={15} /> {t('book_now')}
+                </span>
               </button>
             </div>
           </div>
@@ -3616,6 +3923,24 @@ const contactButton = {
   gap: '0.75rem'
 };
 
+const calendarButton = {
+  width: '100%',
+  background: '#f0fdf4',
+  color: '#16a34a',
+  border: '2px solid #86efac',
+  borderRadius: '12px',
+  padding: '0.85rem 1rem',
+  fontSize: '0.95rem',
+  fontWeight: '700',
+  cursor: 'pointer',
+  marginBottom: '1.5rem',
+  transition: 'all 0.3s ease',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: '0.5rem'
+};
+
 const infoText = {
   display: 'flex',
   flexDirection: 'column',
@@ -3723,6 +4048,109 @@ const modalGrid = {
   display: 'grid',
   gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
   gap: '1rem'
+};
+
+const calBody = {
+  padding: '1.75rem 2rem',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '1rem',
+  backgroundColor: '#fafafa'
+};
+
+const calNavRow = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  gap: '1rem'
+};
+
+const calNavBtn = {
+  border: '2px solid #86efac',
+  background: '#f0fdf4',
+  color: '#16a34a',
+  fontSize: '1.4rem',
+  lineHeight: 1,
+  width: '38px',
+  height: '38px',
+  borderRadius: '10px',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  fontWeight: 700
+};
+
+const calMonthLabel = {
+  fontSize: '1.05rem',
+  fontWeight: 800,
+  color: '#1b5e20'
+};
+
+const calMessage = {
+  padding: '2rem',
+  textAlign: 'center',
+  color: '#718096',
+  fontWeight: 600
+};
+
+const calGrid = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(7, 1fr)',
+  gap: '0.4rem'
+};
+
+const calWeekday = {
+  padding: '0.4rem 0',
+  textAlign: 'center',
+  fontWeight: 800,
+  color: '#2e7d32',
+  fontSize: '0.8rem',
+  background: '#f8fdf7',
+  borderRadius: '6px'
+};
+
+const calDay = {
+  minHeight: '58px',
+  padding: '0.35rem 0.3rem',
+  borderRadius: '8px',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '0.15rem',
+  transition: 'all 0.15s ease',
+  boxSizing: 'border-box'
+};
+
+const calDayEmpty = {
+  minHeight: '58px'
+};
+
+const calLegend = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '0.75rem 1.1rem',
+  fontSize: '0.8rem',
+  color: '#2d3748',
+  padding: '0.75rem 0.9rem',
+  background: '#f8fdf7',
+  border: '1px solid #c8e6c9',
+  borderRadius: '8px'
+};
+
+const calLegendItem = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.4rem'
+};
+
+const calSwatch = {
+  width: '16px',
+  height: '16px',
+  borderRadius: '4px',
+  display: 'inline-block',
+  flexShrink: 0
 };
 
 const inputLabel = {
