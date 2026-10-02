@@ -306,6 +306,20 @@
   to   { opacity: 1; transform: translateX(0); }
 }
 
+/* Short nav (limited owner: 2 items): keep buttons at natural height,
+   grouped at the top instead of stretched across the full sidebar. */
+@media (min-width: 1025px) {
+  .gov-nav--compact {
+    justify-content: flex-start;
+    gap: 0.35rem;
+  }
+  .gov-nav--compact .gov-nav-btn {
+    flex: 0 0 auto;
+    padding-top: 0.62rem;
+    padding-bottom: 0.62rem;
+  }
+}
+
 .gov-nav-btn:hover {
   background: #f0fdf6;
   color: #14532d;

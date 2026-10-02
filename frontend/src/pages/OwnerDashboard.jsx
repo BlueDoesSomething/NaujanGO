@@ -1214,7 +1214,7 @@ const OwnerDashboard = () => {
               {t('auth_sign_out')}
             </button>
           </div>
-          <nav className="gov-nav">
+          <nav className={`gov-nav${visibleOwnerModules.length <= 3 ? ' gov-nav--compact' : ''}`}>
             {visibleOwnerModules.map((module, index) => {
               const isActive = activeTab === module.id;
               return (
