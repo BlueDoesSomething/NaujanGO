@@ -89,8 +89,8 @@ html[data-theme="dark"] .attractions-page {
   --ng-rating-bg: rgba(2, 6, 23, 0.6);
   --ng-rating-border: rgba(255, 255, 255, 0.14);
   --ng-rating-text: #f8fafc;
-  --ng-glass-bg: rgba(255, 255, 255, 0.1);
-  --ng-glass-border: rgba(255, 255, 255, 0.2);
+  --ng-glass-bg: rgba(2, 6, 23, 0.55);
+  --ng-glass-border: rgba(255, 255, 255, 0.22);
   --ng-glass-text: #ffffff;
   --ng-glass-hover-bg: rgba(255, 255, 255, 0.2);
   --ng-glass-hover-border: rgba(255, 255, 255, 0.4);

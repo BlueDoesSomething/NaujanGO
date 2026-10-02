@@ -36,7 +36,6 @@
 * {
   box-sizing: border-box;
   font-family: var(--font-body, "Arial Rounded MT Bold", Arial, sans-serif);
-  color: var(--text-primary);
   margin: 0;
   padding: 0;
 }
