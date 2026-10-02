@@ -227,7 +227,6 @@ export default function HotelDetail() {
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactForm, setContactForm] = useState({ subject: '', message: '' });
   const [contactMessage, setContactMessage] = useState('');
-  const [showCalendar, setShowCalendar] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -236,7 +235,6 @@ export default function HotelDetail() {
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [calendarError, setCalendarError] = useState('');
   const [calendarRange, setCalendarRange] = useState({ start: null, end: null });
-  const [calendarRoomId, setCalendarRoomId] = useState(null);
   
   const [bookingForm, setBookingForm] = useState({
     checkIn: '',
@@ -289,17 +287,24 @@ export default function HotelDetail() {
     }
   }, [user?.phone]);
 
-  // Auto-open the availability calendar when linked with ?calendar=1
+  // Auto-open the booking modal (with the inline calendar) when linked with ?calendar=1
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('calendar') === '1') {
-      setShowCalendar(true);
+      setShowBookingModal(true);
     }
   }, [location.search]);
 
-  // Load per-date availability for the visible month
+  // Fresh calendar state for every open of the booking modal, however it was opened.
   useEffect(() => {
-    if (!showCalendar || !id) return undefined;
+    if (showBookingModal) return;
+    setCalendarRange({ start: null, end: null });
+    setCalendarError('');
+  }, [showBookingModal]);
+
+  // Load per-date availability for the visible month (room-type aware)
+  useEffect(() => {
+    if (!showBookingModal || !id) return undefined;
     let cancelled = false;
     const loadCalendar = async () => {
       setCalendarLoading(true);
@@ -308,7 +313,7 @@ export default function HotelDetail() {
         const start = toCalendarDateKey(calendarMonth);
         const monthEnd = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 0);
         const end = toCalendarDateKey(monthEnd);
-        const response = await fetchHotelCalendar(id, start, end, calendarRoomId);
+        const response = await fetchHotelCalendar(id, start, end, bookingForm.selectedRoomId || null);
         if (cancelled) return;
         const days = Array.isArray(response.data?.days) ? response.data.days : [];
         const byDate = {};
@@ -330,7 +335,7 @@ export default function HotelDetail() {
     return () => {
       cancelled = true;
     };
-  }, [showCalendar, calendarMonth, calendarRoomId, id]);
+  }, [showBookingModal, calendarMonth, bookingForm.selectedRoomId, id]);
 
   const maxGuestsAllowed = 100;
 
@@ -524,12 +529,13 @@ export default function HotelDetail() {
     setShowBookingModal(true);
   };
 
+  // Opens the Book Now modal with the inline availability calendar.
+  // Intentionally not login-gated: checking availability stays public and
+  // handleSubmitBooking prompts for login at confirm time. Range/error are
+  // reset by the showBookingModal close effect, covering every open path.
   const openCalendar = () => {
-    setCalendarRange({ start: null, end: null });
-    setCalendarError('');
-    // Default the room-type selector to the room the guest already picked.
-    setCalendarRoomId(bookingForm.selectedRoomId ? Number(bookingForm.selectedRoomId) : null);
-    setShowCalendar(true);
+    setBookingError('');
+    setShowBookingModal(true);
   };
 
   const changeCalendarMonth = (delta) => {
@@ -537,12 +543,23 @@ export default function HotelDetail() {
     setCalendarRange({ start: null, end: null });
   };
 
-  const handleCalendarRoomChange = (event) => {
+  // The calendar's room-type dropdown doubles as the booking's room choice:
+  // same filtering/clamping the old Select Room Type field had, plus a range
+  // reset because availability differs per type. The fetch effect watches
+  // bookingForm.selectedRoomId, so the calendar refetches for the new type.
+  const handleRoomSelectChange = (event) => {
     const value = event.target.value;
-    setCalendarRoomId(value ? Number(value) : null);
-    // Availability differs per room type, so any half-picked range is invalid.
+    const selectedRoom = rooms.find((room) => String(room.room_id) === String(value));
+    const maxAllowed = selectedRoom ? (selectedRoom.quantity_available || primaryAvailability) : primaryAvailability;
+    setBookingForm((prev) => ({
+      ...prev,
+      selectedRoomId: value ? Number(value) : null,
+      selectedRoomType: selectedRoom ? selectedRoom.room_type_name : null,
+      rooms: Math.min(prev.rooms || 1, Math.max(1, maxAllowed))
+    }));
     setCalendarRange({ start: null, end: null });
     setCalendarError('');
+    setBookingError('');
   };
 
   const isCalendarDayBookable = (dateKey) => {
@@ -557,9 +574,12 @@ export default function HotelDetail() {
     setCalendarError('');
     const { start, end } = calendarRange;
 
-    // First pick (or restart) sets the check-in date.
+    // First pick (or restart) sets the check-in date; the form's dates clear
+    // until a full range is picked so inputs and calendar never disagree.
     if (!start || end || dateKey < start) {
       setCalendarRange({ start: dateKey, end: null });
+      setBookingForm((prev) => ({ ...prev, checkIn: '', checkOut: '' }));
+      setBookingError('');
       return;
     }
 
@@ -578,29 +598,16 @@ export default function HotelDetail() {
 
     if (!allAvailable) {
       setCalendarRange({ start: dateKey, end: null });
+      setBookingForm((prev) => ({ ...prev, checkIn: '', checkOut: '' }));
+      setBookingError('');
       return;
     }
 
+    // Range complete: apply it to the booking form immediately (the calendar
+    // lives inside the booking modal now, so there is no separate confirm).
     setCalendarRange({ start, end: dateKey });
-  };
-
-  const handleUseCalendarDates = () => {
-    const { start, end } = calendarRange;
-    if (!start || !end) return;
-    // The dropdown in the calendar modal is authoritative for the room choice:
-    // a picked type is written into the booking form, "All room types" clears it.
-    const pickedRoom = calendarRoomId
-      ? rooms.find((room) => Number(room.room_id) === Number(calendarRoomId))
-      : null;
-    setBookingForm((prev) => ({
-      ...prev,
-      checkIn: start,
-      checkOut: end,
-      selectedRoomId: pickedRoom ? Number(pickedRoom.room_id) : null,
-      selectedRoomType: pickedRoom ? pickedRoom.room_type_name : null
-    }));
-    setShowCalendar(false);
-    handleBookNow();
+    setBookingForm((prev) => ({ ...prev, checkIn: start, checkOut: dateKey }));
+    setBookingError('');
   };
 
   const handleSubmitBooking = async () => {
@@ -1573,43 +1580,152 @@ export default function HotelDetail() {
                   />
                 </div>
                 <div style={{gridColumn: '1 / -1'}}>
-                  <label style={inputLabel}><Icons.Booking size={16} /> Select Room Type</label>
-                  <select
-                    value={bookingForm.selectedRoomId || ''}
-                    onChange={(e) => {
-                      const selectedRoom = rooms.find(r => String(r.room_id) === String(e.target.value));
-                      const maxAllowed = selectedRoom ? (selectedRoom.quantity_available || primaryAvailability) : primaryAvailability;
-                      setBookingForm({ 
-                        ...bookingForm, 
-                        selectedRoomId: e.target.value ? Number(e.target.value) : null,
-                        selectedRoomType: selectedRoom ? selectedRoom.room_type_name : null,
-                        rooms: Math.min(bookingForm.rooms || 1, Math.max(1, maxAllowed))
-                      });
-                      setBookingError('');
-                    }}
-                    style={inputFieldEnhanced}
-                  >
-                    <option value="">{t('choose_room_type')}</option>
-                    {suitableRoomTypesForGuests.length > 0 ? suitableRoomTypesForGuests.map((room) => {
-                      const quantityOk = room.quantity_available >= bookingForm.rooms;
-                      const warningText = !quantityOk 
-                        ? ` [Only ${room.quantity_available} available, need ${bookingForm.rooms}]`
-                        : '';
-                      
-                      return (
-                        <option 
-                          key={room.room_id} 
-                          value={room.room_id}
-                          disabled={!quantityOk}
-                          style={{ opacity: quantityOk ? 1 : 0.5 }}
+                  {/* Inline availability calendar with room-type selector */}
+                  <div style={calBody}>
+                    {rooms.length > 0 && (
+                      <div style={calRoomRow}>
+                        <label htmlFor="booking-room-type" style={calRoomLabel}>
+                          Select Room Type:
+                        </label>
+                        <select
+                          id="booking-room-type"
+                          value={bookingForm.selectedRoomId || ''}
+                          onChange={handleRoomSelectChange}
+                          style={calRoomSelect}
                         >
-                          {room.room_type_name} (₱{parseFloat(room.price_per_night).toLocaleString()}/night, exact for {room.capacity} guest{room.capacity > 1 ? 's' : ''}, {room.quantity_available} avail){warningText}
-                        </option>
-                      );
-                    }) : (
-                      <option value="" disabled>{`No room types available for ${bookingForm.guests} guest(s)`}</option>
+                          <option value="">All room types</option>
+                          {suitableRoomTypesForGuests.length > 0 ? (
+                            suitableRoomTypesForGuests.map((room) => {
+                              const quantityOk = room.quantity_available >= bookingForm.rooms;
+                              const warningText = !quantityOk
+                                ? ` [Only ${room.quantity_available} available, need ${bookingForm.rooms}]`
+                                : '';
+                              return (
+                                <option
+                                  key={room.room_id}
+                                  value={room.room_id}
+                                  disabled={!quantityOk}
+                                  style={{ opacity: quantityOk ? 1 : 0.5 }}
+                                >
+                                  {room.room_type_name} (₱{parseFloat(room.price_per_night).toLocaleString()}/night, exact for {room.capacity} guest{room.capacity > 1 ? 's' : ''}, {room.quantity_available} avail){warningText}
+                                </option>
+                              );
+                            })
+                          ) : (
+                            <option value="" disabled>{`No room types available for ${bookingForm.guests} guest(s)`}</option>
+                          )}
+                        </select>
+                      </div>
                     )}
-                  </select>
+                    <div style={calNavRow}>
+                      <button style={calNavBtn} onClick={() => changeCalendarMonth(-1)} aria-label={t('prev')}>
+                        &#8249;
+                      </button>
+                      <div style={calMonthLabel}>
+                        {calendarMonth.toLocaleDateString(getCalendarLocale(language), { month: 'long', year: 'numeric' })}
+                      </div>
+                      <button style={calNavBtn} onClick={() => changeCalendarMonth(1)} aria-label={t('next')}>
+                        &#8250;
+                      </button>
+                    </div>
+
+                    {calendarLoading ? (
+                      <div style={calMessage}>{t('loading')}</div>
+                    ) : calendarError ? (
+                      <div style={{ ...calMessage, color: '#c62828' }}>{calendarError}</div>
+                    ) : (
+                      <>
+                        <div style={calGrid}>
+                          {getWeekdayLabels(getCalendarLocale(language)).map((label, idx) => (
+                            <div key={`wd-${idx}`} style={calWeekday}>{label}</div>
+                          ))}
+                          {buildCalendarDays(calendarMonth).map((date, idx) => {
+                            if (!date) return <div key={`empty-${idx}`} style={calDayEmpty} />;
+
+                            const dateKey = toCalendarDateKey(date);
+                            const day = calendarDays[dateKey];
+                            const todayKey = toCalendarDateKey(new Date());
+                            const isPast = dateKey < todayKey;
+                            const isClosed = day?.closed === 1;
+                            const isFull = !!day && Number(day.available) <= 0;
+                            const isSelectable = isCalendarDayBookable(dateKey);
+                            const isSelected = calendarRange.start === dateKey || calendarRange.end === dateKey;
+                            const inRange = !!calendarRange.start && !!calendarRange.end
+                              && dateKey > calendarRange.start && dateKey < calendarRange.end;
+
+                            let background = 'white';
+                            let color = '#1b5e20';
+                            let border = '1px solid #c8e6c9';
+                            if (isPast) {
+                              background = '#f5f5f5';
+                              color = '#9ca3af';
+                            } else if (isSelected) {
+                              background = '#e8f5e9';
+                              border = '2px solid #2e7d32';
+                            } else if (inRange) {
+                              background = '#f0faf2';
+                            } else if (isClosed) {
+                              background = '#ffcccc';
+                              color = '#c62828';
+                            } else if (isFull) {
+                              background = '#fff3cd';
+                              color = '#92400e';
+                            }
+
+                            return (
+                              <div
+                                key={dateKey}
+                                onClick={() => isSelectable && handleCalendarDayClick(dateKey)}
+                                title={day && day.price != null ? `₱${Number(day.price).toLocaleString()}` : undefined}
+                                style={{
+                                  ...calDay,
+                                  background,
+                                  color,
+                                  border,
+                                  cursor: isSelectable ? 'pointer' : 'not-allowed',
+                                  opacity: isPast ? 0.55 : 1
+                                }}
+                              >
+                                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{date.getDate()}</div>
+                                {isClosed ? (
+                                  <div style={{ fontSize: '0.65rem', fontWeight: 700 }}>Closed</div>
+                                ) : isFull ? (
+                                  <div style={{ fontSize: '0.65rem', fontWeight: 700 }}>{t('availability_sold_out')}</div>
+                                ) : day ? (
+                                  <div style={{ fontSize: '0.7rem', fontWeight: 600 }}>
+                                    {Number(day.available)} {t('form_rooms').toLowerCase()}
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div style={calLegend}>
+                          <span style={calLegendItem}>
+                            <span style={{ ...calSwatch, background: 'white', border: '1px solid #c8e6c9' }} />
+                            {t('available_label')}
+                          </span>
+                          <span style={calLegendItem}>
+                            <span style={{ ...calSwatch, background: '#e8f5e9', border: '2px solid #2e7d32' }} />
+                            Selected
+                          </span>
+                          <span style={calLegendItem}>
+                            <span style={{ ...calSwatch, background: '#fff3cd', border: '1px solid #f0e0a0' }} />
+                            {t('availability_sold_out')}
+                          </span>
+                          <span style={calLegendItem}>
+                            <span style={{ ...calSwatch, background: '#ffcccc', border: '1px solid #f5b5b5' }} />
+                            Closed
+                          </span>
+                          <span style={calLegendItem}>
+                            <span style={{ ...calSwatch, background: '#f5f5f5', border: '1px solid #ddd', opacity: 0.6 }} />
+                            Past
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -1807,173 +1923,6 @@ export default function HotelDetail() {
                 ) : (
                   <span style={{display:'flex',alignItems:'center',gap:'0.5rem', lineHeight: 1.2}}><Icons.Check size={15} /> {t('confirm_booking')}</span>
                 )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Availability Calendar Modal */}
-      {showCalendar && hotel && (
-        <div style={modalBackdrop}>
-          <div style={{ ...modalCard, maxWidth: '560px' }}>
-            <div style={modalHeader}>
-              <div>
-                <h2 style={modalTitle}>{t('availability_check_availability')}</h2>
-                <p style={modalSubtitle}>{hotel.name}</p>
-              </div>
-              <button style={modalClose} onClick={() => setShowCalendar(false)}>
-                <Icons.X size={20} />
-              </button>
-            </div>
-
-            <div style={calBody}>
-              {rooms.length > 0 && (
-                <div style={calRoomRow}>
-                  <label htmlFor="calendar-room-type" style={calRoomLabel}>
-                    Select Room Type:
-                  </label>
-                  <select
-                    id="calendar-room-type"
-                    value={calendarRoomId != null ? String(calendarRoomId) : ''}
-                    onChange={handleCalendarRoomChange}
-                    style={calRoomSelect}
-                  >
-                    <option value="">All room types</option>
-                    {rooms
-                      .filter((room) => room.is_active)
-                      .map((room) => (
-                        <option key={room.room_id} value={room.room_id}>
-                          {room.room_type_name}
-                        </option>
-                      ))}
-                  </select>
-                </div>
-              )}
-              <div style={calNavRow}>
-                <button style={calNavBtn} onClick={() => changeCalendarMonth(-1)} aria-label={t('prev')}>
-                  &#8249;
-                </button>
-                <div style={calMonthLabel}>
-                  {calendarMonth.toLocaleDateString(getCalendarLocale(language), { month: 'long', year: 'numeric' })}
-                </div>
-                <button style={calNavBtn} onClick={() => changeCalendarMonth(1)} aria-label={t('next')}>
-                  &#8250;
-                </button>
-              </div>
-
-              {calendarLoading ? (
-                <div style={calMessage}>{t('loading')}</div>
-              ) : calendarError ? (
-                <div style={{ ...calMessage, color: '#c62828' }}>{calendarError}</div>
-              ) : (
-                <>
-                  <div style={calGrid}>
-                    {getWeekdayLabels(getCalendarLocale(language)).map((label, idx) => (
-                      <div key={`wd-${idx}`} style={calWeekday}>{label}</div>
-                    ))}
-                    {buildCalendarDays(calendarMonth).map((date, idx) => {
-                      if (!date) return <div key={`empty-${idx}`} style={calDayEmpty} />;
-
-                      const dateKey = toCalendarDateKey(date);
-                      const day = calendarDays[dateKey];
-                      const todayKey = toCalendarDateKey(new Date());
-                      const isPast = dateKey < todayKey;
-                      const isClosed = day?.closed === 1;
-                      const isFull = !!day && Number(day.available) <= 0;
-                      const isSelectable = isCalendarDayBookable(dateKey);
-                      const isSelected = calendarRange.start === dateKey || calendarRange.end === dateKey;
-                      const inRange = !!calendarRange.start && !!calendarRange.end
-                        && dateKey > calendarRange.start && dateKey < calendarRange.end;
-
-                      let background = 'white';
-                      let color = '#1b5e20';
-                      let border = '1px solid #c8e6c9';
-                      if (isPast) {
-                        background = '#f5f5f5';
-                        color = '#9ca3af';
-                      } else if (isSelected) {
-                        background = '#e8f5e9';
-                        border = '2px solid #2e7d32';
-                      } else if (inRange) {
-                        background = '#f0faf2';
-                      } else if (isClosed) {
-                        background = '#ffcccc';
-                        color = '#c62828';
-                      } else if (isFull) {
-                        background = '#fff3cd';
-                        color = '#92400e';
-                      }
-
-                      return (
-                        <div
-                          key={dateKey}
-                          onClick={() => isSelectable && handleCalendarDayClick(dateKey)}
-                          title={day && day.price != null ? `₱${Number(day.price).toLocaleString()}` : undefined}
-                          style={{
-                            ...calDay,
-                            background,
-                            color,
-                            border,
-                            cursor: isSelectable ? 'pointer' : 'not-allowed',
-                            opacity: isPast ? 0.55 : 1
-                          }}
-                        >
-                          <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{date.getDate()}</div>
-                          {isClosed ? (
-                            <div style={{ fontSize: '0.65rem', fontWeight: 700 }}>Closed</div>
-                          ) : isFull ? (
-                            <div style={{ fontSize: '0.65rem', fontWeight: 700 }}>{t('availability_sold_out')}</div>
-                          ) : day ? (
-                            <div style={{ fontSize: '0.7rem', fontWeight: 600 }}>
-                              {Number(day.available)} {t('form_rooms').toLowerCase()}
-                            </div>
-                          ) : null}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  <div style={calLegend}>
-                    <span style={calLegendItem}>
-                      <span style={{ ...calSwatch, background: 'white', border: '1px solid #c8e6c9' }} />
-                      {t('available_label')}
-                    </span>
-                    <span style={calLegendItem}>
-                      <span style={{ ...calSwatch, background: '#e8f5e9', border: '2px solid #2e7d32' }} />
-                      Selected
-                    </span>
-                    <span style={calLegendItem}>
-                      <span style={{ ...calSwatch, background: '#fff3cd', border: '1px solid #f0e0a0' }} />
-                      {t('availability_sold_out')}
-                    </span>
-                    <span style={calLegendItem}>
-                      <span style={{ ...calSwatch, background: '#ffcccc', border: '1px solid #f5b5b5' }} />
-                      Closed
-                    </span>
-                    <span style={calLegendItem}>
-                      <span style={{ ...calSwatch, background: '#f5f5f5', border: '1px solid #ddd', opacity: 0.6 }} />
-                      Past
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <div style={modalFooter}>
-              <button style={cancelBtnEnhanced} onClick={() => setShowCalendar(false)}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', lineHeight: 1.2 }}>
-                  <Icons.X size={15} /> {t('cancel_button')}
-                </span>
-              </button>
-              <button
-                style={calendarRange.start && calendarRange.end ? confirmBtnEnhanced : confirmBtnDisabled}
-                onClick={handleUseCalendarDates}
-                disabled={!calendarRange.start || !calendarRange.end}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', lineHeight: 1.2 }}>
-                  <Icons.Calendar size={15} /> {t('book_now')}
-                </span>
               </button>
             </div>
           </div>
@@ -4095,11 +4044,9 @@ const modalGrid = {
 };
 
 const calBody = {
-  padding: '1.75rem 2rem',
   display: 'flex',
   flexDirection: 'column',
-  gap: '1rem',
-  backgroundColor: '#fafafa'
+  gap: '1rem'
 };
 
 const calRoomRow = {
