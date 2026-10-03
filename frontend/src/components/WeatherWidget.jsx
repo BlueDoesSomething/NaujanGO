@@ -408,90 +408,161 @@ const WeatherWidget = ({
     );
   }
 
+  const headerBlock = (
+    <div style={horizontal ? { ...headerStyle, marginBottom: '4px', paddingBottom: '6px' } : headerStyle}>
+      <div style={locationStyle}>
+        <h3 style={horizontal ? { ...locationNameStyle, fontSize: '1.1rem' } : locationNameStyle}>{locationName || weather.location?.name || t('location')}</h3>
+        {weather.timestamp && (
+          <span style={timestampStyle}>
+            {t('updated')}: {formatTime(weather.timestamp)}
+          </span>
+        )}
+      </div>
+      <div style={horizontal ? { display: 'none' } : safetyScoreStyle}>
+        <div
+          style={{
+            ...safetyCircleStyle,
+            borderColor: getSafetyColor(safetyScore)
+          }}
+        >
+          <span style={{ color: getSafetyColor(safetyScore), fontWeight: 'bold' }}>
+            {safetyScore}
+          </span>
+        </div>
+        <span style={safetyLabelStyle}>{t('safety_score')}</span>
+      </div>
+    </div>
+  );
+
+  const currentBlock = (
+    <div style={compact ? { ...currentWeatherStyle, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: '14px' } : currentWeatherStyle}>
+      <div style={compact ? { ...temperatureDisplayStyle, gap: '10px', flexShrink: 0 } : temperatureDisplayStyle}>
+        {typeof getWeatherIcon(weather.condition, weather.iconCode) === 'string' &&
+         getWeatherIcon(weather.condition, weather.iconCode).startsWith('http') ? (
+          <img
+            src={getWeatherIcon(weather.condition, weather.iconCode)}
+            alt={weather.condition}
+            style={compact ? { width: '48px', height: '48px' } : weatherIconImageStyle}
+          />
+        ) : (
+          <span style={compact ? { fontSize: '2.2rem' } : weatherIconStyle}>
+            {getWeatherIcon(weather.condition, weather.iconCode)}
+          </span>
+        )}
+        <div>
+          <span style={compact ? { ...temperatureStyle, fontSize: '2rem' } : temperatureStyle}>{weather.temperature}°C</span>
+          <span style={compact ? { ...conditionStyle, fontSize: '0.85rem' } : conditionStyle}>{weather.description}</span>
+        </div>
+      </div>
+
+      <div style={compact ? { ...weatherDetailsGridStyle, gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '8px', flex: '1 1 0', minWidth: '0' } : weatherDetailsGridStyle}>
+        <div style={compact ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
+          <span style={compact ? { fontSize: '1.1rem' } : detailIconStyle}>🌡️</span>
+          <div>
+            <span style={compact ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('feels_like')}</span>
+            <span style={compact ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.feelsLike}°C</span>
+          </div>
+        </div>
+
+        <div style={compact ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
+          <span style={compact ? { fontSize: '1.1rem' } : detailIconStyle}>💧</span>
+          <div>
+            <span style={compact ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('humidity')}</span>
+            <span style={compact ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.humidity}%</span>
+          </div>
+        </div>
+
+        <div style={compact ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
+          <span style={compact ? { fontSize: '1.1rem' } : detailIconStyle}>💨</span>
+          <div>
+            <span style={compact ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('wind')}</span>
+            <span style={compact ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.windSpeed} km/h</span>
+          </div>
+        </div>
+
+        {weather.rainfall > 0 && (
+          <div style={compact ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
+            <span style={compact ? { fontSize: '1.1rem' } : detailIconStyle}>🌧️</span>
+            <div>
+              <span style={compact ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('rain')}</span>
+              <span style={compact ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.rainfall.toFixed(1)}mm</span>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const forecastBlock = (
+    <div style={horizontal ? { ...forecastContainerStyle, marginTop: '8px' } : compact ? { ...forecastContainerStyle, marginTop: '0px' } : forecastContainerStyle}>
+      <h4 style={horizontal ? { ...forecastTitleStyle, fontSize: '0.85rem', marginBottom: '8px' } : forecastTitleStyle}>📅 {t('forecast_7_day')}</h4>
+      <div style={horizontal ? { ...forecastListStyle, flexDirection: 'row', gap: '6px', overflowX: 'auto', paddingBottom: '4px' } : compact ? { ...forecastListStyle, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(60px, 1fr))', gap: '8px' } : forecastListStyle}>
+        {forecast && forecast.forecast && Array.isArray(forecast.forecast) ? (
+          forecast.forecast.slice(0, 7).map((day, index) => {
+            const date = day.datetime ? new Date(day.datetime) : new Date();
+            const utcDate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+            const iconResult = getWeatherIcon(day.condition, day.iconCode);
+            const isImageUrl = typeof iconResult === 'string' && iconResult.startsWith('http');
+
+            const dayName = utcDate.toLocaleDateString(language === 'zh' ? 'zh-CN' : language, { weekday: 'short' }).toUpperCase();
+
+            if (horizontal || compact) {
+              return (
+                <div key={index} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
+                  padding: '8px 10px', borderRadius: '10px', minWidth: '60px',
+                  backgroundColor: 'var(--ww-soft)', border: '1px solid var(--ww-soft-border)'
+                }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--ww-muted)' }}>{dayName}</span>
+                  <span style={{ fontSize: '1.3rem' }}>
+                    {isImageUrl ? <img src={iconResult} alt={day.condition} style={{ width: '28px', height: '28px', objectFit: 'contain' }} /> : iconResult}
+                  </span>
+                  <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#ff6b6b' }}>{day.temperature}°</span>
+                  <span style={{ fontSize: '0.68rem', color: 'var(--ww-muted)', textTransform: 'capitalize' }}>{day.condition}</span>
+                </div>
+              );
+            }
+
+            return (
+              <div key={index} style={forecastItemStyle}>
+                <span style={forecastDateStyle}>{dayName}</span>
+                <div style={forecastIconStyle}>
+                  {isImageUrl ? (
+                    <img src={iconResult} alt={day.condition} style={forecastWeatherIconStyle} />
+                  ) : iconResult}
+                </div>
+                <span style={forecastTempStyle}>{day.temperature}°</span>
+                <span style={forecastConditionStyle}>{day.condition}</span>
+              </div>
+            );
+          })
+        ) : (
+          <div style={forecastItemStyle}>{t('no_forecast_data')}</div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div style={getContainerStyle()}>
       {/* Main Weather Display */}
       <div style={compact ? { ...mainWeatherStyle, gap: '12px' } : mainWeatherStyle}>
-        <div style={horizontal ? { ...headerStyle, marginBottom: '4px', paddingBottom: '6px' } : headerStyle}>
-          <div style={locationStyle}>
-            <h3 style={horizontal ? { ...locationNameStyle, fontSize: '1.1rem' } : locationNameStyle}>{locationName || weather.location?.name || t('location')}</h3>
-            {weather.timestamp && (
-              <span style={timestampStyle}>
-                {t('updated')}: {formatTime(weather.timestamp)}
-              </span>
+        {compact ? (
+          <div style={splitTopStyle}>
+            <div style={splitColLeftStyle}>
+              {headerBlock}
+              {currentBlock}
+            </div>
+            {showForecast && forecast && (
+              <div style={splitColRightStyle}>{forecastBlock}</div>
             )}
           </div>
-          <div style={horizontal ? { display: 'none' } : (horizontal ? { ...safetyScoreStyle, flexDirection: 'row', gap: '6px' } : safetyScoreStyle)}>
-            <div 
-              style={{
-                ...(horizontal ? { ...safetyCircleStyle, width: '38px', height: '38px', fontSize: '0.75rem' } : safetyCircleStyle),
-                borderColor: getSafetyColor(safetyScore)
-              }}
-            >
-              <span style={{ color: getSafetyColor(safetyScore), fontWeight: 'bold' }}>
-                {safetyScore}
-              </span>
-            </div>
-            <span style={horizontal ? { ...safetyLabelStyle, fontSize: '0.6rem' } : safetyLabelStyle}>{t('safety_score')}</span>
-          </div>
-        </div>
-
-        <div style={compact ? { ...currentWeatherStyle, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: '14px' } : currentWeatherStyle}>
-          <div style={compact ? { ...temperatureDisplayStyle, gap: '10px', flexShrink: 0 } : temperatureDisplayStyle}>
-            {typeof getWeatherIcon(weather.condition, weather.iconCode) === 'string' && 
-             getWeatherIcon(weather.condition, weather.iconCode).startsWith('http') ? (
-              <img 
-                src={getWeatherIcon(weather.condition, weather.iconCode)} 
-                alt={weather.condition}
-                style={compact ? { width: '48px', height: '48px' } : weatherIconImageStyle}
-              />
-            ) : (
-              <span style={compact ? { fontSize: '2.2rem' } : weatherIconStyle}>
-                {getWeatherIcon(weather.condition, weather.iconCode)}
-              </span>
-            )}
-            <div>
-              <span style={compact ? { ...temperatureStyle, fontSize: '2rem' } : temperatureStyle}>{weather.temperature}°C</span>
-              <span style={compact ? { ...conditionStyle, fontSize: '0.85rem' } : conditionStyle}>{weather.description}</span>
-            </div>
-          </div>
-
-          <div style={compact ? { ...weatherDetailsGridStyle, gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '8px', flex: '1 1 0', minWidth: '0' } : weatherDetailsGridStyle}>
-            <div style={compact ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
-              <span style={compact ? { fontSize: '1.1rem' } : detailIconStyle}>🌡️</span>
-              <div>
-                <span style={compact ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('feels_like')}</span>
-                <span style={compact ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.feelsLike}°C</span>
-              </div>
-            </div>
-            
-            <div style={compact ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
-              <span style={compact ? { fontSize: '1.1rem' } : detailIconStyle}>💧</span>
-              <div>
-                <span style={compact ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('humidity')}</span>
-                <span style={compact ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.humidity}%</span>
-              </div>
-            </div>
-            
-            <div style={compact ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
-              <span style={compact ? { fontSize: '1.1rem' } : detailIconStyle}>💨</span>
-              <div>
-                <span style={compact ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('wind')}</span>
-                <span style={compact ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.windSpeed} km/h</span>
-              </div>
-            </div>
-            
-            {weather.rainfall > 0 && (
-              <div style={compact ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
-                <span style={compact ? { fontSize: '1.1rem' } : detailIconStyle}>🌧️</span>
-                <div>
-                  <span style={compact ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('rain')}</span>
-                  <span style={compact ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.rainfall.toFixed(1)}mm</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        ) : (
+          <>
+            {headerBlock}
+            {currentBlock}
+          </>
+        )}
 
         {/* Weather Alerts */}
         {showAlerts && alerts.length > 0 && !horizontal && (
@@ -751,55 +822,7 @@ const WeatherWidget = ({
         )}
 
         {/* Weather Forecast */}
-        {showForecast && forecast && (
-          <div style={horizontal ? { ...forecastContainerStyle, marginTop: '8px' } : forecastContainerStyle}>
-            <h4 style={horizontal ? { ...forecastTitleStyle, fontSize: '0.85rem', marginBottom: '8px' } : forecastTitleStyle}>📅 {t('forecast_7_day')}</h4>
-            <div style={horizontal ? { ...forecastListStyle, flexDirection: 'row', gap: '6px', overflowX: 'auto', paddingBottom: '4px' } : compact ? { ...forecastListStyle, flexDirection: 'row', flexWrap: 'wrap', gap: '8px' } : forecastListStyle}>
-              {forecast.forecast && Array.isArray(forecast.forecast) ? (
-                forecast.forecast.slice(0, 7).map((day, index) => {
-                  const date = day.datetime ? new Date(day.datetime) : new Date();
-                  const utcDate = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-                  const iconResult = getWeatherIcon(day.condition, day.iconCode);
-                  const isImageUrl = typeof iconResult === 'string' && iconResult.startsWith('http');
-                  
-                  const dayName = utcDate.toLocaleDateString(language === 'zh' ? 'zh-CN' : language, { weekday: 'short' }).toUpperCase();
-                  
-                  if (horizontal || compact) {
-                    return (
-                      <div key={index} style={{
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
-                        padding: '8px 10px', borderRadius: '10px', minWidth: '60px',
-                        backgroundColor: 'var(--ww-soft)', border: '1px solid var(--ww-soft-border)'
-                      }}>
-                        <span style={{ fontSize: '0.7rem', fontWeight: '700', color: 'var(--ww-muted)' }}>{dayName}</span>
-                        <span style={{ fontSize: '1.3rem' }}>
-                          {isImageUrl ? <img src={iconResult} alt={day.condition} style={{ width: '28px', height: '28px', objectFit: 'contain' }} /> : iconResult}
-                        </span>
-                        <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#ff6b6b' }}>{day.temperature}°</span>
-                        <span style={{ fontSize: '0.68rem', color: 'var(--ww-muted)', textTransform: 'capitalize' }}>{day.condition}</span>
-                      </div>
-                    );
-                  }
-                  
-                  return (
-                    <div key={index} style={forecastItemStyle}>
-                      <span style={forecastDateStyle}>{dayName}</span>
-                      <div style={forecastIconStyle}>
-                        {isImageUrl ? (
-                          <img src={iconResult} alt={day.condition} style={forecastWeatherIconStyle} />
-                        ) : iconResult}
-                      </div>
-                      <span style={forecastTempStyle}>{day.temperature}°</span>
-                      <span style={forecastConditionStyle}>{day.condition}</span>
-                    </div>
-                  );
-                })
-              ) : (
-                <div style={forecastItemStyle}>{t('no_forecast_data')}</div>
-              )}
-            </div>
-          </div>
-        )}
+        {showForecast && forecast && !compact && forecastBlock}
       </div>
     </div>
   );
@@ -827,14 +850,20 @@ const WeatherWidget = ({
       return { ...baseStyle, width: '100%', padding: '0', borderRadius: '0', boxShadow: 'none', backgroundColor: 'transparent', overflow: 'visible' };
     }
 
-    switch (size) {
-      case 'small':
-        return { ...baseStyle, width: '100%', maxWidth: '340px', padding: '14px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: isDark ? '#2c3e50' : '#ffffff' };
-      case 'large':
-        return { ...baseStyle, width: '100%', maxWidth: '500px', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: isDark ? '#2c3e50' : '#ffffff' };
-      default:
-        return { ...baseStyle, width: '100%', maxWidth: '400px', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: isDark ? '#2c3e50' : '#ffffff' };
+    const sizeStyle = (() => {
+      switch (size) {
+        case 'small':
+          return { ...baseStyle, width: '100%', maxWidth: '340px', padding: '14px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: isDark ? '#2c3e50' : '#ffffff' };
+        case 'large':
+          return { ...baseStyle, width: '100%', maxWidth: '500px', padding: '24px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: isDark ? '#2c3e50' : '#ffffff' };
+        default:
+          return { ...baseStyle, width: '100%', maxWidth: '400px', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', overflow: 'hidden', backgroundColor: isDark ? '#2c3e50' : '#ffffff' };
+      }
+    })();
+    if (compact) {
+      sizeStyle.maxWidth = 'none';
     }
+    return sizeStyle;
   }
 
   function getAlertColor(level) {
@@ -863,6 +892,28 @@ const mainWeatherStyle = {
   display: 'flex',
   flexDirection: 'column',
   gap: '16px'
+};
+
+const splitTopStyle = {
+  display: 'flex',
+  flexWrap: 'wrap',
+  gap: '16px',
+  alignItems: 'flex-start'
+};
+
+const splitColLeftStyle = {
+  flex: '1 1 340px',
+  minWidth: '0',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '12px'
+};
+
+const splitColRightStyle = {
+  flex: '1 1 260px',
+  minWidth: '0',
+  display: 'flex',
+  flexDirection: 'column'
 };
 
 const headerStyle = {
