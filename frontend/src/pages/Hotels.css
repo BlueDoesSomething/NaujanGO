@@ -111,6 +111,22 @@ html[data-theme="dark"] .hotels-page { background: #07120c !important; }
   --hg-price: #0f172a;
   --hg-price-sub: #475569;
   --hg-price-accent: #16a34a;
+  --ng-panel-bg: rgba(255, 255, 255, 0.85);
+  --ng-panel-border: rgba(15, 23, 42, 0.07);
+  --ng-surface-2: #f1f5f9;
+  --ng-text: #0f172a;
+  --ng-text-2: #64748b;
+  --ng-text-3: #475569;
+  --ng-input-bg: rgba(255, 255, 255, 0.92);
+  --ng-input-border: rgba(15, 23, 42, 0.14);
+  --ng-placeholder: #94a3b8;
+  --ng-wash: rgba(15, 23, 42, 0.05);
+  --ng-tint: rgba(16, 185, 129, 0.1);
+  --ng-tint-border: rgba(16, 185, 129, 0.35);
+  --ng-tint-text: #047857;
+  --ng-list-chip-bg: rgba(15, 23, 42, 0.05);
+  --ng-list-chip-border: rgba(15, 23, 42, 0.1);
+  --ng-list-chip-text: #475569;
 }
 
 html[data-theme="dark"] .hotels-page {
@@ -137,6 +153,22 @@ html[data-theme="dark"] .hotels-page {
   --hg-price: #f8fafc;
   --hg-price-sub: #94a3b8;
   --hg-price-accent: #4ade80;
+  --ng-panel-bg: rgba(15, 23, 42, 0.78);
+  --ng-panel-border: rgba(255, 255, 255, 0.1);
+  --ng-surface-2: #334155;
+  --ng-text: #f8fafc;
+  --ng-text-2: #94a3b8;
+  --ng-text-3: #cbd5e1;
+  --ng-input-bg: rgba(2, 6, 23, 0.55);
+  --ng-input-border: rgba(148, 163, 184, 0.25);
+  --ng-placeholder: #64748b;
+  --ng-wash: rgba(255, 255, 255, 0.06);
+  --ng-tint: rgba(16, 185, 129, 0.12);
+  --ng-tint-border: rgba(16, 185, 129, 0.35);
+  --ng-tint-text: #6ee7b7;
+  --ng-list-chip-bg: rgba(2, 6, 23, 0.4);
+  --ng-list-chip-border: rgba(255, 255, 255, 0.12);
+  --ng-list-chip-text: #cbd5e1;
 }
 
 /* Taller than attractions cards to fit hotel-specific extras */

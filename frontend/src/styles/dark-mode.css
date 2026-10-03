@@ -827,13 +827,13 @@
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    28. Hotels (logged-out cards use anonymous DIVs) & misc
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-[data-theme="dark"] .hotels-page > div:not(.hero-slideshow) > div,
+[data-theme="dark"] .hotels-page > div:not(.hero-slideshow):not(.filters-wrapper):not(.attr-toolbar) > div,
 [data-theme="dark"] .hotels-page .hotel-grid > div {
   background: #1e293b !important;
   border: 1px solid #334155 !important;
 }
 
-/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/* ────────────────────────────────────────────────────────────
    29. About page (inline-styled classless cards)
    â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 [data-theme="dark"] .about-leadership-grid > div,
@@ -2417,7 +2417,7 @@
   color: #f1f5f9 !important;
 }
 /* Section 28: Hotels — card grid only (HeroSlideshow gets base class 'hero-slideshow') */
-[data-theme="dark"] .hotels-page > div:not(.hero-slideshow) > div,
+[data-theme="dark"] .hotels-page > div:not(.hero-slideshow):not(.filters-wrapper):not(.attr-toolbar) > div,
 [data-theme="dark"] .hotels-page .hotel-grid > div {
   background: #1e293b !important;
   border: 1px solid #334155 !important;

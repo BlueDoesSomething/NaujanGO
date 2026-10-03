@@ -25,6 +25,11 @@ export default function Hotels() {
   const [checkoutState, setCheckoutState] = useState(null)
   const [policyAgreed, setPolicyAgreed] = useState(false)
   const [searchQuery, setSearchQuery] = useState(location.state?.destination || '')
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false)
+  const [filterMinRating, setFilterMinRating] = useState(0)
+  const [filterAmenity, setFilterAmenity] = useState('all')
+  const [sortBy, setSortBy] = useState('popular')
+  const [view, setView] = useState('grid')
 
   const getErrorMessage = (value) => {
     if (!value) return t('Booking_Failed') || 'Booking failed. Please try again.'
@@ -108,16 +113,36 @@ export default function Hotels() {
     }
   }, [location.state])
 
+  const amenityOptions = useMemo(() => {
+    const set = new Set()
+    hotels.forEach((h) => (Array.isArray(h.amenities) ? h.amenities.forEach((a) => set.add(a)) : null))
+    return ['all', ...set]
+  }, [hotels])
+
   const filteredHotels = useMemo(() => {
     const query = searchQuery.trim().toLowerCase()
-    if (!query) return hotels
-    return hotels.filter((hotel) => {
+    const list = hotels.filter((hotel) => {
       const amenitiesText = Array.isArray(hotel.amenities) ? hotel.amenities.join(' ') : ''
-      return `${hotel.name || ''} ${hotel.location || ''} ${hotel.description || ''} ${amenitiesText}`
-        .toLowerCase()
-        .includes(query)
+      const matchesSearch = !query ||
+        `${hotel.name || ''} ${hotel.location || ''} ${hotel.description || ''} ${amenitiesText}`
+          .toLowerCase()
+          .includes(query)
+      const matchesRating = filterMinRating <= 0 || (Number(hotel.rating) || 0) >= filterMinRating
+      const matchesAmenity = filterAmenity === 'all' ||
+        (Array.isArray(hotel.amenities) ? hotel.amenities : []).some((a) => a.toLowerCase() === filterAmenity.toLowerCase())
+      return matchesSearch && matchesRating && matchesAmenity
     })
-  }, [hotels, searchQuery])
+    const price = (h) => Number(h.pricePerNight) || 0
+    const rating = (h) => Number(h.rating) || 0
+    const reviews = (h) => Number(h.reviewCount) || 0
+    return [...list].sort((a, b) => {
+      if (sortBy === 'rating') return rating(b) - rating(a)
+      if (sortBy === 'name') return String(a.name || '').localeCompare(String(b.name || ''))
+      if (sortBy === 'price') return price(a) - price(b)
+      if (sortBy === 'price_high') return price(b) - price(a)
+      return reviews(b) - reviews(a)
+    })
+  }, [hotels, searchQuery, filterMinRating, filterAmenity, sortBy])
 
   const formatCurrency = (value, currency) => {
     try {
@@ -385,23 +410,80 @@ export default function Hotels() {
         showControls={false}
       />
 
-      <div className="hotels-filters" style={filtersSection}>
-        <div style={searchContainer}>
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('search_placeholder_hotels_page')}
-            style={searchInput}
-            className="hotels-search-input"
-          />
-          <div className="hotels-search-icon" style={searchIcon}><Icons.Search size={20} /></div>
+      <div className="filters-wrapper">
+        <div className="search-bar-wrap">
+          <div className="search-bar-inner">
+            <span className="search-bar-icon"><Icons.Search size={18} /></span>
+            <input
+              className="search-bar-input"
+              placeholder={t('search_placeholder_hotels_page')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && <button className="search-clear-btn" onClick={() => setSearchQuery('')}>✕</button>}
+          </div>
+        </div>
+
+        <div className="filters-control-row">
+          <button className={`filter-toggle-btn${filterPanelOpen ? ' filter-toggle-btn--open' : ''}`} onClick={() => setFilterPanelOpen(v => !v)}>
+            {t('filters_button')}
+          </button>
+          <div className="sort-inline-wrap">
+            <label className="sort-inline-label">{t('sort')}:</label>
+            <select className="sort-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <option value="popular">{t('sort_popular')}</option>
+              <option value="rating">{t('sort_highest_rated')}</option>
+              <option value="name">{t('sort_name_az')}</option>
+              <option value="price">{t('sort_price_low')}</option>
+              <option value="price_high">{t('sort_price_high')}</option>
+            </select>
+          </div>
+        </div>
+
+        {filterPanelOpen && (
+          <div className="filter-panel">
+            <div className="filter-panel-grid">
+              <div className="filter-group">
+                <label className="filter-label">{t('filter_amenities_label')}</label>
+                <select className="filter-select" value={filterAmenity} onChange={(e) => setFilterAmenity(e.target.value)}>
+                  {amenityOptions.map((a) => <option key={a} value={a}>{a === 'all' ? t('filter_all_amenities') : a}</option>)}
+                </select>
+              </div>
+              <div className="filter-group">
+                <label className="filter-label">{t('filter_minimum_rating_label')}</label>
+                <div className="rating-filter-stars">
+                  {[0, 1, 2, 3, 4, 5].map(r => (
+                    <button key={r} type="button" className={`rating-star-btn${filterMinRating === r ? ' rating-star-btn--active' : ''}`} onClick={() => setFilterMinRating(r)}>
+                      {r === 0 ? t('filter_rating_any') : `${r}${t('filter_stars_suffix')}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <button className="clear-all-filters-btn" onClick={() => {
+              setFilterAmenity('all');
+              setFilterMinRating(0);
+              setSearchQuery('');
+            }}>{t('clear_all_filters_button')}</button>
+          </div>
+        )}
+
+        <div className="active-chips">
+          {searchQuery && <span className="filter-chip">{searchQuery} <button onClick={() => setSearchQuery('')}>✕</button></span>}
+          {filterAmenity !== 'all' && <span className="filter-chip">{filterAmenity} <button onClick={() => setFilterAmenity('all')}>✕</button></span>}
+          {filterMinRating > 0 && <span className="filter-chip">{filterMinRating}{t('filter_stars_suffix')} <button onClick={() => setFilterMinRating(0)}>✕</button></span>}
         </div>
       </div>
 
-      <div className="hotels-viewbar" style={viewToggleSection}>
-        <div className="hotels-results-count" style={resultsCount}>{filteredHotels.length}{t('hotels_found_count')}</div>
-      </div>
+      {!loading && (
+        <div className="attr-toolbar">
+          <div className="attr-view-toggle">
+            <button className={`attr-view-btn${view === 'grid' ? ' attr-view-btn--active' : ''}`} onClick={() => setView('grid')}>{t('view_grid')}</button>
+            <button className={`attr-view-btn${view === 'list' ? ' attr-view-btn--active' : ''}`} onClick={() => setView('list')}>{t('view_list')}</button>
+          </div>
+          <div className="attr-results"><strong>{filteredHotels.length}</strong>{t('hotels_found_count')}</div>
+        </div>
+      )}
 
       {loading ? (
         <div style={{ textAlign: 'center', padding: '50px' }}>
@@ -411,7 +493,7 @@ export default function Hotels() {
         <div style={{ textAlign: 'center', padding: '50px' }}>
           <p>{t('no_hotels_found')}</p>
         </div>
-      ) : (
+      ) : view === 'grid' ? (
         <section style={contentSection}>
           <div style={cardsGrid}>
             {filteredHotels.map((hotel) => {
@@ -501,6 +583,86 @@ export default function Hotels() {
                 </span>
               </div>
             </article>
+              );
+            })}
+          </div>
+        </section>
+      ) : (
+        <section style={contentSection}>
+          <div className="attr-list">
+            {filteredHotels.map((hotel, index) => {
+              const rating = (Number(hotel.rating) || 0).toFixed(1)
+              const rooms = Number(hotel.rooms_available)
+              const hasRooms = Number.isFinite(rooms)
+              const soldOut = hasRooms && rooms <= 0
+              const availText = !hasRooms
+                ? t('availability_check_availability')
+                : soldOut
+                  ? t('availability_sold_out')
+                  : t('availability_rooms_pattern').replace('{count}', String(rooms))
+              const amenities = Array.isArray(hotel.amenities) ? hotel.amenities.slice(0, 4) : []
+              const extraAmenities = Array.isArray(hotel.amenities) && hotel.amenities.length > 4 ? hotel.amenities.length - 4 : 0
+              return (
+                <div key={hotel.id} className="attr-list-card" onClick={() => navigate(`/hotels/${hotel.id}`)}>
+                  <div className="attr-list-rank">#{index + 1}</div>
+                  <div className="attr-list-media">
+                    <img
+                      src={hotel.image || '/placeholder-hotel.svg'}
+                      alt={hotel.name}
+                      onError={handleImageError}
+                    />
+                  </div>
+                  <div className="attr-list-body">
+                    <h3 className="attr-list-title">{hotel.name}</h3>
+                    <p className="attr-list-location"><Icons.Location size={13} /> {hotel.location}</p>
+                    <p className="attr-list-desc">{hotel.description?.substring(0, 180)}{hotel.description?.length > 180 ? '...' : ''}</p>
+                    <div className="attr-list-meta">
+                      <span className="attr-list-chip"><span className="attr-rating-star">★</span> {rating} ({hotel.reviewCount || 0})</span>
+                      <span className="attr-list-chip">{formatCurrency(hotel.pricePerNight, hotel.currency)}</span>
+                      <button
+                        type="button"
+                        className={`hotel-card-avail${soldOut ? ' hotel-card-avail--out' : ''}${!hasRooms ? ' hotel-card-avail--check' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          navigate(`/hotels/${hotel.id}?calendar=1`)
+                        }}
+                      >
+                        {availText}
+                      </button>
+                    </div>
+                    {hotel.legitimacy && (hotel.legitimacy.business_permit || hotel.legitimacy.dot || hotel.legitimacy.philgeps) ? (
+                      <div className="hotel-card-badges" style={{ marginBottom: 6 }}>
+                        {hotel.legitimacy.business_permit && (
+                          <span className="hotel-legit-chip hotel-legit-chip--permit">
+                            <Icons.Shield size={11} /> {t('badge_business_permit')}
+                          </span>
+                        )}
+                        {hotel.legitimacy.dot && (
+                          <span className="hotel-legit-chip hotel-legit-chip--dot">
+                            <Icons.ShieldCheck size={11} /> {t('badge_dot')}
+                          </span>
+                        )}
+                        {hotel.legitimacy.philgeps && (
+                          <span className="hotel-legit-chip hotel-legit-chip--ph">
+                            <Icons.Document size={11} /> {t('badge_philgeps')}
+                          </span>
+                        )}
+                      </div>
+                    ) : null}
+                    {amenities.length > 0 && (
+                      <div className="hotel-card-amenities" style={{ marginBottom: 8 }}>
+                        {amenities.map((item) => (
+                          <span key={item} className="hotel-card-amenity">{item}</span>
+                        ))}
+                        {extraAmenities > 0 && <span className="hotel-card-amenity">+{extraAmenities}</span>}
+                      </div>
+                    )}
+                    <span className="attr-glass-btn attr-glass-btn--sm">
+                      <span className="attr-glass-label">{t('view_details')}</span>
+                      <span className="attr-glass-chevron"><Icons.ChevronRight size={13} /></span>
+                    </span>
+                  </div>
+                </div>
               );
             })}
           </div>
@@ -839,60 +1001,6 @@ const pageSubtitle = {
 
 const contentSection = {
   padding: 0
-}
-
-const filtersSection = {
-  padding: '2rem',
-  backgroundColor: 'rgba(255, 255, 255, 0.4)',
-  backdropFilter: 'blur(30px)',
-  WebkitBackdropFilter: 'blur(30px)',
-  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-  border: '1px solid rgba(255, 255, 255, 0.18)'
-}
-
-const searchContainer = {
-  position: 'relative',
-  maxWidth: '500px',
-  margin: '0 auto'
-}
-
-const searchInput = {
-  width: '100%',
-  padding: '1rem 3rem 1rem 1rem',
-  border: '2px solid rgba(156, 163, 175, 0.3)',
-  borderRadius: '50px',
-  fontSize: '1rem',
-  outline: 'none',
-  transition: 'border-color 0.3s ease',
-  backgroundColor: 'rgba(255, 255, 255, 0.6)',
-  backdropFilter: 'blur(10px)',
-  WebkitBackdropFilter: 'blur(10px)',
-  color: '#1f2937'
-}
-
-const searchIcon = {
-  position: 'absolute',
-  right: '1rem',
-  top: '50%',
-  transform: 'translateY(-50%)',
-  fontSize: '1.2rem',
-  color: '#666'
-}
-
-const viewToggleSection = {
-  display: 'flex',
-  justifyContent: 'flex-end',
-  alignItems: 'center',
-  padding: '1rem 2rem',
-  backgroundColor: 'rgba(255, 255, 255, 0.4)',
-  backdropFilter: 'blur(30px)',
-  WebkitBackdropFilter: 'blur(30px)',
-  borderBottom: '1px solid rgba(156, 163, 175, 0.2)'
-}
-
-const resultsCount = {
-  color: '#666',
-  fontSize: '0.9rem'
 }
 
 const cardsGrid = {
