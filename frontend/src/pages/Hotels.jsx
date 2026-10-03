@@ -119,11 +119,6 @@ export default function Hotels() {
     })
   }, [hotels, searchQuery])
 
-  const truncateText = (text, maxLength = 120) => {
-    if (!text) return ''
-    return text.length > maxLength ? `${text.slice(0, maxLength).trim()}...` : text
-  }
-
   const formatCurrency = (value, currency) => {
     try {
       const numValue = parseFloat(value);
@@ -419,94 +414,97 @@ export default function Hotels() {
       ) : (
         <section style={contentSection}>
           <div style={cardsGrid}>
-            {filteredHotels.map((hotel) => (
-            <article key={hotel.id} style={card}>
-              <div style={imageWrap}>
-                <img
-                  src={hotel.image || '/placeholder-hotel.svg'}
-                  alt={hotel.name}
-                  style={cardImage}
-                  onError={handleImageError}
-                />
-              </div>
-              <div style={cardBody}>
-                <div style={cardHeader}>
-                  <h2 style={cardTitle}>{hotel.name}</h2>
-                  <div style={ratingContainer}>
-                    <span style={ratingBadge}><Icons.Star size={16} filled={true} /> {(Number(hotel.rating) || 0).toFixed(1)}</span>
-                    <span style={reviewCount}>({hotel.reviewCount || 0})</span>
-                  </div>
+            {filteredHotels.map((hotel) => {
+              const rating = (Number(hotel.rating) || 0).toFixed(1)
+              const rooms = Number(hotel.rooms_available)
+              const hasRooms = Number.isFinite(rooms)
+              const soldOut = hasRooms && rooms <= 0
+              const availText = !hasRooms
+                ? t('availability_check_availability')
+                : soldOut
+                  ? t('availability_sold_out')
+                  : t('availability_rooms_pattern').replace('{count}', String(rooms))
+              const amenities = Array.isArray(hotel.amenities) ? hotel.amenities.slice(0, 3) : []
+              const extraAmenities = Array.isArray(hotel.amenities) && hotel.amenities.length > 3 ? hotel.amenities.length - 3 : 0
+              return (
+            <article key={hotel.id} className="attr-card hotel-card" onClick={() => navigate(`/hotels/${hotel.id}`)}>
+              <img
+                src={hotel.image || '/placeholder-hotel.svg'}
+                alt={hotel.name}
+                className="attr-card-img"
+                onError={handleImageError}
+              />
+              <div className="attr-card-shade" />
+              {hotel.map ? (
+                <a href={hotel.map} className="hotel-map-chip" aria-label={t('button_map')} onClick={(e) => e.stopPropagation()}>
+                  <Icons.Location size={13} />
+                </a>
+              ) : null}
+              <div className="attr-card-content">
+                <div>
+                  <h3 className="attr-card-title">{hotel.name}</h3>
+                  <p className="attr-card-location"><Icons.Location size={12} /> {hotel.location}</p>
                 </div>
-                <p style={cardLocation}><Icons.Location size={16} /> {hotel.location}</p>
                 {hotel.legitimacy && (hotel.legitimacy.business_permit || hotel.legitimacy.dot || hotel.legitimacy.philgeps) ? (
-                  <div style={badgesRow}>
+                  <div className="hotel-card-badges">
                     {hotel.legitimacy.business_permit && (
-                      <span style={{ ...legitimacyBadge, background: '#ecfdf5', color: '#065f46', borderColor: '#a7f3d0' }}>
-                        <Icons.Shield size={12} /> {t('badge_business_permit')}
+                      <span className="hotel-legit-chip hotel-legit-chip--permit">
+                        <Icons.Shield size={11} /> {t('badge_business_permit')}
                       </span>
                     )}
                     {hotel.legitimacy.dot && (
-                      <span style={{ ...legitimacyBadge, background: '#eff6ff', color: '#1e40af', borderColor: '#bfdbfe' }}>
-                        <Icons.ShieldCheck size={12} /> {t('badge_dot')}
+                      <span className="hotel-legit-chip hotel-legit-chip--dot">
+                        <Icons.ShieldCheck size={11} /> {t('badge_dot')}
                       </span>
                     )}
                     {hotel.legitimacy.philgeps && (
-                      <span style={{ ...legitimacyBadge, background: '#fffbeb', color: '#92400e', borderColor: '#fde68a' }}>
-                        <Icons.Document size={12} /> {t('badge_philgeps')}
+                      <span className="hotel-legit-chip hotel-legit-chip--ph">
+                        <Icons.Document size={11} /> {t('badge_philgeps')}
                       </span>
                     )}
                   </div>
                 ) : null}
-                <p style={cardDescription}>{truncateText(hotel.description)}</p>
-                
-                <div style={priceContainer}>
-                  <span style={priceLabel}>{t('price_from') || 'From'}</span>
-                  <span style={cardPrice}>{formatCurrency(hotel.pricePerNight, hotel.currency)}</span>
-                  <span style={priceNight}>{t('price_per_night') || '/night'}</span>
-                </div>
-                
-                <button
-                  type="button"
-                  style={availabilityText}
-                  onClick={() => navigate(`/hotels/${hotel.id}?calendar=1`)}
-                >
-                  {Number.isFinite(Number(hotel.rooms_available))
-                    ? Number(hotel.rooms_available) > 0
-                      ? `${hotel.rooms_available} ${t('availability_rooms_pattern').split(' ').slice(1).join(' ')}`
-                      : t('availability_sold_out')
-                    : t('availability_check_availability')}
-                </button>
-                
-                <div style={amenitiesWrap}>
-                  <span style={amenitiesLabel}>{t('amenities')}:</span>
-                  <div style={amenitiesList}>
-                    {Array.isArray(hotel.amenities) && hotel.amenities.slice(0, 4).map((item) => (
-                      <span key={item} style={amenity}>{item}</span>
-                    ))}
-                    {Array.isArray(hotel.amenities) && hotel.amenities.length > 4 && (
-                      <span style={{...amenity, background: '#f3f4f6', color: '#666'}}>+{hotel.amenities.length - 4}</span>
-                    )}
+                <span className="attr-rating-badge">
+                  <span className="attr-rating-star">★</span>
+                  <span>{rating} ({hotel.reviewCount || 0})</span>
+                </span>
+                <div className="hotel-card-extra">
+                  <div className="hotel-card-meta">
+                    <span className="hotel-card-price">
+                      <span className="h">{t('price_from')}</span>
+                      <b>{formatCurrency(hotel.pricePerNight, hotel.currency)}</b>
+                      <span className="n">{t('price_per_night')}</span>
+                    </span>
+                    <button
+                      type="button"
+                      className={`hotel-card-avail${soldOut ? ' hotel-card-avail--out' : ''}${!hasRooms ? ' hotel-card-avail--check' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        navigate(`/hotels/${hotel.id}?calendar=1`)
+                      }}
+                    >
+                      {availText}
+                    </button>
                   </div>
+                  {amenities.length > 0 && (
+                    <div className="hotel-card-amenities">
+                      {amenities.map((item) => (
+                        <span key={item} className="hotel-card-amenity">{item}</span>
+                      ))}
+                      {extraAmenities > 0 && <span className="hotel-card-amenity">+{extraAmenities}</span>}
+                    </div>
+                  )}
                 </div>
-                
-                <div style={actions}>
-                  <button 
-                    style={viewDetailsButton} 
-                    onClick={() => navigate(`/hotels/${hotel.id}`)}
-                  >
-                    <Icons.Eye size={18} /> {t('view_details')}
-                  </button>
-                  <div style={linksRow}>
-                    <a href={hotel.map} style={link} onClick={(e) => e.stopPropagation()}>
-                      <Icons.Location size={16} /> {t('button_map')}
-                    </a>
-                  </div>
-                </div>
+                <span className="attr-glass-btn">
+                  <span className="attr-glass-label">{t('view_details')}</span>
+                  <span className="attr-glass-chevron"><Icons.ChevronRight size={13} /></span>
+                </span>
               </div>
             </article>
-          ))}
-        </div>
-      </section>
+              );
+            })}
+          </div>
+        </section>
       )}
 
       {showBookingModal && selectedHotel && (
@@ -906,205 +904,6 @@ const cardsGrid = {
   margin: '0 auto'
 }
 
-const card = {
-  backgroundColor: 'rgba(255, 255, 255, 0.4)',
-  backdropFilter: 'blur(30px)',
-  WebkitBackdropFilter: 'blur(30px)',
-  borderRadius: '20px',
-  overflow: 'hidden',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-  transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-  cursor: 'pointer',
-  border: '1px solid rgba(255, 255, 255, 0.18)',
-  display: 'flex',
-  flexDirection: 'column',
-  height: '100%'
-}
-
-const imageWrap = {
-  position: 'relative',
-  overflow: 'hidden',
-  height: '260px'
-}
-
-const cardImage = {
-  width: '100%',
-  height: '100%',
-  objectFit: 'cover',
-  transition: 'transform 0.5s ease'
-}
-
-const cardBody = {
-  padding: '1.75rem',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.75rem',
-  flex: '1',
-  minHeight: '0'
-}
-
-const cardHeader = {
-  display: 'flex',
-  alignItems: 'flex-start',
-  justifyContent: 'space-between',
-  gap: '0.75rem'
-}
-
-const cardTitle = {
-  fontSize: '1.35rem',
-  fontWeight: '700',
-  margin: '0',
-  color: '#16a34a',
-  flex: '1',
-  lineHeight: '1.35rem',
-  height: '2.7rem',
-  overflow: 'hidden',
-  display: '-webkit-box',
-  WebkitLineClamp: 2,
-  WebkitBoxOrient: 'vertical'
-}
-
-const ratingContainer = {
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'flex-end',
-  gap: '0.3rem'
-}
-
-const ratingBadge = {
-  background: '#16a34a',
-  color: 'white',
-  borderRadius: '8px',
-  padding: '0.375rem 0.75rem',
-  fontWeight: '600',
-  fontSize: '0.875rem',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  lineHeight: 1.2,
-  whiteSpace: 'nowrap'
-}
-
-const reviewCount = {
-  fontSize: '0.8rem',
-  color: '#888',
-  fontWeight: '500',
-  whiteSpace: 'nowrap'
-}
-
-const cardLocation = {
-  color: '#666',
-  margin: '0',
-  fontSize: '0.9rem',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  lineHeight: 1.3,
-  height: '1.35rem'
-}
-
-const cardDescription = {
-  color: '#555',
-  lineHeight: '1.6',
-  margin: 0,
-  fontSize: '0.95rem',
-  height: '4.8rem',
-  overflow: 'hidden',
-  display: '-webkit-box',
-  WebkitLineClamp: 3,
-  WebkitBoxOrient: 'vertical'
-}
-
-// Legitimacy & accreditation badges (verified items only, per hotel owner)
-const badgesRow = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '0.4rem',
-  margin: '0.5rem 0 0'
-}
-
-const legitimacyBadge = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '0.3rem',
-  fontSize: '0.7rem',
-  fontWeight: 800,
-  padding: '0.22rem 0.55rem',
-  borderRadius: '999px',
-  border: '1px solid'
-}
-
-const priceContainer = {
-  display: 'flex',
-  alignItems: 'baseline',
-  gap: '0.375rem',
-  padding: '1rem 0 0.75rem 0',
-  borderTop: '1px solid #e5e7eb',
-  marginTop: 'auto'
-}
-
-const priceLabel = {
-  fontSize: '0.85rem',
-  color: '#888',
-  fontWeight: '500'
-}
-
-const cardPrice = {
-  margin: 0,
-  fontWeight: '700',
-  color: '#16a34a',
-  fontSize: '1.5rem'
-}
-
-const priceNight = {
-  fontSize: '0.9rem',
-  color: '#666',
-  fontWeight: '500'
-}
-
-const availabilityText = {
-  fontSize: '0.85rem',
-  color: '#16a34a',
-  fontWeight: '600',
-  padding: '0.4rem 0.8rem',
-  background: 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)',
-  borderRadius: '8px',
-  width: 'fit-content',
-  border: '1px solid #86efac',
-  fontFamily: 'inherit',
-  cursor: 'pointer',
-  transition: 'all 0.2s ease'
-}
-
-const amenitiesWrap = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.5rem'
-}
-
-const amenitiesLabel = {
-  fontWeight: 600,
-  fontSize: '0.85rem',
-  color: '#666'
-}
-
-const amenitiesList = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '0.4rem'
-}
-
-const amenity = {
-  background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
-  color: '#16a34a',
-  padding: '0.3rem 0.6rem',
-  borderRadius: '6px',
-  fontSize: '0.75rem',
-  fontWeight: '600',
-  border: '1px solid #bbf7d0',
-  transition: 'all 0.3s ease'
-}
-
 const paymentMethodsSection = {
   display: 'flex',
   flexDirection: 'column',
@@ -1157,13 +956,6 @@ const paymentMethodText = {
   whiteSpace: 'nowrap'
 }
 
-const actions = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.75rem',
-  paddingTop: '1rem'
-}
-
 const primaryButton = {
   background: 'linear-gradient(135deg, #16a34a, #059669)',
   color: 'white',
@@ -1184,24 +976,6 @@ const primaryButton = {
   }
 }
 
-const viewDetailsButton = {
-  width: '100%',
-  padding: '0.875rem',
-  background: 'linear-gradient(135deg, #16a34a 0%, #059669 100%)',
-  color: 'white',
-  border: 'none',
-  borderRadius: '12px',
-  cursor: 'pointer',
-  fontWeight: '700',
-  fontSize: '0.95rem',
-  transition: 'all 0.3s ease',
-  boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '0.5rem'
-}
-
 const ghostButton = {
   background: 'transparent',
   color: '#16a34a',
@@ -1212,26 +986,6 @@ const ghostButton = {
   fontSize: '0.9rem',
   transition: 'all 0.2s ease',
   textDecoration: 'none'
-}
-
-const linksRow = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.75rem',
-  fontSize: '0.9rem',
-  justifyContent: 'center'
-}
-
-const link = {
-  color: '#16a34a',
-  textDecoration: 'none',
-  fontWeight: '600',
-  fontSize: '0.9rem',
-  transition: 'all 0.2s ease',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  lineHeight: 1.25
 }
 
 const divider = {
@@ -1787,17 +1541,6 @@ const receiptValue = {
 if (typeof document !== 'undefined') {
   const styleSheet = document.createElement("style");
   styleSheet.textContent = `
-    /* Card hover effects */
-    article[style*="rgba(255, 255, 255, 0.4)"]:hover {
-      transform: translateY(-8px) !important;
-      box-shadow: 0 16px 48px rgba(22, 163, 74, 0.2) !important;
-      border-color: #16a34a !important;
-    }
-    
-    article[style*="rgba(255, 255, 255, 0.4)"]:hover img {
-      transform: scale(1.08) !important;
-    }
-    
     /* Link hover effects */
     a[style*="color: #16a34a"]:hover {
       color: #15803d !important;

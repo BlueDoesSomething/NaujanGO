@@ -1406,30 +1406,6 @@
   color: #f1f5f9 !important;
 }
 
-[data-theme="dark"] .hotels-page .hotel-card {
-  background: #1e293b !important;
-  border: 1px solid #334155 !important;
-}
-
-[data-theme="dark"] .hotels-page .hotel-card:hover {
-  border-color: #475569 !important;
-}
-
-[data-theme="dark"] .hotels-page .hotel-card h3,
-[data-theme="dark"] .hotels-page .hotel-card h2 {
-  color: #f1f5f9 !important;
-}
-
-[data-theme="dark"] .hotels-page .hotel-card p,
-[data-theme="dark"] .hotels-page .hotel-card span {
-  color: #cbd5e1 !important;
-}
-
-[data-theme="dark"] .hotels-page .hotel-price,
-[data-theme="dark"] .hotels-page .price {
-  color: #4ade80 !important;
-}
-
 /* Hotel detail page */
 [data-theme="dark"] .hotel-detail,
 [data-theme="dark"] .hotel-detail-page {

@@ -85,3 +85,159 @@ html[data-theme="dark"] .hotels-page { background: #07120c !important; }
 }
 [data-theme="dark"] .hotels-search-icon { color: #cbd5e1 !important; }
 [data-theme="dark"] .hotels-results-count { color: #cbd5e1 !important; }
+
+/* ── Hotel cards: Attractions-page design (image overlay + dark glass CTA) ── */
+.hotels-page {
+  --ng-surface: #ffffff;
+  --ng-border: #e2e8f0;
+  --ng-shadow-card: 0 10px 30px rgba(15, 23, 42, 0.08);
+  --ng-shadow-card-hover: 0 22px 48px rgba(15, 23, 42, 0.16);
+  --ng-card-overlay: linear-gradient(to top, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+  --ng-card-title: #0f172a;
+  --ng-card-location: #475569;
+  --ng-heart-bg: rgba(255, 255, 255, 0.8);
+  --ng-heart-border: rgba(0, 0, 0, 0.06);
+  --ng-heart-icon: #0f172a;
+  --ng-rating-bg: rgba(255, 255, 255, 0.6);
+  --ng-rating-border: rgba(0, 0, 0, 0.06);
+  --ng-rating-text: #0f172a;
+  --ng-glass-bg: rgba(255, 255, 255, 0.65);
+  --ng-glass-border: rgba(255, 255, 255, 0.8);
+  --ng-glass-text: #0f172a;
+  --ng-glass-hover-bg: rgba(255, 255, 255, 0.85);
+  --ng-glass-hover-border: #ffffff;
+  --ng-chevron-bg: #ffffff;
+  --ng-chevron-icon: #0f172a;
+  --hg-price: #0f172a;
+  --hg-price-sub: #475569;
+  --hg-price-accent: #16a34a;
+}
+
+html[data-theme="dark"] .hotels-page {
+  --ng-surface: #1e293b;
+  --ng-border: #334155;
+  --ng-shadow-card: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --ng-shadow-card-hover: 0 22px 48px rgba(0, 0, 0, 0.5);
+  --ng-card-overlay: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
+  --ng-card-title: #f8fafc;
+  --ng-card-location: #94a3b8;
+  --ng-heart-bg: rgba(2, 6, 23, 0.55);
+  --ng-heart-border: rgba(255, 255, 255, 0.16);
+  --ng-heart-icon: #ffffff;
+  --ng-rating-bg: rgba(2, 6, 23, 0.6);
+  --ng-rating-border: rgba(255, 255, 255, 0.14);
+  --ng-rating-text: #f8fafc;
+  --ng-glass-bg: rgba(2, 6, 23, 0.55);
+  --ng-glass-border: rgba(255, 255, 255, 0.22);
+  --ng-glass-text: #ffffff;
+  --ng-glass-hover-bg: rgba(255, 255, 255, 0.2);
+  --ng-glass-hover-border: rgba(255, 255, 255, 0.4);
+  --ng-chevron-bg: #ffffff;
+  --ng-chevron-icon: #0f172a;
+  --hg-price: #f8fafc;
+  --hg-price-sub: #94a3b8;
+  --hg-price-accent: #4ade80;
+}
+
+/* Taller than attractions cards to fit hotel-specific extras */
+.hotels-page .attr-card { aspect-ratio: 3 / 3.8; }
+.hotels-page .attr-card-content { padding: 12px 12px 14px; gap: 6px; }
+
+/* Map shortcut chip (top-right, like attractions' heart button) */
+.hotel-map-chip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 10;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--ng-heart-bg);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  border: 1px solid var(--ng-heart-border);
+  color: var(--ng-heart-icon);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+
+.hotel-map-chip:hover { transform: scale(1.12); }
+.hotel-map-chip svg { width: 11px; height: 11px; }
+
+/* Legitimacy & accreditation badges */
+.hotel-card-badges { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.hotel-legit-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+.hotel-legit-chip--permit { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+.hotel-legit-chip--dot { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+.hotel-legit-chip--ph { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+
+/* Extra hotel info rows (price, availability, amenities) */
+.hotel-card-extra { display: flex; flex-direction: column; gap: 5px; }
+
+.hotel-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.hotel-card-price {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--hg-price);
+}
+
+.hotel-card-price .h { font-size: 10px; font-weight: 600; color: var(--hg-price-sub); }
+.hotel-card-price b { font-size: 15px; font-weight: 700; color: var(--hg-price-accent); }
+.hotel-card-price .n { font-size: 10px; font-weight: 500; color: var(--hg-price-sub); }
+
+.hotel-card-avail {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid #86efac;
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  color: #16a34a;
+  font-family: inherit;
+  line-height: 1.3;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: filter 0.2s ease;
+}
+
+.hotel-card-avail:hover { filter: brightness(0.96); }
+.hotel-card-avail--out { background: #fee2e2; border-color: #fca5a5; color: #b91c1c; }
+.hotel-card-avail--check { background: rgba(255, 255, 255, 0.75); border-color: rgba(15, 23, 42, 0.2); color: #334155; }
+
+.hotel-card-amenities { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.hotel-card-amenity {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  color: #16a34a;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.3;
+  border: 1px solid #bbf7d0;
+}
