@@ -376,8 +376,8 @@
   min-width: 0;
 }
 
-.ad-stack-fill {
-  flex: 1;
+.ad-stack .ad-share-card {
+  margin-top: auto;
 }
 
 .ad-card {

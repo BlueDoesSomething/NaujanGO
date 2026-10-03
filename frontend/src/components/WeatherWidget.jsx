@@ -22,6 +22,7 @@ const WeatherWidget = ({
   size = 'medium', // small, medium, large
   theme = 'light', // light, dark
   horizontal = false,
+  compact = false,
   onSafetyScore
 }) => {
   const { t, language } = useLanguage();
@@ -34,6 +35,7 @@ const WeatherWidget = ({
   const [alternatives, setAlternatives] = useState([]);
   const [showAlternatives, setShowAlternatives] = useState(false);
   const [selectedHourlyTime, setSelectedHourlyTime] = useState('');
+  const [safetyTipsOpen, setSafetyTipsOpen] = useState(false);
   const isCompactLayout = size === 'small';
 
   const normalizeForecastPayload = (raw) => {
@@ -409,7 +411,7 @@ const WeatherWidget = ({
   return (
     <div style={getContainerStyle()}>
       {/* Main Weather Display */}
-      <div style={horizontal ? { ...mainWeatherStyle, flexDirection: 'column', gap: '8px' } : mainWeatherStyle}>
+      <div style={compact ? { ...mainWeatherStyle, gap: '12px' } : mainWeatherStyle}>
         <div style={horizontal ? { ...headerStyle, marginBottom: '4px', paddingBottom: '6px' } : headerStyle}>
           <div style={locationStyle}>
             <h3 style={horizontal ? { ...locationNameStyle, fontSize: '1.1rem' } : locationNameStyle}>{locationName || weather.location?.name || t('location')}</h3>
@@ -434,57 +436,57 @@ const WeatherWidget = ({
           </div>
         </div>
 
-        <div style={horizontal ? { ...currentWeatherStyle, flexDirection: 'row', alignItems: 'center', gap: '16px', flexWrap: 'wrap' } : currentWeatherStyle}>
-          <div style={horizontal ? { ...temperatureDisplayStyle, gap: '10px', flexShrink: 0 } : temperatureDisplayStyle}>
+        <div style={compact ? { ...currentWeatherStyle, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: '14px' } : currentWeatherStyle}>
+          <div style={compact ? { ...temperatureDisplayStyle, gap: '10px', flexShrink: 0 } : temperatureDisplayStyle}>
             {typeof getWeatherIcon(weather.condition, weather.iconCode) === 'string' && 
              getWeatherIcon(weather.condition, weather.iconCode).startsWith('http') ? (
               <img 
                 src={getWeatherIcon(weather.condition, weather.iconCode)} 
                 alt={weather.condition}
-                style={horizontal ? { width: '48px', height: '48px' } : weatherIconImageStyle}
+                style={compact ? { width: '48px', height: '48px' } : weatherIconImageStyle}
               />
             ) : (
-              <span style={horizontal ? { fontSize: '2.2rem' } : weatherIconStyle}>
+              <span style={compact ? { fontSize: '2.2rem' } : weatherIconStyle}>
                 {getWeatherIcon(weather.condition, weather.iconCode)}
               </span>
             )}
             <div>
-              <span style={horizontal ? { ...temperatureStyle, fontSize: '2rem' } : temperatureStyle}>{weather.temperature}°C</span>
-              <span style={horizontal ? { ...conditionStyle, fontSize: '0.85rem' } : conditionStyle}>{weather.description}</span>
+              <span style={compact ? { ...temperatureStyle, fontSize: '2rem' } : temperatureStyle}>{weather.temperature}°C</span>
+              <span style={compact ? { ...conditionStyle, fontSize: '0.85rem' } : conditionStyle}>{weather.description}</span>
             </div>
           </div>
 
-          <div style={horizontal ? { ...weatherDetailsGridStyle, gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', flex: '1 1 0', minWidth: '0' } : weatherDetailsGridStyle}>
-            <div style={horizontal ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
-              <span style={horizontal ? { fontSize: '1.1rem' } : detailIconStyle}>🌡️</span>
+          <div style={compact ? { ...weatherDetailsGridStyle, gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '8px', flex: '1 1 0', minWidth: '0' } : weatherDetailsGridStyle}>
+            <div style={compact ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
+              <span style={compact ? { fontSize: '1.1rem' } : detailIconStyle}>🌡️</span>
               <div>
-                <span style={horizontal ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('feels_like')}</span>
-                <span style={horizontal ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.feelsLike}°C</span>
+                <span style={compact ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('feels_like')}</span>
+                <span style={compact ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.feelsLike}°C</span>
               </div>
             </div>
             
-            <div style={horizontal ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
-              <span style={horizontal ? { fontSize: '1.1rem' } : detailIconStyle}>💧</span>
+            <div style={compact ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
+              <span style={compact ? { fontSize: '1.1rem' } : detailIconStyle}>💧</span>
               <div>
-                <span style={horizontal ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('humidity')}</span>
-                <span style={horizontal ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.humidity}%</span>
+                <span style={compact ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('humidity')}</span>
+                <span style={compact ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.humidity}%</span>
               </div>
             </div>
             
-            <div style={horizontal ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
-              <span style={horizontal ? { fontSize: '1.1rem' } : detailIconStyle}>💨</span>
+            <div style={compact ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
+              <span style={compact ? { fontSize: '1.1rem' } : detailIconStyle}>💨</span>
               <div>
-                <span style={horizontal ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('wind')}</span>
-                <span style={horizontal ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.windSpeed} km/h</span>
+                <span style={compact ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('wind')}</span>
+                <span style={compact ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.windSpeed} km/h</span>
               </div>
             </div>
             
             {weather.rainfall > 0 && (
-              <div style={horizontal ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
-                <span style={horizontal ? { fontSize: '1.1rem' } : detailIconStyle}>🌧️</span>
+              <div style={compact ? { ...weatherDetailStyle, padding: '6px 8px', gap: '6px' } : weatherDetailStyle}>
+                <span style={compact ? { fontSize: '1.1rem' } : detailIconStyle}>🌧️</span>
                 <div>
-                  <span style={horizontal ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('rain')}</span>
-                  <span style={horizontal ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.rainfall.toFixed(1)}mm</span>
+                  <span style={compact ? { fontSize: '0.8rem' } : detailLabelStyle}>{t('rain')}</span>
+                  <span style={compact ? { fontSize: '0.9rem' } : detailValueStyle}>{weather.rainfall.toFixed(1)}mm</span>
                 </div>
               </div>
             )}
@@ -512,15 +514,29 @@ const WeatherWidget = ({
 
         {showSafetyTips && !horizontal && (
           <div style={safetyTipsContainerStyle}>
-            <h4 style={safetyTipsTitleStyle}>{t('safety_tips')}</h4>
-            <div style={safetyTipsListStyle}>
-              {getSafetyTips().map((tip, index) => (
-                <div key={index} style={safetyTipItemStyle}>
-                  <span style={safetyTipBulletStyle}>•</span>
-                  <span style={safetyTipTextStyle}>{tip}</span>
-                </div>
-              ))}
-            </div>
+            {compact ? (
+              <button
+                type="button"
+                onClick={() => setSafetyTipsOpen((prev) => !prev)}
+                style={safetyTipsToggleStyle}
+                aria-expanded={safetyTipsOpen}
+              >
+                <span style={{ ...safetyTipsTitleStyle, margin: 0 }}>{t('safety_tips')}</span>
+                <span style={{ fontSize: '0.75rem', opacity: 0.75 }}>{safetyTipsOpen ? '▾' : '▸'}</span>
+              </button>
+            ) : (
+              <h4 style={safetyTipsTitleStyle}>{t('safety_tips')}</h4>
+            )}
+            {(!compact || safetyTipsOpen) && (
+              <div style={compact ? { ...safetyTipsListStyle, marginTop: '10px' } : safetyTipsListStyle}>
+                {getSafetyTips().map((tip, index) => (
+                  <div key={index} style={safetyTipItemStyle}>
+                    <span style={safetyTipBulletStyle}>•</span>
+                    <span style={safetyTipTextStyle}>{tip}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -605,6 +621,43 @@ const WeatherWidget = ({
           <div style={hourlyContainerStyle}>
             <h4 style={forecastTitleStyle}>⏰ {t('today_hourly_forecast')}</h4>
             {selectedHourlyForecast ? (
+              compact ? (
+                <div style={selectedHourlyStripStyle}>
+                  <span style={selectedHourlyLabelStyle}>{t('weather_selected_time')}</span>
+                  <strong style={selectedHourlyTimeStyle}>{selectedHourlyForecast.time} {t('today')}</strong>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    {(() => {
+                      const iconResult = getWeatherIcon(selectedHourlyForecast.condition, selectedHourlyForecast.iconCode);
+                      const isImageUrl = typeof iconResult === 'string' && iconResult.startsWith('http');
+                      return isImageUrl ? (
+                        <img
+                          src={iconResult}
+                          alt={selectedHourlyForecast.condition}
+                          style={{ width: '26px', height: '26px', objectFit: 'contain' }}
+                        />
+                      ) : (
+                        <span style={{ fontSize: '1.2rem' }}>{iconResult}</span>
+                      );
+                    })()}
+                    <strong style={{ fontSize: '1rem', color: 'var(--ww-strong)' }}>{selectedHourlyForecast.temperature}°C</strong>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--ww-muted)', textTransform: 'capitalize' }}>{selectedHourlyForecast.description}</span>
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--ww-detail)' }}>
+                    {t('wind')}: {selectedHourlyForecast.windSpeed} m/s · {t('humidity')}: {selectedHourlyForecast.humidity}%
+                  </span>
+                  <select
+                    value={selectedHourlyTime}
+                    onChange={(e) => setSelectedHourlyTime(e.target.value)}
+                    style={{ ...selectedHourlySelectStyle, marginLeft: 'auto', minWidth: '96px', padding: '6px 8px', fontSize: '0.85rem' }}
+                  >
+                    {forecast.hourlyToday.map((hour) => (
+                      <option key={hour.time} value={hour.time}>
+                        {hour.time}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
               <div style={selectedHourlyCardStyle}>
                 <div style={selectedHourlyHeaderStyle}>
                   <div>
@@ -649,6 +702,7 @@ const WeatherWidget = ({
                   </div>
                 </div>
               </div>
+              )
             ) : (
               <div style={{ color: 'var(--ww-faint)', fontSize: '0.9rem' }}>
                 {t('no_hourly_forecast_today')}
@@ -700,7 +754,7 @@ const WeatherWidget = ({
         {showForecast && forecast && (
           <div style={horizontal ? { ...forecastContainerStyle, marginTop: '8px' } : forecastContainerStyle}>
             <h4 style={horizontal ? { ...forecastTitleStyle, fontSize: '0.85rem', marginBottom: '8px' } : forecastTitleStyle}>📅 {t('forecast_7_day')}</h4>
-            <div style={horizontal ? { ...forecastListStyle, flexDirection: 'row', gap: '6px', overflowX: 'auto', paddingBottom: '4px' } : forecastListStyle}>
+            <div style={horizontal ? { ...forecastListStyle, flexDirection: 'row', gap: '6px', overflowX: 'auto', paddingBottom: '4px' } : compact ? { ...forecastListStyle, flexDirection: 'row', flexWrap: 'wrap', gap: '8px' } : forecastListStyle}>
               {forecast.forecast && Array.isArray(forecast.forecast) ? (
                 forecast.forecast.slice(0, 7).map((day, index) => {
                   const date = day.datetime ? new Date(day.datetime) : new Date();
@@ -710,7 +764,7 @@ const WeatherWidget = ({
                   
                   const dayName = utcDate.toLocaleDateString(language === 'zh' ? 'zh-CN' : language, { weekday: 'short' }).toUpperCase();
                   
-                  if (horizontal) {
+                  if (horizontal || compact) {
                     return (
                       <div key={index} style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px',
@@ -945,6 +999,22 @@ const safetyTipsTitleStyle = {
   color: 'var(--ww-strong)'
 };
 
+const safetyTipsToggleStyle = {
+  width: '100%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '8px',
+  background: 'transparent',
+  border: 'none',
+  padding: 0,
+  margin: 0,
+  cursor: 'pointer',
+  font: 'inherit',
+  color: 'inherit',
+  textAlign: 'left'
+};
+
 const safetyTipsListStyle = {
   display: 'flex',
   flexDirection: 'column',
@@ -1154,6 +1224,19 @@ const hourlyListStyle = {
 const selectedHourlyCardStyle = {
   marginBottom: '14px',
   padding: '14px',
+  borderRadius: '12px',
+  backgroundColor: 'var(--ww-elevated)',
+  border: '1px solid var(--ww-tip-border)',
+  boxShadow: '0 2px 10px rgba(15, 23, 42, 0.05)'
+};
+
+const selectedHourlyStripStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  flexWrap: 'wrap',
+  gap: '8px 14px',
+  padding: '10px 12px',
+  marginBottom: '14px',
   borderRadius: '12px',
   backgroundColor: 'var(--ww-elevated)',
   border: '1px solid var(--ww-tip-border)',

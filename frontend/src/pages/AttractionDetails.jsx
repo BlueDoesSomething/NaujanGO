@@ -856,13 +856,14 @@ const AttractionDetails = () => {
               showAlerts
               showSafetyTips
               size="large"
+              compact
               theme={isDark ? 'dark' : 'light'}
             />
           </div>
         </section>
 
         <div className="ad-span-1 ad-stack">
-          <section className="ad-eco-card ad-stack-fill">
+          <section className="ad-eco-card">
             <h3><LeafIcon size={18} className="ad-title-icon" />Eco-friendly spot</h3>
             <p>Help preserve {attraction.name}. Carry in, carry out — leave only footprints, take only memories.</p>
             <div className="ad-eco-tags">
