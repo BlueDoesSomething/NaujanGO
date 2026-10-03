@@ -48,21 +48,6 @@
   margin-bottom: 1rem;
 }
 
-/* Circled leaf logo mark (mirrors prototype footer) */
-.footer-logo-mark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #22c55e, #047857);
-  border: 1px solid rgba(74, 222, 128, 0.35);
-  color: #ffffff;
-  flex-shrink: 0;
-  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
-}
-
 .footer-brand-name {
   font-size: var(--font-size-h3, 1.5rem);
   font-weight: var(--font-heading-weight, 800);
@@ -425,10 +410,6 @@
   
   .footer-brand-name {
     font-size: 24px;
-  }
-  
-  .footer-logo-icon {
-    font-size: 32px;
   }
   
   .social-links {
