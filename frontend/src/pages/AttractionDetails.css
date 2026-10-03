@@ -344,21 +344,40 @@
   border-color: rgba(16, 185, 129, 0.55);
 }
 
-/* ── LAYOUT ───────────────────────────────────────── */
+/* ── LAYOUT (balanced bento grid) ─────────────────── */
 .ad-layout {
   max-width: 1260px;
-  margin: 20px auto 0;
+  margin: 16px auto 0;
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
   padding: 0 14px;
+  align-items: stretch;
 }
 
-.ad-main-column,
-.ad-sidebar-column {
+.ad-span-1 {
+  min-width: 0;
+}
+
+.ad-span-2 {
+  grid-column: span 2;
+  min-width: 0;
+}
+
+.ad-span-3 {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.ad-stack {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
+  min-width: 0;
+}
+
+.ad-stack-fill {
+  flex: 1;
 }
 
 .ad-card {
@@ -369,23 +388,18 @@
 }
 
 .ad-section {
-  padding: 24px;
+  padding: 18px;
   animation: adFadeUp 460ms ease both;
 }
 
 .ad-section h2,
-.ad-sidebar-column h3 {
+.ad-section h3 {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: 800;
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.ad-section h3 {
-  margin: 0 0 8px;
-  font-size: 1rem;
 }
 
 .ad-title-icon {
@@ -458,16 +472,37 @@
 }
 
 /* ── REVIEWS ──────────────────────────────────────── */
+.ad-rating-card {
+  display: flex;
+  flex-direction: column;
+}
+
 .ad-rating-summary {
-  display: grid;
-  grid-template-columns: 200px minmax(0, 1fr);
-  gap: 20px;
-  align-items: center;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 18px 20px;
-  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+
+.ad-review-cta--outline {
+  width: 100%;
+  justify-content: center;
+  margin-top: 16px;
+  background: transparent;
+  border: 2px solid #10b981;
+  color: #059669;
+  box-shadow: none;
+}
+
+.ad-review-cta--outline:hover {
+  background: rgba(16, 185, 129, 0.08);
+  box-shadow: none;
+}
+
+.ad-review-cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .ad-rating-score {
@@ -692,15 +727,9 @@
   color: #10b981;
 }
 
-/* ── SIDEBAR ──────────────────────────────────────── */
-.ad-quick-panel {
-  padding: 20px;
-  position: sticky;
-  top: 96px;
-}
-
+/* ── BENTO SIDE CARDS ─────────────────────────────── */
 .ad-quick-panel h3 {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .ad-info-list {
@@ -753,7 +782,7 @@
 
 .ad-eco-card {
   border-radius: 18px;
-  padding: 22px;
+  padding: 18px;
   background: linear-gradient(135deg, #10b981, #0f766e);
   color: #ffffff;
   box-shadow: 0 14px 30px rgba(16, 185, 129, 0.28);
@@ -762,6 +791,11 @@
 .ad-eco-card h3 {
   margin: 0 0 8px;
   color: #ffffff;
+  font-size: 1rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .ad-eco-card .ad-title-icon {
@@ -793,12 +827,8 @@
   padding: 6px 12px;
 }
 
-.ad-share-card {
-  padding: 20px;
-}
-
 .ad-share-card h3 {
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .ad-share-grid {
@@ -1120,11 +1150,6 @@
   border-color: #334155;
 }
 
-[data-theme="dark"] .ad-rating-summary {
-  background: rgba(15, 23, 42, 0.6);
-  border-color: #334155;
-}
-
 [data-theme="dark"] .ad-rating-avg {
   color: #34d399;
 }
@@ -1220,6 +1245,16 @@
   border-color: #475569;
 }
 
+[data-theme="dark"] .ad-review-cta--outline {
+  background: transparent;
+  border-color: #34d399;
+  color: #34d399;
+}
+
+[data-theme="dark"] .ad-review-cta--outline:hover {
+  background: rgba(52, 211, 153, 0.12);
+}
+
 [data-theme="dark"] .ad-modal {
   background: #1e293b;
   border-color: #334155;
@@ -1284,11 +1319,12 @@
    ══════════════════════════════════════════════════ */
 @media (max-width: 1024px) {
   .ad-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .ad-quick-panel {
-    position: static;
+  .ad-span-2,
+  .ad-span-3 {
+    grid-column: auto;
   }
 
   .ad-gallery-main {
@@ -1321,12 +1357,6 @@
   }
 
   .ad-section {
-    padding: 16px;
-  }
-
-  .ad-rating-summary {
-    grid-template-columns: 1fr;
-    gap: 14px;
     padding: 16px;
   }
 

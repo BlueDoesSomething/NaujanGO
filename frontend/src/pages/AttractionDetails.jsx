@@ -758,257 +758,111 @@ const AttractionDetails = () => {
       </section>
 
       <main className="ad-layout">
-        <div className="ad-main-column">
-          <section className="ad-card ad-section">
-            <div className="ad-section-title-wrap">
-              <h2>{t('about_destination')}</h2>
-              {attraction.description?.length > DESCRIPTION_PREVIEW && (
-                <button
-                  type="button"
-                  className="ad-link-btn"
-                  onClick={() => setDescriptionExpanded((prev) => !prev)}
-                >
-                  {descriptionExpanded ? 'Show less' : 'Read more'}
-                </button>
-              )}
-            </div>
-            <p className="ad-body-text">{descriptionExpanded ? attraction.description : shortDescription}</p>
-            <div className="ad-highlight-box">
-              <LightbulbIcon size={18} className="ad-highlight-icon" />
-              <p><strong>Travel tip:</strong> Start early in the day to avoid crowds and bring hydration, sunscreen, and cash for local fees.</p>
-            </div>
-          </section>
-
-          <section className="ad-card ad-section">
-            <div className="ad-section-title-wrap">
-              <h2><CloudSunIcon size={18} className="ad-title-icon" />Weather &amp; trail conditions</h2>
-            </div>
-            <div className="ad-weather-wrap">
-              <WeatherWidget
-                attractionId={attraction.id}
-                latitude={toNumber(attraction.latitude) || 13.3333}
-                longitude={toNumber(attraction.longitude) || 121.3}
-                locationName={attraction.name}
-                showForecast
-                showAlerts
-                showSafetyTips
-                size="large"
-                theme={isDark ? 'dark' : 'light'}
-              />
-            </div>
-          </section>
-
-          <section className="ad-card ad-section" id="map-section">
-            <div className="ad-map-header">
-              <h2><MapPinIcon size={18} className="ad-title-icon" />Map &amp; directions</h2>
-              <a
-                className="ad-link-btn"
-                href={`https://www.google.com/maps/search/?api=1&query=${attraction.latitude},${attraction.longitude}`}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Get Directions
-              </a>
-            </div>
-            <LeafletMap
-              center={[toNumber(attraction.latitude) || 13.3333, toNumber(attraction.longitude) || 121.3]}
-              zoom={14}
-              markers={mapMarkers}
-              style={{ height: 390, borderRadius: 14 }}
-            />
-          </section>
-
-          <section className="ad-card ad-section">
-            <div className="ad-section-title-wrap">
-              <h2>Visitor reviews</h2>
+        <section className="ad-card ad-section ad-span-2">
+          <div className="ad-section-title-wrap">
+            <h2>{t('about_destination')}</h2>
+            {attraction.description?.length > DESCRIPTION_PREVIEW && (
               <button
                 type="button"
-                className="ad-review-cta"
-                onClick={handleOpenReviewModal}
-                disabled={eligibleItineraries.length === 0}
-                style={{
-                  opacity: eligibleItineraries.length === 0 ? 0.6 : 1,
-                  cursor: eligibleItineraries.length === 0 ? 'not-allowed' : 'pointer'
-                }}
+                className="ad-link-btn"
+                onClick={() => setDescriptionExpanded((prev) => !prev)}
               >
-                {eligibleItineraries.length > 0 ? 'Leave a Review' : 'Complete a Trip to Review'}
+                {descriptionExpanded ? 'Show less' : 'Read more'}
               </button>
-            </div>
-
-            {ratingStats && (
-              <div className="ad-rating-summary">
-                <div className="ad-rating-score">
-                  <p className="ad-rating-avg">{ratingStats.avg}</p>
-                  <div className="ad-rating-stars">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <StarIcon
-                        key={star}
-                        size={16}
-                        filled
-                        className={star <= Math.round(Number(ratingStats.avg)) ? 'is-on' : ''}
-                      />
-                    ))}
-                  </div>
-                  <p className="ad-rating-count">Based on {ratingStats.total} {ratingStats.total === 1 ? 'review' : 'reviews'}</p>
-                </div>
-                <div className="ad-rating-bars">
-                  {[5, 4, 3, 2, 1].map((star) => (
-                    <div className="ad-rating-bar-row" key={star}>
-                      <span>{star}★</span>
-                      <div className="ad-rating-bar">
-                        <div
-                          className="ad-rating-bar-fill"
-                          style={{ width: `${(ratingStats.counts[star] / ratingStats.total) * 100}%` }}
-                        />
-                      </div>
-                      <span className="ad-rating-bar-count">{ratingStats.counts[star]}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
             )}
+          </div>
+          <p className="ad-body-text">{descriptionExpanded ? attraction.description : shortDescription}</p>
+          <div className="ad-highlight-box">
+            <LightbulbIcon size={18} className="ad-highlight-icon" />
+            <p><strong>Travel tip:</strong> Start early in the day to avoid crowds and bring hydration, sunscreen, and cash for local fees.</p>
+          </div>
+        </section>
 
-            {reviews.length === 0 ? (
-              <p className="ad-muted">No reviews yet. Be the first to share your experience.</p>
-            ) : (
-              <div className="ad-review-list">
-                {reviews.slice(0, 6).map((review) => (
-                  <article key={review.review_id} className="ad-review-card">
-                    <div className="ad-review-top">
-                      <div className="ad-reviewer">
-                        <span className="ad-review-avatar">
-                          {String(review.user_id || 'G').slice(0, 2).toUpperCase()}
-                        </span>
-                        <div>
-                          <strong>Traveler #{review.user_id || 'Guest'}</strong>
-                          <time>{review.review_date ? new Date(review.review_date).toLocaleDateString() : 'Recently'}</time>
-                        </div>
-                      </div>
-                      <span className="ad-rating-pill">{Number(review.rating || 0).toFixed(1)}/5</span>
-                    </div>
-                    <p>{review.comment || 'No written comment.'}</p>
-                  </article>
-                ))}
+        <section className="ad-card ad-section ad-span-1 ad-quick-panel">
+          <h3><InfoIcon size={18} className="ad-title-icon" />{t('quick_information')}</h3>
+          <ul className="ad-info-list">
+            <li>
+              <span className="ad-info-icon"><MapPinIcon size={16} /></span>
+              <div>
+                <p className="ad-info-label">{t('municipality')}</p>
+                <p className="ad-info-value">{formatLabel(attraction.municipality, t('not_available'))}</p>
               </div>
+            </li>
+            <li>
+              <span className="ad-info-icon"><MountainIcon size={16} /></span>
+              <div>
+                <p className="ad-info-label">{t('category')}</p>
+                <p className="ad-info-value">{formatLabel(attraction.category, t('not_available'))}</p>
+              </div>
+            </li>
+            <li>
+              <span className="ad-info-icon"><ClockIcon size={16} /></span>
+              <div>
+                <p className="ad-info-label">{t('opening_hours')}</p>
+                <p className="ad-info-value">{formatLabel(attraction.hours || attraction.opening_hours, t('not_available'))}</p>
+              </div>
+            </li>
+            <li>
+              <span className="ad-info-icon"><MoneyIcon size={16} /></span>
+              <div>
+                <p className="ad-info-label">{t('entrance_fee')}</p>
+                <p className="ad-info-value">{formatLabel(attraction.entrance_fee || attraction.fee ? `PHP ${attraction.entrance_fee || attraction.fee}` : '', t('not_available'))}</p>
+              </div>
+            </li>
+            <li>
+              <span className="ad-info-icon"><CalendarIcon size={16} /></span>
+              <div>
+                <p className="ad-info-label">{t('visit_duration')}</p>
+                <p className="ad-info-value">{formatLabel(attraction.visit_duration || t('approx_2_3_hours'), t('not_available'))}</p>
+              </div>
+            </li>
+            <li>
+              <span className="ad-info-icon"><SunIcon size={16} /></span>
+              <div>
+                <p className="ad-info-label">{t('best_time')}</p>
+                <p className="ad-info-value">{formatLabel(attraction.best_time_to_visit || t('early_morning'), t('not_available'))}</p>
+              </div>
+            </li>
+            <li>
+              <span className="ad-info-icon"><RouteIcon size={16} /></span>
+              <div>
+                <p className="ad-info-label">{t('difficulty')}</p>
+                <p className="ad-info-value">{formatLabel(attraction.difficulty_level || t('easy_to_moderate'), t('not_available'))}</p>
+              </div>
+            </li>
+            {travelFromUser && (
+              <li>
+                <span className="ad-info-icon"><LocationIcon size={16} /></span>
+                <div>
+                  <p className="ad-info-label">From your location</p>
+                  <p className="ad-info-value">{travelFromUser.distanceKm} km (~{travelFromUser.minutes} min)</p>
+                </div>
+              </li>
             )}
-          </section>
+          </ul>
+        </section>
 
-          <section className="ad-card ad-section">
-            <div className="ad-section-title-wrap">
-              <h2><CompassIcon size={18} className="ad-title-icon" />Nearby recommendations</h2>
-            </div>
-            <div className="ad-nearby-grid">
-              <div className="ad-nearby-col">
-                <h3>Similar attractions</h3>
-                <div className="ad-mini-list">
-                  {nearbyAttractions.length === 0 && <p className="ad-muted">No nearby attractions found.</p>}
-                  {nearbyAttractions.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      className="ad-mini-card"
-                      onClick={() => navigate(`/attractions/${item.id}`, { state: { attraction: item } })}
-                    >
-                      <img src={item.image_url || FALLBACK_IMAGE} alt={item.name} loading="lazy" />
-                      <div>
-                        <strong>{item.name}</strong>
-                        <p>
-                          <MapPinIcon size={13} />
-                          {item.distanceKm ? `${item.distanceKm.toFixed(1)} km away` : formatLabel(item.location)}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="ad-nearby-col">
-                <h3>{t('nearby_hotels')}</h3>
-                <div className="ad-mini-list">
-                  {nearbyHotels.length === 0 && <p className="ad-muted">{t('no_nearby_hotels')}</p>}
-                  {nearbyHotels.map((hotel) => (
-                    <article key={hotel.hotel_id || hotel.id} className="ad-mini-card static-card">
-                      <img src={hotel.image_url || FALLBACK_IMAGE} alt={hotel.name || 'Hotel'} loading="lazy" />
-                      <div>
-                        <strong>{hotel.name || 'Hotel'}</strong>
-                        <p>
-                          <HotelIcon size={13} />
-                          {hotel.distanceKm ? `${hotel.distanceKm.toFixed(1)} km away` : formatLabel(hotel.address || hotel.location)}
-                        </p>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
-        </div>
+        <section className="ad-card ad-section ad-span-2">
+          <div className="ad-section-title-wrap">
+            <h2><CloudSunIcon size={18} className="ad-title-icon" />Weather &amp; trail conditions</h2>
+          </div>
+          <div className="ad-weather-wrap">
+            <WeatherWidget
+              attractionId={attraction.id}
+              latitude={toNumber(attraction.latitude) || 13.3333}
+              longitude={toNumber(attraction.longitude) || 121.3}
+              locationName={attraction.name}
+              showForecast
+              showAlerts
+              showSafetyTips
+              size="large"
+              theme={isDark ? 'dark' : 'light'}
+            />
+          </div>
+        </section>
 
-        <aside className="ad-sidebar-column">
-          <section className="ad-card ad-quick-panel">
-            <h3><InfoIcon size={18} className="ad-title-icon" />{t('quick_information')}</h3>
-            <ul className="ad-info-list">
-              <li>
-                <span className="ad-info-icon"><MapPinIcon size={16} /></span>
-                <div>
-                  <p className="ad-info-label">{t('municipality')}</p>
-                  <p className="ad-info-value">{formatLabel(attraction.municipality, t('not_available'))}</p>
-                </div>
-              </li>
-              <li>
-                <span className="ad-info-icon"><MountainIcon size={16} /></span>
-                <div>
-                  <p className="ad-info-label">{t('category')}</p>
-                  <p className="ad-info-value">{formatLabel(attraction.category, t('not_available'))}</p>
-                </div>
-              </li>
-              <li>
-                <span className="ad-info-icon"><ClockIcon size={16} /></span>
-                <div>
-                  <p className="ad-info-label">{t('opening_hours')}</p>
-                  <p className="ad-info-value">{formatLabel(attraction.hours || attraction.opening_hours, t('not_available'))}</p>
-                </div>
-              </li>
-              <li>
-                <span className="ad-info-icon"><MoneyIcon size={16} /></span>
-                <div>
-                  <p className="ad-info-label">{t('entrance_fee')}</p>
-                  <p className="ad-info-value">{formatLabel(attraction.entrance_fee || attraction.fee ? `PHP ${attraction.entrance_fee || attraction.fee}` : '', t('not_available'))}</p>
-                </div>
-              </li>
-              <li>
-                <span className="ad-info-icon"><CalendarIcon size={16} /></span>
-                <div>
-                  <p className="ad-info-label">{t('visit_duration')}</p>
-                  <p className="ad-info-value">{formatLabel(attraction.visit_duration || t('approx_2_3_hours'), t('not_available'))}</p>
-                </div>
-              </li>
-              <li>
-                <span className="ad-info-icon"><SunIcon size={16} /></span>
-                <div>
-                  <p className="ad-info-label">{t('best_time')}</p>
-                  <p className="ad-info-value">{formatLabel(attraction.best_time_to_visit || t('early_morning'), t('not_available'))}</p>
-                </div>
-              </li>
-              <li>
-                <span className="ad-info-icon"><RouteIcon size={16} /></span>
-                <div>
-                  <p className="ad-info-label">{t('difficulty')}</p>
-                  <p className="ad-info-value">{formatLabel(attraction.difficulty_level || t('easy_to_moderate'), t('not_available'))}</p>
-                </div>
-              </li>
-              {travelFromUser && (
-                <li>
-                  <span className="ad-info-icon"><LocationIcon size={16} /></span>
-                  <div>
-                    <p className="ad-info-label">From your location</p>
-                    <p className="ad-info-value">{travelFromUser.distanceKm} km (~{travelFromUser.minutes} min)</p>
-                  </div>
-                </li>
-              )}
-            </ul>
-          </section>
-
-          <section className="ad-eco-card">
+        <div className="ad-span-1 ad-stack">
+          <section className="ad-eco-card ad-stack-fill">
             <h3><LeafIcon size={18} className="ad-title-icon" />Eco-friendly spot</h3>
             <p>Help preserve {attraction.name}. Carry in, carry out — leave only footprints, take only memories.</p>
             <div className="ad-eco-tags">
@@ -1017,7 +871,7 @@ const AttractionDetails = () => {
             </div>
           </section>
 
-          <section className="ad-card ad-share-card">
+          <section className="ad-card ad-section ad-share-card">
             <h3>Share this destination</h3>
             <div className="ad-share-grid">
               <a className="is-facebook" href={socialLinks.facebook} target="_blank" rel="noreferrer">
@@ -1034,7 +888,161 @@ const AttractionDetails = () => {
               </button>
             </div>
           </section>
-        </aside>
+        </div>
+
+        <section className="ad-card ad-section ad-span-3" id="map-section">
+          <div className="ad-map-header">
+            <h2><MapPinIcon size={18} className="ad-title-icon" />Map &amp; directions</h2>
+            <a
+              className="ad-link-btn"
+              href={`https://www.google.com/maps/search/?api=1&query=${attraction.latitude},${attraction.longitude}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              Get Directions
+            </a>
+          </div>
+          <LeafletMap
+            center={[toNumber(attraction.latitude) || 13.3333, toNumber(attraction.longitude) || 121.3]}
+            zoom={14}
+            markers={mapMarkers}
+            style={{ height: 340, borderRadius: 14 }}
+          />
+        </section>
+
+        <section className="ad-card ad-section ad-span-2">
+          <div className="ad-section-title-wrap">
+            <h2>Visitor reviews</h2>
+            <button
+              type="button"
+              className="ad-review-cta"
+              onClick={handleOpenReviewModal}
+              disabled={eligibleItineraries.length === 0}
+              style={{
+                opacity: eligibleItineraries.length === 0 ? 0.6 : 1,
+                cursor: eligibleItineraries.length === 0 ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {eligibleItineraries.length > 0 ? 'Leave a Review' : 'Complete a Trip to Review'}
+            </button>
+          </div>
+
+          {reviews.length === 0 ? (
+            <p className="ad-muted">No reviews yet. Be the first to share your experience.</p>
+          ) : (
+            <div className="ad-review-list">
+              {reviews.slice(0, 6).map((review) => (
+                <article key={review.review_id} className="ad-review-card">
+                  <div className="ad-review-top">
+                    <div className="ad-reviewer">
+                      <span className="ad-review-avatar">
+                        {String(review.user_id || 'G').slice(0, 2).toUpperCase()}
+                      </span>
+                      <div>
+                        <strong>Traveler #{review.user_id || 'Guest'}</strong>
+                        <time>{review.review_date ? new Date(review.review_date).toLocaleDateString() : 'Recently'}</time>
+                      </div>
+                    </div>
+                    <span className="ad-rating-pill">{Number(review.rating || 0).toFixed(1)}/5</span>
+                  </div>
+                  <p>{review.comment || 'No written comment.'}</p>
+                </article>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="ad-card ad-section ad-span-1 ad-rating-card">
+          {ratingStats && (
+            <div className="ad-rating-summary">
+              <div className="ad-rating-score">
+                <p className="ad-rating-avg">{ratingStats.avg}</p>
+                <div className="ad-rating-stars">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <StarIcon
+                      key={star}
+                      size={16}
+                      filled
+                      className={star <= Math.round(Number(ratingStats.avg)) ? 'is-on' : ''}
+                    />
+                  ))}
+                </div>
+                <p className="ad-rating-count">Based on {ratingStats.total} {ratingStats.total === 1 ? 'review' : 'reviews'}</p>
+              </div>
+              <div className="ad-rating-bars">
+                {[5, 4, 3, 2, 1].map((star) => (
+                  <div className="ad-rating-bar-row" key={star}>
+                    <span>{star}★</span>
+                    <div className="ad-rating-bar">
+                      <div
+                        className="ad-rating-bar-fill"
+                        style={{ width: `${(ratingStats.counts[star] / ratingStats.total) * 100}%` }}
+                      />
+                    </div>
+                    <span className="ad-rating-bar-count">{ratingStats.counts[star]}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <button
+            type="button"
+            className="ad-review-cta ad-review-cta--outline"
+            onClick={handleOpenReviewModal}
+            disabled={eligibleItineraries.length === 0}
+          >
+            {eligibleItineraries.length > 0 ? 'Write a review' : 'Complete a Trip to Review'}
+          </button>
+        </section>
+
+        <section className="ad-card ad-section ad-span-3">
+          <div className="ad-section-title-wrap">
+            <h2><CompassIcon size={18} className="ad-title-icon" />Nearby recommendations</h2>
+          </div>
+          <div className="ad-nearby-grid">
+            <div className="ad-nearby-col">
+              <h3>Similar attractions</h3>
+              <div className="ad-mini-list">
+                {nearbyAttractions.length === 0 && <p className="ad-muted">No nearby attractions found.</p>}
+                {nearbyAttractions.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className="ad-mini-card"
+                    onClick={() => navigate(`/attractions/${item.id}`, { state: { attraction: item } })}
+                  >
+                    <img src={item.image_url || FALLBACK_IMAGE} alt={item.name} loading="lazy" />
+                    <div>
+                      <strong>{item.name}</strong>
+                      <p>
+                        <MapPinIcon size={13} />
+                        {item.distanceKm ? `${item.distanceKm.toFixed(1)} km away` : formatLabel(item.location)}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="ad-nearby-col">
+              <h3>{t('nearby_hotels')}</h3>
+              <div className="ad-mini-list">
+                {nearbyHotels.length === 0 && <p className="ad-muted">{t('no_nearby_hotels')}</p>}
+                {nearbyHotels.map((hotel) => (
+                  <article key={hotel.hotel_id || hotel.id} className="ad-mini-card static-card">
+                    <img src={hotel.image_url || FALLBACK_IMAGE} alt={hotel.name || 'Hotel'} loading="lazy" />
+                    <div>
+                      <strong>{hotel.name || 'Hotel'}</strong>
+                      <p>
+                        <HotelIcon size={13} />
+                        {hotel.distanceKm ? `${hotel.distanceKm.toFixed(1)} km away` : formatLabel(hotel.address || hotel.location)}
+                      </p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       {fullscreenImage && (
