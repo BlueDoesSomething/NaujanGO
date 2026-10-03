@@ -2,13 +2,62 @@ import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { fetchAttractionHeroSettings, fetchAttractions, fetchHotels, fetchReviews, fetchUserItineraries, submitReview } from '../api';
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import LeafletMap from '../components/LeafletMap';
 import WeatherWidget from '../components/WeatherWidget';
+import {
+  ArrowUpRightIcon,
+  CalendarIcon,
+  CameraIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ClockIcon,
+  CloudSunIcon,
+  CompassIcon,
+  HeartIcon,
+  HotelIcon,
+  InfoIcon,
+  LeafIcon,
+  LightbulbIcon,
+  LocationIcon,
+  MapIcon,
+  MapPinIcon,
+  MoneyIcon,
+  MountainIcon,
+  PlusIcon,
+  RouteIcon,
+  StarIcon,
+  SunIcon
+} from '../components/Icons';
 import { loadCachedSetting, saveCachedSetting } from '../utils/siteSettingsCache';
 import './AttractionDetails.css';
 
 const FALLBACK_IMAGE = '/placeholder-attraction.svg';
 const DESCRIPTION_PREVIEW = 320;
+
+const ShareIcon = ({ size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <circle cx="18" cy="5" r="3" />
+    <circle cx="6" cy="12" r="3" />
+    <circle cx="18" cy="19" r="3" />
+    <path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98" />
+  </svg>
+);
+
+const FacebookIcon = ({ size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+    <path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.87.24-1.46 1.49-1.46H16.6V4.46A20.4 20.4 0 0014.3 4.3c-2.3 0-3.81.4-3.8 4v2.2H8v3h2.5V21z" />
+  </svg>
+);
+
+const InstagramIcon = ({ size = 18 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <rect x="3" y="3" width="18" height="18" rx="5" />
+    <circle cx="12" cy="12" r="4" />
+    <circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 const DEFAULT_ATTRACTION_HERO = {
   backButtonLabel: 'back',
   heroMinHeightDesktop: 480,
@@ -25,17 +74,17 @@ const DEFAULT_ATTRACTION_HERO = {
   heroMetaTextColor: '#ecfeff',
   heroKickerColor: '#dcfce7',
   heroBadgeTextColor: '#ecfdf5',
-  backButtonTextColor: '#0f172a',
+  backButtonTextColor: '#ffffff',
   backButtonBgColor: '#ffffff',
-  backButtonTransparent: false,
-  primaryButtonColor: '#16a34a',
+  backButtonTransparent: true,
+  primaryButtonColor: '#10b981',
   primaryButtonTextColor: '#ffffff',
   primaryButtonTransparent: false,
   secondaryButtonColor: '#ffffff',
-  secondaryButtonTextColor: '#111827',
-  secondaryButtonTransparent: false,
-  tertiaryButtonColor: '#0f172a',
-  tertiaryButtonTextColor: '#ecfeff',
+  secondaryButtonTextColor: '#ffffff',
+  secondaryButtonTransparent: true,
+  tertiaryButtonColor: '#ffffff',
+  tertiaryButtonTextColor: '#ffffff',
   tertiaryButtonTransparent: true
 };
 
@@ -107,6 +156,8 @@ const AttractionDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const themeContext = useTheme();
+  const isDark = themeContext?.isDark ?? false;
   const { id } = useParams();
 
   const [attraction, setAttraction] = useState(location.state?.attraction || null);
@@ -374,6 +425,49 @@ const AttractionDetails = () => {
     return `${attraction.description.slice(0, DESCRIPTION_PREVIEW)}...`;
   }, [attraction?.description]);
 
+  const ratingStats = useMemo(() => {
+    const total = reviews.length;
+    if (!total) return null;
+    const counts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    let sum = 0;
+    reviews.forEach((review) => {
+      const value = Number(review.rating || 0);
+      sum += value;
+      const bucket = Math.round(value);
+      if (counts[bucket] !== undefined) counts[bucket] += 1;
+    });
+    return { total, avg: (sum / total).toFixed(1), counts };
+  }, [reviews]);
+
+  const socialLinks = useMemo(() => {
+    const settings = loadCachedSetting('footer-settings') || {};
+    return {
+      facebook: settings.facebook || '#',
+      instagram: settings.instagram || '#'
+    };
+  }, []);
+
+  const showPreviousImage = () => {
+    setGalleryIndex((current) => (current - 1 + gallery.length) % gallery.length);
+  };
+
+  const showNextImage = () => {
+    setGalleryIndex((current) => (current + 1) % gallery.length);
+  };
+
+  useEffect(() => {
+    const handleGalleryKeys = (keyEvent) => {
+      const target = keyEvent.target;
+      const typing = target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
+      if (typing || showReviewModal || fullscreenImage) return;
+      if (keyEvent.key === 'ArrowLeft') showPreviousImage();
+      if (keyEvent.key === 'ArrowRight') showNextImage();
+    };
+
+    window.addEventListener('keydown', handleGalleryKeys);
+    return () => window.removeEventListener('keydown', handleGalleryKeys);
+  });
+
   const handleShare = async () => {
     if (!attraction) return;
     const url = `${window.location.origin}/attractions/${attraction.id}`;
@@ -552,16 +646,28 @@ const AttractionDetails = () => {
                 : (heroCustomization.backButtonBgColor || DEFAULT_ATTRACTION_HERO.backButtonBgColor)
             }}
           >
+            <ChevronLeftIcon size={15} />
             {heroCustomization.backButtonLabel || t('back')}
           </Link>
           <div className="ad-hero-content">
-            <p className="ad-badge" style={{ color: heroCustomization.heroBadgeTextColor || DEFAULT_ATTRACTION_HERO.heroBadgeTextColor }}>{popularityLabel}</p>
-            <p className="ad-kicker" style={{ color: heroCustomization.heroKickerColor || DEFAULT_ATTRACTION_HERO.heroKickerColor }}>{formatLabel(attraction.category, t('tourist_destination'))} • {formatLabel(attraction.municipality, 'Naujan')}</p>
+            <p className="ad-badge" style={{ color: heroCustomization.heroBadgeTextColor || DEFAULT_ATTRACTION_HERO.heroBadgeTextColor }}>
+              <ArrowUpRightIcon size={14} />
+              {popularityLabel}
+            </p>
+            <p className="ad-kicker" style={{ color: heroCustomization.heroKickerColor || DEFAULT_ATTRACTION_HERO.heroKickerColor }}>{formatLabel(attraction.category, t('tourist_destination'))} · {formatLabel(attraction.municipality, 'Naujan')}</p>
             <h1 style={{ color: heroCustomization.heroTitleColor || DEFAULT_ATTRACTION_HERO.heroTitleColor }}>{attraction.name}</h1>
             <div className="ad-hero-meta">
-              <span style={{ color: heroCustomization.heroMetaTextColor || DEFAULT_ATTRACTION_HERO.heroMetaTextColor }}>{t('rating')} {displayRating}/5</span>
-              <span style={{ color: heroCustomization.heroMetaTextColor || DEFAULT_ATTRACTION_HERO.heroMetaTextColor }}>{Number(attraction.review_count || 0)} {t('reviews')}</span>
-              <span style={{ color: heroCustomization.heroMetaTextColor || DEFAULT_ATTRACTION_HERO.heroMetaTextColor }}>{formatLabel(attraction.location)}</span>
+              <span style={{ color: heroCustomization.heroMetaTextColor || DEFAULT_ATTRACTION_HERO.heroMetaTextColor }}>
+                <StarIcon size={14} filled className="ad-meta-star" />
+                {t('rating')} {displayRating}/5
+              </span>
+              <span style={{ color: heroCustomization.heroMetaTextColor || DEFAULT_ATTRACTION_HERO.heroMetaTextColor }}>
+                {Number(attraction.review_count || 0)} {t('reviews')}
+              </span>
+              <span style={{ color: heroCustomization.heroMetaTextColor || DEFAULT_ATTRACTION_HERO.heroMetaTextColor }}>
+                <MapPinIcon size={14} className="ad-meta-pin" />
+                {formatLabel(attraction.location)}
+              </span>
             </div>
             <div className="ad-hero-actions">
               <button
@@ -570,6 +676,7 @@ const AttractionDetails = () => {
                 style={buttonStyle(heroCustomization.primaryButtonColor, heroCustomization.primaryButtonTextColor, heroCustomization.primaryButtonTransparent)}
                 onClick={handleAddToItinerary}
               >
+                <PlusIcon size={16} />
                 {heroCustomization.addToItineraryText || t('add_to_itinerary')}
               </button>
               <button
@@ -578,6 +685,7 @@ const AttractionDetails = () => {
                 style={buttonStyle(heroCustomization.secondaryButtonColor, heroCustomization.secondaryButtonTextColor, heroCustomization.secondaryButtonTransparent)}
                 onClick={toggleFavorite}
               >
+                <HeartIcon size={16} filled={isSaved} />
                 {isSaved
                   ? (heroCustomization.savedToFavoritesText || t('saved_to_favorites'))
                   : (heroCustomization.saveToFavoritesText || t('save_to_favorites'))}
@@ -588,6 +696,7 @@ const AttractionDetails = () => {
                 style={buttonStyle(heroCustomization.tertiaryButtonColor, heroCustomization.tertiaryButtonTextColor, heroCustomization.tertiaryButtonTransparent)}
                 onClick={handleShare}
               >
+                <ShareIcon size={16} />
                 {heroCustomization.shareText || t('share')}
               </button>
               <a
@@ -597,6 +706,7 @@ const AttractionDetails = () => {
                 target="_blank"
                 rel="noreferrer"
               >
+                <MapIcon size={16} />
                 {heroCustomization.viewOnMapText || t('view_on_map')}
               </a>
             </div>
@@ -604,20 +714,47 @@ const AttractionDetails = () => {
         </div>
       </section>
 
-      <section className="ad-gallery-strip ad-card">
-        {gallery.map((img, index) => (
+      <section className="ad-gallery ad-card">
+        <div className="ad-gallery-main">
+          <img
+            src={heroImage}
+            alt={attraction.name}
+            onClick={() => setFullscreenImage(heroImage)}
+          />
           <button
             type="button"
-            key={`${img}-${index}`}
-            className={`ad-gallery-thumb${index === galleryIndex ? ' is-active' : ''}`}
-            onClick={() => {
-              setGalleryIndex(index);
-              setFullscreenImage(img);
-            }}
+            className="ad-gallery-arrow is-prev"
+            aria-label="Previous photo"
+            onClick={showPreviousImage}
           >
-            <img src={img || FALLBACK_IMAGE} alt={`${attraction.name} ${index + 1}`} loading="lazy" />
+            <ChevronLeftIcon size={18} />
           </button>
-        ))}
+          <button
+            type="button"
+            className="ad-gallery-arrow is-next"
+            aria-label="Next photo"
+            onClick={showNextImage}
+          >
+            <ChevronRightIcon size={18} />
+          </button>
+          <span className="ad-gallery-counter">
+            <CameraIcon size={13} />
+            {galleryIndex + 1} / {gallery.length}
+          </span>
+        </div>
+        <div className="ad-gallery-thumbs">
+          {gallery.map((img, index) => (
+            <button
+              type="button"
+              key={`${img}-${index}`}
+              className={`ad-gallery-thumb${index === galleryIndex ? ' is-active' : ''}`}
+              onClick={() => setGalleryIndex(index)}
+              aria-label={`Show photo ${index + 1}`}
+            >
+              <img src={img || FALLBACK_IMAGE} alt={`${attraction.name} ${index + 1}`} loading="lazy" />
+            </button>
+          ))}
+        </div>
       </section>
 
       <main className="ad-layout">
@@ -637,11 +774,15 @@ const AttractionDetails = () => {
             </div>
             <p className="ad-body-text">{descriptionExpanded ? attraction.description : shortDescription}</p>
             <div className="ad-highlight-box">
-              <strong>Travel tip:</strong> Start early in the day to avoid crowds and bring hydration, sunscreen, and cash for local fees.
+              <LightbulbIcon size={18} className="ad-highlight-icon" />
+              <p><strong>Travel tip:</strong> Start early in the day to avoid crowds and bring hydration, sunscreen, and cash for local fees.</p>
             </div>
           </section>
 
           <section className="ad-card ad-section">
+            <div className="ad-section-title-wrap">
+              <h2><CloudSunIcon size={18} className="ad-title-icon" />Weather &amp; trail conditions</h2>
+            </div>
             <div className="ad-weather-wrap">
               <WeatherWidget
                 attractionId={attraction.id}
@@ -652,14 +793,14 @@ const AttractionDetails = () => {
                 showAlerts
                 showSafetyTips
                 size="large"
-                theme="light"
+                theme={isDark ? 'dark' : 'light'}
               />
             </div>
           </section>
 
           <section className="ad-card ad-section" id="map-section">
             <div className="ad-map-header">
-              <h2>Map and directions</h2>
+              <h2><MapPinIcon size={18} className="ad-title-icon" />Map &amp; directions</h2>
               <a
                 className="ad-link-btn"
                 href={`https://www.google.com/maps/search/?api=1&query=${attraction.latitude},${attraction.longitude}`}
@@ -678,16 +819,14 @@ const AttractionDetails = () => {
           </section>
 
           <section className="ad-card ad-section">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div className="ad-section-title-wrap">
               <h2>Visitor reviews</h2>
               <button
                 type="button"
-                className="ad-primary-btn"
+                className="ad-review-cta"
                 onClick={handleOpenReviewModal}
                 disabled={eligibleItineraries.length === 0}
                 style={{
-                  padding: '0.5rem 1rem',
-                  fontSize: '0.9rem',
                   opacity: eligibleItineraries.length === 0 ? 0.6 : 1,
                   cursor: eligibleItineraries.length === 0 ? 'not-allowed' : 'pointer'
                 }}
@@ -695,18 +834,59 @@ const AttractionDetails = () => {
                 {eligibleItineraries.length > 0 ? 'Leave a Review' : 'Complete a Trip to Review'}
               </button>
             </div>
+
+            {ratingStats && (
+              <div className="ad-rating-summary">
+                <div className="ad-rating-score">
+                  <p className="ad-rating-avg">{ratingStats.avg}</p>
+                  <div className="ad-rating-stars">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <StarIcon
+                        key={star}
+                        size={16}
+                        filled
+                        className={star <= Math.round(Number(ratingStats.avg)) ? 'is-on' : ''}
+                      />
+                    ))}
+                  </div>
+                  <p className="ad-rating-count">Based on {ratingStats.total} {ratingStats.total === 1 ? 'review' : 'reviews'}</p>
+                </div>
+                <div className="ad-rating-bars">
+                  {[5, 4, 3, 2, 1].map((star) => (
+                    <div className="ad-rating-bar-row" key={star}>
+                      <span>{star}★</span>
+                      <div className="ad-rating-bar">
+                        <div
+                          className="ad-rating-bar-fill"
+                          style={{ width: `${(ratingStats.counts[star] / ratingStats.total) * 100}%` }}
+                        />
+                      </div>
+                      <span className="ad-rating-bar-count">{ratingStats.counts[star]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {reviews.length === 0 ? (
               <p className="ad-muted">No reviews yet. Be the first to share your experience.</p>
             ) : (
-              <div className="ad-reviews-grid">
+              <div className="ad-review-list">
                 {reviews.slice(0, 6).map((review) => (
                   <article key={review.review_id} className="ad-review-card">
                     <div className="ad-review-top">
-                      <strong>Traveler #{review.user_id || 'Guest'}</strong>
+                      <div className="ad-reviewer">
+                        <span className="ad-review-avatar">
+                          {String(review.user_id || 'G').slice(0, 2).toUpperCase()}
+                        </span>
+                        <div>
+                          <strong>Traveler #{review.user_id || 'Guest'}</strong>
+                          <time>{review.review_date ? new Date(review.review_date).toLocaleDateString() : 'Recently'}</time>
+                        </div>
+                      </div>
                       <span className="ad-rating-pill">{Number(review.rating || 0).toFixed(1)}/5</span>
                     </div>
                     <p>{review.comment || 'No written comment.'}</p>
-                    <time>{review.review_date ? new Date(review.review_date).toLocaleDateString() : 'Recently'}</time>
                   </article>
                 ))}
               </div>
@@ -714,9 +894,11 @@ const AttractionDetails = () => {
           </section>
 
           <section className="ad-card ad-section">
-            <h2>Nearby recommendations</h2>
+            <div className="ad-section-title-wrap">
+              <h2><CompassIcon size={18} className="ad-title-icon" />Nearby recommendations</h2>
+            </div>
             <div className="ad-nearby-grid">
-              <div>
+              <div className="ad-nearby-col">
                 <h3>Similar attractions</h3>
                 <div className="ad-mini-list">
                   {nearbyAttractions.length === 0 && <p className="ad-muted">No nearby attractions found.</p>}
@@ -730,13 +912,16 @@ const AttractionDetails = () => {
                       <img src={item.image_url || FALLBACK_IMAGE} alt={item.name} loading="lazy" />
                       <div>
                         <strong>{item.name}</strong>
-                        <p>{item.distanceKm ? `${item.distanceKm.toFixed(1)} km away` : formatLabel(item.location)}</p>
+                        <p>
+                          <MapPinIcon size={13} />
+                          {item.distanceKm ? `${item.distanceKm.toFixed(1)} km away` : formatLabel(item.location)}
+                        </p>
                       </div>
                     </button>
                   ))}
                 </div>
               </div>
-              <div>
+              <div className="ad-nearby-col">
                 <h3>{t('nearby_hotels')}</h3>
                 <div className="ad-mini-list">
                   {nearbyHotels.length === 0 && <p className="ad-muted">{t('no_nearby_hotels')}</p>}
@@ -745,7 +930,10 @@ const AttractionDetails = () => {
                       <img src={hotel.image_url || FALLBACK_IMAGE} alt={hotel.name || 'Hotel'} loading="lazy" />
                       <div>
                         <strong>{hotel.name || 'Hotel'}</strong>
-                        <p>{hotel.distanceKm ? `${hotel.distanceKm.toFixed(1)} km away` : formatLabel(hotel.address || hotel.location)}</p>
+                        <p>
+                          <HotelIcon size={13} />
+                          {hotel.distanceKm ? `${hotel.distanceKm.toFixed(1)} km away` : formatLabel(hotel.address || hotel.location)}
+                        </p>
                       </div>
                     </article>
                   ))}
@@ -757,18 +945,93 @@ const AttractionDetails = () => {
 
         <aside className="ad-sidebar-column">
           <section className="ad-card ad-quick-panel">
-            <h3>{t('quick_information')}</h3>
-            <div className="ad-info-grid">
-              <div><span>{t('municipality')}</span><strong>{formatLabel(attraction.municipality, t('not_available'))}</strong></div>
-              <div><span>{t('category')}</span><strong>{formatLabel(attraction.category, t('not_available'))}</strong></div>
-              <div><span>{t('opening_hours')}</span><strong>{formatLabel(attraction.hours || attraction.opening_hours, t('not_available'))}</strong></div>
-              <div><span>{t('entrance_fee')}</span><strong>{formatLabel(attraction.entrance_fee || attraction.fee ? `PHP ${attraction.entrance_fee || attraction.fee}` : '', t('not_available'))}</strong></div>
-              <div><span>{t('visit_duration')}</span><strong>{formatLabel(attraction.visit_duration || t('approx_2_3_hours'), t('not_available'))}</strong></div>
-              <div><span>{t('best_time')}</span><strong>{formatLabel(attraction.best_time_to_visit || t('early_morning'), t('not_available'))}</strong></div>
-              <div><span>{t('difficulty')}</span><strong>{formatLabel(attraction.difficulty_level || t('easy_to_moderate'), t('not_available'))}</strong></div>
+            <h3><InfoIcon size={18} className="ad-title-icon" />{t('quick_information')}</h3>
+            <ul className="ad-info-list">
+              <li>
+                <span className="ad-info-icon"><MapPinIcon size={16} /></span>
+                <div>
+                  <p className="ad-info-label">{t('municipality')}</p>
+                  <p className="ad-info-value">{formatLabel(attraction.municipality, t('not_available'))}</p>
+                </div>
+              </li>
+              <li>
+                <span className="ad-info-icon"><MountainIcon size={16} /></span>
+                <div>
+                  <p className="ad-info-label">{t('category')}</p>
+                  <p className="ad-info-value">{formatLabel(attraction.category, t('not_available'))}</p>
+                </div>
+              </li>
+              <li>
+                <span className="ad-info-icon"><ClockIcon size={16} /></span>
+                <div>
+                  <p className="ad-info-label">{t('opening_hours')}</p>
+                  <p className="ad-info-value">{formatLabel(attraction.hours || attraction.opening_hours, t('not_available'))}</p>
+                </div>
+              </li>
+              <li>
+                <span className="ad-info-icon"><MoneyIcon size={16} /></span>
+                <div>
+                  <p className="ad-info-label">{t('entrance_fee')}</p>
+                  <p className="ad-info-value">{formatLabel(attraction.entrance_fee || attraction.fee ? `PHP ${attraction.entrance_fee || attraction.fee}` : '', t('not_available'))}</p>
+                </div>
+              </li>
+              <li>
+                <span className="ad-info-icon"><CalendarIcon size={16} /></span>
+                <div>
+                  <p className="ad-info-label">{t('visit_duration')}</p>
+                  <p className="ad-info-value">{formatLabel(attraction.visit_duration || t('approx_2_3_hours'), t('not_available'))}</p>
+                </div>
+              </li>
+              <li>
+                <span className="ad-info-icon"><SunIcon size={16} /></span>
+                <div>
+                  <p className="ad-info-label">{t('best_time')}</p>
+                  <p className="ad-info-value">{formatLabel(attraction.best_time_to_visit || t('early_morning'), t('not_available'))}</p>
+                </div>
+              </li>
+              <li>
+                <span className="ad-info-icon"><RouteIcon size={16} /></span>
+                <div>
+                  <p className="ad-info-label">{t('difficulty')}</p>
+                  <p className="ad-info-value">{formatLabel(attraction.difficulty_level || t('easy_to_moderate'), t('not_available'))}</p>
+                </div>
+              </li>
               {travelFromUser && (
-                <div><span>From your location</span><strong>{travelFromUser.distanceKm} km (~{travelFromUser.minutes} min)</strong></div>
+                <li>
+                  <span className="ad-info-icon"><LocationIcon size={16} /></span>
+                  <div>
+                    <p className="ad-info-label">From your location</p>
+                    <p className="ad-info-value">{travelFromUser.distanceKm} km (~{travelFromUser.minutes} min)</p>
+                  </div>
+                </li>
               )}
+            </ul>
+          </section>
+
+          <section className="ad-eco-card">
+            <h3><LeafIcon size={18} className="ad-title-icon" />Eco-friendly spot</h3>
+            <p>Help preserve {attraction.name}. Carry in, carry out — leave only footprints, take only memories.</p>
+            <div className="ad-eco-tags">
+              <span><LeafIcon size={12} />Zero waste</span>
+              <span>Low impact</span>
+            </div>
+          </section>
+
+          <section className="ad-card ad-share-card">
+            <h3>Share this destination</h3>
+            <div className="ad-share-grid">
+              <a className="is-facebook" href={socialLinks.facebook} target="_blank" rel="noreferrer">
+                <FacebookIcon size={20} />
+                Facebook
+              </a>
+              <a className="is-instagram" href={socialLinks.instagram} target="_blank" rel="noreferrer">
+                <InstagramIcon size={20} />
+                Instagram
+              </a>
+              <button type="button" className="is-copy" onClick={handleShare}>
+                <ShareIcon size={20} />
+                Copy link
+              </button>
             </div>
           </section>
         </aside>
@@ -791,32 +1054,27 @@ const AttractionDetails = () => {
             </div>
 
             {reviewSuccess ? (
-              <div className="ad-modal-body" style={{ textAlign: 'center', padding: '2rem' }}>
-                <p style={{ fontSize: '1.1rem', color: '#16a34a' }}>✓ Thank you! Your review has been submitted.</p>
+              <div className="ad-modal-body ad-modal-body--center">
+                <p className="ad-review-success">✓ Thank you! Your review has been submitted.</p>
               </div>
             ) : (
               <div className="ad-modal-body">
                 {reviewError && (
-                  <div style={{ padding: '0.75rem', marginBottom: '1rem', backgroundColor: '#fee', borderRadius: '8px', color: '#c00' }}>
+                  <div className="ad-form-alert">
                     {reviewError}
                   </div>
                 )}
 
-                <div style={{ marginBottom: '1rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>{t('review_form_rating')} *</label>
-                  <div style={{ display: 'flex', gap: '0.5rem', fontSize: '1.5rem' }}>
+                <div className="ad-form-field">
+                  <label>{t('review_form_rating')} *</label>
+                  <div className="ad-star-picker">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <button
                         key={star}
                         type="button"
+                        className={`ad-star-btn${star <= reviewForm.rating ? ' is-on' : ''}`}
                         onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          color: star <= reviewForm.rating ? '#fbbf24' : '#d1d5db',
-                          fontSize: '1.5rem'
-                        }}
+                        aria-label={`${star} star${star > 1 ? 's' : ''}`}
                       >
                         ★
                       </button>
@@ -825,21 +1083,15 @@ const AttractionDetails = () => {
                 </div>
 
                 {eligibleItineraries.length > 0 ? (
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label htmlFor="review-itinerary" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                  <div className="ad-form-field">
+                    <label htmlFor="review-itinerary">
                       {t('select_completed_trip')} *
                     </label>
                     <select
                       id="review-itinerary"
+                      className="ad-select"
                       value={reviewForm.itinerary_id || eligibleItineraries[0]?.itinerary_id || ''}
                       onChange={(e) => setReviewForm({ ...reviewForm, itinerary_id: e.target.value ? parseInt(e.target.value) : null })}
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        borderRadius: '8px',
-                        border: '1px solid #d1d5db',
-                        fontSize: '1rem'
-                      }}
                     >
                       {eligibleItineraries.map((itinerary) => (
                         <option key={itinerary.itinerary_id} value={itinerary.itinerary_id}>
@@ -849,62 +1101,37 @@ const AttractionDetails = () => {
                     </select>
                   </div>
                 ) : (
-                  <div style={{ marginBottom: '1rem', padding: '0.9rem 1rem', borderRadius: '8px', backgroundColor: '#f3f4f6', color: '#4b5563' }}>
+                  <div className="ad-form-note">
                     {t('review_requires_completed_itinerary')}
                   </div>
                 )}
 
-                <div style={{ marginBottom: '1rem' }}>
-                  <label htmlFor="review-comment" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                <div className="ad-form-field">
+                  <label htmlFor="review-comment">
                     {t('review_form_review')} *
                   </label>
                   <textarea
                     id="review-comment"
+                    className="ad-textarea"
                     value={reviewForm.comment}
                     onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
                     placeholder={t('placeholder_review_comment')}
-                    style={{
-                      width: '100%',
-                      minHeight: '120px',
-                      padding: '0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #d1d5db',
-                      fontSize: '1rem',
-                      fontFamily: 'inherit',
-                      resize: 'vertical'
-                    }}
                   />
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                <div className="ad-modal-actions">
                   <button
                     type="button"
+                    className="ad-modal-btn"
                     onClick={handleCloseReviewModal}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      borderRadius: '8px',
-                      border: '1px solid #d1d5db',
-                      backgroundColor: '#fff',
-                      cursor: 'pointer',
-                      fontSize: '1rem'
-                    }}
                   >
                     {t('button_cancel_review')}
                   </button>
                   <button
                     type="button"
+                    className="ad-modal-btn is-confirm"
                     onClick={handleSubmitReview}
                     disabled={submittingReview}
-                    style={{
-                      padding: '0.75rem 1.5rem',
-                      borderRadius: '8px',
-                      border: 'none',
-                      backgroundColor: '#16a34a',
-                      color: '#fff',
-                      cursor: submittingReview ? 'not-allowed' : 'pointer',
-                      fontSize: '1rem',
-                      opacity: submittingReview ? 0.6 : 1
-                    }}
                   >
                     {submittingReview ? t('submitting') : t('submit_review')}
                   </button>
