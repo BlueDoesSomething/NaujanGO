@@ -8,7 +8,7 @@ import { authenticateToken, requireOwnerOrAdmin, requireFullAuthorization } from
 import { syncBookingPaymentStatus } from '../utils/paymentSync.js';
 import { balanceOf } from '../utils/paymentAmounts.js';
 import { parsePolicyFields } from '../utils/policyFields.js';
-import { computeAuthorization, LEGITIMACY_FIELDS } from '../utils/legitimacy.js';
+import { computeAuthorization, LEGITIMACY_FIELDS, attachHotelLegitimacyList } from '../utils/legitimacy.js';
 
 const router = express.Router();
 
@@ -119,6 +119,14 @@ const parseImageUrlsInput = (imageUrls) => {
     return JSON.stringify(list);
   }
   return JSON.stringify([String(imageUrls)]);
+};
+
+// Map coordinates: empty → NULL, otherwise must be a finite number.
+const parseCoordinateInput = (value) => {
+  if (value === null || value === undefined || value === '') return { value: null };
+  const num = Number(value);
+  if (!Number.isFinite(num)) return { error: 'Coordinates must be valid numbers' };
+  return { value: num };
 };
 
 const DEFAULT_PAYMENT_METHODS = ['card', 'gcash', 'grabpay', 'qrph', 'paypal', 'bank_transfer', 'pay_at_property'];
@@ -236,8 +244,14 @@ router.get('/hotels', async (req, res) => {
 
       const allowed_payment_methods = parseStoredPaymentMethods(hotel.allowed_payment_methods);
 
-      return { ...hotel, amenities, image_urls, allowed_payment_methods };
+      // `id` alias lets attachHotelLegitimacyList resolve each hotel; the
+      // dashboard keeps using hotel_id, so the extra field is harmless.
+      return { ...hotel, id: hotel.hotel_id, amenities, image_urls, allowed_payment_methods };
     });
+
+    // Attach legitimacy badges + booking_enabled (derived from verification
+    // docs) so the dashboard can explain why online bookings are off.
+    await attachHotelLegitimacyList(formatted);
 
     res.json(formatted);
   } catch (error) {
@@ -272,7 +286,9 @@ router.post('/hotels', async (req, res) => {
     reservation_fee,
     map_url,
     contact_phone,
-    contact_email
+    contact_email,
+    latitude,
+    longitude
   } = req.body;
 
   const [existing] = await db.promise().query(
@@ -286,6 +302,12 @@ router.post('/hotels', async (req, res) => {
 
   if (!name || !location) {
     return res.status(400).json({ error: 'Hotel name and location are required' });
+  }
+
+  const latitudeValue = parseCoordinateInput(latitude);
+  const longitudeValue = parseCoordinateInput(longitude);
+  if (latitudeValue.error || longitudeValue.error) {
+    return res.status(400).json({ error: latitudeValue.error || longitudeValue.error });
   }
 
   const price = Number(price_per_night);
@@ -319,8 +341,8 @@ router.post('/hotels', async (req, res) => {
 
     const [result] = await connection.query(
       `INSERT INTO hotels
-        (name, location, description, price_per_night, currency, rating, amenities, image_url, image_urls, allowed_payment_methods, reservation_fee, map_url, contact_phone, contact_email, is_active, cancellation_type, free_cancellation_days, custom_policy_text, house_rules, check_in_time, check_out_time, balance_due_days)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (name, location, description, price_per_night, currency, rating, amenities, image_url, image_urls, allowed_payment_methods, reservation_fee, map_url, contact_phone, contact_email, latitude, longitude, is_active, cancellation_type, free_cancellation_days, custom_policy_text, house_rules, check_in_time, check_out_time, balance_due_days)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         name,
         location,
@@ -336,6 +358,8 @@ router.post('/hotels', async (req, res) => {
         map_url || null,
         contact_phone || null,
         contact_email || null,
+        latitudeValue.value,
+        longitudeValue.value,
         policy.is_active ?? 1,
         policy.cancellation_type ?? 'free_until',
         policy.free_cancellation_days ?? 1,
@@ -610,7 +634,9 @@ router.put('/hotels/:hotelId', async (req, res) => {
     reservation_fee,
     map_url,
     contact_phone,
-    contact_email
+    contact_email,
+    latitude,
+    longitude
   } = req.body;
 
   try {
@@ -636,10 +662,21 @@ router.put('/hotels/:hotelId', async (req, res) => {
     if (rooms_total !== undefined) { fields.push('rooms_total = ?'); values.push(rooms_total); }
     if (rooms_available !== undefined) { fields.push('rooms_available = ?'); values.push(rooms_available); }
     if (image_url !== undefined) { fields.push('image_url = ?'); values.push(image_url); }
-    // Note: image_urls is for rooms only, not hotels. Hotels use image_url (singular)
+    // Hotel gallery (JSON array column); image_url above stays the primary/cover image.
+    if (image_urls !== undefined) { fields.push('image_urls = ?'); values.push(parseImageUrlsInput(image_urls)); }
     if (map_url !== undefined) { fields.push('map_url = ?'); values.push(map_url); }
     if (contact_phone !== undefined) { fields.push('contact_phone = ?'); values.push(contact_phone); }
     if (contact_email !== undefined) { fields.push('contact_email = ?'); values.push(contact_email); }
+    if (latitude !== undefined) {
+      const parsed = parseCoordinateInput(latitude);
+      if (parsed.error) return res.status(400).json({ error: parsed.error });
+      fields.push('latitude = ?'); values.push(parsed.value);
+    }
+    if (longitude !== undefined) {
+      const parsed = parseCoordinateInput(longitude);
+      if (parsed.error) return res.status(400).json({ error: parsed.error });
+      fields.push('longitude = ?'); values.push(parsed.value);
+    }
     if (allowed_payment_methods !== undefined) {
       fields.push('allowed_payment_methods = ?');
       values.push(parsePaymentMethodsInput(allowed_payment_methods));
@@ -2380,11 +2417,11 @@ router.get('/public/hotels/:hotelId/rooms', async (req, res) => {
 router.get('/hotels/:hotelId/reports/rooms', authenticateToken, async (req, res) => {
   try {
     const { hotelId } = req.params;
-    const userId = req.decoded.user_id;
+    const userId = req.user.user_id;
 
     // Verify ownership
     const [ownerRows] = await db.promise().query(
-      'SELECT owner_id FROM hotel_owners WHERE hotel_id = ? AND owner_id = ?',
+      'SELECT user_id FROM hotel_owners WHERE hotel_id = ? AND user_id = ?',
       [hotelId, userId]
     );
 

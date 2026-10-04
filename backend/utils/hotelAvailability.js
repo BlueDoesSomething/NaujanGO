@@ -63,8 +63,11 @@ export const subtractOneDay = (dateKey) => {
 //                     than either the hotel or the type can sell (legacy bookings without a
 //                     room_id keep counting at the hotel level). closed = hotel OR type closed;
 //   price(d)        = room_inventory.price_override ?? hotel price_override ?? null.
-// Shared by the public calendar endpoint and createHotelBooking so display and
-// enforcement can never disagree. Accepts db.promise() or an open transaction connection.
+// Shared by the public calendar endpoint, createHotelBooking and
+// modifyHotelBooking so display and enforcement can never disagree.
+// Accepts db.promise() or an open transaction connection.
+// options.excludeBookingId (optional): don't count this booking's own rooms —
+//   used when validating a modification so a booking never blocks itself.
 export const fetchHotelAvailabilityDays = async (dbLike, hotelId, startKey, endKey, roomsTotal, options = {}) => {
   const start = toDateOnlyKey(startKey);
   const end = toDateOnlyKey(endKey);
@@ -95,6 +98,12 @@ export const fetchHotelAvailabilityDays = async (dbLike, hotelId, startKey, endK
   endPlusOneDate.setDate(endPlusOneDate.getDate() + 1);
   const endPlusOne = toDateOnlyKey(endPlusOneDate);
 
+  // options.excludeBookingId: ignore one booking's own rooms — used when a
+  // guest modifies an existing booking so it never counts against itself.
+  const excludeBookingId = Number(options.excludeBookingId) > 0 ? Number(options.excludeBookingId) : null;
+  const excludeClause = excludeBookingId ? ' AND booking_id <> ?' : '';
+  const excludeParams = excludeBookingId ? [excludeBookingId] : [];
+
   let bookingRows = [];
   try {
     [bookingRows] = await dbLike.query(
@@ -104,9 +113,9 @@ export const fetchHotelAvailabilityDays = async (dbLike, hotelId, startKey, endK
          AND status IN ('confirmed', 'pending')
          AND check_in < ?
          AND check_out > ?
-         AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))
+         AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))${excludeClause}
          FOR UPDATE`,
-      [hotelId, endPlusOne, start]
+      [hotelId, endPlusOne, start, ...excludeParams]
     );
   } catch (error) {
     // Older databases may lack archived/expires_at columns.
@@ -116,8 +125,8 @@ export const fetchHotelAvailabilityDays = async (dbLike, hotelId, startKey, endK
        WHERE hotel_id = ?
          AND status IN ('confirmed', 'pending')
          AND check_in < ?
-         AND check_out > ?`,
-      [hotelId, endPlusOne, start]
+         AND check_out > ?${excludeClause}`,
+      [hotelId, endPlusOne, start, ...excludeParams]
     );
   }
 
@@ -182,9 +191,9 @@ export const fetchHotelAvailabilityDays = async (dbLike, hotelId, startKey, endK
              AND status IN ('confirmed', 'pending')
              AND check_in < ?
              AND check_out > ?
-             AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))
+             AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))${excludeClause}
              FOR UPDATE`,
-          [hotelId, roomId, endPlusOne, start]
+          [hotelId, roomId, endPlusOne, start, ...excludeParams]
         );
       } catch (error) {
         // Older databases may lack archived/expires_at columns.
@@ -195,8 +204,8 @@ export const fetchHotelAvailabilityDays = async (dbLike, hotelId, startKey, endK
              AND room_id = ?
              AND status IN ('confirmed', 'pending')
              AND check_in < ?
-             AND check_out > ?`,
-          [hotelId, roomId, endPlusOne, start]
+             AND check_out > ?${excludeClause}`,
+          [hotelId, roomId, endPlusOne, start, ...excludeParams]
         );
       }
 

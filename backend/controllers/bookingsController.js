@@ -670,6 +670,254 @@ export const cancelHotelBooking = async (req, res) => {
   }
 };
 
+// Guest-initiated modification of an upcoming booking (new dates / rooms /
+// guests). Availability is re-validated against every OTHER booking — the
+// booking being changed never counts against itself — and the stay is
+// re-priced with the ORIGINAL price_per_night so later owner price edits
+// never rewrite existing bookings. The new total can never drop below what
+// has already been paid.
+export const modifyHotelBooking = async (req, res) => {
+  const userId = getUserIdFromToken(req);
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+  const MAX_GUESTS_PER_BOOKING = 100;
+  const { check_in, check_out, rooms, guests } = req.body;
+
+  try {
+    const booking = await fetchBooking(req.params.bookingId);
+    if (!booking || booking.user_id !== userId || Number(booking.archived) === 1) {
+      return res.status(404).json({ error: 'Booking not found' });
+    }
+
+    if (!['pending', 'confirmed'].includes(booking.status)) {
+      return res.status(409).json({ error: 'Bookings can only be modified while pending or confirmed' });
+    }
+
+    if (!booking.hotel_id) {
+      return res.status(409).json({ error: 'This booking cannot be modified online' });
+    }
+
+    const checkInKey = toDateOnlyKey(check_in);
+    const checkOutKey = toDateOnlyKey(check_out);
+    if (!checkInKey || !checkOutKey) {
+      return res.status(400).json({ error: 'Check-in and check-out must be dates in YYYY-MM-DD format' });
+    }
+
+    const checkInDate = new Date(check_in);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (checkInDate < today) {
+      return res.status(400).json({ error: 'Check-in date cannot be in the past' });
+    }
+
+    const nights = computeNights(check_in, check_out);
+    if (nights <= 0) {
+      return res.status(400).json({ error: 'Check-out date must be after check-in date' });
+    }
+    if (nights > 90) {
+      return res.status(400).json({ error: 'Maximum stay is 90 nights' });
+    }
+
+    const numRooms = Math.floor(toNumber(rooms, 0));
+    if (numRooms < 1) {
+      return res.status(400).json({ error: 'At least one room is required' });
+    }
+
+    const numGuests = Math.floor(toNumber(guests, 0));
+    if (numGuests < 1) {
+      return res.status(400).json({ error: 'At least one guest is required' });
+    }
+    if (numGuests > MAX_GUESTS_PER_BOOKING) {
+      return res.status(400).json({ error: `Maximum guests per booking is ${MAX_GUESTS_PER_BOOKING}` });
+    }
+
+    const connection = await db.promise().getConnection();
+    const fail = async (status, message) => {
+      await connection.rollback();
+      connection.release();
+      return res.status(status).json({ error: message });
+    };
+
+    try {
+      await connection.beginTransaction();
+
+      // Lock the booking row so concurrent edits serialize.
+      const [lockedRows] = await connection.query(
+        'SELECT * FROM hotel_bookings WHERE booking_id = ? FOR UPDATE',
+        [booking.booking_id]
+      );
+      const locked = lockedRows[0];
+      if (!locked || locked.user_id !== userId || Number(locked.archived) === 1
+          || !['pending', 'confirmed'].includes(locked.status)) {
+        return await fail(409, 'This booking can no longer be modified');
+      }
+
+      const hotelId = locked.hotel_id;
+
+      const [hotelRows] = await connection.query(
+        'SELECT rooms_total, balance_due_days FROM hotels WHERE hotel_id = ? FOR UPDATE',
+        [hotelId]
+      );
+      if (hotelRows.length === 0) {
+        return await fail(404, 'Hotel not found');
+      }
+      const hotelRow = hotelRows[0];
+      const totalRooms = Number(hotelRow.rooms_total) || 0;
+
+      let selectedRoom = null;
+      if (locked.room_id) {
+        const [roomRows] = await connection.query(
+          'SELECT room_id, room_type_name, capacity, quantity_available FROM rooms WHERE room_id = ? AND hotel_id = ? FOR UPDATE',
+          [locked.room_id, hotelId]
+        );
+        if (roomRows.length === 0) {
+          return await fail(409, 'The room type for this booking is no longer available');
+        }
+        selectedRoom = roomRows[0];
+        if (Number(selectedRoom.capacity) < numGuests) {
+          return await fail(409, `This room type can only accommodate ${selectedRoom.capacity} guest(s), but you requested ${numGuests}. Please select fewer guests.`);
+        }
+      }
+
+      // Per-date enforcement via the same helper as the calendar and create
+      // flow, excluding this booking's own rooms so it never blocks itself.
+      try {
+        const availabilityDays = await fetchHotelAvailabilityDays(
+          connection,
+          hotelId,
+          checkInKey,
+          subtractOneDay(checkOutKey),
+          totalRooms,
+          { excludeBookingId: locked.booking_id, ...(locked.room_id ? { roomId: locked.room_id } : {}) }
+        );
+
+        const closedDay = availabilityDays.find((day) => day.closed === 1);
+        if (closedDay) {
+          return await fail(409, `This hotel is closed for booking on ${closedDay.date}. Please choose different dates.`);
+        }
+
+        const shortDay = availabilityDays.find((day) => day.available < numRooms);
+        if (shortDay) {
+          return await fail(409, `Not enough rooms available on ${shortDay.date} (${shortDay.available} left for your dates). Please adjust your dates or number of rooms.`);
+        }
+      } catch (availabilityError) {
+        // Never block modifications if availability data cannot be read; the
+        // aggregate room checks below still apply.
+        console.error('Per-date availability check failed:', availabilityError);
+      }
+
+      // Aggregate check, excluding this booking (mirrors createHotelBooking).
+      if (selectedRoom) {
+        const [bookedRoomTypes] = await connection.query(
+          `SELECT SUM(rooms) AS booked_rooms
+           FROM hotel_bookings
+           WHERE hotel_id = ?
+             AND room_id = ?
+             AND booking_id <> ?
+             AND status IN ('confirmed', 'pending')
+             AND check_in < ?
+             AND check_out > ?
+             AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))
+           FOR UPDATE`,
+          [hotelId, selectedRoom.room_id, locked.booking_id, checkOutKey, checkInKey]
+        );
+
+        const availableOfType = Number(selectedRoom.quantity_available) - Number(bookedRoomTypes[0]?.booked_rooms || 0);
+        if (availableOfType < numRooms) {
+          return await fail(409, `Only ${availableOfType} unit(s) of "${selectedRoom.room_type_name}" are available for your selected dates. Please choose different dates.`);
+        }
+      } else {
+        const [bookings] = await connection.query(
+          `SELECT SUM(rooms) AS booked_rooms
+           FROM hotel_bookings
+           WHERE hotel_id = ?
+             AND booking_id <> ?
+             AND status IN ('confirmed', 'pending')
+             AND check_in < ?
+             AND check_out > ?
+             AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))
+           FOR UPDATE`,
+          [hotelId, locked.booking_id, checkOutKey, checkInKey]
+        );
+
+        const bookedRooms = Number(bookings[0]?.booked_rooms || 0);
+        if (totalRooms - bookedRooms < numRooms) {
+          return await fail(409, 'Not enough rooms available for selected dates');
+        }
+      }
+
+      // The guest must not end up with two overlapping bookings at this hotel.
+      const [duplicates] = await connection.query(
+        `SELECT booking_id FROM hotel_bookings
+         WHERE user_id = ? AND hotel_id = ? AND booking_id <> ?
+           AND status IN ('confirmed', 'pending')
+           AND check_in < ? AND check_out > ?
+           AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))`,
+        [userId, hotelId, locked.booking_id, checkOutKey, checkInKey]
+      );
+      if (duplicates.length > 0) {
+        return await fail(409, 'You already have a booking for these dates');
+      }
+
+      // Re-price with the ORIGINAL per-night rate captured at booking time.
+      const price = toNumber(locked.price_per_night, 0);
+      if (price <= 0) {
+        return await fail(409, 'This booking cannot be modified because its original price is unavailable');
+      }
+      const newTotal = Number((price * nights * numRooms).toFixed(2));
+
+      const [paidRows] = await connection.query(
+        `SELECT COALESCE(SUM(CASE WHEN status = 'succeeded' THEN amount END), 0) AS amount_paid
+         FROM hotel_payments WHERE booking_id = ?`,
+        [locked.booking_id]
+      );
+      const amountPaid = Number(paidRows[0]?.amount_paid) || 0;
+
+      if (newTotal < amountPaid) {
+        return await fail(409, 'The modified booking total is less than the amount already paid. Please choose a longer stay or more rooms.');
+      }
+
+      let paymentStatus = locked.payment_status;
+      if (amountPaid > 0) {
+        paymentStatus = amountPaid >= newTotal ? 'paid' : 'partial';
+      }
+
+      // Keep the balance deadline in sync with the new check-in date; every
+      // other frozen policy term stays exactly as the guest agreed.
+      let policySnapshotValue = locked.policy_snapshot;
+      if (locked.policy_snapshot) {
+        const snapshot = parsePolicySnapshot(locked.policy_snapshot) || {};
+        const balanceDays = snapshot.balance_due_days === null || snapshot.balance_due_days === undefined
+          ? (hotelRow.balance_due_days === null || hotelRow.balance_due_days === undefined ? 1 : Number(hotelRow.balance_due_days))
+          : Number(snapshot.balance_due_days);
+        snapshot.balance_due_at = balanceDueAt(checkInKey, balanceDays);
+        policySnapshotValue = JSON.stringify(snapshot);
+      }
+
+      await connection.query(
+        `UPDATE hotel_bookings
+         SET check_in = ?, check_out = ?, nights = ?, rooms = ?, guests = ?,
+             total_amount = ?, payment_status = ?, policy_snapshot = ?, updated_at = NOW()
+         WHERE booking_id = ?`,
+        [checkInKey, checkOutKey, nights, numRooms, numGuests, newTotal, paymentStatus, policySnapshotValue, locked.booking_id]
+      );
+
+      await connection.commit();
+      connection.release();
+    } catch (err) {
+      await connection.rollback();
+      connection.release();
+      throw err;
+    }
+
+    const updatedBooking = await fetchBooking(booking.booking_id);
+    res.json({ booking: updatedBooking, message: 'Booking modified successfully' });
+  } catch (err) {
+    console.error('Modify booking error:', err);
+    res.status(500).json({ error: 'Failed to modify booking' });
+  }
+};
+
 export const getHotelBookingReceipt = async (req, res) => {
   const userId = getUserIdFromToken(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
