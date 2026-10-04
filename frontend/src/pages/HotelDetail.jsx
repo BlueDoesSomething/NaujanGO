@@ -162,6 +162,17 @@ const amenityIconFor = (amenity) => {
   return <Icons.Check size={16} />;
 };
 
+// '14:00' / '14:00:00' -> '2:00 PM' (mysql2 returns TIME with seconds).
+const fmtTime = (value) => {
+  if (!value) return '';
+  const m = String(value).match(/(\d{1,2}):(\d{2})/);
+  if (!m) return String(value);
+  const hour = parseInt(m[1], 10);
+  const meridiem = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${m[2]} ${meridiem}`;
+};
+
 const CALENDAR_LOCALES = {
   en: 'en-US',
   es: 'es-ES',
@@ -2235,11 +2246,13 @@ export default function HotelDetail() {
                         {selectedRoom.capacity} {selectedRoom.capacity === 1 ? t('person') : t('people')}
                       </p>
                     </div>
-                    <div className="hd-rm-stat">
-                      <Icons.Bed size={16} />
-                      <p className="hd-rm-stat-label">Bed Type</p>
-                      <p className="hd-rm-stat-value">King</p>
-                    </div>
+                    {selectedRoom.bed_type ? (
+                      <div className="hd-rm-stat">
+                        <Icons.Bed size={16} />
+                        <p className="hd-rm-stat-label">Bed Type</p>
+                        <p className="hd-rm-stat-value">{selectedRoom.bed_type}</p>
+                      </div>
+                    ) : null}
                     {selectedRoom.room_size_sqm ? (
                       <div className="hd-rm-stat">
                         <Icons.Ruler size={16} />
@@ -2293,17 +2306,15 @@ export default function HotelDetail() {
                   <div className="hd-rm-sec">
                     <p className="hd-rm-sec-title">Why guests love this room</p>
                     <div className="hd-rm-grid2">
-                      {[
-                        { icon: Icons.Sparkles, text: 'Modern Design' },
-                        { icon: Icons.Mountain, text: 'Great Views' },
-                        { icon: Icons.Heart, text: 'Premium Beds' },
-                        { icon: Icons.Waves, text: 'Luxury Bath' }
-                      ].map((item, i) => {
-                        const IconComponent = item.icon;
+                      {(Array.isArray(selectedRoom.room_features) && selectedRoom.room_features.length > 0
+                        ? selectedRoom.room_features
+                        : ['Modern Design', 'Great Views', 'Premium Beds', 'Luxury Bath']
+                      ).slice(0, 8).map((text, i) => {
+                        const IconComponent = [Icons.Sparkles, Icons.Mountain, Icons.Heart, Icons.Waves][i % 4];
                         return (
                           <div className="hd-rm-mini" key={i}>
                             <span className="hd-rm-mini-ic"><IconComponent size={14} /></span>
-                            <p>{item.text}</p>
+                            <p>{text}</p>
                           </div>
                         );
                       })}
@@ -2345,19 +2356,21 @@ export default function HotelDetail() {
                     <div className="hd-rm-grid2">
                       <div className="hd-rm-policy">
                         <p className="hd-rm-policy-t"><Icons.Clock size={14} /> Check-in / Check-out</p>
-                        <p className="hd-rm-policy-d">Check-in: 2:00 PM · Check-out: 11:00 AM</p>
+                        <p className="hd-rm-policy-d">
+                          Check-in: {fmtTime(selectedRoom.check_in_time || '14:00')} · Check-out: {fmtTime(selectedRoom.check_out_time || '11:00')}
+                        </p>
                       </div>
                       <div className="hd-rm-policy">
                         <p className="hd-rm-policy-t"><Icons.Filter size={14} /> Pet Policy</p>
-                        <p className="hd-rm-policy-d">Pets not allowed</p>
+                        <p className="hd-rm-policy-d">{Number(selectedRoom.pets_allowed) ? 'Pets allowed' : 'Pets not allowed'}</p>
                       </div>
                       <div className="hd-rm-policy">
                         <p className="hd-rm-policy-t"><Icons.Info size={14} /> Smoking Policy</p>
-                        <p className="hd-rm-policy-d">Non-smoking room</p>
+                        <p className="hd-rm-policy-d">{Number(selectedRoom.smoking_allowed) ? 'Smoking allowed' : 'Non-smoking room'}</p>
                       </div>
                       <div className="hd-rm-policy">
                         <p className="hd-rm-policy-t"><Icons.X size={14} /> Events &amp; Parties</p>
-                        <p className="hd-rm-policy-d">Not permitted</p>
+                        <p className="hd-rm-policy-d">{Number(selectedRoom.events_allowed) ? 'Permitted' : 'Not permitted'}</p>
                       </div>
                     </div>
                   </div>

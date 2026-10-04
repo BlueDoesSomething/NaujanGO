@@ -656,9 +656,10 @@ export const getHotelRooms = async (req, res) => {
     const { id } = req.params;
 
     const [rooms] = await db.promise().query(
-      `SELECT room_id, room_type_name, description, capacity, room_size_sqm, 
-              price_per_night, currency, quantity_available, amenities, image_urls, 
-              primary_image_url, is_active
+      `SELECT room_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
+              price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
+              primary_image_url, check_in_time, check_out_time,
+              smoking_allowed, pets_allowed, events_allowed, is_active
        FROM rooms
        WHERE hotel_id = ? AND is_active = 1
        ORDER BY price_per_night`,
@@ -668,6 +669,16 @@ export const getHotelRooms = async (req, res) => {
     let formatted = rooms.map(room => ({
       ...room,
       amenities: parseAmenitiesServer(room.amenities),
+      room_features: (() => {
+        try {
+          if (!room.room_features) return [];
+          if (Array.isArray(room.room_features)) return room.room_features;
+          if (typeof room.room_features === 'string') return JSON.parse(room.room_features);
+          return [];
+        } catch (e) {
+          return [];
+        }
+      })(),
       image_urls: (() => {
         try {
           if (!room.image_urls) return [];

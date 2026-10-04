@@ -87,3 +87,20 @@ export const ensureBusinessLegitimacySchema = async () => {
     console.error('Schema ensure (business legitimacy) failed:', error.message);
   }
 };
+
+// Room policy / detail fields (migration 043): the owner Room Management form
+// collects these but the rooms table had no columns for them, so the values
+// were silently dropped on save.
+export const ensureRoomFieldsSchema = async () => {
+  try {
+    await ensureColumn('rooms', 'bed_type', 'VARCHAR(50) NULL DEFAULT NULL AFTER `room_type_name`');
+    await ensureColumn('rooms', 'check_in_time', "TIME NOT NULL DEFAULT '14:00' AFTER `quantity_available`");
+    await ensureColumn('rooms', 'check_out_time', "TIME NOT NULL DEFAULT '11:00' AFTER `check_in_time`");
+    await ensureColumn('rooms', 'smoking_allowed', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `check_out_time`');
+    await ensureColumn('rooms', 'pets_allowed', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `smoking_allowed`');
+    await ensureColumn('rooms', 'events_allowed', 'TINYINT(1) NOT NULL DEFAULT 0 AFTER `pets_allowed`');
+    await ensureColumn('rooms', 'room_features', 'TEXT NULL DEFAULT NULL AFTER `amenities`');
+  } catch (error) {
+    console.error('Schema ensure (room fields) failed:', error.message);
+  }
+};

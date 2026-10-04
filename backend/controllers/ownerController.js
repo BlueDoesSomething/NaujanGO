@@ -2053,21 +2053,24 @@ router.get('/hotels/:hotelId/rooms', async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const [rooms] = await db.promise().query(
-      `SELECT room_id, hotel_id, room_type_name, description, capacity, room_size_sqm, 
-              price_per_night, currency, quantity_available, amenities, image_urls, 
-              primary_image_url, is_active, created_at, updated_at
-       FROM rooms
-       WHERE hotel_id = ?
-       ORDER BY room_type_name`,
-      [hotelId]
-    );
+      const [rooms] = await db.promise().query(
+        `SELECT room_id, hotel_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
+                price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
+                primary_image_url, check_in_time, check_out_time,
+                smoking_allowed, pets_allowed, events_allowed,
+                is_active, created_at, updated_at
+         FROM rooms
+         WHERE hotel_id = ?
+         ORDER BY room_type_name`,
+        [hotelId]
+      );
 
-    const formatted = rooms.map(room => ({
-      ...room,
-      amenities: room.amenities ? JSON.parse(room.amenities) : [],
-      image_urls: room.image_urls ? JSON.parse(room.image_urls) : []
-    }));
+      const formatted = rooms.map(room => ({
+        ...room,
+        amenities: room.amenities ? JSON.parse(room.amenities) : [],
+        room_features: parseJsonArrayField(room.room_features) || [],
+        image_urls: room.image_urls ? JSON.parse(room.image_urls) : []
+      }));
 
     res.json(formatted);
   } catch (error) {
@@ -2076,12 +2079,25 @@ router.get('/hotels/:hotelId/rooms', async (req, res) => {
   }
 });
 
+// Safely parse a JSON-array column (amenities / image_urls / room_features).
+const parseJsonArrayField = (value) => {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (e) {
+    return null;
+  }
+};
+
 // Create a new room type
 router.post('/hotels/:hotelId/rooms', upload.array('images', 10), async (req, res) => {
   try {
     const { hotelId } = req.params;
     const { room_type_name, description, capacity, room_size_sqm, price_per_night, 
-            currency, quantity_available, amenities, image_urls } = req.body;
+            currency, quantity_available, amenities, image_urls,
+            bed_type, room_features, check_in_time, check_out_time,
+            smoking_allowed, pets_allowed, events_allowed } = req.body;
     const userId = req.user.user_id;
 
     // Verify ownership
@@ -2112,6 +2128,19 @@ router.post('/hotels/:hotelId/rooms', upload.array('images', 10), async (req, re
       }
     }
 
+    // Parse room features ("why guests love this room")
+    let roomFeaturesJson = null;
+    if (room_features) {
+      try {
+        roomFeaturesJson = JSON.stringify(
+          Array.isArray(room_features) ? room_features :
+          typeof room_features === 'string' ? room_features.split(',').map(f => f.trim()).filter(Boolean) : []
+        );
+      } catch (e) {
+        roomFeaturesJson = null;
+      }
+    }
+
     // Parse image URLs
     let imageUrlsJson = null;
     if (image_urls) {
@@ -2138,12 +2167,15 @@ router.post('/hotels/:hotelId/rooms', upload.array('images', 10), async (req, re
     }
 
     const [result] = await db.promise().query(
-      `INSERT INTO rooms (hotel_id, room_type_name, description, capacity, room_size_sqm, 
-                         price_per_night, currency, quantity_available, amenities, image_urls, 
-                         primary_image_url, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-      [hotelId, room_type_name, description || null, capacity, room_size_sqm || null, 
-       price_per_night, currency || 'PHP', quantity_available, amenitiesJson, imageUrlsJson, primaryImage]
+      `INSERT INTO rooms (hotel_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
+                         price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
+                         primary_image_url, check_in_time, check_out_time,
+                         smoking_allowed, pets_allowed, events_allowed, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+      [hotelId, room_type_name, bed_type || null, description || null, capacity, room_size_sqm || null, 
+       price_per_night, currency || 'PHP', quantity_available, amenitiesJson, roomFeaturesJson,
+       imageUrlsJson, primaryImage, check_in_time || '14:00', check_out_time || '11:00',
+       Number(smoking_allowed) ? 1 : 0, Number(pets_allowed) ? 1 : 0, Number(events_allowed) ? 1 : 0]
     );
 
     res.status(201).json({
@@ -2162,7 +2194,9 @@ router.put('/hotels/:hotelId/rooms/:roomId', upload.array('images', 10), async (
   try {
     const { hotelId, roomId } = req.params;
     const { room_type_name, description, capacity, room_size_sqm, price_per_night, 
-            currency, quantity_available, amenities, image_urls, is_active } = req.body;
+            currency, quantity_available, amenities, image_urls, is_active,
+            bed_type, room_features, check_in_time, check_out_time,
+            smoking_allowed, pets_allowed, events_allowed } = req.body;
     const userId = req.user.user_id;
 
     // Verify ownership
@@ -2190,6 +2224,19 @@ router.put('/hotels/:hotelId/rooms/:roomId', upload.array('images', 10), async (
       }
     }
 
+    // Parse room features ("why guests love this room")
+    let roomFeaturesJson = null;
+    if (room_features) {
+      try {
+        roomFeaturesJson = JSON.stringify(
+          Array.isArray(room_features) ? room_features :
+          typeof room_features === 'string' ? room_features.split(',').map(f => f.trim()).filter(Boolean) : []
+        );
+      } catch (e) {
+        roomFeaturesJson = null;
+      }
+    }
+
     // Parse image URLs
     let imageUrlsJson = null;
     if (image_urls) {
@@ -2204,15 +2251,21 @@ router.put('/hotels/:hotelId/rooms/:roomId', upload.array('images', 10), async (
     }
 
     // Add uploaded images if provided
-    let primaryImage = null;
     if (req.files && req.files.length > 0) {
       const imageArray = imageUrlsJson ? JSON.parse(imageUrlsJson) : [];
       req.files.forEach(file => {
-        const imageUrl = `/uploads/hotels/${file.filename}`;
-        imageArray.push(imageUrl);
-        if (!primaryImage) primaryImage = imageUrl;
+        imageArray.push(`/uploads/hotels/${file.filename}`);
       });
       imageUrlsJson = JSON.stringify(imageArray);
+    }
+
+    // Recompute the cover image from the gallery whenever it changes, so
+    // removing the current cover promotes the next image instead of leaving
+    // a stale primary_image_url behind.
+    let primaryImage;
+    if (imageUrlsJson !== null) {
+      const imageArray = parseJsonArrayField(imageUrlsJson) || [];
+      primaryImage = imageArray.length > 0 ? imageArray[0] : null;
     }
 
     const updates = [];
@@ -2221,6 +2274,10 @@ router.put('/hotels/:hotelId/rooms/:roomId', upload.array('images', 10), async (
     if (room_type_name !== undefined) {
       updates.push('room_type_name = ?');
       params.push(room_type_name);
+    }
+    if (bed_type !== undefined) {
+      updates.push('bed_type = ?');
+      params.push(bed_type || null);
     }
     if (description !== undefined) {
       updates.push('description = ?');
@@ -2246,21 +2303,45 @@ router.put('/hotels/:hotelId/rooms/:roomId', upload.array('images', 10), async (
       updates.push('quantity_available = ?');
       params.push(quantity_available);
     }
+    if (check_in_time !== undefined) {
+      updates.push('check_in_time = ?');
+      params.push(check_in_time || '14:00');
+    }
+    if (check_out_time !== undefined) {
+      updates.push('check_out_time = ?');
+      params.push(check_out_time || '11:00');
+    }
+    if (smoking_allowed !== undefined) {
+      updates.push('smoking_allowed = ?');
+      params.push(Number(smoking_allowed) ? 1 : 0);
+    }
+    if (pets_allowed !== undefined) {
+      updates.push('pets_allowed = ?');
+      params.push(Number(pets_allowed) ? 1 : 0);
+    }
+    if (events_allowed !== undefined) {
+      updates.push('events_allowed = ?');
+      params.push(Number(events_allowed) ? 1 : 0);
+    }
     if (amenitiesJson !== null) {
       updates.push('amenities = ?');
       params.push(amenitiesJson);
     }
+    if (roomFeaturesJson !== null) {
+      updates.push('room_features = ?');
+      params.push(roomFeaturesJson);
+    }
     if (imageUrlsJson !== null) {
       updates.push('image_urls = ?');
       params.push(imageUrlsJson);
-    }
-    if (primaryImage !== null) {
+      // Cover follows the gallery (may be null once the gallery is emptied).
       updates.push('primary_image_url = ?');
-      params.push(primaryImage);
+      params.push(primaryImage ?? null);
     }
     if (is_active !== undefined) {
       updates.push('is_active = ?');
-      params.push(is_active ? 1 : 0);
+      // FormData sends '0'/'1' strings — plain truthiness would force 1.
+      params.push(Number(is_active) ? 1 : 0);
     }
 
     if (updates.length === 0) {
@@ -2391,9 +2472,10 @@ router.get('/public/hotels/:hotelId/rooms', async (req, res) => {
     const { hotelId } = req.params;
 
     const [rooms] = await db.promise().query(
-      `SELECT room_id, room_type_name, description, capacity, room_size_sqm, 
-              price_per_night, currency, quantity_available, amenities, image_urls, 
-              primary_image_url
+      `SELECT room_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
+              price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
+              primary_image_url, check_in_time, check_out_time,
+              smoking_allowed, pets_allowed, events_allowed
        FROM rooms
        WHERE hotel_id = ? AND is_active = 1
        ORDER BY price_per_night`,
@@ -2403,6 +2485,7 @@ router.get('/public/hotels/:hotelId/rooms', async (req, res) => {
     const formatted = rooms.map(room => ({
       ...room,
       amenities: room.amenities ? JSON.parse(room.amenities) : [],
+      room_features: parseJsonArrayField(room.room_features) || [],
       image_urls: room.image_urls ? JSON.parse(room.image_urls) : []
     }));
 

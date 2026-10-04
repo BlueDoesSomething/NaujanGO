@@ -18,6 +18,17 @@ const amenityIconFor = (amenity) => {
   return <Icons.Check size={16} />;
 };
 
+// '14:00' / '14:00:00' -> '2:00 PM' (mysql2 returns TIME with seconds).
+const fmtTime = (value) => {
+  if (!value) return '';
+  const m = String(value).match(/(\d{1,2}):(\d{2})/);
+  if (!m) return String(value);
+  const hour = parseInt(m[1], 10);
+  const meridiem = hour >= 12 ? 'PM' : 'AM';
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${m[2]} ${meridiem}`;
+};
+
 const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,8 +49,8 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
     image_urls: [],
     is_active: 1,
     room_features: [], // NEW: Why guests love this room
-    check_in_time: '2:00 PM', // NEW: Check-in policy
-    check_out_time: '11:00 AM', // NEW: Check-out policy
+    check_in_time: '14:00', // NEW: Check-in policy (24h for <input type="time">)
+    check_out_time: '11:00', // NEW: Check-out policy (24h for <input type="time">)
     smoking_allowed: false, // NEW: Smoking policy
     pets_allowed: false, // NEW: Pet policy
     events_allowed: false // NEW: Events policy
@@ -47,6 +58,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
 
   const [roomForm, setRoomForm] = useState(emptyRoom);
   const [amenitiesInput, setAmenitiesInput] = useState('');
+  const [featuresInput, setFeaturesInput] = useState('');
   const [selectedImages, setSelectedImages] = useState([]);
 
   useEffect(() => {
@@ -101,6 +113,11 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
         .map(a => a.trim())
         .filter(Boolean);
 
+      const roomFeatures = featuresInput
+        .split(',')
+        .map(f => f.trim())
+        .filter(Boolean);
+
       const formData = new FormData();
       formData.append('room_type_name', roomForm.room_type_name);
       formData.append('bed_type', roomForm.bed_type || '');
@@ -111,6 +128,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
       formData.append('currency', roomForm.currency);
       formData.append('quantity_available', roomForm.quantity_available);
       formData.append('amenities', JSON.stringify(amenities));
+      formData.append('room_features', JSON.stringify(roomFeatures));
       
       // Append existing image URLs
       formData.append('image_urls', JSON.stringify(roomForm.image_urls));
@@ -143,6 +161,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
       setCreatingRoom(false);
       setRoomForm(emptyRoom);
       setAmenitiesInput('');
+      setFeaturesInput('');
       setSelectedImages([]);
       await fetchRooms();
     } catch (error) {
@@ -175,12 +194,15 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
       description: room.description || '',
       room_size_sqm: room.room_size_sqm || '',
       bed_type: room.bed_type || '',
-      check_in_time: room.check_in_time || emptyRoom.check_in_time,
-      check_out_time: room.check_out_time || emptyRoom.check_out_time,
+      // TIME comes back as 'HH:MM:SS'; time inputs need 'HH:MM'.
+      check_in_time: String(room.check_in_time || emptyRoom.check_in_time).slice(0, 5),
+      check_out_time: String(room.check_out_time || emptyRoom.check_out_time).slice(0, 5),
       amenities: Array.isArray(room.amenities) ? room.amenities : [],
+      room_features: Array.isArray(room.room_features) ? room.room_features : [],
       image_urls: Array.isArray(room.image_urls) ? room.image_urls : []
     });
     setAmenitiesInput(Array.isArray(room.amenities) ? room.amenities.join(', ') : '');
+    setFeaturesInput(Array.isArray(room.room_features) ? room.room_features.join(', ') : '');
     setSelectedImages([]);
   };
 
@@ -189,6 +211,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
     setCreatingRoom(true);
     setRoomForm(emptyRoom);
     setAmenitiesInput('');
+    setFeaturesInput('');
     setSelectedImages([]);
   };
 
@@ -197,10 +220,12 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
     setCreatingRoom(false);
     setRoomForm(emptyRoom);
     setAmenitiesInput('');
+    setFeaturesInput('');
     setSelectedImages([]);
   };
 
   const amenityPreview = amenitiesInput.split(',').map(a => a.trim()).filter(Boolean);
+  const featurePreview = featuresInput.split(',').map(f => f.trim()).filter(Boolean);
   const totalUnits = rooms.reduce((sum, r) => sum + (parseInt(r.quantity_available, 10) || 0), 0);
   const activeRooms = rooms.filter(r => Number(r.is_active) === 1).length;
 
@@ -306,12 +331,12 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
                               <div className="hd-rm-chips">
                                 {room.check_in_time && (
                                   <span className="hd-rm-chip hd-rm-chip-green">
-                                    <Icons.Clock size={12} /> In from {room.check_in_time}
+                                    <Icons.Clock size={12} /> In from {fmtTime(room.check_in_time)}
                                   </span>
                                 )}
                                 {room.check_out_time && (
                                   <span className="hd-rm-chip hd-rm-chip-green">
-                                    <Icons.Clock size={12} /> Out by {room.check_out_time}
+                                    <Icons.Clock size={12} /> Out by {fmtTime(room.check_out_time)}
                                   </span>
                                 )}
                                 {room.smoking_allowed && (
@@ -363,6 +388,22 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
                                 {room.amenities.length > 4 && (
                                   <p className="rm-more">+{room.amenities.length - 4} more</p>
                                 )}
+                              </div>
+                            )}
+
+                            {Array.isArray(room.room_features) && room.room_features.length > 0 && (
+                              <div>
+                                <p className="hd-rm-sec-title">Why guests love this room</p>
+                                <div className="hd-rm-chips">
+                                  {room.room_features.slice(0, 4).map((feature, i) => (
+                                    <span className="hd-rm-chip hd-rm-chip-green" key={`feat-${i}`}>
+                                      <Icons.Sparkles size={12} /> {feature}
+                                    </span>
+                                  ))}
+                                  {room.room_features.length > 4 && (
+                                    <span className="hd-rm-chip">+{room.room_features.length - 4}</span>
+                                  )}
+                                </div>
                               </div>
                             )}
 
@@ -555,6 +596,33 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
                           ))}
                           {amenityPreview.length > 8 && (
                             <span className="hd-rm-chip">+{amenityPreview.length - 8}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Why guests love this room */}
+                    <div className="rm-form-sec">
+                      <p className="hd-rm-sec-title">Why guests love this room</p>
+                      <input
+                        type="text"
+                        value={featuresInput}
+                        onChange={(e) => setFeaturesInput(e.target.value)}
+                        className="rm-input"
+                        placeholder="e.g. City view, Free breakfast, Private balcony"
+                      />
+                      <small className="rm-hint">
+                        Tip: Enter highlights separated by commas — shown to guests on the room card
+                      </small>
+                      {featurePreview.length > 0 && (
+                        <div className="hd-rm-chips">
+                          {featurePreview.slice(0, 8).map((feature, i) => (
+                            <span className="hd-rm-chip hd-rm-chip-green" key={`feat-${i}`}>
+                              <Icons.Sparkles size={12} /> {feature}
+                            </span>
+                          ))}
+                          {featurePreview.length > 8 && (
+                            <span className="hd-rm-chip">+{featurePreview.length - 8}</span>
                           )}
                         </div>
                       )}
