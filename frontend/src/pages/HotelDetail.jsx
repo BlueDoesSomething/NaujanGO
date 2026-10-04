@@ -939,9 +939,19 @@ export default function HotelDetail() {
 
   useEffect(() => {
     if (!anyModalOpen) return;
-    document.body.style.overflow = 'hidden';
+    const body = document.body;
+    const html = document.documentElement;
+    const prevBodyOverflow = body.style.overflow;
+    const prevBodyPaddingRight = body.style.paddingRight;
+    const prevHtmlOverflow = html.style.overflow;
+    const scrollbarWidth = window.innerWidth - html.clientWidth;
+    body.style.overflow = 'hidden';
+    html.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) body.style.paddingRight = `${scrollbarWidth}px`;
     return () => {
-      document.body.style.overflow = '';
+      body.style.overflow = prevBodyOverflow;
+      body.style.paddingRight = prevBodyPaddingRight;
+      html.style.overflow = prevHtmlOverflow;
     };
   }, [anyModalOpen]);
 
@@ -2108,6 +2118,7 @@ export default function HotelDetail() {
             width: '100%',
             maxHeight: '90vh',
             overflow: 'auto',
+            overscrollBehavior: 'contain',
             boxShadow: '0 25px 80px rgba(0,0,0,0.25)'
           }}>
             {/* Modal Header - Image Carousel */}
@@ -3318,6 +3329,7 @@ export default function HotelDetail() {
             width: '100%',
             maxHeight: '90vh',
             overflow: 'auto',
+            overscrollBehavior: 'contain',
             boxShadow: '0 25px 80px rgba(0,0,0,0.25)'
           }}>
             {/* Modal Header */}
@@ -3439,6 +3451,7 @@ const modalCard = {
   maxWidth: '750px',
   maxHeight: '90vh',
   overflow: 'auto',
+  overscrollBehavior: 'contain',
   boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
   animation: 'slideUp 0.3s ease-out'
 };
