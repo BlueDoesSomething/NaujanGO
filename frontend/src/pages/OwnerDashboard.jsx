@@ -955,6 +955,9 @@ const OwnerDashboard = () => {
     if (isLimitedOwner && !['hotels', 'profile'].includes(activeTab)) {
       setActiveTab('hotels');
     }
+    if (isLimitedOwner && reportHotel) {
+      setReportHotel(null);
+    }
   }, [isLimitedOwner, activeTab]);
 
   const isCurrentUser = (userId) => String(userId) === String(user?.user_id);
@@ -1785,8 +1788,8 @@ const OwnerDashboard = () => {
               </div>
             )}
 
-            {/* Room revenue report modal */}
-            {reportHotel && (
+            {/* Room revenue report modal (full authorization only) */}
+            {reportHotel && !isLimitedOwner && (
               <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
                 onClick={(e) => { if (e.target === e.currentTarget) setReportHotel(null); }}
               >
@@ -1935,14 +1938,18 @@ const OwnerDashboard = () => {
                       >
                         <Icons.Hotel size={16} style={{ verticalAlign: 'middle', marginRight: '0.3rem' }} /> Rooms
                       </button>
-                      <button
-                        className="gov-btn gov-btn-secondary"
-                        onClick={() => setReportHotel(hotel)}
-                        style={{ flex: 1, whiteSpace: 'nowrap' }}
-                        title="View room revenue report"
-                      >
-                        <Icons.ChartPie size={16} style={{ verticalAlign: 'middle', marginRight: '0.3rem' }} /> Report
-                      </button>
+                      {/* Financial reports follow the full-authorization gate
+                          (same rule as the Analytics tab). */}
+                      {!isLimitedOwner && (
+                        <button
+                          className="gov-btn gov-btn-secondary"
+                          onClick={() => setReportHotel(hotel)}
+                          style={{ flex: 1, whiteSpace: 'nowrap' }}
+                          title="View room revenue report"
+                        >
+                          <Icons.ChartPie size={16} style={{ verticalAlign: 'middle', marginRight: '0.3rem' }} /> Report
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

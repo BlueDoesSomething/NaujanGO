@@ -2413,8 +2413,8 @@ router.get('/public/hotels/:hotelId/rooms', async (req, res) => {
   }
 });
 
-// NEW: Get room revenue reports for a hotel
-router.get('/hotels/:hotelId/reports/rooms', authenticateToken, async (req, res) => {
+// NEW: Get room revenue reports for a hotel (financial data — full authorization)
+router.get('/hotels/:hotelId/reports/rooms', authenticateToken, requireFullAuthorization, async (req, res) => {
   try {
     const { hotelId } = req.params;
     const userId = req.user.user_id;
