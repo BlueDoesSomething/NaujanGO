@@ -1413,6 +1413,7 @@ const translations = {
     listing_status_label: 'Listing status',
     listing_active: 'Active',
     listing_inactive: 'Inactive',
+    bookings_active_badge: 'Online bookings active',
     chip_free_cancel: 'Free cancel',
     chip_partial_refund: 'Partial refund',
     chip_nonrefundable: 'Non-refundable',

@@ -18,6 +18,7 @@ import ReportsAndAnalyticsDashboard from '../components/ReportsAndAnalyticsDashb
 import api from '../api';
 import Pagination from '../components/Pagination';
 import RoomManagement from '../components/RoomManagement';
+import RoomRevenueReport from '../components/RoomRevenueReport';
 import { policyChip } from '../utils/bookingPolicy';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -121,6 +122,7 @@ const OwnerDashboard = () => {
   const [galleryUrlInput, setGalleryUrlInput] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
   const [managingRoomsHotel, setManagingRoomsHotel] = useState(null);
+  const [reportHotel, setReportHotel] = useState(null);
   const [showCoordinatePicker, setShowCoordinatePicker] = useState(false);
   const [mapInstance, setMapInstance] = useState(null);
 
@@ -1783,6 +1785,33 @@ const OwnerDashboard = () => {
               </div>
             )}
 
+            {/* Room revenue report modal */}
+            {reportHotel && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+                onClick={(e) => { if (e.target === e.currentTarget) setReportHotel(null); }}
+              >
+                <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '900px', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.22)', display: 'flex', flexDirection: 'column' }}>
+                  {/* Header */}
+                  <div style={{ background: 'linear-gradient(135deg,#2E7D32 0%,#66bb6a 100%)', borderRadius: '16px 16px 0 0', padding: '1.4rem 1.5rem', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexShrink: 0 }}>
+                    <div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.3rem' }}>Room Revenue Report</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{reportHotel.hotel_name || reportHotel.name}</div>
+                      <div style={{ fontSize: '0.82rem', opacity: 0.8, marginTop: '2px' }}>{reportHotel.location}</div>
+                    </div>
+                    <button onClick={() => setReportHotel(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '34px', height: '34px', cursor: 'pointer', color: '#fff', fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✕</button>
+                  </div>
+                  {/* Body */}
+                  <div style={{ overflowY: 'auto', flex: 1 }}>
+                    <RoomRevenueReport hotelId={reportHotel.hotel_id} hotelName={reportHotel.hotel_name || reportHotel.name} />
+                  </div>
+                  {/* Footer */}
+                  <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e5e7eb', background: '#f9fafb', borderRadius: '0 0 16px 16px', flexShrink: 0, textAlign: 'right' }}>
+                    <button className="gov-btn gov-btn-primary" onClick={() => setReportHotel(null)}>Done</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
@@ -1859,6 +1888,35 @@ const OwnerDashboard = () => {
                       }}>
                         {hotel.is_active ? t('listing_active') : t('listing_inactive')}
                       </span>
+                      {hotel.booking_enabled === false && (
+                        <span
+                          style={{
+                            background: '#fffbeb',
+                            color: '#b45309',
+                            border: '1px solid #fde68a',
+                            borderRadius: '999px',
+                            padding: '0.2rem 0.65rem',
+                            fontSize: '0.72rem',
+                            fontWeight: 800
+                          }}
+                          title={t('listing_only_notice')}
+                        >
+                          {t('promo_listing')}
+                        </span>
+                      )}
+                      {hotel.booking_enabled === true && (
+                        <span style={{
+                          background: '#f0fdf4',
+                          color: '#16a34a',
+                          border: '1px solid #bbf7d0',
+                          borderRadius: '999px',
+                          padding: '0.2rem 0.65rem',
+                          fontSize: '0.72rem',
+                          fontWeight: 800
+                        }}>
+                          {t('bookings_active_badge')}
+                        </span>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1876,6 +1934,14 @@ const OwnerDashboard = () => {
                         title="Manage rooms for this hotel"
                       >
                         <Icons.Hotel size={16} style={{ verticalAlign: 'middle', marginRight: '0.3rem' }} /> Rooms
+                      </button>
+                      <button
+                        className="gov-btn gov-btn-secondary"
+                        onClick={() => setReportHotel(hotel)}
+                        style={{ flex: 1, whiteSpace: 'nowrap' }}
+                        title="View room revenue report"
+                      >
+                        <Icons.ChartPie size={16} style={{ verticalAlign: 'middle', marginRight: '0.3rem' }} /> Report
                       </button>
                     </div>
                   </div>
