@@ -923,6 +923,11 @@ export default function HotelDetail() {
         setFullscreenImage(null);
         return;
       }
+      if (e.key === 'Escape' && selectedRoom) {
+        setSelectedRoom(null);
+        setRoomImageIndex(0);
+        return;
+      }
       if (showBookingModal || showContactModal || selectedRoom || fullscreenImage) return;
       const tag = e.target && e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
@@ -1007,6 +1012,45 @@ export default function HotelDetail() {
   const totalRoomsCount = hotel.rooms_total || rooms.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0) || 0;
   const ratingNote = reviewEligibilityReason || t('review_booking_history_note');
   const totalReviewsCount = averageRating.total || reviews.length;
+
+  // Room Details modal derived values
+  const roomImages = selectedRoom && selectedRoom.primary_image_url ? [selectedRoom.primary_image_url] : [];
+  const roomImgIndex = roomImages.length ? Math.min(roomImageIndex, roomImages.length - 1) : 0;
+  const roomAmenities = selectedRoom && Array.isArray(selectedRoom.amenities)
+    ? selectedRoom.amenities.map(formatAmenity).filter(Boolean)
+    : [];
+  const roomUnavailable = Boolean(selectedRoom && (!selectedRoom.is_active || !(selectedRoom.quantity_available > 0)));
+  const roomPromoOnly = hotel.booking_enabled === false;
+  const roomBookable = Boolean(selectedRoom && !roomUnavailable && !roomPromoOnly);
+
+  const closeRoomModal = () => {
+    setSelectedRoom(null);
+    setRoomImageIndex(0);
+  };
+
+  const roomBookNow = () => {
+    if (!selectedRoom) return;
+    setBookingForm(prev => ({
+      ...prev,
+      selectedRoomId: selectedRoom.room_id,
+      selectedRoomType: selectedRoom.room_type_name
+    }));
+    setSelectedRoom(null);
+    setRoomImageIndex(0);
+    setShowBookingModal(true);
+  };
+
+  const shareRoom = () => {
+    if (!selectedRoom) return;
+    const shareUrl = window.location.href;
+    const shareText = `Check out ${selectedRoom.room_type_name} at ${hotel.name}! ⭐`;
+    if (navigator.share) {
+      navigator.share({ title: selectedRoom.room_type_name, text: shareText, url: shareUrl }).catch(() => {});
+    } else if (navigator.clipboard) {
+      navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      showToast(t('room_link_copied'));
+    }
+  };
 
   return (
     <div className="hd-page">
@@ -2097,1211 +2141,362 @@ export default function HotelDetail() {
 
       {/* Room Details Modal */}
       {selectedRoom && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 999,
-          padding: '1rem',
-          animation: 'fadeIn 0.3s ease'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            maxWidth: '650px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            overscrollBehavior: 'contain',
-            boxShadow: '0 25px 80px rgba(0,0,0,0.25)'
-          }}>
-            {/* Modal Header - Image Carousel */}
-            <div style={{
-              position: 'relative',
-              height: '320px',
-              background: '#f5f5f5',
-              overflow: 'hidden'
-            }}>
-              {/* Image Display */}
-              {selectedRoom.primary_image_url ? (
-                <img 
-                  src={selectedRoom.primary_image_url}
-                  alt={selectedRoom.room_type_name}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
-                  onError={handleImageError}
-                />
-              ) : (
-                <div style={{
-                  width: '100%',
-                  height: '100%',
-                  background: 'linear-gradient(135deg, #2E7D32 0%, #1B5E20 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '4rem',
-                  color: 'rgba(255,255,255,0.2)'
-                }}>
-                  ■
+        <div className="hd-modal-back hd-rm-back">
+          <div className="hd-rm-panel">
+            <button className="hd-rm-close" onClick={closeRoomModal} aria-label="Close">
+              <Icons.X size={18} />
+            </button>
+
+            <div className="hd-rm-scroll">
+              <div className="hd-rm-grid">
+                {/* Left: details */}
+                <div className="hd-rm-main">
+                  {/* Gallery */}
+                  <div className="hd-rm-gallery">
+                    {roomImages.length > 0 ? (
+                      <img
+                        src={roomImages[roomImgIndex]}
+                        alt={selectedRoom.room_type_name}
+                        onError={handleImageError}
+                      />
+                    ) : (
+                      <div className="hd-rm-ph"><Icons.Bed size={56} /></div>
+                    )}
+                    <button
+                      className="hd-rm-gnav hd-rm-gprev"
+                      aria-label="Previous photo"
+                      disabled={roomImgIndex <= 0}
+                      onClick={() => setRoomImageIndex(Math.max(0, roomImgIndex - 1))}
+                    >
+                      <Icons.ChevronLeft size={18} />
+                    </button>
+                    <button
+                      className="hd-rm-gnav hd-rm-gnext"
+                      aria-label="Next photo"
+                      disabled={roomImgIndex >= roomImages.length - 1}
+                      onClick={() => setRoomImageIndex(Math.min(roomImages.length - 1, roomImgIndex + 1))}
+                    >
+                      <Icons.ChevronRight size={18} />
+                    </button>
+                    <span className="hd-rm-gcount">
+                      <Icons.Camera size={12} />
+                      {roomImgIndex + 1} / {Math.max(roomImages.length, 1)}
+                    </span>
+                    {roomUnavailable ? (
+                      <span className="hd-rm-flag hd-rm-flag-bad">
+                        <Icons.Info size={12} /> {t('room_currently_unavailable')}
+                      </span>
+                    ) : roomPromoOnly ? (
+                      <span className="hd-rm-flag hd-rm-flag-amber">
+                        <Icons.Megaphone size={12} /> {t('promo_listing')}
+                      </span>
+                    ) : (
+                      <span className="hd-rm-flag hd-rm-flag-ok">
+                        <Icons.Check size={12} /> Instant Confirmation
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Title + chips */}
+                  <div className="hd-rm-head">
+                    <h2>{selectedRoom.room_type_name}</h2>
+                    <p>
+                      <Icons.MapPin size={13} />
+                      {hotel.name} · {hotel.location}
+                    </p>
+                    <div className="hd-rm-chips">
+                      <span className="hd-rm-chip hd-rm-chip-green">
+                        <Icons.Check size={12} /> {t('booking_benefit_free_cancellation')}
+                      </span>
+                      <span className="hd-rm-chip hd-rm-chip-green">
+                        <Icons.Calendar size={12} /> {t('instant_booking')}
+                      </span>
+                      <span className="hd-rm-chip hd-rm-chip-amber">
+                        <Icons.Star size={12} filled /> {t('best_value')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  {selectedRoom.description && (
+                    <p className="hd-rm-desc">{selectedRoom.description}</p>
+                  )}
+
+                  {/* Stats bento */}
+                  <div className="hd-rm-stats">
+                    <div className="hd-rm-stat">
+                      <Icons.Users size={16} />
+                      <p className="hd-rm-stat-label">Capacity</p>
+                      <p className="hd-rm-stat-value">
+                        {selectedRoom.capacity} {selectedRoom.capacity === 1 ? t('person') : t('people')}
+                      </p>
+                    </div>
+                    <div className="hd-rm-stat">
+                      <Icons.Bed size={16} />
+                      <p className="hd-rm-stat-label">Bed Type</p>
+                      <p className="hd-rm-stat-value">King</p>
+                    </div>
+                    {selectedRoom.room_size_sqm ? (
+                      <div className="hd-rm-stat">
+                        <Icons.Ruler size={16} />
+                        <p className="hd-rm-stat-label">Room Size</p>
+                        <p className="hd-rm-stat-value">{selectedRoom.room_size_sqm} m²</p>
+                      </div>
+                    ) : (
+                      <div className="hd-rm-stat">
+                        <Icons.Calendar size={16} />
+                        <p className="hd-rm-stat-label">Availability</p>
+                        <p className="hd-rm-stat-value">{selectedRoom.quantity_available}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Guest rating */}
+                  <div className="hd-rm-rating">
+                    <p className="hd-rm-rating-score">
+                      {parseFloat(averageRating.average || 0).toFixed(1)}
+                      <span className="hd-rm-stars">
+                        {[0, 1, 2, 3, 4].map((i) => (
+                          <Icons.Star key={i} size={15} filled={i < Math.round(parseFloat(averageRating.average || 0))} />
+                        ))}
+                      </span>
+                    </p>
+                    <p className="hd-rm-rating-sub">
+                      {totalReviewsCount > 0
+                        ? t('based_on_reviews_pattern').replace('{count}', String(totalReviewsCount))
+                        : t('no_reviews_yet')}
+                    </p>
+                  </div>
+
+                  {/* Amenities */}
+                  <div className="hd-rm-sec">
+                    <p className="hd-rm-sec-title">Amenities</p>
+                    {roomAmenities.length > 0 ? (
+                      <div className="hd-rm-amen">
+                        {roomAmenities.map((amenity, i) => (
+                          <div className="hd-rm-amen-row" key={i}>
+                            <span className="hd-rm-amen-ic">{amenityIconFor(amenity)}</span>
+                            <p>{amenity}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="hd-rm-empty">{t('no_amenities_listed')}</p>
+                    )}
+                  </div>
+
+                  {/* Highlights */}
+                  <div className="hd-rm-sec">
+                    <p className="hd-rm-sec-title">Why guests love this room</p>
+                    <div className="hd-rm-grid2">
+                      {[
+                        { icon: Icons.Sparkles, text: 'Modern Design' },
+                        { icon: Icons.Mountain, text: 'Great Views' },
+                        { icon: Icons.Heart, text: 'Premium Beds' },
+                        { icon: Icons.Waves, text: 'Luxury Bath' }
+                      ].map((item, i) => {
+                        const IconComponent = item.icon;
+                        return (
+                          <div className="hd-rm-mini" key={i}>
+                            <span className="hd-rm-mini-ic"><IconComponent size={14} /></span>
+                            <p>{item.text}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Guest quotes */}
+                  <div className="hd-rm-sec">
+                    <p className="hd-rm-sec-title">What guests say</p>
+                    <div className="hd-rm-grid2">
+                      {[
+                        {
+                          quote: 'Beautiful room with excellent view. The bed was very comfortable!',
+                          author: 'Sarah M.',
+                          date: 'Feb 2024'
+                        },
+                        {
+                          quote: 'Loved the modern design and spacious bathroom. Highly recommended!',
+                          author: 'James P.',
+                          date: 'Jan 2024'
+                        }
+                      ].map((item, i) => (
+                        <div className="hd-rm-quote" key={i}>
+                          <span className="hd-rm-stars">
+                            {[0, 1, 2, 3, 4].map((s) => (
+                              <Icons.Star key={s} size={12} filled />
+                            ))}
+                          </span>
+                          <p>"{item.quote}"</p>
+                          <small>{item.author} · {item.date}</small>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Policies */}
+                  <div className="hd-rm-sec">
+                    <p className="hd-rm-sec-title">Room rules &amp; policies</p>
+                    <div className="hd-rm-grid2">
+                      <div className="hd-rm-policy">
+                        <p className="hd-rm-policy-t"><Icons.Clock size={14} /> Check-in / Check-out</p>
+                        <p className="hd-rm-policy-d">Check-in: 2:00 PM · Check-out: 11:00 AM</p>
+                      </div>
+                      <div className="hd-rm-policy">
+                        <p className="hd-rm-policy-t"><Icons.Filter size={14} /> Pet Policy</p>
+                        <p className="hd-rm-policy-d">Pets not allowed</p>
+                      </div>
+                      <div className="hd-rm-policy">
+                        <p className="hd-rm-policy-t"><Icons.Info size={14} /> Smoking Policy</p>
+                        <p className="hd-rm-policy-d">Non-smoking room</p>
+                      </div>
+                      <div className="hd-rm-policy">
+                        <p className="hd-rm-policy-t"><Icons.X size={14} /> Events &amp; Parties</p>
+                        <p className="hd-rm-policy-d">Not permitted</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* FAQ */}
+                  <div className="hd-rm-sec">
+                    <p className="hd-rm-sec-title">Common questions</p>
+                    <div className="hd-rm-faq">
+                      {[
+                        { q: 'Can I modify my booking?', a: 'Yes, free modifications up to 7 days before check-in' },
+                        { q: 'What is the earliest check-in?', a: '2:00 PM standard, subject to availability' },
+                        { q: 'Is breakfast included?', a: 'Yes, complimentary daily breakfast' },
+                        { q: 'Is WiFi available?', a: 'Yes, free high-speed WiFi throughout' }
+                      ].map((item, i) => (
+                        <details className="hd-rm-faq-item" key={i}>
+                          <summary>
+                            <span><Icons.Info size={13} /> {item.q}</span>
+                            <span className="hd-rm-chev"><Icons.ChevronDown size={14} /></span>
+                          </summary>
+                          <p>{item.a}</p>
+                        </details>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              )}
 
-              {/* Previous Button */}
-              <button
-                onClick={() => setRoomImageIndex(Math.max(0, roomImageIndex - 1))}
-                style={{
-                  position: 'absolute',
-                  left: '1rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(0, 0, 0, 0.5)',
-                  color: 'white',
-                  border: 'none',
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '50%',
-                  cursor: roomImageIndex === 0 ? 'not-allowed' : 'pointer',
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.3s',
-                  opacity: roomImageIndex === 0 ? 0.3 : 0.8
-                }}
-                onMouseOver={(e) => {
-                  if (roomImageIndex > 0) {
-                    e.currentTarget.style.background = 'rgba(0, 0, 0, 0.7)';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'rgba(0, 0, 0, 0.5)';
-                }}
-              >
-                ‹
-              </button>
+                {/* Right: booking panel */}
+                <div className="hd-rm-side">
+                  <div className="hd-rm-side-inner">
+                    {/* Perfect for */}
+                    <div className="hd-rm-sec">
+                      <p className="hd-rm-sec-title">Perfect for</p>
+                      <div className="hd-rm-grid2">
+                        {[
+                          { icon: Icons.Users, label: 'Family Trips', detail: '3–4 guests with comfort' },
+                          { icon: Icons.Heart, label: 'Couples', detail: 'Romantic getaway' },
+                          { icon: Icons.MapPin, label: 'Business Travel', detail: 'Work & relaxation' },
+                          { icon: Icons.User, label: 'Solo Travelers', detail: 'Independent exploration' }
+                        ].map((item, idx) => {
+                          const IconComponent = item.icon;
+                          return (
+                            <div className="hd-rm-perfect" key={idx}>
+                              <IconComponent size={14} />
+                              <p className="hd-rm-perfect-l">{item.label}</p>
+                              <p className="hd-rm-perfect-d">{item.detail}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
 
-              {/* Next Button */}
-              <button
-                onClick={() => setRoomImageIndex(Math.min(0, roomImageIndex + 1))}
-                style={{
-                  position: 'absolute',
-                  right: '1rem',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(0, 0, 0, 0.5)',
-                  color: 'white',
-                  border: 'none',
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '50%',
-                  cursor: 'not-allowed',
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.3s',
-                  opacity: 0.3
-                }}
-              >
-                ›
-              </button>
+                    {/* Price + availability */}
+                    <div className="hd-rm-pricebox">
+                      <div>
+                        <p className="hd-rm-sec-title">Price per night</p>
+                        <p className="hd-rm-price">₱{parseFloat(selectedRoom.price_per_night).toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="hd-rm-sec-title">Availability</p>
+                        <p className={`hd-rm-avail${selectedRoom.quantity_available > 0 ? '' : ' bad'}`}>
+                          <span className="hd-rm-dot" />
+                          {selectedRoom.quantity_available > 0 ? selectedRoom.quantity_available : '0'}
+                        </p>
+                        <p className="hd-rm-avail-sub">
+                          {selectedRoom.quantity_available > 0
+                            ? t('availability_rooms_pattern').replace('{count}', String(selectedRoom.quantity_available))
+                            : t('room_currently_unavailable')}
+                        </p>
+                      </div>
+                    </div>
 
-              {/* Image Counter */}
-              <div style={{
-                position: 'absolute',
-                bottom: '1rem',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: 'rgba(0, 0, 0, 0.6)',
-                color: 'white',
-                padding: '0.5rem 1rem',
-                borderRadius: '24px',
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                backdropFilter: 'blur(10px)'
-              }}>
-                Gallery (1 / 1)
-              </div>
-              
-              {/* Close Button */}
-              <button
-                onClick={() => {
-                  setSelectedRoom(null);
-                  setRoomImageIndex(0);
-                }}
-                style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  right: '1rem',
-                  background: 'rgba(255, 255, 255, 0.95)',
-                  border: 'none',
-                  color: '#1B5E20',
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                  transition: 'all 0.3s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'white';
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.95)';
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-              >
-                ✕
-              </button>
-              
-              {/* Status Badge */}
-              {!selectedRoom.is_active && (
-                <div style={{
-                  position: 'absolute',
-                  top: '1rem',
-                  left: '1rem',
-                  background: '#EF5350',
-                  color: 'white',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '24px',
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                }}>
-                  Unavailable
+                    {/* Perks */}
+                    <div className="hd-rm-perks">
+                      <div className="hd-rm-perk hd-rm-perk-amber">
+                        <Icons.Money size={15} />
+                        <p className="hd-rm-perk-t">BEST RATES</p>
+                        <p className="hd-rm-perk-d">Guaranteed best price</p>
+                      </div>
+                      <div className="hd-rm-perk hd-rm-perk-green">
+                        <Icons.Check size={15} />
+                        <p className="hd-rm-perk-t">INSTANT BOOK</p>
+                        <p className="hd-rm-perk-d">Confirmation within 2 hours</p>
+                      </div>
+                      <div className="hd-rm-perk hd-rm-perk-purple">
+                        <Icons.Sparkles size={15} />
+                        <p className="hd-rm-perk-t">WELCOME OFFER</p>
+                        <p className="hd-rm-perk-d">Special perks for new guests</p>
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className={`hd-rm-status${selectedRoom.is_active ? '' : ' bad'}`}>
+                      <p className="hd-rm-status-label">Room status</p>
+                      <p className="hd-rm-status-value">
+                        <Icons.Check size={14} />
+                        {!roomUnavailable ? t('available_for_booking') : t('room_currently_unavailable')}
+                      </p>
+                    </div>
+
+                    {roomPromoOnly && (
+                      <div className="hd-rm-note">
+                        <Icons.Megaphone size={13} />
+                        <p>{t('listing_only_notice')}</p>
+                      </div>
+                    )}
+
+                    {/* Desktop CTA */}
+                    <div className="hd-rm-cta">
+                      {roomBookable && (
+                        <button className="hd-rm-book" onClick={roomBookNow}>{t('book_now')}</button>
+                      )}
+                      <button
+                        className={`hd-rm-share${roomBookable ? '' : ' full'}`}
+                        onClick={shareRoom}
+                        title={t('share_this_room')}
+                        aria-label={t('share_this_room')}
+                      >
+                        <Icons.ArrowUpRight size={16} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              )}
-
-              {/* Instant Confirmation Badge */}
-              <div style={{
-                position: 'absolute',
-                bottom: '1rem',
-                right: '1rem',
-                background: 'linear-gradient(135deg, rgba(76, 175, 80, 0.9) 0%, rgba(46, 125, 50, 0.9) 100%)',
-                color: 'white',
-                padding: '0.75rem 1rem',
-                borderRadius: '24px',
-                fontSize: '0.8rem',
-                fontWeight: 700,
-                textAlign: 'center',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-              }}>
-                <div style={{ fontSize: '0.95rem', fontWeight: 800 }}>✓ Instant</div>
-                <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>Confirmation</div>
               </div>
             </div>
 
-            {/* Modal Body */}
-            <div style={{ padding: '2.5rem' }}>
-              {/* Room Name */}
-              <h2 style={{
-                margin: '0 0 0.5rem 0',
-                fontSize: '1.8rem',
-                fontWeight: 800,
-                color: '#1B5E20',
-                letterSpacing: '-0.5px'
-              }}>
-                {selectedRoom.room_type_name}
-              </h2>
-
-              {/* Description */}
-              {selectedRoom.description && (
-                <p style={{
-                  margin: '0 0 1.5rem 0',
-                  color: '#666',
-                  fontSize: '0.95rem',
-                  lineHeight: 1.8,
-                  fontWeight: 500
-                }}>
-                  {selectedRoom.description}
-                </p>
-              )}
-
-              {/* Quick Features Badges */}
-              <div style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                gap: '0.7rem',
-                marginBottom: '1.5rem'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  background: '#e8f5e9',
-                  padding: '0.6rem 1rem',
-                  borderRadius: '20px',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  color: '#2e7d32'
-                }}>
-                  <span>✓</span> {t('booking_benefit_free_cancellation')}
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  background: '#e8f5e9',
-                  padding: '0.6rem 1rem',
-                  borderRadius: '20px',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  color: '#2e7d32'
-                }}>
-                  <span>⚡</span> {t('instant_booking')}
-                </div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  background: '#fff3e0',
-                  padding: '0.6rem 1rem',
-                  borderRadius: '20px',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  color: '#f57c00'
-                }}>
-                  <span>★</span> {t('best_value')}
-                </div>
+            {/* Mobile sticky CTA */}
+            <div className="hd-rm-mbar">
+              <div className="hd-rm-mbar-price">
+                <small>{t('per_night')}</small>
+                <strong>₱{parseFloat(selectedRoom.price_per_night).toLocaleString()}</strong>
               </div>
-
-              {/* Divider */}
-              <div style={{
-                height: '1px',
-                background: '#e8e8e8',
-                marginBottom: '1.5rem'
-              }}></div>
-
-              {/* Details Grid - 3 Columns */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-                gap: '2rem',
-                marginBottom: '2rem'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column'
-                }}>
-                  <span style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    color: '#999',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    marginBottom: '0.75rem'
-                  }}>
-                    Guest Capacity
-                  </span>
-                  <span style={{
-                    fontSize: '1.8rem',
-                    fontWeight: 800,
-                    color: '#2E7D32'
-                  }}>
-                    {selectedRoom.capacity}
-                  </span>
-                  <span style={{
-                    fontSize: '0.85rem',
-                    color: '#999',
-                    marginTop: '0.25rem'
-                  }}>
-                    {selectedRoom.capacity === 1 ? 'person' : 'people'}
-                  </span>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column'
-                }}>
-                  <span style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    color: '#999',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    marginBottom: '0.75rem'
-                  }}>
-                    Bed Type
-                  </span>
-                  <span style={{
-                    fontSize: '1.8rem',
-                    fontWeight: 800,
-                    color: '#2E7D32'
-                  }}>
-                    King
-                  </span>
-                  <span style={{
-                    fontSize: '0.85rem',
-                    color: '#999',
-                    marginTop: '0.25rem'
-                  }}>
-                    bed(s)
-                  </span>
-                </div>
-
-                {selectedRoom.room_size_sqm && (
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column'
-                  }}>
-                    <span style={{
-                      fontSize: '0.8rem',
-                      fontWeight: 700,
-                      color: '#999',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px',
-                      marginBottom: '0.75rem'
-                    }}>
-                      Room Size
-                    </span>
-                    <span style={{
-                      fontSize: '1.8rem',
-                      fontWeight: 800,
-                      color: '#2E7D32'
-                    }}>
-                      {selectedRoom.room_size_sqm}m²
-                    </span>
-                    <span style={{
-                      fontSize: '0.85rem',
-                      color: '#999',
-                      marginTop: '0.25rem'
-                    }}>
-                      square meters
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              {/* Reviews Rating Section */}
-              <div style={{
-                padding: '1.5rem',
-                background: '#f9f9f9',
-                borderRadius: '12px',
-                border: '1px solid #e8e8e8',
-                marginBottom: '2rem',
-                textAlign: 'center'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.5rem',
-                  marginBottom: '0.75rem'
-                }}>
-                  <span style={{
-                    fontSize: '1.8rem',
-                    fontWeight: 800,
-                    color: '#2e7d32'
-                  }}>
-                    4.8
-                  </span>
-                  <div style={{
-                    display: 'flex',
-                    gap: '0.2rem'
-                  }}>
-                    {[...Array(5)].map((_, i) => (
-                      <span key={i} style={{
-                        fontSize: '1.2rem',
-                        color: i < 4 ? '#ffc107' : '#ddd'
-                      }}>
-                        ★
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <p style={{
-                  margin: 0,
-                  fontSize: '0.85rem',
-                  color: '#666',
-                  fontWeight: 500
-                }}>
-                  Based on 247 verified guest reviews
-                </p>
-              </div>
-
-              {/* Amenities Section */}
-              {sanitizedSelectedRoomAmenities.length > 0 ? (
-                <div style={{ marginBottom: '2rem' }}>
-                  <h3 style={{
-                    margin: '0 0 1rem 0',
-                    fontSize: '0.95rem',
-                    fontWeight: 700,
-                    color: '#1B5E20',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px'
-                  }}>
-                    Room Amenities
-                  </h3>
-                  <div style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '0.7rem'
-                  }}>
-                    {sanitizedSelectedRoomAmenities.map((amenity, i) => (
-                      <span key={i} style={{
-                        background: '#f0fdf4',
-                        color: '#2E7D32',
-                        padding: '0.6rem 1.2rem',
-                        borderRadius: '24px',
-                        fontSize: '0.9rem',
-                        fontWeight: 600,
-                        border: '1.5px solid #c8e6c9',
-                        transition: 'all 0.2s'
-                      }}>
-                        {amenity}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+              {roomBookable ? (
+                <button className="hd-rm-book" onClick={roomBookNow}>{t('book_now')}</button>
               ) : (
-                <div style={{ marginBottom: '1rem', color: '#6b7280', fontStyle: 'italic' }}>{t('no_amenities_listed') || 'No amenities listed'}</div>
-              )}
-
-              {/* What's Included Section */}
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{
-                  margin: '0 0 1rem 0',
-                  fontSize: '0.95rem',
-                  fontWeight: 700,
-                  color: '#1B5E20',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px'
-                }}>
-                  What's Included
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                  gap: '0.8rem'
-                }}>
-                  {[
-                    { icon: Icons.Utensils, text: 'Complimentary Breakfast' },
-                    { icon: Icons.Cloud, text: 'Free High-Speed WiFi' },
-                    { icon: Icons.Cloud, text: 'Air Conditioning' },
-                    { icon: Icons.Film, text: 'Smart TV & Streaming' },
-                    { icon: Icons.Eye, text: 'Premium Toiletries' },
-                    { icon: Icons.Leaf, text: 'Daily Housekeeping' }
-                  ].map((item, idx) => {
-                    const IconComponent = item.icon;
-                    return (
-                      <div
-                        key={idx}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.8rem',
-                          padding: '0.8rem',
-                          background: '#e8f5e9',
-                          borderRadius: '8px',
-                          border: '1px solid #c8e6c9'
-                        }}
-                      >
-                        <IconComponent size={20} style={{ color: '#2E7D32', minWidth: '20px' }} />
-                        <span style={{
-                          fontSize: '0.85rem',
-                          fontWeight: 600,
-                          color: '#2E7D32'
-                        }}>
-                          {item.text}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Key Highlights Section */}
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{
-                  margin: '0 0 1rem 0',
-                  fontSize: '0.95rem',
-                  fontWeight: 700,
-                  color: '#1B5E20',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px'
-                }}>
-                  Why Guests Love This Room
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                  gap: '1rem'
-                }}>
-                  {[
-                    { icon: Icons.Sparkles, text: 'Modern Design' },
-                    { icon: Icons.Mountain, text: 'Great Views' },
-                    { icon: Icons.Heart, text: 'Premium Beds' },
-                    { icon: Icons.Waves, text: 'Luxury Bath' }
-                  ].map((item, i) => {
-                    const IconComponent = item.icon;
-                    return (
-                      <div key={i} style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        padding: '0.75rem',
-                        background: '#f5f5f5',
-                        borderRadius: '8px',
-                        border: '1px solid #e8e8e8'
-                      }}>
-                        <IconComponent size={20} style={{ color: '#2E7D32', minWidth: '20px' }} />
-                        <span style={{
-                          fontSize: '0.9rem',
-                          fontWeight: 600,
-                          color: '#333'
-                        }}>
-                          {item.text}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div style={{
-                height: '1px',
-                background: '#e8e8e8',
-                marginBottom: '2rem'
-              }}></div>
-
-              {/* Guest Testimonials */}
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{
-                  margin: '0 0 1rem 0',
-                  fontSize: '0.95rem',
-                  fontWeight: 700,
-                  color: '#1B5E20',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px'
-                }}>
-                  What Guests Say
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                  gap: '1rem'
-                }}>
-                  {[
-                    {
-                      quote: "Beautiful room with excellent view. The bed was very comfortable!",
-                      author: "Sarah M.",
-                      date: "Feb 2024"
-                    },
-                    {
-                      quote: "Loved the modern design and spacious bathroom. Highly recommended!",
-                      author: "James P.",
-                      date: "Jan 2024"
-                    }
-                  ].map((testimonial, i) => (
-                    <div key={i} style={{
-                      padding: '1rem',
-                      background: '#f9f9f9',
-                      borderRadius: '10px',
-                      border: '1px solid #e8e8e8',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '0.75rem'
-                    }}>
-                      <div style={{
-                        display: 'flex',
-                        gap: '0.2rem'
-                      }}>
-                        {[...Array(5)].map((_, j) => (
-                          <span key={j} style={{
-                            fontSize: '1rem',
-                            color: '#ffc107'
-                          }}>
-                            ★
-                          </span>
-                        ))}
-                      </div>
-                      <p style={{
-                        margin: 0,
-                        fontSize: '0.9rem',
-                        color: '#333',
-                        fontStyle: 'italic',
-                        lineHeight: 1.6
-                      }}>
-                        "{testimonial.quote}"
-                      </p>
-                      <div style={{
-                        fontSize: '0.85rem',
-                        color: '#999',
-                        fontWeight: 600
-                      }}>
-                        {testimonial.author} <span style={{ color: '#ccc' }}>•</span> {testimonial.date}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div style={{
-                height: '1px',
-                background: '#e8e8e8',
-                marginBottom: '2rem'
-              }}></div>
-
-              {/* Room Rules & Policies */}
-              <div style={{ marginBottom: '2rem' }}>
-                <h3 style={{
-                  margin: '0 0 1rem 0',
-                  fontSize: '0.95rem',
-                  fontWeight: 700,
-                  color: '#1B5E20',
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px'
-                }}>
-                  Room Rules & Policies
-</h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                  gap: '0.8rem'
-                }}>
-                  <div>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '0.75rem',
-                      marginBottom: '1rem'
-                    }}>
-                      <Icons.Clock size={20} style={{ color: '#2E7D32', marginTop: '0.2rem', minWidth: '20px' }} />
-                      <div>
-                        <div style={{
-                          fontSize: '0.9rem',
-                          fontWeight: 700,
-                          color: '#333',
-                          marginBottom: '0.25rem'
-                        }}>
-                          Check-in / Check-out
-                        </div>
-                        <div style={{
-                          fontSize: '0.85rem',
-                          color: '#666'
-                        }}>
-                          Check-in: 2:00 PM • Check-out: 11:00 AM
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '0.75rem'
-                    }}>
-                      <Icons.Info size={20} style={{ color: '#2E7D32', marginTop: '0.2rem', minWidth: '20px' }} />
-                      <div>
-                        <div style={{
-                          fontSize: '0.9rem',
-                          fontWeight: 700,
-                          color: '#333',
-                          marginBottom: '0.25rem'
-                        }}>
-                          Smoking Policy
-                        </div>
-                        <div style={{
-                          fontSize: '0.85rem',
-                          color: '#666'
-                        }}>
-                          Non-smoking room
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '0.75rem',
-                      marginBottom: '1rem'
-                    }}>
-                      <Icons.Filter size={20} style={{ color: '#2E7D32', marginTop: '0.2rem', minWidth: '20px' }} />
-                      <div>
-                        <div style={{
-                          fontSize: '0.9rem',
-                          fontWeight: 700,
-                          color: '#333',
-                          marginBottom: '0.25rem'
-                        }}>
-                          Pet Policy
-                        </div>
-                        <div style={{
-                          fontSize: '0.85rem',
-                          color: '#666'
-                        }}>
-                          Pets not allowed
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '0.75rem'
-                    }}>
-                      <Icons.X size={20} style={{ color: '#2E7D32', marginTop: '0.2rem', minWidth: '20px' }} />
-                      <div>
-                        <div style={{
-                          fontSize: '0.9rem',
-                          fontWeight: 700,
-                          color: '#333',
-                          marginBottom: '0.25rem'
-                        }}>
-                          Events & Parties
-                        </div>
-                        <div style={{
-                          fontSize: '0.85rem',
-                          color: '#666'
-                        }}>
-                          Not permitted
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div style={{
-                height: '1px',
-                background: '#e8e8e8',
-                marginBottom: '2rem'
-              }}></div>
-
-              {/* Quick FAQ Section */}
-              <div style={{
-                marginBottom: '2rem'
-              }}>
-                <h3 style={{
-                  fontSize: '1.1rem',
-                  fontWeight: 700,
-                  color: '#2E7D32',
-                  marginBottom: '1rem',
-                  letterSpacing: '0.5px'
-                }}>
-                  Common Questions
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                  gap: '1rem'
-                }}>
-                  {[
-                    { q: 'Can I modify my booking?', a: 'Yes, free modifications up to 7 days before check-in' },
-                    { q: 'What is the earliest check-in?', a: '2:00 PM standard, subject to availability' },
-                    { q: 'Is breakfast included?', a: 'Yes, complimentary daily breakfast' },
-                    { q: 'Is WiFi available?', a: 'Yes, free high-speed WiFi throughout' }
-                  ].map((item, idx) => (
-                    <div
-                      key={idx}
-                      style={{
-                        padding: '1rem',
-                        background: '#fafafa',
-                        borderRadius: '8px',
-                        border: '1px solid #e8e8e8'
-                      }}
-                    >
-                      <div style={{
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        color: '#2E7D32',
-                        marginBottom: '0.5rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem'
-                      }}>
-                        <Icons.Info size={16} style={{ color: '#2E7D32' }} />
-                        {item.q}
-                      </div>
-                      <div style={{
-                        fontSize: '0.8rem',
-                        color: '#666',
-                        lineHeight: 1.4
-                      }}>
-                        {item.a}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div style={{
-                marginBottom: '2rem'
-              }}>
-                <h3 style={{
-                  fontSize: '1.1rem',
-                  fontWeight: 700,
-                  color: '#2E7D32',
-                  marginBottom: '1rem',
-                  letterSpacing: '0.5px'
-                }}>
-                  Perfect For
-                </h3>
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                  gap: '0.8rem'
-                }}>
-                  {[
-                    { icon: Icons.Users, label: 'Family Trips', detail: '3-4 guests with comfort' },
-                    { icon: Icons.Heart, label: 'Couples', detail: 'Romantic getaway' },
-                    { icon: Icons.MapPin, label: 'Business Travel', detail: 'Work & relaxation' },
-                    { icon: Icons.User, label: 'Solo Travelers', detail: 'Independent exploration' }
-                  ].map((item, idx) => {
-                    const IconComponent = item.icon;
-                    return (
-                      <div
-                        key={idx}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.8rem',
-                          padding: '0.8rem',
-                          background: '#f5f5f5',
-                          borderRadius: '8px',
-                          border: '1px solid #e8e8e8'
-                        }}
-                      >
-                        <IconComponent size={24} style={{ color: '#2E7D32', minWidth: '24px' }} />
-                        <div>
-                          <div style={{
-                            fontSize: '0.85rem',
-                            fontWeight: 700,
-                            color: '#2E7D32'
-                          }}>
-                            {item.label}
-                          </div>
-                          <div style={{
-                            fontSize: '0.75rem',
-                            color: '#999'
-                          }}>
-                            {item.detail}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Pricing & Availability */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                gap: '2rem',
-                padding: '2rem',
-                background: '#f0fdf4',
-                borderRadius: '12px',
-                border: '1px solid #c8e6c9',
-                marginBottom: '2rem'
-              }}>
-                <div>
-                  <span style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    color: '#999',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    display: 'block',
-                    marginBottom: '0.75rem'
-                  }}>
-                    Price per Night
-                  </span>
-                  <div style={{
-                    fontSize: '2rem',
-                    fontWeight: 800,
-                    color: '#2E7D32',
-                    lineHeight: 1.2
-                  }}>
-                    ₱{parseFloat(selectedRoom.price_per_night).toLocaleString()}
-                  </div>
-                </div>
-
-                <div>
-                  <span style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    color: '#999',
-                    textTransform: 'uppercase',
-                    letterSpacing: '1px',
-                    display: 'block',
-                    marginBottom: '0.75rem'
-                  }}>
-                    Availability
-                  </span>
-                  <div style={{
-                    fontSize: '1.5rem',
-                    fontWeight: 800,
-                    color: selectedRoom.quantity_available > 0 ? '#2E7D32' : '#c62828',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem'
-                  }}>
-                    <span style={{
-                      width: '12px',
-                      height: '12px',
-                      borderRadius: '50%',
-                      background: selectedRoom.quantity_available > 0 ? '#2E7D32' : '#c62828'
-                    }}></span>
-                    {selectedRoom.quantity_available > 0 
-                      ? selectedRoom.quantity_available
-                      : '0'
-                    }
-                  </div>
-                  <span style={{
-                    fontSize: '0.85rem',
-                    color: '#999',
-                    marginTop: '0.25rem',
-                    display: 'block'
-                  }}>
-                    {selectedRoom.quantity_available > 0 
-                      ? t('availability_rooms_pattern').replace('{count}', String(selectedRoom.quantity_available))
-                      : t('room_currently_unavailable')
-                    }
-                  </span>
-                </div>
-              </div>
-
-              {/* Booking Benefits Section */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '1rem',
-                marginBottom: '2rem'
-              }}>
-                {/* Benefit 1: Flexible Cancellation */}
-                <div style={{
-                  background: '#fef9e7',
-                  border: '1.5px solid #ffd54f',
-                  borderRadius: '10px',
-                  padding: '1rem',
-                  textAlign: 'center'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    marginBottom: '0.6rem'
-                  }}>
-                    <Icons.Money size={28} style={{ color: '#f57f17' }} />
-                  </div>
-                  <div style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    color: '#f57f17',
-                    marginBottom: '0.3rem'
-                  }}>
-                    BEST RATES
-                  </div>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    color: '#555'
-                  }}>
-                    Guaranteed best price
-                  </div>
-                </div>
-
-                {/* Benefit 2: Instant Booking */}
-                <div style={{
-                  background: '#c8e6c9',
-                  border: '1.5px solid #81c784',
-                  borderRadius: '10px',
-                  padding: '1rem',
-                  textAlign: 'center'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    marginBottom: '0.6rem'
-                  }}>
-                    <Icons.Check size={28} style={{ color: '#2e7d32' }} />
-                  </div>
-                  <div style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    color: '#2e7d32',
-                    marginBottom: '0.3rem'
-                  }}>
-                    INSTANT BOOK
-                  </div>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    color: '#555'
-                  }}>
-                    Confirmation within 2 hours
-                  </div>
-                </div>
-
-                {/* Benefit 3: Special */}
-                <div style={{
-                  background: '#f3e5f5',
-                  border: '1.5px solid #ce93d8',
-                  borderRadius: '10px',
-                  padding: '1rem',
-                  textAlign: 'center'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    marginBottom: '0.6rem'
-                  }}>
-                    <Icons.Sparkles size={28} style={{ color: '#7b1fa2' }} />
-                  </div>
-                  <div style={{
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    color: '#7b1fa2',
-                    marginBottom: '0.3rem'
-                  }}>
-                    WELCOME OFFER
-                  </div>
-                  <div style={{
-                    fontSize: '0.75rem',
-                    color: '#555'
-                  }}>
-                    Special perks for new guests
-                  </div>
-                </div>
-              </div>
-
-              {/* Room Status Section */}
-              <div style={{
-                padding: '1.5rem',
-                background: selectedRoom.is_active ? '#e8f5e9' : '#ffebee',
-                borderRadius: '10px',
-                border: `2px solid ${selectedRoom.is_active ? '#4caf50' : '#ef5350'}`,
-                marginBottom: '2rem'
-              }}>
-                <div style={{
-                  fontSize: '0.85rem',
-                  fontWeight: 700,
-                  color: selectedRoom.is_active ? '#2e7d32' : '#c62828',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  marginBottom: '0.5rem'
-                }}>
-                  Room Status
-                </div>
-                <div style={{
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  color: selectedRoom.is_active ? '#2e7d32' : '#c62828'
-                }}>
-                  {selectedRoom.is_active ? t('available_for_booking') || 'Available for Booking' : t('room_currently_unavailable')}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 0.3fr',
-                gap: '1rem'
-              }}>
-                {/* Book Now Button */}
-                {selectedRoom.is_active && selectedRoom.quantity_available > 0 && (
-                  <button
-                    onClick={() => {
-                      setBookingForm(prev => ({
-                        ...prev,
-                        selectedRoomId: selectedRoom.room_id,
-                        selectedRoomType: selectedRoom.room_type_name
-                      }));
-                      setSelectedRoom(null);
-                      setShowBookingModal(true);
-                    }}
-                    style={{
-                      padding: '1.2rem',
-                      background: '#2E7D32',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '10px',
-                      fontSize: '1.05rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.3s',
-                      textTransform: 'uppercase',
-                      letterSpacing: '1px'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = '#1B5E20';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 8px 20px rgba(46, 125, 50, 0.3)';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = '#2E7D32';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
-                  >
-                    {t('book_now')}
-                  </button>
-                )}
-                
-                {/* Share Room Button */}
                 <button
-                  onClick={() => {
-                    const shareUrl = window.location.href;
-                    const shareText = `Check out ${selectedRoom.room_type_name} at ${hotel.name}! ⭐`;
-                    
-                    if (navigator.share) {
-                      navigator.share({
-                        title: selectedRoom.room_type_name,
-                        text: shareText,
-                        url: shareUrl
-                      });
-                    } else {
-                      // Fallback: copy to clipboard
-                      navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
-                      alert(t('room_link_copied'));
-                    }
-                  }}
-                  style={{
-                    padding: '1.2rem',
-                    background: '#f0fdf4',
-                    color: '#2E7D32',
-                    border: '2px solid #2E7D32',
-                    borderRadius: '10px',
-                    fontSize: '1.2rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#2E7D32';
-                    e.currentTarget.style.color = 'white';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = '#f0fdf4';
-                    e.currentTarget.style.color = '#2E7D32';
-                  }}
+                  className="hd-rm-share"
+                  onClick={shareRoom}
                   title={t('share_this_room')}
+                  aria-label={t('share_this_room')}
                 >
-                  ↗
+                  <Icons.ArrowUpRight size={16} />
                 </button>
-              </div>
+              )}
             </div>
           </div>
         </div>
