@@ -1,0 +1,548 @@
+/* ==========================================
+   Room Management (owner) — styled to match
+   the Hotel Details room modal (hd-rm-*).
+   hd-rm-* classes come from HotelDetail.css.
+   All selectors here are rm-* prefixed.
+   ========================================== */
+
+.rm-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.rm-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.rm-card:hover {
+  border-color: #a7f3d0;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+}
+
+.rm-gallery {
+  height: 170px;
+  border-radius: 0;
+  flex-shrink: 0;
+}
+
+.rm-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  flex: 1;
+}
+
+.rm-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+/* Stat bento with auto-fit so 2 or 3 tiles both look balanced */
+.rm-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+  gap: 0.5rem;
+}
+
+.rm-more {
+  margin: 0.4rem 0 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.rm-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: auto;
+  padding-top: 0.35rem;
+}
+
+/* Buttons (tokens mirror hd-rm-book / hd-rm-share) */
+.hd-rm-side-inner > .hd-rm-book {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+.hd-rm-cta .rm-btn {
+  flex: 1;
+}
+
+.rm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 0.82rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.rm-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.rm-btn-ghost {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+.rm-btn-ghost:hover:enabled {
+  background: #f8fafc;
+  border-color: #10b981;
+  color: #047857;
+}
+
+.rm-btn-danger {
+  background: #ffffff;
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.rm-btn-danger:hover:enabled {
+  background: #fef2f2;
+  border-color: #ef4444;
+}
+
+.rm-btn-primary {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(16, 185, 129, 0.25);
+}
+
+.rm-btn-primary:hover:enabled {
+  background: #059669;
+  border-color: #059669;
+}
+
+.rm-btn-done {
+  background: #ffffff;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
+.rm-btn-done:hover {
+  background: #ecfdf5;
+}
+
+/* Loading / empty */
+.rm-loading {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.rm-loading p {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.rm-spinner,
+.rm-spin {
+  width: 38px;
+  height: 38px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #10b981;
+  border-radius: 50%;
+  margin: 0 auto 0.9rem;
+  animation: rmSpin 1s linear infinite;
+}
+
+.rm-spin {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  border-width: 2px;
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+}
+
+@keyframes rmSpin {
+  to { transform: rotate(360deg); }
+}
+
+.rm-empty {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background: #f8fafc;
+  border: 2px dashed #e2e8f0;
+  border-radius: 14px;
+  color: #64748b;
+}
+
+.rm-empty svg {
+  color: #a7f3d0;
+}
+
+.rm-empty h3 {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #334155;
+}
+
+.rm-empty p {
+  margin: 0 0 1.25rem;
+  font-size: 0.85rem;
+}
+
+.rm-empty .rm-btn {
+  display: inline-flex;
+}
+
+/* ---------- Form ---------- */
+.rm-form {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+}
+
+@media (min-width: 640px) {
+  .rm-form {
+    padding: 1.5rem;
+  }
+}
+
+.rm-form-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.rm-form-ic {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.rm-form-head h3 {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.rm-form-head p {
+  margin: 0.15rem 0 0;
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.rm-form-sec {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.rm-form-sec > .hd-rm-sec-title {
+  margin: 0;
+}
+
+.rm-grid3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  gap: 0.85rem;
+}
+
+.rm-grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.85rem;
+}
+
+.rm-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.rm-label {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.rm-label svg {
+  color: #059669;
+}
+
+.rm-label .req {
+  color: #ef4444;
+}
+
+.rm-input {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.88rem;
+  font-family: inherit;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.rm-input::placeholder {
+  color: #94a3b8;
+}
+
+.rm-input:focus {
+  outline: none;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+}
+
+textarea.rm-input {
+  resize: vertical;
+  min-height: 78px;
+  line-height: 1.5;
+}
+
+.rm-hint {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+.rm-sublabel {
+  margin: 0 0 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #047857;
+}
+
+/* Photos */
+.rm-file {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px dashed #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.85rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.rm-file:hover {
+  border-color: #10b981;
+  background: #f0fdf4;
+}
+
+.rm-thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 0.6rem;
+}
+
+.rm-thumb {
+  position: relative;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  aspect-ratio: 1;
+  background: #f8fafc;
+}
+
+.rm-thumb.new {
+  border: 2px solid #10b981;
+}
+
+.rm-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.rm-thumb-x {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.3rem;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.95);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.rm-thumb-x:hover {
+  background: #dc2626;
+}
+
+/* Policy checkboxes as mini cards */
+.rm-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(165px, 1fr));
+  gap: 0.6rem;
+}
+
+.rm-check {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.7rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.rm-check svg {
+  color: #059669;
+}
+
+.rm-check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #10b981;
+  cursor: pointer;
+  margin: 0;
+}
+
+.rm-check:has(input:checked) {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.rm-form-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* ---------- Dark mode ---------- */
+[data-theme="dark"] .rm-card,
+[data-theme="dark"] .rm-form,
+[data-theme="dark"] .rm-thumb {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .rm-card:hover {
+  border-color: #059669;
+}
+
+[data-theme="dark"] .rm-title,
+[data-theme="dark"] .rm-form-head h3,
+[data-theme="dark"] .rm-empty h3 {
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .rm-label,
+[data-theme="dark"] .rm-check {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .rm-input,
+[data-theme="dark"] .rm-file {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .rm-input:focus {
+  border-color: #10b981;
+}
+
+[data-theme="dark"] .rm-file:hover,
+[data-theme="dark"] .rm-check:has(input:checked) {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: #34d399;
+}
+
+[data-theme="dark"] .rm-btn-ghost,
+[data-theme="dark"] .rm-btn-danger,
+[data-theme="dark"] .rm-btn-done {
+  background: #0f172a;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .rm-btn-ghost:hover:enabled {
+  background: #16233a;
+  border-color: #059669;
+  color: #34d399;
+}
+
+[data-theme="dark"] .rm-btn-danger:hover:enabled {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: #ef4444;
+  color: #f87171;
+}
+
+[data-theme="dark"] .rm-btn-done:hover {
+  background: #064e3b;
+}
+
+[data-theme="dark"] .rm-empty,
+[data-theme="dark"] .rm-loading {
+  background: #0f172a;
+  border-color: #334155;
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .rm-empty h3 {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .rm-form-actions {
+  border-top-color: #334155;
+}

@@ -26,6 +26,7 @@ import naujanGoLogo from '../assets/552820828_1195483019268738_37207696287107793
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import './OwnerDashboard.css';
+import './HotelDetail.css';
 
 const getHotelPaymentMethodOptions = (t) => [
   { value: 'card', label: t('payment_provider_card') },
@@ -263,6 +264,30 @@ const OwnerDashboard = () => {
       setPaymentMethodSettings(firstHotel.allowed_payment_methods);
     }
   }, [hotels]);
+
+  // Lock page scroll while the Room Management modal is open (mirrors HotelDetail).
+  useEffect(() => {
+    if (!managingRoomsHotel) return;
+    const body = document.body;
+    const html = document.documentElement;
+    const prevBodyOverflow = body.style.overflow;
+    const prevBodyPaddingRight = body.style.paddingRight;
+    const prevHtmlOverflow = html.style.overflow;
+    const scrollbarWidth = window.innerWidth - html.clientWidth;
+    body.style.overflow = 'hidden';
+    html.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) body.style.paddingRight = `${scrollbarWidth}px`;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setManagingRoomsHotel(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      body.style.overflow = prevBodyOverflow;
+      body.style.paddingRight = prevBodyPaddingRight;
+      html.style.overflow = prevHtmlOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [managingRoomsHotel]);
 
   const fetchDashboardData = async () => {
     try {
@@ -1763,27 +1788,12 @@ const OwnerDashboard = () => {
 
             {/* Room Management Modal */}
             {managingRoomsHotel && (
-              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
-                onClick={(e) => { if (e.target === e.currentTarget) setManagingRoomsHotel(null); }}
-              >
-                <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '900px', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.22)', display: 'flex', flexDirection: 'column' }}>
-                  {/* Header */}
-                  <div style={{ background: 'linear-gradient(135deg,#2E7D32 0%,#66bb6a 100%)', borderRadius: '16px 16px 0 0', padding: '1.4rem 1.5rem', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexShrink: 0 }}>
-                    <div>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.3rem' }}>Room Management</div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{managingRoomsHotel.name}</div>
-                      <div style={{ fontSize: '0.82rem', opacity: 0.8, marginTop: '2px' }}>{managingRoomsHotel.location}</div>
-                    </div>
-                    <button onClick={() => setManagingRoomsHotel(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '34px', height: '34px', cursor: 'pointer', color: '#fff', fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✕</button>
-                  </div>
-                  {/* Body */}
-                  <div style={{ overflowY: 'auto', flex: 1 }}>
-                    <RoomManagement hotel={managingRoomsHotel} onClose={() => setManagingRoomsHotel(null)} t={t} />
-                  </div>
-                  {/* Footer */}
-                  <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e5e7eb', background: '#f9fafb', borderRadius: '0 0 16px 16px', flexShrink: 0, textAlign: 'right' }}>
-                    <button className="gov-btn gov-btn-primary" onClick={() => setManagingRoomsHotel(null)}>Done</button>
-                  </div>
+              <div className="hd-modal-back hd-rm-back" onClick={(e) => { if (e.target === e.currentTarget) setManagingRoomsHotel(null); }}>
+                <div className="hd-rm-panel">
+                  <button className="hd-rm-close" onClick={() => setManagingRoomsHotel(null)} aria-label="Close">
+                    <Icons.X size={18} />
+                  </button>
+                  <RoomManagement hotel={managingRoomsHotel} onClose={() => setManagingRoomsHotel(null)} t={t} />
                 </div>
               </div>
             )}

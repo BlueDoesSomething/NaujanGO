@@ -928,6 +928,10 @@ export default function HotelDetail() {
         setRoomImageIndex(0);
         return;
       }
+      if (e.key === 'Escape' && managingRoomsHotel) {
+        setManagingRoomsHotel(null);
+        return;
+      }
       if (showBookingModal || showContactModal || selectedRoom || fullscreenImage) return;
       const tag = e.target && e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
@@ -2504,93 +2508,13 @@ export default function HotelDetail() {
 
       {/* Room Management Modal */}
       {managingRoomsHotel && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000,
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            maxWidth: '1000px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            overscrollBehavior: 'contain',
-            boxShadow: '0 25px 80px rgba(0,0,0,0.25)'
-          }}>
-            {/* Modal Header */}
-            <div style={{
-              position: 'sticky',
-              top: 0,
-              background: '#2E7D32',
-              color: 'white',
-              padding: '2rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderBottom: 'none',
-              zIndex: 10
-            }}>
-              <div>
-                <h2 style={{ 
-                  margin: 0, 
-                  fontSize: '1.5rem', 
-                  fontWeight: 800,
-                  letterSpacing: '-0.5px'
-                }}>
-                  Manage Room Types
-                </h2>
-                <p style={{ 
-                  margin: '0.5rem 0 0 0', 
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  opacity: 0.9
-                }}>
-                  {managingRoomsHotel?.name}
-                </p>
-              </div>
-              <button
-                onClick={() => setManagingRoomsHotel(null)}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  border: 'none',
-                  color: 'white',
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                  transition: 'all 0.3s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
-              >
-                ✕
-              </button>
-            </div>
+        <div className="hd-modal-back hd-rm-back" onClick={(e) => { if (e.target === e.currentTarget) setManagingRoomsHotel(null); }}>
+          <div className="hd-rm-panel">
+            <button className="hd-rm-close" onClick={() => setManagingRoomsHotel(null)} aria-label="Close">
+              <Icons.X size={18} />
+            </button>
 
-            {/* Modal Body */}
-            <RoomManagement 
+            <RoomManagement
               hotel={managingRoomsHotel}
               onClose={() => setManagingRoomsHotel(null)}
               t={t}
