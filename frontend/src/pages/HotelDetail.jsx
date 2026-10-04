@@ -934,6 +934,17 @@ export default function HotelDetail() {
     return () => window.removeEventListener('keydown', onKey);
   });
 
+  // Lock the hotel page scroll while a modal is open (the modal itself still scrolls)
+  const anyModalOpen = Boolean(showBookingModal || showContactModal || selectedRoom || managingRoomsHotel || fullscreenImage);
+
+  useEffect(() => {
+    if (!anyModalOpen) return;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [anyModalOpen]);
+
   if (loading) {
     return (
       <div className="hd-page">
