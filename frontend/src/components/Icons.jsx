@@ -561,6 +561,67 @@ export const LightbulbIcon = ({ size = 24, className = "" }) => (
   </svg>
 );
 
+export const BedIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M2 4v16" />
+    <path d="M2 8h18a2 2 0 0 1 2 2v10" />
+    <path d="M2 17h20" />
+    <path d="M6 8v9" />
+    <path d="M6 12h6a2 2 0 0 0-2-2H6" />
+  </svg>
+);
+
+export const DoorIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <rect x="5" y="3" width="14" height="18" rx="1" />
+    <path d="M3 21h18" />
+    <circle cx="15.5" cy="12" r="1" />
+  </svg>
+);
+
+export const ShirtIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M6 4 3 6l1.5 3L7 7.5V20h10V7.5l2.5 1.5L21 6l-3-2-2 1.5a3 3 0 0 1-6 0L6 4Z" />
+  </svg>
+);
+
+export const SnowflakeIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M12 2v20" />
+    <path d="M4.93 4.93 19.07 19.07" />
+    <path d="M2 12h20" />
+    <path d="M4.93 19.07 19.07 4.93" />
+    <path d="m8 4 4 2 4-2" />
+    <path d="m8 20 4-2 4 2" />
+    <path d="m4 8 2 4-2 4" />
+    <path d="m20 8-2 4 2 4" />
+  </svg>
+);
+
+export const ThumbUpIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M7 10v12" />
+    <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />
+  </svg>
+);
+
+export const RulerIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M21.3 8.7 8.7 21.3a1 1 0 0 1-1.4 0l-4.6-4.6a1 1 0 0 1 0-1.4L15.3 2.7a1 1 0 0 1 1.4 0l4.6 4.6a1 1 0 0 1 0 1.4Z" />
+    <path d="m7.5 10.5 2 2" />
+    <path d="m10.5 7.5 2 2" />
+    <path d="m13.5 4.5 2 2" />
+    <path d="m4.5 13.5 2 2" />
+  </svg>
+);
+
+export const CopyIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <rect x="9" y="9" width="12" height="12" rx="2" />
+    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+  </svg>
+);
+
 // Export all icons as a collection
 export const Icons = {
   // Primary names
@@ -641,6 +702,13 @@ export const Icons = {
   ChevronDown: ChevronDownIcon,
   CalendarDays: CalendarDaysIcon,
   Lightbulb: LightbulbIcon,
+  Bed: BedIcon,
+  Door: DoorIcon,
+  Shirt: ShirtIcon,
+  Snowflake: SnowflakeIcon,
+  ThumbUp: ThumbUpIcon,
+  Ruler: RulerIcon,
+  Copy: CopyIcon,
   // Aliases with "Icon" suffix for compatibility
   MapIcon: MapIcon,
   LocationIcon: LocationIcon,
@@ -719,6 +787,13 @@ export const Icons = {
   ChevronDownIcon: ChevronDownIcon,
   CalendarDaysIcon: CalendarDaysIcon,
   LightbulbIcon: LightbulbIcon,
+  BedIcon: BedIcon,
+  DoorIcon: DoorIcon,
+  ShirtIcon: ShirtIcon,
+  SnowflakeIcon: SnowflakeIcon,
+  ThumbUpIcon: ThumbUpIcon,
+  RulerIcon: RulerIcon,
+  CopyIcon: CopyIcon,
 };
 
 export default Icons;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -7,9 +7,9 @@ import * as api from '../api';
 import axios from 'axios';
 import LeafletMap from '../components/LeafletMap';
 import Icons from '../components/Icons';
-import HeroSlideshow from '../components/HeroSlideshow';
 import RoomManagement from '../components/RoomManagement';
 import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
+import './HotelDetail.css';
 
 const API_BASE_URL = getApiBaseUrl() + '/api';
 
@@ -146,6 +146,20 @@ const formatAmenity = (a) => {
   } catch (e) {
     return '';
   }
+};
+
+const amenityIconFor = (amenity) => {
+  const a = String(amenity || '').toLowerCase();
+  if (a.includes('wi-fi') || a.includes('wifi') || a.includes('internet')) return <Icons.Wifi size={16} />;
+  if (a.includes('air-con') || a.includes('air con') || a.includes('aircond') || a.includes('condition') || a.includes('snow')) return <Icons.Snowflake size={16} />;
+  if (a.includes('laundry') || a.includes('wash') || a.includes('linen') || a.includes('shirt') || a.includes('iron')) return <Icons.Shirt size={16} />;
+  if (a.includes('restaurant') || a.includes('dining') || a.includes('breakfast') || a.includes('bar') || a.includes('kitchen')) return <Icons.Utensils size={16} />;
+  if (a.includes('pool') || a.includes('spa') || a.includes('water')) return <Icons.Waves size={16} />;
+  if (a.includes('parking') || a.includes('car') || a.includes('shuttle')) return <Icons.MapPin size={16} />;
+  if (a.includes('coffee') || a.includes('tea')) return <Icons.Coffee size={16} />;
+  if (a.includes('gym') || a.includes('fitness') || a.includes('sport')) return <Icons.Users size={16} />;
+  if (a.includes('tv') || a.includes('television') || a.includes('cable')) return <Icons.Photo size={16} />;
+  return <Icons.Check size={16} />;
 };
 
 const CALENDAR_LOCALES = {
@@ -852,10 +866,78 @@ export default function HotelDetail() {
     }
   };
 
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [fullscreenImage, setFullscreenImage] = useState(null);
+  const [toastText, setToastText] = useState('');
+  const toastTimerRef = useRef(null);
+
+  const gallery = useMemo(() => {
+    const imgs = Array.isArray(hotel?.images) ? hotel.images.filter(Boolean) : [];
+    if (imgs.length > 0) return imgs;
+    if (hotel?.image) return [hotel.image];
+    return ['/placeholder-hotel.svg'];
+  }, [hotel]);
+
+  const ratingStats = useMemo(() => {
+    const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    (Array.isArray(reviews) ? reviews : []).forEach((r) => {
+      const star = Math.round(Number(r.rating) || 0);
+      if (counts[star] !== undefined) counts[star] += 1;
+    });
+    return counts;
+  }, [reviews]);
+
+  const showToast = (message) => {
+    setToastText(message);
+    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    toastTimerRef.current = setTimeout(() => setToastText(''), 2600);
+  };
+
+  const copyToClipboard = async (text) => {
+    if (!text) return;
+    try {
+      await navigator.clipboard.writeText(String(text));
+      showToast(t('copied_toast_pattern').replace('{label}', String(text)));
+    } catch (err) {
+      console.warn('Clipboard copy failed:', err);
+    }
+  };
+
+  const showPreviousImage = () => {
+    if (gallery.length < 2) return;
+    setGalleryIndex((i) => (i - 1 + gallery.length) % gallery.length);
+  };
+
+  const showNextImage = () => {
+    if (gallery.length < 2) return;
+    setGalleryIndex((i) => (i + 1) % gallery.length);
+  };
+
+  useEffect(() => {
+    setGalleryIndex(0);
+  }, [id]);
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape' && fullscreenImage) {
+        setFullscreenImage(null);
+        return;
+      }
+      if (showBookingModal || showContactModal || selectedRoom || fullscreenImage) return;
+      const tag = e.target && e.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (gallery.length < 2) return;
+      if (e.key === 'ArrowLeft') showPreviousImage();
+      if (e.key === 'ArrowRight') showNextImage();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  });
+
   if (loading) {
     return (
-      <div style={pageStyle}>
-        <div style={{ textAlign: 'center', padding: '50px' }}>
+      <div className="hd-page">
+        <div className="hd-state">
           <p>{t('loading_hotel_details')}</p>
         </div>
       </div>
@@ -864,10 +946,10 @@ export default function HotelDetail() {
 
   if (!hotel) {
     return (
-      <div style={pageStyle}>
-        <div style={{ textAlign: 'center', padding: '50px' }}>
+      <div className="hd-page">
+        <div className="hd-state">
           <p>{t('Hotels')} not found</p>
-          <Link to="/hotels" style={backLink}>{t('back_to_hotels')}</Link>
+          <Link to="/hotels">{t('back_to_hotels')}</Link>
         </div>
       </div>
     );
@@ -882,356 +964,344 @@ export default function HotelDetail() {
     ? selectedRoom.amenities.map(sanitizeAmenityString).filter(Boolean)
     : [];
 
+  const activeIndex = gallery.length > 0 ? Math.min(galleryIndex, gallery.length - 1) : 0;
+  const activeImage = gallery[activeIndex] || '/placeholder-hotel.svg';
+
+  const priceMin = rooms.length > 0 ? Math.min(...rooms.map(r => parseFloat(r.price_per_night) || 0)) : null;
+  const priceMax = rooms.length > 0 ? Math.max(...rooms.map(r => parseFloat(r.price_per_night) || 0)) : null;
+  const heroPrice = priceMin === null
+    ? (hotel.pricePerNight || hotel.price_per_night
+      ? `₱${parseFloat(hotel.pricePerNight || hotel.price_per_night).toLocaleString()}`
+      : null)
+    : priceMin === priceMax
+      ? `₱${priceMin.toLocaleString()}`
+      : `₱${priceMin.toLocaleString()} – ₱${priceMax.toLocaleString()}`;
+
+  const availabilityText = hasAvailability || hasRoomTypes
+    ? primaryAvailability > 0
+      ? t('availability_rooms_pattern').replace('{count}', String(primaryAvailability))
+      : t('button_sold_out')
+    : t('availability_na');
+
+  const totalRoomsCount = hotel.rooms_total || rooms.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0) || 0;
+  const ratingNote = reviewEligibilityReason || t('review_booking_history_note');
+  const totalReviewsCount = averageRating.total || reviews.length;
+
   return (
-    <div style={pageStyle}>
-      {/* Hero Header */}
-      <HeroSlideshow 
-        title={hotel.name}
-        subtitle={hotel.location}
-        height="400px"
-        showControls={false}
-      />
-
-      {/* Back to Hotels Button */}
-      <div style={breadcrumbContainer}>
-        <Link to="/hotels" style={breadcrumbLink}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-          {t('back_to_hotels')}
-        </Link>
-      </div>
-
-      {/* Rating Section */}
-      <div style={ratingContainer}>
-        <div style={ratingSection}>
-          <div style={starsContainer}>{renderStars(Math.round(parseFloat(averageRating.average)))}</div>
-          <span style={ratingText}>
-            {parseFloat(averageRating.average).toFixed(1)} ({averageRating.total} {t('reviews') || 'reviews'})
-          </span>
+    <div className="hd-page">
+      {/* Hero */}
+      <header className="hd-hero">
+        <img className="hd-hero-img" src={hotel.image || activeImage} alt={hotel.name} onError={handleImageError} />
+        <div className="hd-hero-shade" />
+        <div className="hd-hero-inner">
+          <Link to="/hotels" className="hd-back">
+            <Icons.ChevronLeft size={16} />
+            {t('back_to_hotels')}
+          </Link>
+          <div className="hd-hero-body">
+            {hotel.booking_enabled === false && (
+              <span className="hd-tag hd-tag-amber">
+                <Icons.Megaphone size={12} /> {t('promo_listing')}
+              </span>
+            )}
+            <h1 className="hd-hero-title">{hotel.name}</h1>
+            <p className="hd-hero-loc">
+              <Icons.MapPin size={15} />
+              {hotel.location}
+            </p>
+            <div className="hd-hero-pills">
+              <span className="hd-pill">
+                <Icons.Star size={13} filled />
+                {parseFloat(averageRating.average || 0).toFixed(1)} · {totalReviewsCount} {t('reviews_label')}
+              </span>
+              {heroPrice && (
+                <span className="hd-pill">
+                  <Icons.Money size={13} />
+                  {heroPrice}
+                </span>
+              )}
+              <span className="hd-pill">
+                <Icons.Bed size={13} />
+                {availabilityText}
+              </span>
+            </div>
+          </div>
         </div>
-      </div>
+      </header>
 
-      {/* Legitimacy & accreditation badges (verified items only) */}
+      {/* Legitimacy & accreditation tags (verified items only) */}
       {hotel.legitimacy && (hotel.legitimacy.business_permit || hotel.legitimacy.dot || hotel.legitimacy.philgeps) ? (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', margin: '0 0 1rem' }}>
-          {hotel.legitimacy.business_permit && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', fontWeight: 800, padding: '0.3rem 0.7rem', borderRadius: '999px', background: '#ecfdf5', color: '#065f46', border: '1px solid #a7f3d0' }}>
-              <Icons.Shield size={14} /> {t('badge_business_permit')}
-            </span>
-          )}
-          {hotel.legitimacy.dot && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', fontWeight: 800, padding: '0.3rem 0.7rem', borderRadius: '999px', background: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe' }}>
-              <Icons.ShieldCheck size={14} /> {t('badge_dot')}
-            </span>
-          )}
-          {hotel.legitimacy.philgeps && (
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', fontWeight: 800, padding: '0.3rem 0.7rem', borderRadius: '999px', background: '#fffbeb', color: '#92400e', border: '1px solid #fde68a' }}>
-              <Icons.Document size={14} /> {t('badge_philgeps')}
-            </span>
-          )}
+        <div className="hd-legit-wrap">
+          <div className="hd-legit">
+            {hotel.legitimacy.business_permit && (
+              <span className="hd-legit-item hd-legit-green">
+                <Icons.Shield size={14} /> {t('badge_business_permit')}
+              </span>
+            )}
+            {hotel.legitimacy.dot && (
+              <span className="hd-legit-item hd-legit-blue">
+                <Icons.ShieldCheck size={14} /> {t('badge_dot')}
+              </span>
+            )}
+            {hotel.legitimacy.philgeps && (
+              <span className="hd-legit-item hd-legit-amber">
+                <Icons.Document size={14} /> {t('badge_philgeps')}
+              </span>
+            )}
+          </div>
         </div>
       ) : null}
 
-      <div style={contentGrid} className="hotel-detail-content">
-        {/* Left Column */}
-        <div style={leftColumn}>
-          {/* Hotel Image */}
-          <div style={imageContainer}>
+      <main className="hd-layout">
+        {/* Gallery */}
+        <section className="hd-card hd-span-2 hd-gallery">
+          <div className="hd-gallery-main">
             <img
-              src={hotel.image || '/placeholder-hotel.svg'}
+              className="hd-gallery-img"
+              src={activeImage}
               alt={hotel.name}
-              style={hotelImage}
+              onClick={() => setFullscreenImage(activeImage)}
               onError={handleImageError}
             />
+            {gallery.length > 1 && (
+              <>
+                <button className="hd-arrow hd-arrow-l" onClick={showPreviousImage} aria-label="Previous image">
+                  <Icons.ChevronLeft size={18} />
+                </button>
+                <button className="hd-arrow hd-arrow-r" onClick={showNextImage} aria-label="Next image">
+                  <Icons.ChevronRight size={18} />
+                </button>
+                <span className="hd-count">{activeIndex + 1} / {gallery.length}</span>
+              </>
+            )}
           </div>
-          {Array.isArray(hotel.images) && hotel.images.length > 0 && (
-            <div style={galleryGrid}>
-              {hotel.images.map((url, index) => (
-                <img
+          {gallery.length > 1 && (
+            <div className="hd-thumbs">
+              {gallery.map((url, index) => (
+                <button
                   key={`${url}-${index}`}
-                  src={url}
-                  alt={`${hotel.name} ${index + 1}`}
-                  style={galleryImage}
-                  onError={handleImageError}
-                />
+                  className={`hd-thumb${index === activeIndex ? ' is-current' : ''}`}
+                  onClick={() => setGalleryIndex(index)}
+                  aria-label={`${hotel.name} ${index + 1}`}
+                >
+                  <img src={url} alt="" onError={handleImageError} />
+                </button>
               ))}
             </div>
           )}
+        </section>
 
-          {/* About Section */}
-          <div style={sectionCard}>
-            <h2 style={sectionTitle}>About {t('about_hotel_fallback')}</h2>
-            <p style={descriptionText}>{hotel.description}</p>
+        {/* Booking card */}
+        <section className="hd-card hd-book">
+          {bookingForm.selectedRoomId && rooms.length > 0 ? (
+            <div>
+              <div className="hd-price-label">{t('price_per_night')}</div>
+              <div className="hd-price-amount">
+                ₱{parseFloat(rooms.find(r => r.room_id === bookingForm.selectedRoomId)?.price_per_night || 0).toLocaleString()}
+              </div>
+            </div>
+          ) : rooms.length > 0 ? (
+            <div>
+              <div className="hd-price-label">{t('price_range')}</div>
+              <div className="hd-price-amount">
+                ₱{priceMin.toLocaleString()} – ₱{priceMax.toLocaleString()}
+              </div>
+              <small className="hd-price-note">{t('select_room_for_exact_price')}</small>
+            </div>
+          ) : null}
+
+          <div className={`hd-avail${isSoldOut ? ' is-out' : ''}`}>
+            {availabilityText}
+            {roomTypeAvailabilityMismatch && (
+              <div className="hd-avail-sub">
+                {t('total_across_room_types_pattern').replace('{count}', String(totalRoomTypeAvailability))}
+              </div>
+            )}
           </div>
 
-          {/* Room Types Section - Enhanced Interactive */}
+          <div className="hd-contacts">
+            <div className="hd-crow">
+              <Icons.Phone size={17} />
+              <span className="hd-crow-val">{hotel.phone || t('contact_not_available')}</span>
+              <button className="hd-copy" type="button" onClick={() => copyToClipboard(hotel.phone)} disabled={!hotel.phone}>
+                <Icons.Copy size={12} />
+                {t('copy_button')}
+              </button>
+            </div>
+            <div className="hd-crow">
+              <Icons.Email size={17} />
+              <span className="hd-crow-val">{hotel.email || t('contact_not_available')}</span>
+              <button className="hd-copy" type="button" onClick={() => copyToClipboard(hotel.email)} disabled={!hotel.email}>
+                <Icons.Copy size={12} />
+                {t('copy_button')}
+              </button>
+            </div>
+          </div>
+
+          {hotel.booking_enabled === false ? (
+            <div className="hd-promo">{t('listing_only_notice')}</div>
+          ) : (
+            <button className="hd-cta" onClick={handleBookNow} disabled={isSoldOut}>
+              <Icons.Booking size={19} />
+              {isSoldOut ? t('button_sold_out') : isLoggedIn ? t('book_now') : t('login_to_book')}
+            </button>
+          )}
+
+          <button className="hd-talk" onClick={() => isLoggedIn ? setShowContactModal(true) : navigate('/login')}>
+            <Icons.Chat size={17} />
+            {t('button_contact_owner')}
+          </button>
+
+          <ul className="hd-trust">
+            <li><Icons.Check size={14} />{t('booking_benefit_free_cancellation').replace('✓', '').trim()}</li>
+            <li><Icons.Check size={14} />{t('booking_benefit_no_fees').replace('✓', '').trim()}</li>
+            <li><Icons.Check size={14} />{t('booking_benefit_instant_confirmation').replace('✓', '').trim()}</li>
+          </ul>
+        </section>
+
+          {/* About */}
+          <section className="hd-card hd-span-2">
+            <h2 className="hd-h2"><Icons.Hotel size={18} /> About {t('about_hotel_fallback')}</h2>
+            <p className="hd-desc">{hotel.description}</p>
+            <div className="hd-stats">
+              <div className="hd-stat">
+                <span className="hd-stat-ic"><Icons.Bed size={18} /></span>
+                <div>
+                  <strong>{rooms.length}</strong>
+                  <small>{t('room_types_label')}</small>
+                </div>
+              </div>
+              <div className="hd-stat">
+                <span className="hd-stat-ic"><Icons.Door size={18} /></span>
+                <div>
+                  <strong>{totalRoomsCount}</strong>
+                  <small>{t('total_rooms_label')}</small>
+                </div>
+              </div>
+              <div className="hd-stat">
+                <span className="hd-stat-ic"><Icons.Sparkles size={18} /></span>
+                <div>
+                  <strong>{sanitizedHotelAmenities.length}</strong>
+                  <small>{t('section_amenities')}</small>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Amenities */}
+          <section className="hd-card">
+            <h2 className="hd-h2"><Icons.Check size={18} /> {t('section_amenities')}</h2>
+            {sanitizedHotelAmenities.length > 0 ? (
+              <ul className="hd-amen">
+                {sanitizedHotelAmenities.map((amenity, index) => (
+                  <li key={index}>
+                    <span className="hd-amen-ic">{amenityIconFor(amenity)}</span>
+                    {amenity}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="hd-empty">{t('no_amenities_listed')}</p>
+            )}
+          </section>
+
+          {/* Room types */}
           {rooms && rooms.length > 0 && (
-            <div style={{
-              ...sectionCard,
-              background: '#ffffff',
-              border: '2px solid #c8e6c9',
-              borderRadius: '14px'
-            }}>
-              <h2 style={{
-                ...sectionTitle,
-                margin: 0,
-                marginBottom: '1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem'
-              }}>
-                Room Types ({rooms.length})
+            <section className="hd-card hd-span-3">
+              <h2 className="hd-h2">
+                <Icons.Users size={18} />
+                {t('room_types_pattern').replace('{count}', String(rooms.length))}
               </h2>
 
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-                gap: '1.5rem'
-              }}>
+              <div className="hd-rooms">
                 {rooms.map((room) => (
-                  <div 
-                    key={room.room_id} 
+                  <article
+                    key={room.room_id}
+                    className="hd-room"
                     onClick={() => setSelectedRoom(room)}
-                    style={{
-                      background: '#ffffff',
-                      border: '1px solid #d0d0d0',
-                      borderRadius: '12px',
-                      overflow: 'hidden',
-                      transition: 'all 0.3s ease',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-6px)';
-                      e.currentTarget.style.boxShadow = '0 12px 24px rgba(46, 125, 50, 0.15)';
-                      e.currentTarget.style.borderColor = '#a5d6a7';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)';
-                      e.currentTarget.style.borderColor = '#d0d0d0';
-                    }}
                   >
-                    {/* Room Image */}
-                    <div style={{
-                      position: 'relative',
-                      background: '#f0fdf4',
-                      height: '160px',
-                      overflow: 'hidden',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
+                    {/* Room image */}
+                    <div className="hd-room-img">
                       {room.primary_image_url ? (
-                        <img 
-                          src={room.primary_image_url} 
-                          alt={room.room_type_name}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            transition: 'transform 0.3s'
-                          }}
-                          onError={handleImageError}
-                          onMouseOver={(e) => {
-                            e.currentTarget.style.transform = 'scale(1.08)';
-                          }}
-                          onMouseOut={(e) => {
-                            e.currentTarget.style.transform = 'scale(1)';
-                          }}
-                        />
+                        <img src={room.primary_image_url} alt={room.room_type_name} onError={handleImageError} />
                       ) : (
-                        <div style={{ fontSize: '3rem' }}>■</div>
+                        <div className="hd-room-ph"><Icons.Hotel size={28} /></div>
                       )}
-                      {!room.is_active && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '0.75rem',
-                          right: '0.75rem',
-                          background: '#EF5350',
-                          color: 'white',
-                          padding: '0.4rem 0.8rem',
-                          borderRadius: '20px',
-                          fontSize: '0.75rem',
-                          fontWeight: 700,
-                          textTransform: 'uppercase'
-                        }}>
-                          {t('room_unavailable_badge')}
-                        </div>
+                      {!room.is_active || !(room.quantity_available > 0) ? (
+                        <span className="hd-tag hd-tag-red">{t('room_unavailable_badge')}</span>
+                      ) : (
+                        <span className="hd-tag hd-tag-green">
+                          {t('availability_rooms_pattern').replace('{count}', String(room.quantity_available))}
+                        </span>
                       )}
                     </div>
 
-                    {/* Room Details */}
-                    <div style={{ padding: '1.25rem' }}>
-                      {/* Room Name & Description */}
-                      <h3 style={{
-                        margin: '0 0 0.5rem 0',
-                        fontSize: '1.1rem',
-                        fontWeight: 700,
-                        color: '#1B5E20'
-                      }}>
-                        {room.room_type_name}
-                      </h3>
-                      {room.description && (
-                        <p style={{
-                          margin: '0 0 0.75rem 0',
-                          fontSize: '0.85rem',
-                          color: '#666',
-                          lineHeight: 1.5,
-                          maxHeight: '2.5em',
-                          overflow: 'hidden'
-                        }}>
-                          {room.description}
-                        </p>
-                      )}
+                    {/* Room body */}
+                    <div className="hd-room-body">
+                      <h3>{room.room_type_name}</h3>
 
-                      {/* Features Grid */}
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-                        gap: '0.75rem',
-                        padding: '0.75rem 0',
-                        borderTop: '1px solid #e0e0e0',
-                        borderBottom: '1px solid #e0e0e0',
-                        marginBottom: '0.75rem',
-                        fontSize: '0.9rem'
-                      }}>
-                        <div>
-                          <div style={{ fontWeight: 600, color: '#424242', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                            👥 Capacity
-                          </div>
-                          <div style={{ color: '#2E7D32', fontWeight: 700, fontSize: '0.95rem' }}>
-                            {room.capacity} {room.capacity === 1 ? t('person') : t('people')}
-                          </div>
-                        </div>
+                      <div className="hd-room-meta">
+                        <span>
+                          <Icons.Users size={14} />
+                          {room.capacity} {room.capacity === 1 ? t('person') : t('people')}
+                        </span>
                         {room.room_size_sqm && (
-                          <div>
-                            <div style={{ fontWeight: 600, color: '#424242', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                              📐 Size
-                            </div>
-                            <div style={{ color: '#2E7D32', fontWeight: 700, fontSize: '0.95rem' }}>
-                              {room.room_size_sqm} m²
-                            </div>
-                          </div>
+                          <span>
+                            <Icons.Ruler size={14} />
+                            {room.room_size_sqm} m²
+                          </span>
                         )}
                       </div>
 
-                      {/* Amenities */}
                       {Array.isArray(room.amenities) && room.amenities.length > 0 && (
-                        <div style={{
-                          marginBottom: '0.75rem'
-                        }}>
-                          <div style={{
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                            color: '#999',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px',
-                            marginBottom: '0.5rem'
-                          }}>
-                            Amenities
-                          </div>
-                          <div style={{
-                            display: 'flex',
-                            flexWrap: 'wrap',
-                            gap: '0.35rem'
-                          }}>
-                            {room.amenities.slice(0, 3).map((amenity, i) => (
-                              <span key={i} style={{
-                                background: '#f0fdf4',
-                                color: '#2E7D32',
-                                padding: '0.3rem 0.6rem',
-                                borderRadius: '6px',
-                                fontSize: '0.8rem',
-                                fontWeight: 500,
-                                border: '1px solid #c8e6c9'
-                              }}>
-                                {formatAmenity(amenity)}
-                              </span>
-                            ))}
-                            {room.amenities.length > 3 && (
-                              <span style={{
-                                padding: '0.3rem 0.6rem',
-                                fontSize: '0.8rem',
-                                color: '#2E7D32',
-                                fontWeight: 700
-                              }}>
-                                +{room.amenities.length - 3}
-                              </span>
-                            )}
-                          </div>
+                        <div className="hd-room-tags">
+                          {room.amenities.slice(0, 3).map((amenity, i) => (
+                            <span key={i} className="hd-room-tag">{formatAmenity(amenity)}</span>
+                          ))}
+                          {room.amenities.length > 3 && (
+                            <span className="hd-room-tag">+{room.amenities.length - 3}</span>
+                          )}
                         </div>
                       )}
 
-                      {/* Price Section */}
-                      <div style={{
-                        background: '#f0fdf4',
-                        padding: '0.75rem',
-                        borderRadius: '8px',
-                        textAlign: 'center',
-                        borderTop: '1px solid #e0e0e0',
-                        marginTop: '0.75rem'
-                      }}>
-                        <div style={{
-                          fontSize: '0.75rem',
-                          color: '#999',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          marginBottom: '0.3rem'
-                        }}>
-                          {t('price_per_night')}
+                      <div className="hd-room-foot">
+                        <div className="hd-room-price">
+                          <small>{t('per_night')}</small>
+                          <strong>₱{parseFloat(room.price_per_night).toLocaleString()}</strong>
                         </div>
-                        <div style={{
-                          fontSize: '1.3rem',
-                          fontWeight: 700,
-                          color: '#2E7D32'
-                        }}>
-                          ₱{parseFloat(room.price_per_night).toLocaleString()}
-                        </div>
-                      </div>
-
-                      {/* Availability Badge */}
-                      <div style={{
-                        marginTop: '0.75rem',
-                        padding: '0.5rem',
-                        background: room.quantity_available > 0 ? '#c8e6c9' : '#ffcdd2',
-                        color: room.quantity_available > 0 ? '#1B5E20' : '#c62828',
-                        borderRadius: '6px',
-                        textAlign: 'center',
-                        fontSize: '0.85rem',
-                        fontWeight: 600
-                      }}>
-                        {room.quantity_available > 0 
-                          ? t('availability_rooms_pattern').replace('{count}', String(room.quantity_available))
-                          : t('room_currently_unavailable')}
+                        <button
+                          className="hd-room-cta"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedRoom(room);
+                          }}
+                        >
+                          {t('view_details')}
+                        </button>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 ))}
               </div>
-            </div>
+            </section>
           )}
 
-          {/* Amenities */}
-          <div style={sectionCard}>
-            <h2 style={sectionTitle}>{t('section_amenities')}</h2>
-            <div style={amenitiesGrid}>
-                {sanitizedHotelAmenities.length > 0 ? sanitizedHotelAmenities.map((amenity, index) => (
-                  <div key={index} style={amenityItem}>
-                    {amenity}
-                  </div>
-                )) : (
-                  <div style={{ color: '#6b7280', fontStyle: 'italic' }}>{t('no_amenities_listed') || 'No amenities listed'}</div>
-                )}
-            </div>
-          </div>
-
-          {/* Map */}
+          {/* Location */}
           {hotel.latitude && hotel.longitude && (
-            <div style={sectionCard}>
-              <h2 style={sectionTitle}>{t('section_location')}</h2>
-              <div style={mapContainer}>
+            <section className="hd-card hd-span-2">
+              <div className="hd-h2-row">
+                <h2 className="hd-h2"><Icons.MapPin size={18} /> {t('section_location')}</h2>
+                <a
+                  className="hd-dir"
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${parseFloat(hotel.latitude)},${parseFloat(hotel.longitude)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Icons.Route size={15} />
+                  {t('get_directions')}
+                </a>
+              </div>
+              <div className="hd-map">
                 <LeafletMap
                   center={[parseFloat(hotel.latitude), parseFloat(hotel.longitude)]}
                   zoom={16}
@@ -1243,94 +1313,65 @@ export default function HotelDetail() {
                   style={mapStyle}
                 />
               </div>
-            </div>
+            </section>
           )}
 
-          {/* Reviews Section */}
-          <div style={sectionCard}>
-            <div style={reviewsHeader}>
-              <h2 style={sectionTitle}>{t('section_guest_reviews')} ({reviews.length})</h2>
+          {/* Guest rating */}
+          <section className="hd-card">
+            <h2 className="hd-h2"><Icons.Star size={18} /> {t('guest_rating')}</h2>
+            <div className="hd-rate">
+              <strong className="hd-rate-num">{parseFloat(averageRating.average || 0).toFixed(1)}</strong>
+              <div>
+                <div className="hd-stars">{renderStars(Math.round(parseFloat(averageRating.average || 0)))}</div>
+                <small>{t('based_on_reviews_pattern').replace('{count}', String(totalReviewsCount))}</small>
+              </div>
+            </div>
+            <div className="hd-hist">
+              {[5, 4, 3, 2, 1].map(star => {
+                const count = ratingStats[star] || 0;
+                const pct = reviews.length > 0 ? Math.round((count / reviews.length) * 100) : 0;
+                return (
+                  <div className="hd-hist-row" key={star}>
+                    <span>{star}</span>
+                    <Icons.Star size={11} filled />
+                    <span className="hd-hist-bar"><i style={{ width: `${pct}%` }} /></span>
+                    <em>{count}</em>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="hd-note">{ratingNote}</p>
+          </section>
+
+          {/* Reviews */}
+          <section className="hd-card hd-span-3">
+            <div className="hd-h2-row">
+              <h2 className="hd-h2">
+                <Icons.Chat size={18} />
+                {t('section_guest_reviews')} ({reviews.length})
+              </h2>
               {isLoggedIn && canReview && (
-                <button 
-                  style={writeReviewBtn} 
-                  onClick={() => setShowReviewForm(!showReviewForm)}
-                >
+                <button className="hd-write" onClick={() => setShowReviewForm(!showReviewForm)}>
                   {showReviewForm ? t('cancel_button') : t('write_review_button')}
                 </button>
               )}
             </div>
 
-            {isLoggedIn && !canReview && (
-              <div style={{
-                padding: '20px',
-                backgroundColor: '#fff3cd',
-                border: '1px solid #ffc107',
-                borderRadius: '8px',
-                marginBottom: '20px',
-                color: '#856404'
-              }}>
-                <p style={{ margin: 0, fontSize: '14px' }}>
-                  {reviewEligibilityReason || 'You must complete a stay at this hotel before writing a review. Book now to share your experience!'}
-                </p>
-              </div>
-            )}
-
             {showReviewForm && (
-              <form onSubmit={handleSubmitReview} style={{
-                background: '#ffffff',
-                border: '1.5px solid #e8e8e8',
-                borderRadius: '12px',
-                padding: '2rem',
-                marginBottom: '1.5rem'
-              }}>
-                <h3 style={{
-                  margin: '0 0 1.5rem 0',
-                  fontSize: '1.1rem',
-                  fontWeight: 700,
-                  color: '#1B5E20'
-                }}>
-                  {t('write_your_review')}
-                </h3>
+              <form className="hd-rform" onSubmit={handleSubmitReview}>
+                <h3>{t('write_your_review')}</h3>
 
-                {/* Rating Section */}
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '0.9rem',
-                    fontWeight: 700,
-                    color: '#1B5E20',
-                    marginBottom: '0.75rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
-                    {t('your_rating')}
-                  </label>
-                  <div style={{
-                    display: 'flex',
-                    gap: '0.5rem'
-                  }}>
+                {/* Rating */}
+                <div style={{ marginBottom: '1.1rem' }}>
+                  <label className="hd-label">{t('your_rating')}</label>
+                  <div className="hd-stars-pick">
                     {[1, 2, 3, 4, 5].map(star => (
                       <button
                         key={star}
                         type="button"
+                        className={`hd-star-btn${star <= reviewForm.rating ? ' is-on' : ''}`}
                         onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                        style={{
-                          background: 'none',
-                          border: 'none',
-                          fontSize: '2rem',
-                          color: star <= reviewForm.rating ? '#ffc107' : '#ddd',
-                          cursor: 'pointer',
-                          transition: 'all 0.2s',
-                          transform: star <= reviewForm.rating ? 'scale(1.2)' : 'scale(1)'
-                        }}
-                        onMouseOver={(e) => {
-                          e.currentTarget.style.transform = 'scale(1.3)';
-                          e.currentTarget.style.color = '#ffc107';
-                        }}
-                        onMouseOut={(e) => {
-                          e.currentTarget.style.transform = star <= reviewForm.rating ? 'scale(1.2)' : 'scale(1)';
-                          e.currentTarget.style.color = star <= reviewForm.rating ? '#ffc107' : '#ddd';
-                        }}
+                        aria-label={`${star} stars`}
                       >
                         ★
                       </button>
@@ -1338,231 +1379,70 @@ export default function HotelDetail() {
                   </div>
                 </div>
 
-                {/* Review Text */}
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '0.9rem',
-                    fontWeight: 700,
-                    color: '#1B5E20',
-                    marginBottom: '0.75rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>
-                    {t('your_review')}
-                  </label>
+                {/* Comment */}
+                <div className="hd-field">
+                  <label className="hd-label">{t('your_review')}</label>
                   <textarea
+                    className="hd-textarea"
+                    rows="4"
                     value={reviewForm.comment}
                     onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                    rows="4"
-                    style={{
-                      width: '100%',
-                      padding: '0.85rem 1rem',
-                      border: '1.5px solid #d0d0d0',
-                      borderRadius: '10px',
-                      fontSize: '0.95rem',
-                      fontFamily: 'inherit',
-                      transition: 'all 0.3s',
-                      boxSizing: 'border-box',
-                      resize: 'vertical'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#2E7D32';
-                      e.target.style.boxShadow = '0 0 0 3px rgba(46, 125, 50, 0.1)';
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = '#d0d0d0';
-                      e.target.style.boxShadow = 'none';
-                    }}
                     placeholder={t('share_experience_placeholder')}
                   />
                 </div>
 
                 {reviewMessage && (
-                  <div style={{
-                    padding: '1rem',
-                    background: reviewMessage.includes('success') ? '#e8f5e9' : '#ffebee',
-                    border: `1.5px solid ${reviewMessage.includes('success') ? '#4caf50' : '#ef5350'}`,
-                    borderRadius: '10px',
-                    color: reviewMessage.includes('success') ? '#2e7d32' : '#c62828',
-                    fontSize: '0.9rem',
-                    fontWeight: 500,
-                    marginBottom: '1rem'
-                  }}>
+                  <div className={`hd-msg${reviewMessage.includes('success') ? ' ok' : ''}`}>
                     {reviewMessage}
                   </div>
                 )}
 
-                <button 
-                  type="submit" 
-                  disabled={submittingReview}
-                  style={{
-                    width: '100%',
-                    padding: '0.85rem 1.5rem',
-                    background: submittingReview ? '#ccc' : '#2E7D32',
-                    border: 'none',
-                    color: 'white',
-                    borderRadius: '10px',
-                    fontSize: '0.95rem',
-                    fontWeight: 700,
-                    cursor: submittingReview ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.3s',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}
-                  onMouseOver={(e) => {
-                    if (!submittingReview) {
-                      e.currentTarget.style.background = '#1B5E20';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 8px 20px rgba(46, 125, 50, 0.3)';
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (!submittingReview) {
-                      e.currentTarget.style.background = '#2E7D32';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }
-                  }}
-                >
+                <button className="hd-send" type="submit" disabled={submittingReview}>
                   {submittingReview ? t('submitting_review') : t('submit_review')}
                 </button>
               </form>
             )}
 
-            <div style={reviewsList}>
+            <div className="hd-revs">
               {reviews.length === 0 ? (
-                <p style={noReviewsText}>{t('no_reviews_yet')}</p>
+                <p className="hd-norev">{t('no_reviews_yet')}</p>
               ) : (
                 reviews.map((review) => (
-                  <div key={review.review_id} style={reviewCard}>
-                    <div style={reviewHeader}>
+                  <article key={review.review_id} className="hd-rev">
+                    <div className="hd-rev-top">
                       <div>
-                        <div style={reviewAuthor}>
+                        <div className="hd-rev-name">
                           {review.first_name || review.username || t('anonymous_user')}
                         </div>
-                        <div style={reviewDate}>
+                        <div className="hd-rev-date">
                           {new Date(review.review_date).toLocaleDateString()}
                         </div>
                       </div>
-                      <div style={reviewRating}>{renderStars(review.rating)}</div>
+                      <div className="hd-rev-stars">{renderStars(review.rating)}</div>
                     </div>
-                    <p style={reviewComment}>{review.comment}</p>
-                    {/* NEW: Display room type if available */}
+                    <p className="hd-rev-comment">{review.comment}</p>
                     {review.room_type_name && (
-                      <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '0.75rem', fontWeight: 600 }}>
-                        🛏️ {review.room_type_name}
+                      <p className="hd-rev-room">
+                        <Icons.Bed size={14} />
+                        {review.room_type_name}
                       </p>
                     )}
                     {review.owner_reply && (
-                      <div style={{
-                        marginTop: '1rem',
-                        padding: '1rem',
-                        background: '#f1f8f4',
-                        borderRadius: '8px',
-                        borderLeft: '3px solid #2e7d32'
-                      }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#2e7d32', marginBottom: '0.5rem' }}>
-                          {t('owner_reply_label')}
-                        </div>
-                        <div style={{ fontSize: '0.9rem', color: '#2d3748' }}>
-                          {review.owner_reply}
-                        </div>
+                      <div className="hd-rev-reply">
+                        <div className="hd-rev-reply-label">{t('owner_reply_label')}</div>
+                        <div className="hd-rev-reply-body">{review.owner_reply}</div>
                       </div>
                     )}
-                    <div style={reviewFooter}>
-                      <button 
-                        style={helpfulBtn}
-                        onClick={() => handleMarkHelpful(review.review_id)}
-                      >
-                        👍 Helpful ({review.helpful_count || 0})
-                      </button>
-                    </div>
-                  </div>
+                    <button className="hd-help" onClick={() => handleMarkHelpful(review.review_id)}>
+                      <Icons.ThumbUp size={13} />
+                      {t('helpful_label')} ({review.helpful_count || 0})
+                    </button>
+                  </article>
                 ))
               )}
             </div>
-          </div>
-        </div>
-
-        {/* Right Column - Booking Card */}
-        <div style={rightColumn}>
-          <div style={bookingCard}>
-            {/* Room Price Display - Only show if room selected or price range */}
-            {bookingForm.selectedRoomId && rooms.length > 0 ? (
-              <div style={priceSection}>
-                <div style={priceLabel}>Price per night</div>
-                <div style={priceAmount}>
-                  ₱{parseFloat(rooms.find(r => r.room_id === bookingForm.selectedRoomId)?.price_per_night || 0).toLocaleString()}
-                </div>
-              </div>
-            ) : rooms.length > 0 ? (
-              <div style={priceSection}>
-                <div style={priceLabel}>Price Range</div>
-                <div style={priceAmount}>
-                  ₱{parseFloat(Math.min(...rooms.map(r => r.price_per_night))).toLocaleString()} - ₱{parseFloat(Math.max(...rooms.map(r => r.price_per_night))).toLocaleString()}
-                </div>
-                <small style={{ color: '#718096', fontSize: '0.8rem', marginTop: '0.25rem' }}>{t('select_room_for_exact_price')}</small>
-              </div>
-            ) : null}
-
-            <div style={availabilityBanner}>
-              {hasAvailability || hasRoomTypes
-                ? primaryAvailability > 0
-                  ? t('availability_rooms_pattern').replace('{count}', String(primaryAvailability))
-                  : t('button_sold_out')
-                : t('availability_na')}
-              {roomTypeAvailabilityMismatch && (
-                <div style={{ marginTop: '0.35rem', fontSize: '0.8rem', color: '#718096' }}>
-                  {totalRoomTypeAvailability} total across room types
-                </div>
-              )}
-            </div>
-
-            <div style={contactSection}>
-              <div style={contactItem}>
-                <Icons.Phone size={18} />
-                <span>{hotel.phone || t('contact_not_available')}</span>
-              </div>
-              <div style={contactItem}>
-                <Icons.Email size={18} />
-                <span>{hotel.email || t('contact_not_available')}</span>
-              </div>
-            </div>
-
-            {hotel.booking_enabled === false ? (
-              <div style={{
-                padding: '0.85rem 1rem',
-                borderRadius: '10px',
-                border: '1px solid #fde68a',
-                background: '#fffbeb',
-                color: '#92400e',
-                fontSize: '0.85rem',
-                fontWeight: 700,
-                textAlign: 'center'
-              }}>
-                {t('listing_only_notice')}
-              </div>
-            ) : (
-              <button style={bookNowButton} onClick={handleBookNow} disabled={isSoldOut}>
-                <Icons.Booking size={20} />
-                {isSoldOut ? t('button_sold_out') : isLoggedIn ? t('book_now') : t('login_to_book')}
-              </button>
-            )}
-
-            <button style={contactButton} onClick={() => isLoggedIn ? setShowContactModal(true) : navigate('/login')}>
-              <Icons.Chat size={18} />
-              {t('button_contact_owner')}
-            </button>
-
-            <div style={infoText}>
-              <span>{t('booking_benefit_free_cancellation')}</span>
-              <span>{t('booking_benefit_no_fees')}</span>
-              <span>{t('booking_benefit_instant_confirmation')}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+          </section>
+      </main>
 
       {/* Booking Modal */}
       {showBookingModal && (
@@ -2098,243 +1978,94 @@ export default function HotelDetail() {
 
       {/* Contact Owner Modal */}
       {showContactModal && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.6)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 999,
-          padding: '1rem'
-        }}>
-          <div style={{
-            background: 'white',
-            borderRadius: '16px',
-            maxWidth: '550px',
-            width: '100%',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            boxShadow: '0 25px 80px rgba(0,0,0,0.25)'
-          }}>
-            {/* Modal Header */}
-            <div style={{
-              position: 'sticky',
-              top: 0,
-              background: '#2E7D32',
-              color: 'white',
-              padding: '2rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              borderBottom: 'none',
-              zIndex: 10
-            }}>
+        <div className="hd-modal-back">
+          <div className="hd-cmodal">
+            {/* Modal header */}
+            <div className="hd-cmodal-head">
               <div>
-                <h2 style={{ 
-                  margin: 0, 
-                  fontSize: '1.5rem', 
-                  fontWeight: 800,
-                  letterSpacing: '-0.5px'
-                }}>
-                  {t('modal_contact_title')}
-                </h2>
-                <p style={{ 
-                  margin: '0.5rem 0 0 0', 
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  opacity: 0.9
-                }}>
-                  {t('get_in_touch_owner')}
-                </p>
+                <h2 className="hd-cmodal-title">{t('modal_contact_title')}</h2>
+                <p className="hd-cmodal-sub">{t('get_in_touch_owner')}</p>
               </div>
-              <button 
+              <button
+                className="hd-cmodal-close"
                 onClick={() => setShowContactModal(false)}
-                style={{
-                  background: 'rgba(255, 255, 255, 0.2)',
-                  border: 'none',
-                  color: 'white',
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  fontSize: '1.5rem',
-                  fontWeight: 700,
-                  transition: 'all 0.3s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}
-                onMouseOver={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)';
-                  e.currentTarget.style.transform = 'scale(1.1)';
-                }}
-                onMouseOut={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)';
-                  e.currentTarget.style.transform = 'scale(1)';
-                }}
               >
-                ✕
+                <Icons.X size={18} />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <form onSubmit={handleSubmitContact} style={{ padding: '2.5rem' }}>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{
-                  display: 'block',
-                  fontSize: '0.9rem',
-                  fontWeight: 700,
-                  color: '#1B5E20',
-                  marginBottom: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Subject
-                </label>
+            {/* Modal body */}
+            <form className="hd-cmodal-body" onSubmit={handleSubmitContact}>
+              <div className="hd-cmodal-contacts">
+                <div className="hd-cmodal-row">
+                  <Icons.Phone size={17} />
+                  <div className="hd-cmodal-row-txt">
+                    <small>{t('phone')}</small>
+                    <strong>{hotel.phone || t('contact_not_available')}</strong>
+                  </div>
+                  <button
+                    className="hd-copy"
+                    type="button"
+                    onClick={() => copyToClipboard(hotel.phone)}
+                    disabled={!hotel.phone}
+                  >
+                    <Icons.Copy size={12} />
+                    {t('copy_button')}
+                  </button>
+                </div>
+                <div className="hd-cmodal-row">
+                  <Icons.Email size={17} />
+                  <div className="hd-cmodal-row-txt">
+                    <small>{t('email')}</small>
+                    <strong>{hotel.email || t('contact_not_available')}</strong>
+                  </div>
+                  <button
+                    className="hd-copy"
+                    type="button"
+                    onClick={() => copyToClipboard(hotel.email)}
+                    disabled={!hotel.email}
+                  >
+                    <Icons.Copy size={12} />
+                    {t('copy_button')}
+                  </button>
+                </div>
+              </div>
+
+              <div className="hd-field">
+                <label className="hd-label">{t('form_subject')}</label>
                 <input
+                  className="hd-input"
                   type="text"
                   value={contactForm.subject}
                   onChange={(e) => setContactForm({ ...contactForm, subject: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.85rem 1rem',
-                    border: '1.5px solid #d0d0d0',
-                    borderRadius: '10px',
-                    fontSize: '0.95rem',
-                    fontFamily: 'inherit',
-                    transition: 'all 0.3s',
-                    boxSizing: 'border-box'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#2E7D32';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(46, 125, 50, 0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#d0d0d0';
-                    e.target.style.boxShadow = 'none';
-                  }}
                   placeholder={t('contact_owner_subject_placeholder')}
                   required
                 />
               </div>
 
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{
-                  display: 'block',
-                  fontSize: '0.9rem',
-                  fontWeight: 700,
-                  color: '#1B5E20',
-                  marginBottom: '0.75rem',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px'
-                }}>
-                  Message
-                </label>
+              <div className="hd-field">
+                <label className="hd-label">{t('form_message')}</label>
                 <textarea
-                  rows="6"
+                  className="hd-textarea"
+                  rows="5"
                   value={contactForm.message}
                   onChange={(e) => setContactForm({ ...contactForm, message: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '0.85rem 1rem',
-                    border: '1.5px solid #d0d0d0',
-                    borderRadius: '10px',
-                    fontSize: '0.95rem',
-                    fontFamily: 'inherit',
-                    transition: 'all 0.3s',
-                    boxSizing: 'border-box',
-                    resize: 'vertical'
-                  }}
-                  onFocus={(e) => {
-                    e.target.style.borderColor = '#2E7D32';
-                    e.target.style.boxShadow = '0 0 0 3px rgba(46, 125, 50, 0.1)';
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = '#d0d0d0';
-                    e.target.style.boxShadow = 'none';
-                  }}
                   placeholder={t('contact_owner_message_placeholder')}
                   required
                 />
               </div>
 
               {contactMessage && (
-                <div style={{
-                  padding: '1rem',
-                  background: contactMessage.includes('success') ? '#e8f5e9' : '#ffebee',
-                  border: `1.5px solid ${contactMessage.includes('success') ? '#4caf50' : '#ef5350'}`,
-                  borderRadius: '10px',
-                  color: contactMessage.includes('success') ? '#2e7d32' : '#c62828',
-                  fontSize: '0.9rem',
-                  fontWeight: 500,
-                  marginBottom: '1.5rem'
-                }}>
+                <div className={`hd-msg${contactMessage.includes('success') ? ' ok' : ''}`}>
                   {contactMessage}
                 </div>
               )}
 
-              {/* Footer Buttons */}
-              <div style={{ 
-                display: 'flex', 
-                gap: '1rem', 
-                justifyContent: 'flex-end'
-              }}>
-                <button 
-                  type="button" 
-                  onClick={() => setShowContactModal(false)}
-                  style={{
-                    padding: '0.85rem 1.5rem',
-                    background: 'transparent',
-                    border: '1.5px solid #d0d0d0',
-                    color: '#666',
-                    borderRadius: '10px',
-                    fontSize: '0.95rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.borderColor = '#999';
-                    e.currentTarget.style.background = '#f5f5f5';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.borderColor = '#d0d0d0';
-                    e.currentTarget.style.background = 'transparent';
-                  }}
-                >
+              <div className="hd-form-actions">
+                <button className="hd-btn-quiet" type="button" onClick={() => setShowContactModal(false)}>
                   {t('cancel_button')}
                 </button>
-                <button 
-                  type="submit"
-                  style={{
-                    padding: '0.85rem 1.5rem',
-                    background: '#2E7D32',
-                    border: 'none',
-                    color: 'white',
-                    borderRadius: '10px',
-                    fontSize: '0.95rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    transition: 'all 0.3s',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.background = '#1B5E20';
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 8px 20px rgba(46, 125, 50, 0.3)';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.background = '#2E7D32';
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
+                <button className="hd-send" type="submit">
                   {t('send_message')}
                 </button>
               </div>
@@ -3649,453 +3380,31 @@ export default function HotelDetail() {
           </div>
         </div>
       )}
+
+      {/* Image lightbox */}
+      {fullscreenImage && (
+        <div className="hd-lightbox" onClick={() => setFullscreenImage(null)}>
+          <img src={fullscreenImage} alt={hotel.name} onClick={(e) => e.stopPropagation()} />
+          <button
+            className="hd-lightbox-close"
+            onClick={() => setFullscreenImage(null)}
+            aria-label="Close image"
+          >
+            <Icons.X size={20} />
+          </button>
+        </div>
+      )}
+
+      {/* Copy toast */}
+      {toastText && <div className="hd-toast">{toastText}</div>}
     </div>
   );
 }
 
 // Styles
-const pageStyle = {
-  backgroundColor: 'transparent',
-  minHeight: '100vh',
-  paddingBottom: '3rem'
-};
-
-const breadcrumbContainer = {
-  maxWidth: '1400px',
-  margin: '0 auto',
-  padding: '2rem 2rem 1rem 2rem'
-};
-
-const breadcrumbLink = {
-  color: '#16a34a',
-  textDecoration: 'none',
-  fontSize: '0.9rem',
-  fontWeight: '700',
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  padding: '0.75rem 1.5rem',
-  background: 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)',
-  borderRadius: '50px',
-  border: '2px solid #86efac',
-  transition: 'all 0.3s ease',
-  textTransform: 'uppercase',
-  letterSpacing: '0.5px',
-  boxShadow: '0 4px 12px rgba(22, 163, 74, 0.2)',
-  ':hover': {
-    transform: 'translateY(-2px)',
-    boxShadow: '0 6px 16px rgba(22, 163, 74, 0.3)'
-  }
-};
-
-const ratingContainer = {
-  maxWidth: '1400px',
-  margin: '0 auto',
-  padding: '0 2rem 1rem 2rem',
-  display: 'flex',
-  justifyContent: 'center'
-};
-
-const ratingSection = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '1rem',
-  background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-  padding: '0.75rem 1.5rem',
-  borderRadius: '50px',
-  boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
-  border: '2px solid rgba(22, 163, 74, 0.2)'
-};
-
-const starsContainer = {
-  display: 'flex'
-};
-
-const ratingText = {
-  fontSize: '1rem',
-  color: '#555',
-  fontWeight: '600'
-};
-
-const contentGrid = {
-  maxWidth: '1400px',
-  margin: '1rem auto 2rem auto',
-  padding: '0 2rem',
-  display: 'grid',
-  gridTemplateColumns: '1fr 380px',
-  gap: '2.5rem'
-};
-
-const leftColumn = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '2rem'
-};
-
-const rightColumn = {
-  position: 'sticky',
-  top: '1rem',
-  alignSelf: 'flex-start'
-};
-
-const imageContainer = {
-  borderRadius: '24px',
-  overflow: 'hidden',
-  boxShadow: '0 20px 50px rgba(0,0,0,0.15)',
-  border: '4px solid white',
-  position: 'relative',
-  transition: 'transform 0.3s ease'
-};
-
-const hotelImage = {
-  width: '100%',
-  height: 'auto',
-  display: 'block',
-  transition: 'transform 0.3s ease'
-};
-
-const galleryGrid = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
-  gap: '0.75rem'
-};
-
-const galleryImage = {
-  width: '100%',
-  height: '90px',
-  objectFit: 'cover',
-  borderRadius: '10px',
-  border: '1px solid #e5e7eb'
-};
-
-const sectionCard = {
-  background: 'white',
-  borderRadius: '24px',
-  padding: '2.5rem',
-  boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-  border: '1px solid rgba(22, 163, 74, 0.1)',
-  transition: 'all 0.3s ease'
-};
-
-const sectionTitle = {
-  fontSize: '2rem',
-  fontWeight: '800',
-  margin: '0 0 1.5rem 0',
-  color: '#16a34a',
-  textShadow: '0 1px 2px rgba(0,0,0,0.1)',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.75rem',
-  paddingBottom: '1rem',
-  borderBottom: '3px solid #16a34a'
-};
-
-const descriptionText = {
-  fontSize: '1rem',
-  lineHeight: '1.7',
-  color: '#555',
-  fontWeight: '400'
-};
-
-const amenitiesGrid = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-  gap: '0.75rem'
-};
-
-const amenityItem = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.75rem',
-  padding: '0.85rem 1rem',
-  background: 'linear-gradient(135deg, #f1f8f4 0%, #e8f5e9 100%)',
-  borderRadius: '12px',
-  border: '1px solid rgba(22, 163, 74, 0.1)',
-  transition: 'all 0.3s ease',
-  fontSize: '0.95rem',
-  fontWeight: '500'
-};
-
-const amenityIcon = {
-  color: '#16a34a',
-  fontWeight: 'bold',
-  fontSize: '1.3rem'
-};
-
-const mapContainer = {
-  height: '300px',
-  borderRadius: '12px',
-  overflow: 'hidden'
-};
-
 const mapStyle = {
   width: '100%',
   height: '100%'
-};
-
-const reviewsHeader = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: '1.5rem'
-};
-
-const writeReviewBtn = {
-  background: '#2e7d32',
-  color: 'white',
-  border: 'none',
-  borderRadius: '8px',
-  padding: '0.5rem 1rem',
-  fontWeight: '600',
-  cursor: 'pointer'
-};
-
-const reviewFormCard = {
-  background: '#f8f9fa',
-  padding: '1.5rem',
-  borderRadius: '12px',
-  marginBottom: '1.5rem'
-};
-
-const formGroup = {
-  marginBottom: '1rem'
-};
-
-const formLabel = {
-  display: 'block',
-  fontWeight: '600',
-  marginBottom: '0.5rem',
-  color: '#333'
-};
-
-const starSelector = {
-  display: 'flex',
-  gap: '0.25rem'
-};
-
-const starButton = {
-  fontSize: '2rem',
-  cursor: 'pointer',
-  transition: 'color 0.2s'
-};
-
-const textareaField = {
-  width: '100%',
-  padding: '0.75rem',
-  borderRadius: '8px',
-  border: '1px solid #ddd',
-  fontSize: '1rem',
-  fontFamily: 'inherit'
-};
-
-const reviewMessageBox = {
-  padding: '0.75rem',
-  background: '#e8f5e9',
-  color: '#2e7d32',
-  borderRadius: '8px',
-  marginBottom: '1rem',
-  fontWeight: '600'
-};
-
-const submitReviewBtn = {
-  background: '#2e7d32',
-  color: 'white',
-  border: 'none',
-  borderRadius: '8px',
-  padding: '0.75rem 1.5rem',
-  fontWeight: '600',
-  cursor: 'pointer',
-  width: '100%'
-};
-
-const reviewsList = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1rem'
-};
-
-const noReviewsText = {
-  textAlign: 'center',
-  color: '#999',
-  padding: '2rem',
-  fontSize: '1rem'
-};
-
-const reviewCard = {
-  padding: '2rem',
-  background: 'linear-gradient(135deg, #fafafa 0%, #f5f5f5 100%)',
-  borderRadius: '16px',
-  border: '1px solid #e0e0e0',
-  boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-  transition: 'all 0.3s ease'
-};
-
-const reviewHeader = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'flex-start',
-  marginBottom: '0.75rem'
-};
-
-const reviewAuthor = {
-  fontWeight: '700',
-  fontSize: '1rem',
-  color: '#333'
-};
-
-const reviewDate = {
-  fontSize: '0.85rem',
-  color: '#999',
-  marginTop: '0.25rem'
-};
-
-const reviewRating = {
-  display: 'flex'
-};
-
-const reviewComment = {
-  fontSize: '0.95rem',
-  lineHeight: '1.6',
-  color: '#555',
-  margin: '0 0 1rem 0'
-};
-
-const reviewFooter = {
-  display: 'flex',
-  gap: '1rem'
-};
-
-const helpfulBtn = {
-  background: 'white',
-  border: '1px solid #ddd',
-  borderRadius: '6px',
-  padding: '0.4rem 0.8rem',
-  fontSize: '0.85rem',
-  cursor: 'pointer',
-  color: '#666'
-};
-
-const bookingCard = {
-  background: 'white',
-  borderRadius: '24px',
-  padding: '2.5rem',
-  boxShadow: '0 20px 50px rgba(22, 163, 74, 0.15)',
-  border: '3px solid rgba(22, 163, 74, 0.2)',
-  position: 'relative',
-  overflow: 'hidden'
-};
-
-const priceSection = {
-  marginBottom: '2rem',
-  paddingBottom: '2rem',
-  borderBottom: '2px solid #f0f0f0',
-  textAlign: 'center'
-};
-
-const priceLabel = {
-  fontSize: '0.9rem',
-  color: '#666',
-  marginBottom: '0.75rem',
-  fontWeight: '600',
-  textTransform: 'uppercase',
-  letterSpacing: '0.5px'
-};
-
-const priceAmount = {
-  fontSize: '3rem',
-  fontWeight: '900',
-  color: '#16a34a',
-  textShadow: '0 2px 4px rgba(22, 163, 74, 0.2)'
-};
-
-const availabilityBanner = {
-  background: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-  color: '#1b5e20',
-  padding: '1rem 1.25rem',
-  borderRadius: '15px',
-  fontWeight: '700',
-  marginBottom: '2rem',
-  textAlign: 'center',
-  fontSize: '1.05rem',
-  boxShadow: '0 4px 12px rgba(27, 94, 32, 0.15)',
-  border: '2px solid rgba(27, 94, 32, 0.1)'
-};
-
-const contactSection = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1rem',
-  marginBottom: '1.5rem'
-};
-
-const contactItem = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  lineHeight: 1.3,
-  fontSize: '0.95rem',
-  color: '#555',
-  fontWeight: '500'
-};
-
-const contactIcon = {
-  fontSize: '1.1rem'
-};
-
-const bookNowButton = {
-  width: '100%',
-  background: 'linear-gradient(135deg, #16a34a, #059669)',
-  color: 'white',
-  border: 'none',
-  borderRadius: '15px',
-  padding: '1.5rem',
-  fontSize: '1.1rem',
-  fontWeight: '800',
-  cursor: 'pointer',
-  marginBottom: '1rem',
-  boxShadow: '0 8px 20px rgba(22, 163, 74, 0.4)',
-  transition: 'all 0.3s ease',
-  textTransform: 'uppercase',
-  letterSpacing: '0.5px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '0.75rem'
-};
-
-const contactButton = {
-  width: '100%',
-  background: 'white',
-  color: '#16a34a',
-  border: '3px solid #16a34a',
-  borderRadius: '15px',
-  padding: '1.25rem',
-  fontSize: '1rem',
-  fontWeight: '700',
-  cursor: 'pointer',
-  marginBottom: '1.5rem',
-  transition: 'all 0.3s ease',
-  textTransform: 'uppercase',
-  letterSpacing: '0.5px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: '0.75rem'
-};
-
-const infoText = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.5rem',
-  fontSize: '0.85rem',
-  color: '#666',
-  fontWeight: '500'
-};
-
-const backLink = {
-  color: '#2e7d32',
-  textDecoration: 'none',
-  fontWeight: '600'
 };
 
 const modalBackdrop = {
