@@ -104,3 +104,31 @@ export const ensureRoomFieldsSchema = async () => {
     console.error('Schema ensure (room fields) failed:', error.message);
   }
 };
+
+// reviews.room_id (migration 024) is what the public Room Details modal uses
+// to show room-specific guest quotes. createHotelReview writes it for new
+// reviews; this backfills historic ones from their booking. Idempotent and
+// only runs while unmatched rows remain.
+export const ensureReviewRoomIdBackfill = async () => {
+  try {
+    await ensureColumn('reviews', 'room_id', 'INT NULL DEFAULT NULL AFTER `hotel_id`');
+
+    const [pending] = await db.promise().query(
+      `SELECT COUNT(*) AS c
+       FROM reviews r
+       JOIN hotel_bookings hb ON r.booking_id = hb.booking_id
+       WHERE r.room_id IS NULL AND hb.room_id IS NOT NULL`
+    );
+    if (!pending[0].c) return;
+
+    await db.promise().query(
+      `UPDATE reviews r
+       JOIN hotel_bookings hb ON r.booking_id = hb.booking_id
+       SET r.room_id = hb.room_id
+       WHERE r.room_id IS NULL AND hb.room_id IS NOT NULL`
+    );
+    console.log(`Schema: backfilled reviews.room_id for ${pending[0].c} review(s)`);
+  } catch (error) {
+    console.error('Schema ensure (review room_id backfill) failed:', error.message);
+  }
+};

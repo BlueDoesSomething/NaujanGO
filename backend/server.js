@@ -378,7 +378,7 @@ app.get('/', (req, res) => {
 });
 
 import { initSocket } from './socket.js';
-import { ensureFlexiblePaymentSchema, ensureHotelPolicySchema, ensureBusinessLegitimacySchema, ensureRoomFieldsSchema } from './utils/dbSchema.js';
+import { ensureFlexiblePaymentSchema, ensureHotelPolicySchema, ensureBusinessLegitimacySchema, ensureRoomFieldsSchema, ensureReviewRoomIdBackfill } from './utils/dbSchema.js';
 
 // Flexible payment options: make sure reservation_fee / payment_option /
 // payment_status('partial') exist before any request can hit them.
@@ -389,6 +389,8 @@ await ensureHotelPolicySchema();
 await ensureBusinessLegitimacySchema();
 // Room policy / detail fields on rooms (migration 043).
 await ensureRoomFieldsSchema();
+// Historic reviews: link them to the room that was reviewed (migration 044).
+await ensureReviewRoomIdBackfill();
 
 if (USE_HTTPS) {
   // selfsigned is a dev-only dependency, imported lazily so production builds

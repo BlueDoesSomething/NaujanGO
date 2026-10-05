@@ -1051,7 +1051,26 @@ export default function HotelDetail() {
   const totalReviewsCount = averageRating.total || reviews.length;
 
   // Room Details modal derived values
-  const roomImages = selectedRoom && selectedRoom.primary_image_url ? [selectedRoom.primary_image_url] : [];
+  // All uploaded photos: primary first, then the rest (deduped). image_urls
+  // can arrive as an array or a JSON string depending on the endpoint.
+  const roomImages = (() => {
+    if (!selectedRoom) return [];
+    let urls = [];
+    const rawUrls = selectedRoom.image_urls;
+    if (Array.isArray(rawUrls)) {
+      urls = rawUrls;
+    } else if (typeof rawUrls === 'string' && rawUrls.trim().startsWith('[')) {
+      try {
+        const parsed = JSON.parse(rawUrls);
+        if (Array.isArray(parsed)) urls = parsed;
+      } catch (e) { /* keep empty */ }
+    }
+    const all = [selectedRoom.primary_image_url, ...urls]
+      .filter(Boolean)
+      .map((u) => String(u).trim())
+      .filter(Boolean);
+    return Array.from(new Set(all));
+  })();
   const roomImgIndex = roomImages.length ? Math.min(roomImageIndex, roomImages.length - 1) : 0;
   const roomAmenities = selectedRoom && Array.isArray(selectedRoom.amenities)
     ? selectedRoom.amenities.map(formatAmenity).filter(Boolean)
@@ -1059,6 +1078,14 @@ export default function HotelDetail() {
   const roomUnavailable = Boolean(selectedRoom && (!selectedRoom.is_active || !(selectedRoom.quantity_available > 0)));
   const roomPromoOnly = hotel.booking_enabled === false;
   const roomBookable = Boolean(selectedRoom && !roomUnavailable && !roomPromoOnly);
+
+  // Real, room-specific guest quotes (reviews with a comment tied to this
+  // room). Section renders only when at least one exists.
+  const roomQuotes = selectedRoom
+    ? reviews
+        .filter((r) => Number(r.room_id) === Number(selectedRoom.room_id) && r.comment)
+        .slice(0, 2)
+    : [];
 
   const closeRoomModal = () => {
     setSelectedRoom(null);
@@ -1320,7 +1347,7 @@ export default function HotelDetail() {
                   <article
                     key={room.room_id}
                     className="hd-room"
-                    onClick={() => setSelectedRoom(room)}
+                    onClick={() => { setRoomImageIndex(0); setSelectedRoom(room); }}
                   >
                     {/* Room image */}
                     <div className="hd-room-img">
@@ -1375,6 +1402,7 @@ export default function HotelDetail() {
                           className="hd-room-cta"
                           onClick={(e) => {
                             e.stopPropagation();
+                            setRoomImageIndex(0);
                             setSelectedRoom(room);
                           }}
                         >
@@ -2189,12 +2217,13 @@ export default function HotelDetail() {
                 {/* Left: details */}
                 <div className="hd-rm-main">
                   {/* Gallery */}
-                  <div className="hd-rm-gallery">
+                  <div className="hd-rm-gallery hd-rm-gallery-zoom">
                     {roomImages.length > 0 ? (
                       <img
                         src={roomImages[roomImgIndex]}
                         alt={selectedRoom.room_type_name}
                         onError={handleImageError}
+                        onClick={() => setFullscreenImage(roomImages[roomImgIndex])}
                       />
                     ) : (
                       <div className="hd-rm-ph"><Icons.Bed size={56} /></div>
@@ -2343,34 +2372,32 @@ export default function HotelDetail() {
                     </div>
                   </div>
 
-                  {/* Guest quotes */}
-                  <div className="hd-rm-sec">
-                    <p className="hd-rm-sec-title">What guests say</p>
-                    <div className="hd-rm-grid2">
-                      {[
-                        {
-                          quote: 'Beautiful room with excellent view. The bed was very comfortable!',
-                          author: 'Sarah M.',
-                          date: 'Feb 2024'
-                        },
-                        {
-                          quote: 'Loved the modern design and spacious bathroom. Highly recommended!',
-                          author: 'James P.',
-                          date: 'Jan 2024'
-                        }
-                      ].map((item, i) => (
-                        <div className="hd-rm-quote" key={i}>
-                          <span className="hd-rm-stars">
-                            {[0, 1, 2, 3, 4].map((s) => (
-                              <Icons.Star key={s} size={12} filled />
-                            ))}
-                          </span>
-                          <p>"{item.quote}"</p>
-                          <small>{item.author} · {item.date}</small>
-                        </div>
-                      ))}
+                  {/* Guest quotes (room-specific only, hidden when none) */}
+                  {roomQuotes.length > 0 && (
+                    <div className="hd-rm-sec">
+                      <p className="hd-rm-sec-title">What guests say</p>
+                      <div className="hd-rm-grid2">
+                        {roomQuotes.map((review) => (
+                          <div className="hd-rm-quote" key={review.review_id || review.id}>
+                            <span className="hd-rm-stars">
+                              {[0, 1, 2, 3, 4].map((s) => (
+                                <Icons.Star
+                                  key={s}
+                                  size={12}
+                                  filled={s < Math.round(Number(review.rating) || 0)}
+                                />
+                              ))}
+                            </span>
+                            <p>"{review.comment}"</p>
+                            <small>
+                              {review.first_name || review.username || 'Guest'} ·{' '}
+                              {review.review_date ? new Date(review.review_date).toLocaleDateString() : ''}
+                            </small>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Policies */}
                   <div className="hd-rm-sec">

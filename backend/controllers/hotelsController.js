@@ -567,9 +567,10 @@ export const createHotelReview = async (req, res) => {
       return res.status(400).json({ message: 'Booking ID is required to submit a review' });
     }
 
-    // Verify the booking belongs to this user and hotel
+    // Verify the booking belongs to this user and hotel (also grab the
+    // booked room so the review can be linked to that room type).
     const [bookings] = await db.promise().query(
-      `SELECT booking_id FROM hotel_bookings
+      `SELECT booking_id, room_id FROM hotel_bookings
        WHERE booking_id = ?
        AND user_id = ?
        AND hotel_id = ?
@@ -602,11 +603,12 @@ export const createHotelReview = async (req, res) => {
     );
 
     const moderated = isInappropriate ? 0 : 1;
+    const roomId = bookings[0].room_id || null;
 
     await db.promise().query(
-      `INSERT INTO reviews (user_id, hotel_id, booking_id, rating, comment, review_date, moderated)
-       VALUES (?, ?, ?, ?, ?, NOW(), ?)`,
-      [user_id, hotelId, booking_id, rating, comment, moderated]
+      `INSERT INTO reviews (user_id, hotel_id, booking_id, room_id, rating, comment, review_date, moderated)
+       VALUES (?, ?, ?, ?, ?, ?, NOW(), ?)`,
+      [user_id, hotelId, booking_id, roomId, rating, comment, moderated]
     );
 
     const message = moderated ? 'Review submitted successfully' : 'Review submitted for moderation';

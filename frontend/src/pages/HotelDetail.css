@@ -1849,6 +1849,11 @@
   display: block;
 }
 
+/* Public Room Details modal gallery opens the lightbox on click. */
+.hd-rm-gallery-zoom img {
+  cursor: zoom-in;
+}
+
 .hd-rm-ph {
   width: 100%;
   height: 100%;

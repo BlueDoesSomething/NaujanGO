@@ -307,7 +307,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
                             {imgCount > 0 && (
                               <span className="hd-rm-gcount">
                                 <Icons.Camera size={12} />
-                                1 / {imgCount}
+                                {imgCount}
                               </span>
                             )}
                           </div>
