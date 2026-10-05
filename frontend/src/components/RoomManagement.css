@@ -467,6 +467,45 @@ textarea.rm-input {
   border-top: 1px solid #e2e8f0;
 }
 
+/* ---------- Two-column edit layout ---------- */
+/* While the form is open, collapse the shell to a single full-width column
+   and hide the stats side panel (defined in HotelDetail.css). The doubled
+   class outranks `.hd-rm-grid` regardless of stylesheet order. */
+.hd-rm-grid.hd-rm-grid-editing {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.hd-rm-grid-editing .hd-rm-side {
+  display: none;
+}
+
+.rm-form-cols {
+  display: grid;
+  gap: 1.15rem;
+}
+
+.rm-form-col {
+  display: flex;
+  flex-direction: column;
+  gap: 1.15rem;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .rm-form-cols {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  /* align-self: start keeps the item from filling its grid area, which
+     is what gives the sticky column room to slide. */
+  .rm-form-col-sticky {
+    position: sticky;
+    top: 0;
+    align-self: start;
+  }
+}
+
 /* ---------- Dark mode ---------- */
 [data-theme="dark"] .rm-card,
 [data-theme="dark"] .rm-form,

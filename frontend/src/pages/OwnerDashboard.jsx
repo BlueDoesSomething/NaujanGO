@@ -365,6 +365,17 @@ const OwnerDashboard = () => {
     }
   };
 
+  // Lightweight room-only refresh for the availability calendar /
+  // Room Types Inventory after Room Management edits.
+  const refreshOwnerRooms = async () => {
+    try {
+      const res = await api.get('/owner/rooms');
+      setRooms(res.data);
+    } catch (error) {
+      console.error('Error refreshing owner rooms:', error);
+    }
+  };
+
   const fetchPayments = async () => {
     try {
       const params = {
@@ -1793,7 +1804,7 @@ const OwnerDashboard = () => {
                   <button className="hd-rm-close" onClick={() => setManagingRoomsHotel(null)} aria-label="Close">
                     <Icons.X size={18} />
                   </button>
-                  <RoomManagement hotel={managingRoomsHotel} onClose={() => setManagingRoomsHotel(null)} t={t} />
+                  <RoomManagement hotel={managingRoomsHotel} onClose={() => setManagingRoomsHotel(null)} t={t} onRoomsChanged={refreshOwnerRooms} />
                 </div>
               </div>
             )}

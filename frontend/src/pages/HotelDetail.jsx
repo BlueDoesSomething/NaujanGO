@@ -367,6 +367,43 @@ export default function HotelDetail() {
 
   const maxGuestsAllowed = 100;
 
+  // Public rooms fetch (normalized). Reused by loadHotelData and by the
+  // Room Management onRoomsChanged callback so the Room Details modal
+  // reflects owner edits without a reload.
+  const fetchRooms = async () => {
+    try {
+      const roomsResponse = await axios.get(`${API_BASE_URL}/hotels/${id}/rooms`);
+      const rawRooms = roomsResponse.data || [];
+      // Normalize amenities: backend may sometimes double-encode or store objects.
+      const normalizedRooms = (rawRooms || []).map((r) => {
+        const raw = parseAmenitiesRaw(r.amenities || r.amenities_raw || r.amenitiesJson);
+        const amenities = (raw || []).map(sanitizeAmenityString).filter(Boolean);
+        return { ...r, amenities };
+      });
+
+      console.log('Rooms loaded (normalized):', normalizedRooms);
+      setRooms(normalizedRooms);
+      return normalizedRooms;
+    } catch (error) {
+      console.error('Could not load rooms:', error);
+      setRooms([]);
+      return [];
+    }
+  };
+
+  // Called after owner room edits/deletes: refresh public rooms and keep
+  // the open Room Details modal in sync (close it if the room is gone).
+  const refreshRooms = async () => {
+    const normalizedRooms = await fetchRooms();
+    setSelectedRoom((prev) => {
+      if (!prev) return prev;
+      const fresh = normalizedRooms.find((r) => String(r.room_id) === String(prev.room_id));
+      if (!fresh) return null;
+      return { ...fresh };
+    });
+    setRoomImageIndex(0);
+  };
+
   const loadHotelData = async () => {
     try {
       setLoading(true);
@@ -385,22 +422,7 @@ export default function HotelDetail() {
       setReviews(reviewsResponse.data || []);
 
       // Load rooms
-      try {
-        const roomsResponse = await axios.get(`${API_BASE_URL}/hotels/${id}/rooms`);
-        const rawRooms = roomsResponse.data || [];
-        // Normalize amenities: backend may sometimes double-encode or store objects.
-        const normalizedRooms = (rawRooms || []).map((r) => {
-          const raw = parseAmenitiesRaw(r.amenities || r.amenities_raw || r.amenitiesJson);
-          const amenities = (raw || []).map(sanitizeAmenityString).filter(Boolean);
-          return { ...r, amenities };
-        });
-
-        console.log('Rooms loaded (normalized):', normalizedRooms);
-        setRooms(normalizedRooms);
-      } catch (error) {
-        console.error('Could not load rooms:', error);
-        setRooms([]);
-      }
+      await fetchRooms();
       
       // Load average rating
       const ratingResponse = await axios.get(`${API_BASE_URL}/hotels/${id}/average-rating`);
@@ -2531,6 +2553,7 @@ export default function HotelDetail() {
               hotel={managingRoomsHotel}
               onClose={() => setManagingRoomsHotel(null)}
               t={t}
+              onRoomsChanged={refreshRooms}
             />
           </div>
         </div>

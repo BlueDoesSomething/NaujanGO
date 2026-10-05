@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Icons from '../components/Icons';
 import api from '../api';
 import './RoomManagement.css';
@@ -29,7 +29,7 @@ const fmtTime = (value) => {
   return `${hour12}:${m[2]} ${meridiem}`;
 };
 
-const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
+const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingRoom, setEditingRoom] = useState(null);
@@ -60,10 +60,20 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
   const [amenitiesInput, setAmenitiesInput] = useState('');
   const [featuresInput, setFeaturesInput] = useState('');
   const [selectedImages, setSelectedImages] = useState([]);
+  const formRef = useRef(null);
 
   useEffect(() => {
     fetchRooms();
   }, [hotel]);
+
+  const notifyRoomsChanged = async () => {
+    if (typeof onRoomsChanged !== 'function') return;
+    try {
+      await onRoomsChanged();
+    } catch (error) {
+      console.error('Failed to notify rooms changed:', error);
+    }
+  };
 
   const fetchRooms = async () => {
     try {
@@ -164,6 +174,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
       setFeaturesInput('');
       setSelectedImages([]);
       await fetchRooms();
+      await notifyRoomsChanged();
     } catch (error) {
       console.error('Failed to save room:', error);
       alert(error.response?.data?.error || 'Failed to save room');
@@ -178,6 +189,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
     try {
       await api.delete(`/owner/hotels/${hotel.hotel_id}/rooms/${roomId}`);
       await fetchRooms();
+      await notifyRoomsChanged();
     } catch (error) {
       console.error('Failed to delete room:', error);
       alert('Failed to delete room');
@@ -228,11 +240,21 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
   const featurePreview = featuresInput.split(',').map(f => f.trim()).filter(Boolean);
   const totalUnits = rooms.reduce((sum, r) => sum + (parseInt(r.quantity_available, 10) || 0), 0);
   const activeRooms = rooms.filter(r => Number(r.is_active) === 1).length;
+  const formOpen = Boolean(editingRoom || creatingRoom);
+
+  // Keep the form in view when it opens (cards can sit far down the list).
+  useEffect(() => {
+    if (!formOpen || !formRef.current) return;
+    const frame = requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [formOpen]);
 
   return (
     <>
       <div className="hd-rm-scroll">
-        <div className="hd-rm-grid">
+        <div className={`hd-rm-grid${formOpen ? ' hd-rm-grid-editing' : ''}`}>
           {/* Left: rooms + form */}
           <div className="hd-rm-main">
             <div className="hd-rm-head">
@@ -443,7 +465,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
 
                 {/* Edit / Create Form */}
                 {(editingRoom || creatingRoom) && (
-                  <div className="rm-form">
+                  <div className="rm-form" ref={formRef}>
                     <div className="rm-form-head">
                       <span className="rm-form-ic">
                         {creatingRoom ? <Icons.Plus size={18} /> : <Icons.Pencil size={18} />}
@@ -456,7 +478,9 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
                       </div>
                     </div>
 
-                    {/* Basics */}
+                    <div className="rm-form-cols">
+                      <div className="rm-form-col">
+                        {/* Basics */}
                     <div className="rm-form-sec">
                       <p className="hd-rm-sec-title">Basics</p>
                       <div className="rm-grid3">
@@ -627,7 +651,9 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
                         </div>
                       )}
                     </div>
+                      </div>
 
+                      <div className="rm-form-col rm-form-col-sticky">
                     {/* Photos */}
                     <div className="rm-form-sec">
                       <p className="hd-rm-sec-title">Photos</p>
@@ -772,6 +798,8 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key }) => {
                           </>
                         )}
                       </button>
+                    </div>
+                      </div>
                     </div>
                   </div>
                 )}
