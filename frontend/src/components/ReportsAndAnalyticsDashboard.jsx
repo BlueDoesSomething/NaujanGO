@@ -28,18 +28,21 @@ ChartJS.register(
   Filler
 );
 
-const ReportsAndAnalyticsDashboard = ({ 
+const ReportsAndAnalyticsDashboard = ({
   data,
   loading = false,
   userRole = 'admin', // 'admin' or 'owner'
   onExport = () => {},
-  stats = null
+  stats = null,
+  children = null,      // extra category (e.g. Tourism Arrivals) rendered as its own section
+  initialCategory = null // scroll to this category on mount (deep links)
 }) => {
   const { t } = useLanguage();
   const [selectedDateRange, setSelectedDateRange] = useState('30d');
   const [displayMode, setDisplayMode] = useState('overview');
   const [visitorAnalytics, setVisitorAnalytics] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('overview');
   const trendSeries = selectedDateRange === '7d' && data?.dailyTrends?.length
     ? data.dailyTrends
     : data?.monthlyTrends || [];
@@ -48,6 +51,54 @@ const ReportsAndAnalyticsDashboard = ({
   const trendSubtitle = selectedDateRange === '7d' ? 'Daily booking patterns and growth' : 'Monthly booking patterns and growth';
   const revenueTitle = selectedDateRange === '7d' ? 'Daily Revenue Report' : 'Revenue Report';
   const revenueSubtitle = selectedDateRange === '7d' ? 'Daily revenue analysis and trends' : 'Monthly revenue analysis and trends';
+
+  // Anchor categories for the single-page Reports view.
+  // Visitor Analytics is admin-only; Tourism Arrivals exists only when a child section is passed.
+  const reportCategories = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'bookings-revenue', label: 'Bookings & Revenue' },
+    { id: 'occupancy-performance', label: 'Occupancy & Performance' },
+    ...(userRole === 'admin' ? [{ id: 'visitor-analytics', label: 'Visitor Analytics' }] : []),
+    ...(children ? [{ id: 'tourism-arrivals', label: 'Tourism Arrivals' }] : []),
+  ];
+
+  const scrollToCategory = (id) => {
+    setActiveCategory(id);
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Track which category is in view while scrolling the page
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return undefined;
+    const root = document.querySelector('.gov-main') || null;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]?.target?.id) setActiveCategory(visible[0].target.id);
+      },
+      { root, rootMargin: '-120px 0px -60% 0px', threshold: 0 }
+    );
+    reportCategories.forEach((cat) => {
+      const el = document.getElementById(cat.id);
+      if (el) observer.observe(el);
+    });
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userRole, children, loading, visitorAnalytics]);
+
+  // Deep links (/admin/tourist-arrivals etc.) — scroll to the requested category once
+  useEffect(() => {
+    if (!initialCategory) return undefined;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(initialCategory);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      setActiveCategory(initialCategory);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [initialCategory]);
 
   // Fetch visitor analytics on mount (admin only)
   useEffect(() => {
@@ -247,7 +298,22 @@ const ReportsAndAnalyticsDashboard = ({
         </div>
       </div>
 
+      {/* Category navigation (anchor scroll) */}
+      <nav className="reports-category-nav" aria-label="Report categories">
+        {reportCategories.map((cat) => (
+          <button
+            key={cat.id}
+            type="button"
+            className={`reports-category-link${activeCategory === cat.id ? ' is-active' : ''}`}
+            onClick={() => scrollToCategory(cat.id)}
+          >
+            {cat.label}
+          </button>
+        ))}
+      </nav>
+
       {/* KPI Cards */}
+      <section id="overview" className="reports-section">
       <div className="kpi-grid">
         <KPICard 
           label={t('analytics_total_bookings')}
@@ -279,14 +345,18 @@ const ReportsAndAnalyticsDashboard = ({
           </>
         )}
       </div>
+      </section>
 
       {/* Charts Grid */}
       {loading ? (
         <ChartLoader />
       ) : (
         <>
-          {/* Top Row - Large Charts */}
-          <div className="charts-grid charts-grid-2">
+          {/* Bookings & Revenue: trend charts + detailed metrics */}
+          <section id="bookings-revenue" className="reports-section">
+            <h2 className="reports-section-title">Bookings &amp; Revenue</h2>
+            {/* Top Row - Large Charts */}
+            <div className="charts-grid charts-grid-2">
             {/* Booking Trends */}
             <div className="chart-card">
               <div className="chart-header">
@@ -340,10 +410,54 @@ const ReportsAndAnalyticsDashboard = ({
                 </div>
               )}
             </div>
-          </div>
+            </div>
 
-          {/* Bottom Row - Smaller Charts */}
-          <div className="charts-grid charts-grid-3">
+            {/* Detailed Metrics */}
+            <div className="details-section">
+              <h3 className="details-title">Detailed Metrics</h3>
+              <div className="metrics-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Month</th>
+                      <th>Bookings</th>
+                      <th>Revenue</th>
+                      {userRole === 'admin' && <th>Occupancy %</th>}
+                      <th>Growth</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trendSeries && trendSeries.map((period, idx) => {
+                      const previousPeriod = idx > 0 ? trendSeries[idx - 1] : null;
+                      const growth = previousPeriod
+                        ? (((period.bookings || period.count || 0) - (previousPeriod.bookings || previousPeriod.count || 0)) / (previousPeriod.bookings || previousPeriod.count || 1) * 100).toFixed(1)
+                        : 0;
+
+                      return (
+                        <tr key={idx}>
+                          <td><strong>{period[trendLabel]}</strong></td>
+                          <td>{period.bookings || period.count || 0}</td>
+                          <td>₱{(period.revenue || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
+                          {userRole === 'admin' && <td>{(period.occupancy || 0).toFixed(1)}%</td>}
+                          <td>
+                            <span className={`growth-badge ${growth >= 0 ? 'positive' : 'negative'}`}>
+                              {growth >= 0 ? '+' : ''}{growth}%
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+
+          {/* Occupancy & Performance */}
+          <section id="occupancy-performance" className="reports-section">
+            <h2 className="reports-section-title">Occupancy &amp; Performance</h2>
+            {/* Bottom Row - Smaller Charts */}
+            <div className="charts-grid charts-grid-3">
             {/* Performance Metrics */}
             <div className="chart-card">
               <div className="chart-header">
@@ -431,11 +545,13 @@ const ReportsAndAnalyticsDashboard = ({
                 </div>
               )}
             </div>
-          </div>
+            </div>
+          </section>
 
           {/* Visitor Analytics Section - Admin Only */}
           {userRole === 'admin' && visitorAnalytics && (
-            <>
+            <section id="visitor-analytics" className="reports-section">
+              <h2 className="reports-section-title">Visitor Analytics</h2>
               {/* Visitor Demographics Row */}
               <div className="charts-grid charts-grid-2">
                 {/* Gender Distribution */}
@@ -647,50 +763,13 @@ const ReportsAndAnalyticsDashboard = ({
                   </table>
                 </div>
               </div>
-            </>
+            </section>
           )}
-
-          {/* Details Section */}
-          <div className="details-section">
-            <h2 className="details-title">Detailed Metrics</h2>
-            <div className="metrics-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Month</th>
-                    <th>Bookings</th>
-                    <th>Revenue</th>
-                    {userRole === 'admin' && <th>Occupancy %</th>}
-                    <th>Growth</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trendSeries && trendSeries.map((period, idx) => {
-                    const previousPeriod = idx > 0 ? trendSeries[idx - 1] : null;
-                    const growth = previousPeriod 
-                      ? (((period.bookings || period.count || 0) - (previousPeriod.bookings || previousPeriod.count || 0)) / (previousPeriod.bookings || previousPeriod.count || 1) * 100).toFixed(1)
-                      : 0;
-                    
-                    return (
-                      <tr key={idx}>
-                        <td><strong>{period[trendLabel]}</strong></td>
-                        <td>{period.bookings || period.count || 0}</td>
-                        <td>₱{(period.revenue || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
-                        {userRole === 'admin' && <td>{(period.occupancy || 0).toFixed(1)}%</td>}
-                        <td>
-                          <span className={`growth-badge ${growth >= 0 ? 'positive' : 'negative'}`}>
-                            {growth >= 0 ? '+' : ''}{growth}%
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </>
       )}
+
+      {/* Extra category section (Tourism Arrivals) — renders its own <section id="tourism-arrivals"> */}
+      {children}
     </div>
   );
 };
