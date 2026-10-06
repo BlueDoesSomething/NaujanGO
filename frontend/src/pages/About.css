@@ -113,6 +113,15 @@ body {
    SIDEBAR NAVIGATION (PERMANENT - Desktop)
    ======================================== */
 
+/* Global styles set `overflow-x: hidden` on body, which turns body into a
+   scroll container and silently disables `position: sticky` for the sidebar.
+   `clip` keeps the same horizontal-overflow protection without creating a
+   scroll container — scoped to the About page only so other pages keep
+   their current behavior. */
+body:has(.about-page) {
+  overflow-x: clip;
+}
+
 .about-nav-sidebar {
   /* Desktop: sticky positioning */
   position: sticky;
