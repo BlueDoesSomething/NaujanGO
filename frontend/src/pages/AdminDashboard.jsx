@@ -1846,6 +1846,24 @@ const AdminDashboard = () => {
     }
   };
 
+  // Mirror of the backend authorization rule — keep in sync with
+  // backend/utils/legitimacy.js computeAuthorization().
+  const missingRequirementsFor = (bp) => {
+    const has = (v) => typeof v === 'string' && v.trim() !== '';
+    const missing = [];
+    if (!has(bp.business_permit_no)) missing.push('business_permit');
+    if (!(has(bp.dot_no) || has(bp.philgeps_no))) missing.push('dot_or_philgeps');
+    if (bp.verification_status !== 'verified') missing.push('verification');
+    return missing;
+  };
+
+  const missingLabel = (key) =>
+    key === 'business_permit'
+      ? t('missing_business_permit')
+      : key === 'dot_or_philgeps'
+        ? t('missing_dot_or_philgeps')
+        : t('missing_verification');
+
   const verifyBusinessProfile = async (id, status) => {
     let rejection_reason = null;
     if (status === 'rejected') {
@@ -2539,12 +2557,33 @@ const AdminDashboard = () => {
                           {bp.verification_status === 'rejected' && bp.rejection_reason && (
                             <div style={{ fontSize: '0.75rem', color: '#991b1b', marginTop: '0.25rem' }}>{bp.rejection_reason}</div>
                           )}
+                          {(() => {
+                            const missing = missingRequirementsFor(bp);
+                            if (missing.length === 0) return null;
+                            const docsMissing = missing.filter((key) => key !== 'verification');
+                            return (
+                              <div style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                marginTop: '0.3rem',
+                                color: docsMissing.length === 0 ? '#166534' : '#92400e'
+                              }}>
+                                {docsMissing.length === 0
+                                  ? t('admin_ready_to_unlock')
+                                  : `${t('requirements_missing_label')}${missing.map(missingLabel).join(', ')}`}
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
                           <button
                             className="gov-btn-primary"
                             style={{ marginRight: '0.5rem', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                            onClick={() => verifyBusinessProfile(bp.id, 'verified')}
+                            onClick={() => {
+                              const docsMissing = missingRequirementsFor(bp).filter((key) => key !== 'verification');
+                              if (docsMissing.length > 0 && !window.confirm(t('admin_verify_incomplete_confirm'))) return;
+                              verifyBusinessProfile(bp.id, 'verified');
+                            }}
                             disabled={bp.verification_status === 'verified'}
                           >
                             {t('admin_verify')}

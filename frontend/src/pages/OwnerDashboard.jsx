@@ -289,6 +289,67 @@ const OwnerDashboard = () => {
     };
   }, [managingRoomsHotel]);
 
+  // Access state (verification badge, authorization, stats/bookings) comes
+  // from /owner/profile. Shared by the initial load and the focus refresh so
+  // an admin's verification shows up without a manual reload.
+  const applyAccess = async (profileData) => {
+    const bp = profileData.businessProfile;
+    setProfileStatus({
+      verification_status: bp?.verification_status || 'pending',
+      rejection_reason: bp?.rejection_reason || ''
+    });
+
+    // Admins always get the full dashboard; owners depend on legitimacy.
+    const authz = user?.role === 'admin' ? 'full' : (profileData.authorization || 'limited');
+    setAuthorization(authz);
+    setMissingRequirements(profileData.missing_requirements || []);
+
+    if (authz === 'full') {
+      const [statsRes, bookingsRes] = await Promise.all([
+        api.get('/owner/dashboard/stats'),
+        api.get('/owner/bookings')
+      ]);
+      setStats(statsRes.data);
+      setBookings(bookingsRes.data);
+    } else {
+      setStats(null);
+      setBookings([]);
+    }
+  };
+
+  // Profile-only refresh: never touches the business-profile form state, so
+  // it cannot clobber fields the owner is in the middle of editing.
+  const refreshAccess = async () => {
+    try {
+      const res = await api.get('/owner/profile');
+      await applyAccess(res.data || {});
+    } catch (error) {
+      console.error('Error refreshing owner access:', error);
+    }
+  };
+
+  // Re-validate when the tab regains focus so verification (made by an admin
+  // in another tab) unlocks the dashboard in an already-open session.
+  useEffect(() => {
+    let lastRefresh = 0;
+    const refresh = () => {
+      const now = Date.now();
+      if (now - lastRefresh < 10000) return; // focus + visibility double-fire
+      lastRefresh = now;
+      refreshAccess();
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') refresh();
+    };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
   const fetchDashboardData = async () => {
     try {
       const [hotelsRes, roomsRes, profileRes] = await Promise.all([
@@ -323,27 +384,7 @@ const OwnerDashboard = () => {
           philgeps_file: bp.philgeps_file || ''
         });
       }
-      setProfileStatus({
-        verification_status: bp?.verification_status || 'pending',
-        rejection_reason: bp?.rejection_reason || ''
-      });
-
-      // Admins always get the full dashboard; owners depend on legitimacy.
-      const authz = user?.role === 'admin' ? 'full' : (profileData.authorization || 'limited');
-      setAuthorization(authz);
-      setMissingRequirements(profileData.missing_requirements || []);
-
-      if (authz === 'full') {
-        const [statsRes, bookingsRes] = await Promise.all([
-          api.get('/owner/dashboard/stats'),
-          api.get('/owner/bookings')
-        ]);
-        setStats(statsRes.data);
-        setBookings(bookingsRes.data);
-      } else {
-        setStats(null);
-        setBookings([]);
-      }
+      await applyAccess(profileData);
 
       setLoading(false);
     } catch (error) {

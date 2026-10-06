@@ -1446,6 +1446,8 @@ const translations = {
     admin_reject: 'Reject',
     admin_rejection_reason: 'Rejection reason:',
     admin_business_verification: 'Business Verification',
+    admin_ready_to_unlock: 'Ready to unlock — Verify grants full dashboard access.',
+    admin_verify_incomplete_confirm: 'Requirements are incomplete. Verifying now will NOT unlock full dashboard access until the owner adds the missing documents. Verify anyway?',
   },
   es: {
     // Navigation
