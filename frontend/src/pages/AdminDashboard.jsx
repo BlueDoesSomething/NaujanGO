@@ -11,8 +11,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import { Bar, Line, Pie } from 'react-chartjs-2';
-import { BookingsLineChart, RevenueBarChart, ChartLoader } from '../components/AdminCharts';
+import { Bar, Pie } from 'react-chartjs-2';
 import ReportsAndAnalyticsDashboard from '../components/ReportsAndAnalyticsDashboard';
 import TouristArrivalsReport from '../components/TouristArrivalsReport';
 import api from '../api';
@@ -285,13 +284,12 @@ const AdminDashboard = () => {
   const [viewingItinerary, setViewingItinerary] = useState(null);
   const [ownerAssignments, setOwnerAssignments] = useState({});
   const [ownerAssigning, setOwnerAssigning] = useState({});
-  const [activeReport, setActiveReport] = useState('booking-trends');
   // Business legitimacy verification (permit / DOT / PhilGEPS)
   const [businessProfiles, setBusinessProfiles] = useState([]);
   const [businessProfilesLoading, setBusinessProfilesLoading] = useState(false);
   const [reportsLoading, setReportsLoading] = useState(false);
   const [reportsInitialCategory, setReportsInitialCategory] = useState(null);
-  const [analyticsData, setAnalyticsData] = useState({ dailyTrends: [], monthlyTrends: [], hotelPerformance: [] });
+  const [analyticsData, setAnalyticsData] = useState({ dailyTrends: [], monthlyTrends: [] });
   const [editingUser, setEditingUser] = useState(null);
   const [userForm, setUserForm] = useState({
     username: '',
@@ -866,6 +864,8 @@ const AdminDashboard = () => {
 
   const [archivedBookings, setArchivedBookings] = useState([]);
   const [archivedItineraries, setArchivedItineraries] = useState([]);
+  const [archivedHotels, setArchivedHotels] = useState([]);
+  const [archivedAttractions, setArchivedAttractions] = useState([]);
   const [archiveSubSection, setArchiveSubSection] = useState('bookings');
 
   // ── Pagination ─────────────────────────────────────────────────────────
@@ -1922,11 +1922,11 @@ const AdminDashboard = () => {
 
   const loadArchivedHotels = async () => {
     try {
-      const response = await api.get('/admin/hotels?archived=true');
-      return response.data;
+      const response = await api.get('/admin/hotels/archived');
+      setArchivedHotels(response.data);
     } catch (error) {
       console.error('Error loading archived hotels:', error);
-      return [];
+      setArchivedHotels([]);
     }
   };
 
@@ -1942,11 +1942,11 @@ const AdminDashboard = () => {
 
   const loadArchivedAttractions = async () => {
     try {
-      const response = await api.get('/admin/attractions?archived=true');
-      return response.data;
+      const response = await api.get('/admin/attractions/archived');
+      setArchivedAttractions(response.data);
     } catch (error) {
       console.error('Error loading archived attractions:', error);
-      return [];
+      setArchivedAttractions([]);
     }
   };
 
@@ -2281,7 +2281,7 @@ const AdminDashboard = () => {
                   if (mod.id === 'chatbot') loadChatbotData();
                   if (mod.id === 'reports') { loadAnalytics(); setReportsInitialCategory('overview'); }
                   if (mod.id === 'moderation') navigate('/admin/moderation');
-                  if (mod.id === 'archive') { loadArchivedBookings(); loadArchivedItineraries(); }
+                  if (mod.id === 'archive') { loadArchivedBookings(); loadArchivedItineraries(); loadArchivedHotels(); loadArchivedAttractions(); }
                 }}
               >
                 <span className="gov-nav-btn__icon">{mod.icon}</span>
@@ -7103,11 +7103,53 @@ const AdminDashboard = () => {
               {archiveSubSection === 'hotels' && (
                 <div className="gov-glass-panel">
                   <h2 className="gov-glass-panel__title">
-                    Archived Hotels
+                    Archived Hotels ({archivedHotels.length})
                   </h2>
-                  <div className="gov-empty">
-                    <p>No archived hotels found</p>
+                  <div className="gov-table-wrap">
+                    <table className="gov-table">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Hotel</th>
+                          <th>Owner</th>
+                          <th>Archived</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {archivedHotels.map((hotel) => (
+                          <tr key={hotel.hotel_id}>
+                            <td>#{hotel.hotel_id}</td>
+                            <td>{hotel.name}</td>
+                            <td>{hotel.owner_names || '—'}</td>
+                            <td>{hotel.archived_at ? new Date(hotel.archived_at).toLocaleDateString() : '—'}</td>
+                            <td>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await api.put(`/admin/hotels/${hotel.hotel_id}/restore`);
+                                    loadArchivedHotels();
+                                    loadHotels();
+                                  } catch (error) {
+                                    console.error('Restore error:', error);
+                                    alert(error.response?.data?.error || 'Failed to restore hotel');
+                                  }
+                                }}
+                                className="gov-btn gov-btn-primary"
+                              >
+                                Restore
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
+                  {archivedHotels.length === 0 && (
+                    <div className="gov-empty">
+                      <p>No archived hotels found</p>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -7131,7 +7173,7 @@ const AdminDashboard = () => {
                           <button 
                             onClick={async () => {
                               try {
-                                const resp = await api.post(`/admin/itineraries/${itinerary.itinerary_id}/restore`);
+                                const resp = await api.put(`/admin/itineraries/${itinerary.itinerary_id}/restore`);
                                 if (resp.data.success) {
                                   alert('Itinerary restored successfully');
                                   loadArchivedItineraries();
@@ -7159,11 +7201,53 @@ const AdminDashboard = () => {
               {archiveSubSection === 'attractions' && (
                 <div className="gov-glass-panel">
                   <h2 className="gov-glass-panel__title">
-                    Archived Attractions
+                    Archived Attractions ({archivedAttractions.length})
                   </h2>
-                  <div className="gov-empty">
-                    <p>No archived attractions found</p>
+                  <div className="gov-table-wrap">
+                    <table className="gov-table">
+                      <thead>
+                        <tr>
+                          <th>ID</th>
+                          <th>Attraction</th>
+                          <th>Location</th>
+                          <th>Archived</th>
+                          <th>Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {archivedAttractions.map((attraction) => (
+                          <tr key={attraction.id}>
+                            <td>#{attraction.id}</td>
+                            <td>{attraction.name}</td>
+                            <td>{attraction.location}</td>
+                            <td>{attraction.archived_at ? new Date(attraction.archived_at).toLocaleDateString() : '—'}</td>
+                            <td>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await api.put(`/admin/attractions/${attraction.id}/restore`);
+                                    loadArchivedAttractions();
+                                    loadAttractions();
+                                  } catch (error) {
+                                    console.error('Restore error:', error);
+                                    alert(error.response?.data?.error || 'Failed to restore attraction');
+                                  }
+                                }}
+                                className="gov-btn gov-btn-primary"
+                              >
+                                Restore
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
+                  {archivedAttractions.length === 0 && (
+                    <div className="gov-empty">
+                      <p>No archived attractions found</p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

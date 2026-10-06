@@ -1,19 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Icons from '../components/Icons';
 import { Link, useNavigate } from 'react-router-dom';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Tooltip,
-  Legend
-} from 'chart.js';
-import { Bar, Line, Pie } from 'react-chartjs-2';
-import { BookingsLineChart, RevenueBarChart, ChartLoader } from '../components/AdminCharts';
 import ReportsAndAnalyticsDashboard from '../components/ReportsAndAnalyticsDashboard';
 import api from '../api';
 import Pagination from '../components/Pagination';
@@ -54,17 +41,6 @@ const getPaymentMethodLabel = (method, t) => {
   if (key) return t(`payment_provider_${String(method).toLowerCase()}`) || PAYMENT_METHOD_LABELS[String(method).toLowerCase()];
   return method;
 };
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  BarElement,
-  ArcElement,
-  Tooltip,
-  Legend
-);
 
 const OwnerDashboard = () => {
   const { user, logout } = useAuth();
@@ -1123,8 +1099,7 @@ const OwnerDashboard = () => {
       } catch (error) {
         console.error('Error loading analytics:', error);
         setAnalyticsData({
-          monthlyTrends: [],
-          hotelPerformance: []
+          monthlyTrends: []
         });
       } finally {
         setAnalyticsLoading(false);

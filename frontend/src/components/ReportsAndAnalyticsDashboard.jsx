@@ -39,9 +39,7 @@ const ReportsAndAnalyticsDashboard = ({
 }) => {
   const { t } = useLanguage();
   const [selectedDateRange, setSelectedDateRange] = useState('30d');
-  const [displayMode, setDisplayMode] = useState('overview');
   const [visitorAnalytics, setVisitorAnalytics] = useState(null);
-  const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState('overview');
   const trendSeries = selectedDateRange === '7d' && data?.dailyTrends?.length
     ? data.dailyTrends
@@ -109,7 +107,6 @@ const ReportsAndAnalyticsDashboard = ({
 
   const fetchVisitorAnalytics = async () => {
     try {
-      setAnalyticsLoading(true);
       const response = await fetch('/api/admin/visitor-analytics', {
         credentials: 'include'
       });
@@ -119,8 +116,6 @@ const ReportsAndAnalyticsDashboard = ({
       }
     } catch (error) {
       console.error('Failed to fetch visitor analytics:', error);
-    } finally {
-      setAnalyticsLoading(false);
     }
   };
 
@@ -147,8 +142,7 @@ const ReportsAndAnalyticsDashboard = ({
       totalBookings,
       totalRevenue,
       avgOccupancy,
-      bookingGrowth,
-      currentTrends
+      bookingGrowth
     };
   };
 
