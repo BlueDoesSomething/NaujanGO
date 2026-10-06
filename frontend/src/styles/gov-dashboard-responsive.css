@@ -1,0 +1,347 @@
+/* ============================================================
+   Shared responsive shell for the Admin & Owner dashboards.
+   Both dashboard CSS files load globally and carry conflicting
+   legacy rules for the 768–1024px range (full-width top-bar
+   sidebar, nav pills stretched to ~1000px each). These rules are
+   scoped under `.gov-dashboard` (higher specificity) so they win
+   regardless of stylesheet order, on both dashboards.
+
+   <1024px : off-canvas drawer + hamburger button
+   >=1024px: fixed 240px sidebar (original desktop layout)
+   ============================================================ */
+
+/* Hamburger toggle — mobile/tablet only */
+.gov-dashboard .gov-menu-btn {
+  display: none;
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 450;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  background: #3ba861;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(15, 61, 46, 0.28);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.gov-dashboard .gov-menu-btn:hover {
+  background: #2f9454;
+}
+
+.gov-dashboard .gov-menu-btn:focus-visible {
+  outline: 3px solid rgba(34, 197, 94, 0.45);
+  outline-offset: 2px;
+}
+
+.gov-dashboard .gov-menu-btn span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 2px;
+  background: #ffffff;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+.gov-dashboard .gov-menu-btn[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.gov-dashboard .gov-menu-btn[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.gov-dashboard .gov-menu-btn[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Dimmed backdrop behind the open drawer */
+.gov-dashboard .gov-nav-scrim {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 390;
+  background: rgba(15, 23, 42, 0.45);
+  border: 0;
+  padding: 0;
+  animation: govScrimIn 0.2s ease both;
+}
+
+@keyframes govScrimIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* OwnerDashboard.css applies `.gov-dashboard > * { position: relative; z-index: 1 }`,
+   which would trap the shell (and the drawer sidebar inside it) below the
+   scrim's z-index: 390. Let the shell pass z-index through so sidebar (400)
+   and scrim (390) compete directly. */
+.gov-dashboard .gov-shell {
+  z-index: auto;
+}
+
+/* ============================================================
+   Responsive grid utilities (replacing hardcoded inline
+   grid-template-columns on dashboard layout wrappers)
+   ============================================================ */
+.gov-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.gov-grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.gov-grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.gov-grid-main { grid-template-columns: minmax(0, 1fr) 360px; }
+.gov-grid-cards { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+
+/* Big metric numbers (inline 2rem): shrink on narrow cards so currency
+   values like ₱660,200 don't wrap mid-number */
+@media (max-width: 639px) {
+  .gov-metric-value { font-size: 1.5rem !important; }
+}
+
+@media (max-width: 1023px) {
+  .gov-grid-main { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 767px) {
+  .gov-grid-2,
+  .gov-grid-3 { grid-template-columns: minmax(0, 1fr); }
+  .gov-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 479px) {
+  .gov-grid-4 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ============================================================
+   auth.css mobile rules (`@media (max-width:640px)`) force
+   `flex-direction: column !important` on any div whose inline
+   style contains `gap: 1rem`, turning px flex-basis values on
+   dashboard search inputs into 250-300px TALL boxes. Keep the
+   stacked layout but size children by content/width instead.
+   ============================================================ */
+@media (max-width: 640px) {
+  .gov-dashboard div[style*="display"][style*="flex"][style*="gap: 1rem"] > * {
+    flex-basis: auto !important;
+  }
+
+  .gov-dashboard div[style*="display"][style*="flex"][style*="gap: 1rem"] > input,
+  .gov-dashboard div[style*="display"][style*="flex"][style*="gap: 1rem"] > select,
+  .gov-dashboard div[style*="display"][style*="flex"][style*="gap: 1rem"] > textarea {
+    width: 100% !important;
+    min-height: 42px !important;
+  }
+}
+
+/* ============================================================
+   < 1024px — drawer layout
+   ============================================================ */
+@media (max-width: 1023px) {
+  .gov-dashboard .gov-menu-btn {
+    display: flex;
+  }
+
+  .gov-dashboard .gov-shell {
+    flex-direction: column;
+    margin-left: 0;
+    min-height: auto;
+  }
+
+  .gov-dashboard .gov-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 264px;
+    max-width: 85vw;
+    height: 100vh;
+    height: 100dvh;
+    transform: translateX(-105%);
+    transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 400;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-right: 1px solid #e2e8e4;
+    border-bottom: none;
+    box-shadow: none;
+    animation: none;
+    visibility: hidden;
+  }
+
+  .gov-dashboard .gov-sidebar.is-open {
+    transform: translateX(0);
+    visibility: visible;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.28);
+  }
+
+  /* Keep the toggle reachable above the open drawer (acts as close) */
+  .gov-dashboard .gov-menu-btn[aria-expanded="true"] {
+    background: #14532d;
+  }
+
+  .gov-dashboard .gov-nav {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 2px;
+    overflow: visible;
+    padding: 0.6rem;
+    justify-content: flex-start;
+  }
+
+  .gov-dashboard .gov-nav-btn {
+    width: 100%;
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 0.55rem 0.7rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    opacity: 1;
+    animation: none;
+  }
+
+  .gov-dashboard .gov-nav-btn:hover {
+    transform: none;
+  }
+
+  .gov-dashboard .gov-nav-btn.is-active::before {
+    display: none;
+  }
+
+  .gov-dashboard .gov-main {
+    /* App.css applies `main { margin-top: 72px !important }` for the public
+       navbar at <=768px; dashboards have no such header. */
+    margin-top: 0 !important;
+    padding: 4.25rem 1rem 1.5rem;
+    min-height: auto;
+    overflow-y: visible;
+    overflow-x: hidden;
+  }
+
+  .gov-dashboard .gov-page-title {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+  }
+
+  .gov-dashboard .gov-stats-grid,
+  .gov-dashboard .gov-charts-grid,
+  .gov-dashboard .gov-form-grid {
+    grid-template-columns: 1fr;
+    gap: 0.9rem;
+  }
+
+  .gov-dashboard .gov-stat-card,
+  .gov-dashboard .gov-glass-panel,
+  .gov-dashboard .gov-chart-card,
+  .gov-dashboard .gov-edit-panel {
+    padding: 1rem;
+    border-radius: 12px;
+  }
+
+  .gov-dashboard .gov-stat-card__value {
+    font-size: 1.7rem;
+  }
+
+  .gov-dashboard .gov-form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gov-dashboard .gov-btn {
+    min-height: 40px;
+  }
+
+  .gov-dashboard .gov-input,
+  .gov-dashboard .gov-select,
+  .gov-dashboard .gov-search-bar input {
+    min-height: 42px;
+    font-size: 16px;
+  }
+
+  .gov-dashboard .gov-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .gov-dashboard .gov-table {
+    font-size: 0.8rem;
+  }
+}
+
+/* Tablet: two-column stat cards, drawer stays */
+@media (min-width: 640px) and (max-width: 1023px) {
+  .gov-dashboard .gov-stats-grid,
+  .gov-dashboard .gov-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gov-dashboard .gov-main {
+    padding-left: 1.25rem;
+    padding-right: 1.25rem;
+  }
+}
+
+/* ============================================================
+   >= 1024px — original desktop shell (also wins at exactly
+   1024px where legacy max-width:1024px rules used to collide)
+   ============================================================ */
+@media (min-width: 1024px) {
+  .gov-dashboard .gov-menu-btn,
+  .gov-dashboard .gov-nav-scrim {
+    display: none;
+  }
+
+  .gov-dashboard .gov-shell {
+    flex-direction: row;
+    margin-left: 240px;
+    min-height: 100vh;
+  }
+
+  .gov-dashboard .gov-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: auto;
+    width: 240px;
+    max-width: none;
+    height: 100vh;
+    transform: none;
+    visibility: visible;
+    z-index: 200;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-right: 1px solid #e2e8e4;
+    border-bottom: none;
+    box-shadow: 3px 0 16px rgba(0, 0, 0, 0.07);
+    animation: none;
+  }
+
+  .gov-dashboard .gov-nav {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0;
+    overflow: visible;
+    padding: 0.3rem 0.6rem;
+    justify-content: flex-start;
+  }
+
+  .gov-dashboard .gov-nav-btn {
+    width: 100%;
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 0 0.7rem;
+    border-radius: 9px;
+    opacity: 1;
+    animation: none;
+  }
+
+  .gov-dashboard .gov-main {
+    padding: 1.75rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .gov-dashboard .gov-main {
+    padding: 2rem;
+  }
+
+  .gov-dashboard .gov-page-title {
+    font-size: 1.85rem;
+    margin-bottom: 1.5rem;
+  }
+}

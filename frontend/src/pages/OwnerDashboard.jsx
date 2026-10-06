@@ -74,6 +74,7 @@ const OwnerDashboard = () => {
   };
 
   const [stats, setStats] = useState(null);
+  const [navOpen, setNavOpen] = useState(false);
   const [hotels, setHotels] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [reviews, setReviews] = useState([]);
@@ -1226,7 +1227,7 @@ const OwnerDashboard = () => {
               ))}
             </div>
             <div className="gov-splash-skel-content">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div className="gov-grid-3" style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
                 {[0,1,2].map((i) => (
                   <div key={i} className="gov-skel-card" style={{ animationDelay: `${i * 0.1}s` }} />
                 ))}
@@ -1245,8 +1246,18 @@ const OwnerDashboard = () => {
 
   return (
     <div className="gov-dashboard gov-dashboard--owner">
+      <button
+        className="gov-menu-btn"
+        onClick={() => setNavOpen((v) => !v)}
+        aria-label={navOpen ? 'Close navigation' : 'Open navigation'}
+        aria-expanded={navOpen}
+        aria-controls="owner-nav"
+      >
+        <span></span><span></span><span></span>
+      </button>
+      {navOpen && <div className="gov-nav-scrim" onClick={() => setNavOpen(false)} />}
       <div className="gov-shell">
-        <aside className="gov-sidebar">
+        <aside className={`gov-sidebar${navOpen ? ' is-open' : ''}`}>
           {/* Sidebar Brand */}
           <div className="gov-sidebar-brand">
             <Link to="/owner" className="gov-brand">
@@ -1271,7 +1282,7 @@ const OwnerDashboard = () => {
               {t('auth_sign_out')}
             </button>
           </div>
-          <nav className={`gov-nav${visibleOwnerModules.length <= 3 ? ' gov-nav--compact' : ''}`}>
+          <nav className={`gov-nav${visibleOwnerModules.length <= 3 ? ' gov-nav--compact' : ''}`} id="owner-nav">
             {visibleOwnerModules.map((module, index) => {
               const isActive = activeTab === module.id;
               return (
@@ -1280,6 +1291,7 @@ const OwnerDashboard = () => {
                   className={`gov-nav-btn${isActive ? ' is-active' : ''}`}
                   style={{ '--i': index }}
                   onClick={() => {
+                    setNavOpen(false);
                     setActiveTab(module.id);
                     if (module.id === 'reviews') fetchReviews();
                     if (module.id === 'payments') { fetchPayments(); fetchPaymentStats(); }
@@ -1342,10 +1354,10 @@ const OwnerDashboard = () => {
               </div>
 
               {/* Metric Cards */}
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${metricCards.length}, 1fr)`, gap: '1rem', marginBottom: '1.25rem' }}>
+              <div className="gov-grid-cards" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
                 {metricCards.map(({ label, value, accent, sub, prefix }) => (
                   <div key={label} style={{ background: '#fff', border: '1px solid #e5e7eb', borderTop: `3px solid ${accent}`, borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', lineHeight: 1, marginBottom: '0.35rem' }}>{prefix || ''}{Number(value).toLocaleString()}</div>
+                    <div className="gov-metric-value" style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', lineHeight: 1, marginBottom: '0.35rem' }}>{prefix || ''}{Number(value).toLocaleString()}</div>
                     <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151' }}>{label}</div>
                     <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.2rem' }}>{sub}</div>
                   </div>
@@ -1353,7 +1365,7 @@ const OwnerDashboard = () => {
               </div>
 
               {/* Booking Breakdown + Quick Actions */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
 
                 {/* Booking Status */}
                 <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.5rem' }}>
@@ -1523,7 +1535,7 @@ const OwnerDashboard = () => {
                     {/* Basic Info */}
                     <div>
                       <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Basic Info</div>
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                      <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Hotel Name *</span>
                           <input type="text" value={hotelForm.name} onChange={(e) => setHotelForm({ ...hotelForm, name: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} required />
@@ -1553,7 +1565,7 @@ const OwnerDashboard = () => {
                     {/* Contact */}
                     <div>
                       <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Contact</div>
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                      <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Phone</span>
                           <input type="text" value={hotelForm.contact_phone} onChange={(e) => setHotelForm({ ...hotelForm, contact_phone: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
@@ -1567,7 +1579,7 @@ const OwnerDashboard = () => {
                     {/* Location Coordinates */}
                     <div>
                       <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Map Coordinates</div>
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem', marginBottom:'0.85rem' }}>
+                      <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem', marginBottom:'0.85rem' }}>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Latitude</span>
                           <input type="number" step="0.00001" value={hotelForm.latitude} onChange={(e) => setHotelForm({ ...hotelForm, latitude: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} placeholder="e.g., 12.4200" />
@@ -1643,7 +1655,7 @@ const OwnerDashboard = () => {
                     {/* Policies */}
                     <div>
                       <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>{t('policies_section')}</div>
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                      <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('cancellation_type_label')}</span>
                           <select
@@ -1736,7 +1748,7 @@ const OwnerDashboard = () => {
                     {/* Settings */}
                     <div>
                       <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Settings</div>
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                      <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Currency</span>
                           <input type="text" value={hotelForm.currency} onChange={(e) => setHotelForm({ ...hotelForm, currency: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
@@ -2594,7 +2606,7 @@ const OwnerDashboard = () => {
                       <div style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '0.25rem' }}>Amount</div>
                       <div style={{ fontWeight: 700, color: '#1B5E20', fontSize: '1.5rem' }}>₱{parseFloat(selectedPayment.amount || 0).toLocaleString()}</div>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem' }}>
                       <div style={{ padding: '1rem', background: '#f8fdf7', borderRadius: '8px' }}>
                         <div style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '0.25rem' }}>Method</div>
                         <div style={{ fontWeight: 700, color: '#1B5E20' }}>{getPaymentMethodLabel(selectedPayment.method, t)}</div>

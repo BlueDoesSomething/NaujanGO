@@ -237,6 +237,7 @@ const AdminDashboard = () => {
 
   const [loading, setLoading] = useState(true);
   const [activeModule, setActiveModule] = useState('overview');
+  const [navOpen, setNavOpen] = useState(false);
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -2218,7 +2219,7 @@ const AdminDashboard = () => {
               ))}
             </div>
             <div className="gov-splash-skel-content">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div className="gov-grid-4" style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
                 {[0,1,2,3].map((i) => (
                   <div key={i} className="gov-skel-card" style={{ animationDelay: `${i * 0.1}s` }} />
                 ))}
@@ -2237,8 +2238,18 @@ const AdminDashboard = () => {
 
   return (
     <div className="gov-dashboard gov-dashboard--admin">
+      <button
+        className="gov-menu-btn"
+        onClick={() => setNavOpen((v) => !v)}
+        aria-label={navOpen ? 'Close navigation' : 'Open navigation'}
+        aria-expanded={navOpen}
+        aria-controls="admin-nav"
+      >
+        <span></span><span></span><span></span>
+      </button>
+      {navOpen && <div className="gov-nav-scrim" onClick={() => setNavOpen(false)} />}
       <div className="gov-shell">
-        <aside className="gov-sidebar">
+        <aside className={`gov-sidebar${navOpen ? ' is-open' : ''}`}>
           {/* Sidebar Brand */}
           <div className="gov-sidebar-brand">
             <Link to="/admin" className="gov-brand">
@@ -2263,13 +2274,14 @@ const AdminDashboard = () => {
               {t('logout')}
             </button>
           </div>
-          <nav className="gov-nav">
+          <nav className="gov-nav" id="admin-nav">
             {modules.map((mod, i) => (
               <button
                 key={mod.id}
                 style={{ '--i': i }}
                 className={`gov-nav-btn${activeModule === mod.id ? ' is-active' : ''}`}
                 onClick={() => {
+                  setNavOpen(false);
                   setActiveModule(mod.id);
                   if (mod.id === 'users') loadUsers();
                   if (mod.id === 'hotels') { loadHotels(); loadUsers(); }
@@ -2323,7 +2335,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Metric Cards */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div className="gov-grid-4" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
                   {[
                     { label: t('admin_stat_users'), value: stats.totals?.users ?? 0, accent: '#16a34a', sub: t('all_roles') || 'All roles' },
                     { label: t('admin_stat_hotels'), value: stats.totals?.hotels ?? 0, accent: '#2563eb', sub: t('active_properties') || 'Active properties' },
@@ -2331,7 +2343,7 @@ const AdminDashboard = () => {
                     { label: t('admin_stat_attractions'), value: stats.totals?.attractions ?? 0, accent: '#d97706', sub: t('registered_sites') || 'Registered sites' },
                   ].map(({ label, value, accent, sub }) => (
                     <div key={label} style={{ background: '#fff', border: '1px solid #e5e7eb', borderTop: `3px solid ${accent}`, borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
-                      <div style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', lineHeight: 1, marginBottom: '0.35rem' }}>{value.toLocaleString()}</div>
+                      <div className="gov-metric-value" style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', lineHeight: 1, marginBottom: '0.35rem' }}>{value.toLocaleString()}</div>
                       <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151' }}>{label}</div>
                       <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.2rem' }}>{sub}</div>
                     </div>
@@ -2339,7 +2351,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Second Row: Booking Breakdown + Recent Users */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
 
                   {/* Booking Status */}
                   <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.5rem' }}>
@@ -2601,7 +2613,7 @@ const AdminDashboard = () => {
                       {/* Identity */}
                       <div>
                         <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>{t('identity')}</div>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                        <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('username')}</span>
                             <input type="text" value={userForm.username} onChange={(e) => setUserForm({ ...userForm, username: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
@@ -2627,7 +2639,7 @@ const AdminDashboard = () => {
                       {/* Role */}
                       <div>
                         <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>{t('role_access')}</div>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                        <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('role')}</span>
                             <select value={userForm.role} onChange={(e) => setUserForm({ ...userForm, role: e.target.value })} className="gov-input" style={{ borderRadius:'8px', cursor:'pointer' }}>
@@ -2931,7 +2943,7 @@ const AdminDashboard = () => {
                       {/* Basic Info */}
                       <div>
                         <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Basic Info</div>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                        <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Hotel Name</span>
                             <input type="text" value={hotelForm.name} onChange={(e) => setHotelForm({ ...hotelForm, name: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
@@ -2960,7 +2972,7 @@ const AdminDashboard = () => {
                       {/* Contact */}
                       <div>
                         <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>{t('contact')}</div>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                        <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Phone</span>
                             <input type="text" value={hotelForm.contact_phone} onChange={(e) => setHotelForm({ ...hotelForm, contact_phone: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
@@ -2988,7 +3000,7 @@ const AdminDashboard = () => {
                       {/* Policies */}
                       <div>
                         <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>{t('policies_section')}</div>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                        <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('cancellation_type_label')}</span>
                             <select
@@ -3075,7 +3087,7 @@ const AdminDashboard = () => {
                       {/* Settings */}
                       <div>
                         <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>{t('settings')}</div>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                        <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Status</span>
                             <select value={hotelForm.is_active} onChange={(e) => setHotelForm({ ...hotelForm, is_active: Number(e.target.value) })} className="gov-input" style={{ borderRadius:'8px', cursor:'pointer' }}>
@@ -3263,7 +3275,7 @@ const AdminDashboard = () => {
                       {/* Details */}
                       <div>
                         <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Details</div>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                        <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Itinerary Name</span>
                             <input type="text" value={itineraryForm.name} onChange={(e) => setItineraryForm({ ...itineraryForm, name: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
@@ -3806,7 +3818,7 @@ const AdminDashboard = () => {
                       {/* Basic Info */}
                       <div>
                         <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Basic Info</div>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                        <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Attraction Name</span>
                             <input type="text" value={attractionForm.name} onChange={(e) => setAttractionForm({ ...attractionForm, name: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
@@ -3824,7 +3836,7 @@ const AdminDashboard = () => {
                       {/* Coordinates */}
                       <div>
                         <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Coordinates</div>
-                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'0.85rem' }}>
+                        <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Latitude</span>
                             <input type="number" step="any" value={attractionForm.latitude} onChange={(e) => setAttractionForm({ ...attractionForm, latitude: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} placeholder="e.g. 13.4125" />
@@ -4411,7 +4423,7 @@ const AdminDashboard = () => {
                         Loading hero settings…
                       </div>
                     ) : (
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '1.5rem', alignItems: 'flex-start' }}>
+                      <div className="gov-grid-main" style={{ display: 'grid', gap: '1.5rem', alignItems: 'flex-start' }}>
                         {/* Left: Image Management */}
                         <div style={{ background: 'white', borderRadius: 16, padding: '1.75rem', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid #e5e7eb' }}>
                           <h2 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>Slideshow Images</h2>
@@ -4567,14 +4579,14 @@ const AdminDashboard = () => {
                       </button>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '1.5rem', alignItems: 'flex-start' }}>
+                    <div className="gov-grid-main" style={{ display: 'grid', gap: '1.5rem', alignItems: 'flex-start' }}>
                       <div style={{ background: 'white', borderRadius: 16, padding: '1.75rem', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid #e5e7eb' }}>
                         <h2 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>Attraction Page Hero Controls</h2>
                         <p style={{ margin: '0 0 1.25rem', color: '#6b7280', fontSize: '0.875rem' }}>
                           Customize the hero for attraction details pages like /attractions/1.
                         </p>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', marginBottom: '1rem' }}>
+                        <div className="gov-grid-2" style={{ display: 'grid', gap: '0.85rem', marginBottom: '1rem' }}>
                           <div>
                             <label style={{ display: 'block', fontWeight: 700, fontSize: '0.83rem', color: '#374151', marginBottom: '0.35rem' }}>Back Button Label</label>
                             <input type="text" maxLength={24} value={attractionHeroSettings.backButtonLabel}
@@ -4613,7 +4625,7 @@ const AdminDashboard = () => {
                           </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.85rem', marginBottom: '1rem' }}>
+                        <div className="gov-grid-2" style={{ display: 'grid', gap: '0.85rem', marginBottom: '1rem' }}>
                           <div>
                             <label style={{ display: 'block', fontWeight: 700, fontSize: '0.83rem', color: '#374151', marginBottom: '0.35rem' }}>Hero Height Desktop (px)</label>
                             <input type="number" min={360} max={760} value={attractionHeroSettings.heroMinHeightDesktop}
@@ -4629,7 +4641,7 @@ const AdminDashboard = () => {
                         </div>
 
                         <h3 style={{ margin: '0.25rem 0 0.75rem', fontSize: '0.95rem', color: '#111827' }}>Hero Font Colors</h3>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+                        <div className="gov-grid-2" style={{ display: 'grid', gap: '0.75rem', marginBottom: '1rem' }}>
                           {[
                             { key: 'heroTitleColor', label: 'Title' },
                             { key: 'heroMetaTextColor', label: 'Metadata' },
@@ -4725,7 +4737,7 @@ const AdminDashboard = () => {
                             </div>
                             <div style={{ marginTop: '4.2rem' }}>
                               <div style={{ fontSize: '1.3rem', fontWeight: 900, textShadow: '0 2px 6px rgba(0,0,0,0.5)', color: attractionHeroSettings.heroTitleColor }}>333 Steps</div>
-                              <div style={{ marginTop: '0.55rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.45rem' }}>
+                              <div className="gov-grid-2" style={{ marginTop: '0.55rem', display: 'grid', gap: '0.45rem' }}>
                                 {[
                                   { label: attractionHeroSettings.addToItineraryText, key: 'primary' },
                                   { label: attractionHeroSettings.saveToFavoritesText, key: 'secondary' },
@@ -4761,7 +4773,7 @@ const AdminDashboard = () => {
                       </button>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: '1.5rem', alignItems: 'flex-start' }}>
+                    <div className="gov-grid-main" style={{ display: 'grid', gap: '1.5rem', alignItems: 'flex-start' }}>
                       {/* Left: Text Labels */}
                       <div style={{ background: 'white', borderRadius: 16, padding: '1.75rem', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid #e5e7eb' }}>
                         <h2 style={{ margin: '0 0 0.4rem', fontSize: '1.1rem', fontWeight: 800, color: '#111827' }}>Slideshow Text Labels</h2>
@@ -4793,7 +4805,7 @@ const AdminDashboard = () => {
 
                         <div style={{ marginTop: '1.1rem', borderTop: '1px solid #f3f4f6', paddingTop: '1rem' }}>
                           <h3 style={{ margin: '0 0 0.75rem', fontSize: '0.95rem', color: '#111827' }}>Slideshow Font & Button Colors</h3>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.7rem', marginBottom: '0.75rem' }}>
+                          <div className="gov-grid-2" style={{ display: 'grid', gap: '0.7rem', marginBottom: '0.75rem' }}>
                             {[
                               { key: 'titleColor', label: 'Title' },
                               { key: 'descriptionColor', label: 'Description' },
@@ -4865,7 +4877,7 @@ const AdminDashboard = () => {
                             <label style={{ display: 'block', fontWeight: 700, fontSize: '0.875rem', color: '#374151', marginBottom: '0.4rem' }}>
                               Button Size (Padding)
                             </label>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                            <div className="gov-grid-2" style={{ display: 'grid', gap: '0.6rem', marginBottom: '0.75rem' }}>
                               <div>
                                 <small style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280', marginBottom: '0.3rem' }}>Vertical: {homeSlideshowSettings.buttonPaddingVertical}rem</small>
                                 <input
@@ -4896,7 +4908,7 @@ const AdminDashboard = () => {
                             <label style={{ display: 'block', fontWeight: 700, fontSize: '0.875rem', color: '#374151', marginBottom: '0.4rem' }}>
                               Shadow — Blur {homeSlideshowSettings.buttonShadowBlur}px, Opacity {Math.round((homeSlideshowSettings.buttonShadowOpacity || 0.3) * 100)}%
                             </label>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', marginBottom: '0.75rem' }}>
+                            <div className="gov-grid-2" style={{ display: 'grid', gap: '0.6rem', marginBottom: '0.75rem' }}>
                               <input
                                 type="range"
                                 min="0"
@@ -4919,7 +4931,7 @@ const AdminDashboard = () => {
 
                             {/* Hover Animation */}
                             <label style={{ display: 'block', fontWeight: 700, fontSize: '0.875rem', color: '#374151', marginBottom: '0.5rem' }}>Hover Animation</label>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                            <div className="gov-grid-2" style={{ display: 'grid', gap: '0.5rem', marginBottom: '0.75rem' }}>
                               {['lift', 'scale', 'glow', 'slide'].map(anim => (
                                 <button
                                   key={anim}
@@ -5114,7 +5126,7 @@ const AdminDashboard = () => {
                       </button>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div className="gov-grid-2" style={{ display: 'grid', gap: '1.5rem' }}>
                       {/* Color editors */}
                       {[
                         { key: 'primary', label: 'Primary Color', desc: 'Main brand color used for buttons, links, and accents.' },
@@ -5260,7 +5272,7 @@ const AdminDashboard = () => {
                                 {TYPOGRAPHY_FONT_OPTIONS.map(font => <option key={font} value={font}>{font}</option>)}
                               </select>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
+                            <div className="gov-grid-2" style={{ display: 'grid', gap: '0.85rem' }}>
                               <div>
                                 <label style={{ display: 'block', marginBottom: '0.45rem', fontWeight: 700, color: '#374151' }}>Heading Weight</label>
                                 <select value={typography.headingWeight} onChange={e => updateTypography({ headingWeight: e.target.value })} style={selectStyle}>
@@ -5458,7 +5470,7 @@ const AdminDashboard = () => {
                       </div>
                     )}
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div className="gov-grid-2" style={{ display: 'grid', gap: '1.5rem' }}>
                       <div style={{ background: 'white', borderRadius: 16, padding: '1.75rem', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid #e5e7eb', gridColumn: '1 / -1' }}>
                         <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontWeight: 800, fontSize: '1rem', color: '#111827', marginBottom: '1.25rem' }}>
                           <input type="checkbox" checked={announcement.enabled}
@@ -5470,7 +5482,7 @@ const AdminDashboard = () => {
                         <input type="text" value={announcement.message} maxLength={200}
                           onChange={e => setAnnouncement(p => ({ ...p, message: e.target.value }))}
                           className="gov-input" style={{ marginBottom: '1.25rem', marginTop: 0 }} placeholder="Enter your announcement message…" />
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
+                        <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
                           <div>
                             <label style={{ display: 'block', fontWeight: 700, fontSize: '0.875rem', color: '#374151', marginBottom: '0.4rem' }}>Link Label <span style={{ fontWeight: 400, color: '#9ca3af' }}>(optional)</span></label>
                             <input type="text" value={announcement.linkLabel} maxLength={60}
@@ -5540,7 +5552,7 @@ const AdminDashboard = () => {
                       {msgBadge(footerMsg)}
                       <button onClick={saveFooterSettings} disabled={footerSaving} className="gov-btn gov-btn--primary" style={{ padding: '0.65rem 1.5rem', fontWeight: 700 }}>{footerSaving ? 'Saving…' : 'Save Footer'}</button>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div className="gov-grid-2" style={{ display: 'grid', gap: '1.5rem' }}>
                       <div style={{ background: 'white', borderRadius: 16, padding: '1.75rem', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid #e5e7eb' }}>
                         <h2 style={{ margin: '0 0 1.25rem', fontWeight: 800, fontSize: '1.05rem', color: '#111827' }}>Text Content</h2>
                         {[
@@ -5572,7 +5584,7 @@ const AdminDashboard = () => {
                       </div>
                       <div style={{ background: 'white', borderRadius: 16, padding: '1.75rem', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid #e5e7eb', gridColumn: '1 / -1' }}>
                         <h2 style={{ margin: '0 0 1.25rem', fontWeight: 800, fontSize: '1.05rem', color: '#111827' }}>Social Media Links</h2>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                        <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem' }}>
                           {[
                             { key: 'facebook', label: '🔵 Facebook URL' },
                             { key: 'instagram', label: '📸 Instagram URL' },
@@ -5607,7 +5619,7 @@ const AdminDashboard = () => {
                       sections marked <strong>(Logged-in)</strong> appear only to authenticated users.
                     </p>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                    <div className="gov-grid-2" style={{ display: 'grid', gap: '1.25rem' }}>
 
                       {/* Hero Slideshow */}
                       <div style={{ background: 'white', borderRadius: 16, padding: '1.5rem', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: `2px solid ${homepageSections.showHeroSlideshow !== false ? '#16a34a' : '#e5e7eb'}` }}>
@@ -5747,7 +5759,7 @@ const AdminDashboard = () => {
                       {msgBadge(brandingMsg)}
                       <button onClick={saveBranding} disabled={brandingSaving} className="gov-btn gov-btn--primary" style={{ padding: '0.65rem 1.5rem', fontWeight: 700 }}>{brandingSaving ? 'Saving…' : 'Save Branding'}</button>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div className="gov-grid-2" style={{ display: 'grid', gap: '1.5rem' }}>
                       <div style={{ background: 'white', borderRadius: 16, padding: '1.75rem', boxShadow: '0 2px 12px rgba(0,0,0,0.07)', border: '1px solid #e5e7eb' }}>
                         <h2 style={{ margin: '0 0 1.25rem', fontWeight: 800, fontSize: '1.05rem', color: '#111827' }}>Site Identity</h2>
                         {[
@@ -5803,7 +5815,7 @@ const AdminDashboard = () => {
 
                     {authPagesMsg && msgBadge(authPagesMsg)}
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem' }}>
+                    <div className="gov-grid-2" style={{ display: 'grid', gap: '2rem', marginBottom: '2rem' }}>
                       {/* Login Page Settings */}
                       <div className="gov-glass-panel">
                         <h2 style={{ marginTop: 0, marginBottom: '1.5rem', fontSize: '1.15rem', fontWeight: 800 }}>Login Page Background</h2>
@@ -6312,7 +6324,7 @@ const AdminDashboard = () => {
                         <Icons.Sparkles size={22} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
                         Vision & Mission
                       </h2>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                      <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem', marginBottom: '1rem' }}>
                         <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                           <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>Vision Text</span>
                           <textarea
@@ -6383,7 +6395,7 @@ const AdminDashboard = () => {
                         <Icons.Users size={22} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
                         Leadership
                       </h2>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem' }}>
                         <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                           <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>Mayor Name</span>
                           <input
@@ -6788,7 +6800,7 @@ const AdminDashboard = () => {
                   </div>
 
                   {/* Bottom row: Language Distribution + Weekly Trend */}
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'1.5rem', marginBottom:'2rem' }}>
+                  <div className="gov-grid-2" style={{ display:'grid', gap:'1.5rem', marginBottom:'2rem' }}>
                     {/* Language Distribution */}
                     <div className="gov-glass-panel" style={{ padding:'1.25rem' }}>
                       <h3 style={{ margin:'0 0 1rem 0', fontSize:'1rem', fontWeight:800, color:'#1f2937' }}>Language Distribution</h3>
