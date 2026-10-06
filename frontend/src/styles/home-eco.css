@@ -229,7 +229,7 @@
   background: #0f1419;
   border: 1px solid rgba(255, 255, 255, 0.1);
   outline: none;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+  box-shadow: none;
   isolation: isolate;
   contain: layout paint;
   touch-action: pan-y;
@@ -437,7 +437,7 @@
   background: var(--eco-card-strong);
   border: 1px solid var(--eco-border);
   backdrop-filter: blur(18px);
-  box-shadow: var(--eco-shadow);
+  box-shadow: none;
   overflow: hidden;
 }
 .info-card::before {

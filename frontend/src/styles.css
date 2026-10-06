@@ -200,7 +200,7 @@ button,
   position: relative;
   border-radius: 18px;
   overflow: hidden;
-  box-shadow: 0 14px 30px rgba(2, 136, 209, 0.3);
+  box-shadow: none;
 }
 
 .mySlides {
