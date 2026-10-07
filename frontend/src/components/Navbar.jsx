@@ -47,15 +47,11 @@ const Navbar = () => {
   const { t, supportedLanguages } = useLanguage();
   const { isDark, toggleDark } = useTheme();
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showAboutDropdown, setShowAboutDropdown] = useState(false);
-  const [activeAboutSection, setActiveAboutSection] = useState('overview');
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [ecoSiteCount, setEcoSiteCount] = useState(null);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
-  const aboutDropdownRef = useRef(null);
-  const aboutButtonRef = useRef(null);
 
   // Top meta bar: real one-time attraction count
   useEffect(() => {
@@ -80,26 +76,8 @@ const Navbar = () => {
         setShowDropdown(false);
       }
       
-      if (
-        aboutDropdownRef.current &&
-        !aboutDropdownRef.current.contains(event.target) &&
-        aboutButtonRef.current &&
-        !aboutButtonRef.current.contains(event.target)
-      ) {
-        setShowAboutDropdown(false);
-      }
     };
     
-    const handleScroll = () => {
-      const isScrolled = window.scrollY > 50;
-      setScrolled(isScrolled);
-      
-      // Track active section on about pages
-      if (window.location.pathname.startsWith('/about/')) {
-        const sectionId = window.location.pathname.split('/about/')[1];
-        setActiveAboutSection(sectionId);
-      }
-    };
     
     document.addEventListener('mousedown', handleClickOutside);
     window.addEventListener('scroll', handleScroll);
@@ -167,29 +145,6 @@ const Navbar = () => {
 
   const toggleDropdown = () => {
     setShowDropdown(!showDropdown);
-  };
-
-  const toggleAboutDropdown = () => {
-    setShowAboutDropdown(!showAboutDropdown);
-  };
-
-  const aboutSections = [
-    { label: 'Overview', id: 'overview', path: '/about/overview', tKey: 'about_overview' },
-    { label: 'Vision & Mission', id: 'vision-mission', path: '/about/vision-mission', tKey: 'about_vision_mission' },
-    { label: 'History', id: 'history', path: '/about/history', tKey: 'about_history' },
-    { label: 'Leadership', id: 'leadership', path: '/about/leadership', tKey: 'about_leadership' },
-    { label: 'Quick Facts', id: 'quick-facts', path: '/about/quick-facts', tKey: 'about_quick_facts' },
-    { label: 'Indigenous Communities', id: 'indigenous', path: '/about/indigenous', tKey: 'about_indigenous_communities' },
-    { label: 'Alangan People', id: 'alangan', path: '/about/alangan', tKey: 'about_alangan_people' },
-    { label: 'People & Culture', id: 'culture', path: '/about/culture', tKey: 'about_people_culture' },
-    { label: 'Economy & Livelihood', id: 'economy', path: '/about/economy', tKey: 'about_economy_livelihood' },
-    { label: 'Tourism', id: 'tourism', path: '/about/tourism', tKey: 'about_tourism' }
-  ];
-
-  const handleAboutSectionClick = (sectionId) => {
-    setShowAboutDropdown(false);
-    setMenuOpen(false);
-    setActiveAboutSection(sectionId);
   };
 
   return (
@@ -312,35 +267,20 @@ const Navbar = () => {
                 <span className="link-text">{t('interactive_map')}</span>
               </NavLink>
             </li>
-            <li role="none" className="navbar-dropdown-item" ref={aboutDropdownRef}>
-              <button
-                ref={aboutButtonRef}
-                onClick={toggleAboutDropdown}
-                className={`navbar-link about-dropdown-btn ${window.location.pathname.startsWith('/about') ? 'active' : ''}`}
+            <li role="none">
+              <NavLink
+                to="/about/overview"
+                className={({ isActive }) =>
+                  isActive || window.location.pathname.startsWith('/about')
+                    ? 'navbar-link active'
+                    : 'navbar-link'
+                }
                 role="menuitem"
-                aria-haspopup="true"
-                aria-expanded={showAboutDropdown}
+                onClick={handleNavClick}
               >
                 <span className="nav-link-icon"><InfoIcon size={18} /></span>
                 <span className="link-text">{t('about')}</span>
-                <span className="about-dropdown-chevron"><ChevronIcon size={14} /></span>
-              </button>
-              {showAboutDropdown && (
-                <ul className="navbar-about-dropdown" role="menu" aria-label="About Naujan sections">
-                  {aboutSections.map((section) => (
-                    <li key={section.id} role="none">
-                      <Link
-                        to={section.path}
-                        className={`about-dropdown-link ${window.location.pathname === section.path ? 'active' : ''}`}
-                        role="menuitem"
-                        onClick={() => handleAboutSectionClick(section.id)}
-                      >
-                        {t(section.tKey)}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              </NavLink>
             </li>
           </ul>
 
