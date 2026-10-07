@@ -129,21 +129,18 @@ const Navbar = () => {
     if (location.pathname === '/login' || location.pathname === '/register') {
       // Always close account dropdown on auth pages
       setShowDropdown(false);
-      setShowAboutDropdown(false);
     }
   }, [location.pathname]);
 
   const handleNavClick = () => {
     setMenuOpen(false);
     setShowDropdown(false);
-    setShowAboutDropdown(false);
     window.scrollTo(0, 0);
   };
 
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
     setShowDropdown(false);
-    setShowAboutDropdown(false);
   };
 
   const toggleDropdown = () => {
