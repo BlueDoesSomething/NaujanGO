@@ -112,7 +112,6 @@ const Navbar = () => {
       await logout();  // Wait for logout to complete
       console.log('[Navbar] logout() completed');
       setShowDropdown(false);
-      setShowAboutDropdown(false);
       setMenuOpen(false);
       // Redirect to login page after logout
       navigate('/login', { replace: true });
@@ -120,7 +119,6 @@ const Navbar = () => {
       console.error('[Navbar] logout error:', error);
       // Still close dropdowns and redirect even if error
       setShowDropdown(false);
-      setShowAboutDropdown(false);
       setMenuOpen(false);
       navigate('/login', { replace: true });
     }
