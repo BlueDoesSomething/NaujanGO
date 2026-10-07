@@ -79,6 +79,11 @@ const Navbar = () => {
     };
     
     
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 50;
+      setScrolled(isScrolled);
+    };
+    
     document.addEventListener('mousedown', handleClickOutside);
     window.addEventListener('scroll', handleScroll);
     window.addEventListener('hashchange', handleScroll);
