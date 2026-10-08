@@ -79,6 +79,22 @@ const permitUpload = multer({
   }
 });
 
+// Convert multer errors (size / type) into JSON so the client shows the real
+// reason instead of the generic "Document upload failed" alert.
+const uploadPermitDoc = (req, res, next) => {
+  permitUpload.single('file')(req, res, (err) => {
+    if (err) {
+      const message = err.code === 'LIMIT_FILE_SIZE'
+        ? 'File is too large (max 6MB)'
+        : (err.message || 'Document upload failed');
+      return res.status(400).json({ error: message });
+    }
+    return next();
+  });
+};
+
+const DOC_FILE_FIELDS = ['business_permit_file', 'dot_file', 'philgeps_file'];
+
 const parseAmenitiesInput = (amenities) => {
   if (amenities === null || amenities === undefined) return null;
   if (Array.isArray(amenities)) return JSON.stringify(amenities);
@@ -1535,12 +1551,50 @@ router.put('/profile', async (req, res) => {
   }
 });
 
-// Upload a legitimacy document (business permit / DOT accreditation / PhilGEPS)
-router.post('/profile/upload', permitUpload.single('file'), (req, res) => {
+// Upload a legitimacy document (business permit / DOT accreditation / PhilGEPS).
+// The file URL is persisted immediately (and verification resets to pending on
+// change, same rule as PUT /profile) so a focus-triggered refetch or page
+// reload cannot drop the uploaded document before the owner clicks Save.
+router.post('/profile/upload', uploadPermitDoc, async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No document uploaded' });
   }
-  res.json({ url: `/uploads/permits/${req.file.filename}`, name: req.file.originalname });
+
+  const field = req.body.field;
+  if (!DOC_FILE_FIELDS.includes(field)) {
+    return res.status(400).json({ error: 'Invalid document field' });
+  }
+
+  const userId = req.user.user_id;
+  const url = `/uploads/permits/${req.file.filename}`;
+
+  try {
+    const [rows] = await db.promise().query(
+      'SELECT * FROM business_profiles WHERE owner_id = ?',
+      [userId]
+    );
+
+    if (rows.length > 0) {
+      const changed = (rows[0][field] || null) !== url;
+      const reset = changed
+        ? ", verification_status = 'pending', verified_at = NULL, rejection_reason = NULL"
+        : '';
+      await db.promise().query(
+        `UPDATE business_profiles SET \`${field}\` = ?${reset}, updated_at = NOW() WHERE owner_id = ?`,
+        [url, userId]
+      );
+    } else {
+      await db.promise().query(
+        `INSERT INTO business_profiles (owner_id, \`${field}\`) VALUES (?, ?)`,
+        [userId, url]
+      );
+    }
+
+    res.json({ url, name: req.file.originalname });
+  } catch (error) {
+    console.error('Persist document upload error:', error);
+    res.status(500).json({ error: 'Failed to save document' });
+  }
 });
 
 // Get payment statistics

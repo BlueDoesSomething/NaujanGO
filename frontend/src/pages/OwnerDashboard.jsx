@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Icons from '../components/Icons';
 import { Link, useNavigate } from 'react-router-dom';
 import ReportsAndAnalyticsDashboard from '../components/ReportsAndAnalyticsDashboard';
@@ -157,6 +157,10 @@ const OwnerDashboard = () => {
       philgeps_file: ''
     });
     const [profileEditing, setProfileEditing] = useState(false);
+    // Ref mirror of profileEditing so async refetches (focus/auth refresh)
+    // can check it without a stale closure.
+    const profileEditingRef = useRef(false);
+    useEffect(() => { profileEditingRef.current = profileEditing; }, [profileEditing]);
     // Full vs limited dashboard authorization (legitimacy requirements)
     const [authorization, setAuthorization] = useState('full');
     const [missingRequirements, setMissingRequirements] = useState([]);
@@ -216,7 +220,11 @@ const OwnerDashboard = () => {
       return;
     }
     fetchDashboardData();
-  }, [user, navigate]);
+    // Depend on ids, not the user object: AuthContext.refreshProfile() on
+    // window focus replaces `user` with a new identity, which used to
+    // re-run this effect and clobber unsaved profile edits / uploads.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.user_id, user?.role, navigate]);
 
   useEffect(() => {
     if (selectedHotelForCalendar) {
@@ -340,8 +348,10 @@ const OwnerDashboard = () => {
       const profileData = profileRes.data || {};
       const bp = profileData.businessProfile;
 
-      // Load business profile if it exists
-      if (bp) {
+      // Load business profile if it exists. While the owner is editing the
+      // form, keep local state instead of overwriting it with DB values
+      // (refetches can fire mid-edit via focus/auth refresh or other actions).
+      if (bp && !profileEditingRef.current) {
         setBusinessProfile({
           business_name: bp.business_name || user?.first_name || user?.username || '',
           business_email: bp.business_email || user?.email || '',
@@ -479,6 +489,7 @@ const OwnerDashboard = () => {
     try {
       const formData = new FormData();
       formData.append('file', file);
+      formData.append('field', field);
       const res = await api.post('/owner/profile/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -581,7 +592,12 @@ const OwnerDashboard = () => {
                     type="file"
                     accept=".jpg,.jpeg,.png,.webp,.pdf"
                     style={{ display: 'none' }}
-                    onChange={(e) => handleDocumentUpload(fileKey, e.target.files?.[0])}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      // Reset so selecting the same file again re-fires onChange.
+                      e.target.value = '';
+                      handleDocumentUpload(fileKey, file);
+                    }}
                   />
                 </label>
               )}
