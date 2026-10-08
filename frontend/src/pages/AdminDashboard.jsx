@@ -288,6 +288,9 @@ const AdminDashboard = () => {
   // Business legitimacy verification (permit / DOT / PhilGEPS)
   const [businessProfiles, setBusinessProfiles] = useState([]);
   const [businessProfilesLoading, setBusinessProfilesLoading] = useState(false);
+  const [rejectProfile, setRejectProfile] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectSaving, setRejectSaving] = useState(false);
   const [reportsLoading, setReportsLoading] = useState(false);
   const [reportsInitialCategory, setReportsInitialCategory] = useState(null);
   const [analyticsData, setAnalyticsData] = useState({ dailyTrends: [], monthlyTrends: [] });
@@ -1813,22 +1816,27 @@ const AdminDashboard = () => {
         ? t('missing_dot_or_philgeps')
         : t('missing_verification');
 
-  const verifyBusinessProfile = async (id, status) => {
-    let rejection_reason = null;
-    if (status === 'rejected') {
-      rejection_reason = window.prompt(t('admin_rejection_reason'));
-      if (!rejection_reason || !rejection_reason.trim()) return;
-    }
+  const verifyBusinessProfile = async (id, status, reason) => {
     try {
       await api.put(`/admin/business-profiles/${id}/verification`, {
         verification_status: status,
-        rejection_reason: rejection_reason && rejection_reason.trim()
+        rejection_reason: reason && reason.trim()
       });
       await loadBusinessProfiles();
     } catch (error) {
       console.error('Verification update failed:', error);
       alert(error.response?.data?.error || 'Failed to update verification');
     }
+  };
+
+  const confirmReject = async () => {
+    if (!rejectReason.trim()) return;
+    const id = rejectProfile.id;
+    setRejectSaving(true);
+    await verifyBusinessProfile(id, 'rejected', rejectReason);
+    setRejectSaving(false);
+    setRejectProfile(null);
+    setRejectReason('');
   };
 
   useEffect(() => {
@@ -2505,31 +2513,53 @@ const AdminDashboard = () => {
                           </td>
                         ))}
                         <td>
-                          <span style={{
-                            fontSize: '0.72rem', fontWeight: 800, padding: '0.25rem 0.6rem', borderRadius: '999px',
-                            background: bp.verification_status === 'verified' ? '#dcfce7' : bp.verification_status === 'rejected' ? '#fee2e2' : '#fef3c7',
-                            color: bp.verification_status === 'verified' ? '#166534' : bp.verification_status === 'rejected' ? '#991b1b' : '#92400e'
-                          }}>
-                            {bp.verification_status === 'verified' ? t('verification_verified') : bp.verification_status === 'rejected' ? t('verification_rejected') : t('verification_pending')}
-                          </span>
-                          {bp.verification_status === 'rejected' && bp.rejection_reason && (
-                            <div style={{ fontSize: '0.75rem', color: '#991b1b', marginTop: '0.25rem' }}>{bp.rejection_reason}</div>
-                          )}
                           {(() => {
-                            const missing = missingRequirementsFor(bp);
-                            if (missing.length === 0) return null;
-                            const docsMissing = missing.filter((key) => key !== 'verification');
+                            const docsMissing = missingRequirementsFor(bp).filter((key) => key !== 'verification');
+                            const isVerifiedButIncomplete = bp.verification_status === 'verified' && docsMissing.length > 0;
                             return (
-                              <div style={{
-                                fontSize: '0.75rem',
-                                fontWeight: 700,
-                                marginTop: '0.3rem',
-                                color: docsMissing.length === 0 ? '#166534' : '#92400e'
-                              }}>
-                                {docsMissing.length === 0
-                                  ? t('admin_ready_to_unlock')
-                                  : `${t('requirements_missing_label')}${missing.map(missingLabel).join(', ')}`}
-                              </div>
+                              <>
+                                <span style={{
+                                  fontSize: '0.72rem', fontWeight: 800, padding: '0.25rem 0.6rem', borderRadius: '999px',
+                                  background: bp.verification_status === 'rejected'
+                                    ? '#fee2e2'
+                                    : isVerifiedButIncomplete
+                                      ? '#fef3c7'
+                                      : bp.verification_status === 'verified'
+                                        ? '#dcfce7'
+                                        : '#e0f2fe',
+                                  color: bp.verification_status === 'rejected'
+                                    ? '#991b1b'
+                                    : isVerifiedButIncomplete
+                                      ? '#b45309'
+                                      : bp.verification_status === 'verified'
+                                        ? '#166534'
+                                        : '#1e40af'
+                                }}>
+                                  {bp.verification_status === 'rejected' ? t('verification_rejected')
+                                    : isVerifiedButIncomplete ? t('verification_verified_incomplete')
+                                    : bp.verification_status === 'verified' ? t('verification_verified')
+                                    : t('verification_pending')}
+                                </span>
+                                {bp.verification_status === 'rejected' && bp.rejection_reason && (
+                                  <div style={{ fontSize: '0.75rem', color: '#991b1b', marginTop: '0.25rem' }}>{bp.rejection_reason}</div>
+                                )}
+                                {(() => {
+                                  const missing = missingRequirementsFor(bp);
+                                  if (missing.length === 0) return null;
+                                  return (
+                                    <div style={{
+                                      fontSize: '0.75rem',
+                                      fontWeight: 700,
+                                      marginTop: '0.3rem',
+                                      color: docsMissing.length === 0 ? '#166534' : '#b45309'
+                                    }}>
+                                      {docsMissing.length === 0
+                                        ? t('admin_ready_to_unlock')
+                                        : `${t('requirements_missing_label')}${missing.filter((k) => k !== 'verification').map(missingLabel).join(', ')}`}
+                                    </div>
+                                  );
+                                })()}
+                              </>
                             );
                           })()}
                         </td>
@@ -2549,8 +2579,11 @@ const AdminDashboard = () => {
                           <button
                             className="gov-btn-ghost"
                             style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                            onClick={() => verifyBusinessProfile(bp.id, 'rejected')}
-                            disabled={bp.verification_status === 'rejected'}
+                            onClick={() => {
+                              setRejectReason('');
+                              setRejectProfile(bp);
+                            }}
+                            disabled={bp.verification_status === 'rejected' || rejectSaving}
                           >
                             {t('admin_reject')}
                           </button>
@@ -2559,6 +2592,47 @@ const AdminDashboard = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {rejectProfile && (
+            <div
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+              onClick={(e) => { if (e.target === e.currentTarget) setRejectProfile(null); }}
+            >
+              <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '440px', padding: '1.5rem', boxShadow: '0 24px 64px rgba(0,0,0,0.22)' }}>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#991b1b' }}>
+                  {t('admin_reject')}: {rejectProfile.business_name || rejectProfile.username || ''}
+                </h3>
+                <p style={{ margin: '0.5rem 0 0.75rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                  {t('admin_rejection_reason')}
+                </p>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  rows={4}
+                  placeholder={t('admin_rejection_reason')}
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.875rem', fontFamily: 'inherit', resize: 'vertical' }}
+                />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
+                  <button
+                    className="gov-btn-ghost"
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
+                    onClick={() => setRejectProfile(null)}
+                    disabled={rejectSaving}
+                  >
+                    {t('cancel')}
+                  </button>
+                  <button
+                    className="gov-btn-primary"
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', background: '#dc2626', borderColor: '#dc2626' }}
+                    onClick={confirmReject}
+                    disabled={rejectSaving || !rejectReason.trim()}
+                  >
+                    {rejectSaving ? t('saving') || 'Saving...' : t('admin_reject')}
+                  </button>
+                </div>
               </div>
             </div>
           )}
