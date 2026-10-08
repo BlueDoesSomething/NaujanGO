@@ -2514,8 +2514,14 @@ const AdminDashboard = () => {
                         ))}
                         <td>
                           {(() => {
-                            const docsMissing = missingRequirementsFor(bp).filter((key) => key !== 'verification');
+                            const missing = missingRequirementsFor(bp);
+                            const docsMissing = missing.filter((key) => key !== 'verification');
                             const isVerifiedButIncomplete = bp.verification_status === 'verified' && docsMissing.length > 0;
+                            const note = docsMissing.length > 0
+                              ? `${t('requirements_missing_label')}${docsMissing.map(missingLabel).join(', ')}`
+                              : missing.length > 0
+                                ? t('admin_ready_to_unlock')
+                                : '';
                             return (
                               <>
                                 <span style={{
@@ -2536,29 +2542,30 @@ const AdminDashboard = () => {
                                         : '#1e40af'
                                 }}>
                                   {bp.verification_status === 'rejected' ? t('verification_rejected')
-                                    : isVerifiedButIncomplete ? t('verification_verified_incomplete')
                                     : bp.verification_status === 'verified' ? t('verification_verified')
                                     : t('verification_pending')}
                                 </span>
+                                {note && (
+                                  <span
+                                    title={note}
+                                    aria-label={note}
+                                    style={{
+                                      display: 'inline-flex', verticalAlign: 'middle',
+                                      marginLeft: '0.4rem', cursor: 'help',
+                                      color: docsMissing.length > 0 ? '#d97706' : '#166534',
+                                      borderRadius: '50%'
+                                    }}
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                      <circle cx="12" cy="12" r="10" />
+                                      <line x1="12" y1="8" x2="12" y2="13" />
+                                      <line x1="12" y1="16.5" x2="12.01" y2="16.5" />
+                                    </svg>
+                                  </span>
+                                )}
                                 {bp.verification_status === 'rejected' && bp.rejection_reason && (
                                   <div style={{ fontSize: '0.75rem', color: '#991b1b', marginTop: '0.25rem' }}>{bp.rejection_reason}</div>
                                 )}
-                                {(() => {
-                                  const missing = missingRequirementsFor(bp);
-                                  if (missing.length === 0) return null;
-                                  return (
-                                    <div style={{
-                                      fontSize: '0.75rem',
-                                      fontWeight: 700,
-                                      marginTop: '0.3rem',
-                                      color: docsMissing.length === 0 ? '#166534' : '#b45309'
-                                    }}>
-                                      {docsMissing.length === 0
-                                        ? t('admin_ready_to_unlock')
-                                        : `${t('requirements_missing_label')}${missing.filter((k) => k !== 'verification').map(missingLabel).join(', ')}`}
-                                    </div>
-                                  );
-                                })()}
                               </>
                             );
                           })()}
