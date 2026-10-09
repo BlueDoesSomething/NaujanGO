@@ -1576,27 +1576,25 @@ export default function HotelDetail() {
 
       {/* Booking Modal */}
       {showBookingModal && (
-        <div style={modalBackdrop}>
-          <div style={modalCard}>
+        <div className="hd-bm-back">
+          <div className="hd-bm-card">
             {/* Modal Header */}
-            <div style={modalHeader}>
+            <div className="hd-bm-head">
               <div>
-                <h2 style={modalTitle}>Book {hotel.name}</h2>
-                <p style={modalSubtitle}>{hotel.location}</p>
+                <h2>Book {hotel.name}</h2>
+                <p className="hd-bm-sub">{hotel.location}</p>
               </div>
-              <button style={modalClose} onClick={() => {
+              <button className="hd-bm-close" onClick={() => {
                 setShowBookingModal(false);
                 setBookingError('');
               }}><Icons.X size={18} /></button>
             </div>
 
-            <div style={modalBody}>
-              <div style={sectionDivider}>
-                <h3 style={sectionHeading}><Icons.Calendar size={17} /> {t('modal_stay_details')}</h3>
-              </div>
-              <div style={modalGrid}>
+            <div className="hd-bm-body">
+              <h3 className="hd-bm-sec-h"><Icons.Calendar size={17} /> {t('modal_stay_details')}</h3>
+              <div className="hd-bm-grid">
                   <div>
-                  <label style={inputLabel}><Icons.Calendar size={16} /> {t('form_check_in')}</label>
+                  <label className="hd-bm-label"><Icons.Calendar size={16} /> {t('form_check_in')}</label>
                   <input
                     type="date"
                     value={bookingForm.checkIn}
@@ -1604,12 +1602,12 @@ export default function HotelDetail() {
                       setBookingForm({ ...bookingForm, checkIn: e.target.value });
                       setBookingError('');
                     }}
-                    style={inputFieldEnhanced}
+                    className="hd-input"
                     min={new Date().toISOString().split('T')[0]}
                   />
                 </div>
                 <div>
-                  <label style={inputLabel}><Icons.Calendar size={16} /> {t('form_check_out')}</label>
+                  <label className="hd-bm-label"><Icons.Calendar size={16} /> {t('form_check_out')}</label>
                   <input
                     type="date"
                     value={bookingForm.checkOut}
@@ -1617,12 +1615,12 @@ export default function HotelDetail() {
                       setBookingForm({ ...bookingForm, checkOut: e.target.value });
                       setBookingError('');
                     }}
-                    style={inputFieldEnhanced}
+                    className="hd-input"
                     min={bookingForm.checkIn || new Date().toISOString().split('T')[0]}
                   />
                 </div>
                 <div>
-                  <label style={inputLabel}><Icons.User size={16} /> {t('form_guests')}</label>
+                  <label className="hd-bm-label"><Icons.User size={16} /> {t('form_guests')}</label>
                   <input
                     type="number"
                     min="1"
@@ -1640,13 +1638,13 @@ export default function HotelDetail() {
                       });
                       setBookingError('');
                     }}
-                    style={inputFieldEnhanced}
+                    className="hd-input"
                   />
                 </div>
                 <div>
-                  <label style={inputLabel}>
+                  <label className="hd-bm-label">
                     <Icons.Booking size={16} /> {t('form_rooms')}
-                    <span style={{ fontSize: '0.8rem', color: '#6b7280', marginLeft: '0.5rem' }}>
+                    <span className="hd-bm-max">
                       {(() => {
                         const sel = rooms.find(r => String(r.room_id) === String(bookingForm.selectedRoomId));
                         const maxAllowed = sel ? (sel.quantity_available || primaryAvailability) : primaryAvailability;
@@ -1671,22 +1669,22 @@ export default function HotelDetail() {
                       setBookingForm({ ...bookingForm, rooms: value });
                       setBookingError('');
                     }}
-                    style={inputFieldEnhanced}
+                    className="hd-input"
                   />
                 </div>
-                <div style={{gridColumn: '1 / -1'}}>
+                <div className="hd-bm-grid-full">
                   {/* Inline availability calendar with room-type selector */}
-                  <div style={calBody}>
+                  <div className="hd-bm-cals">
                     {rooms.length > 0 && (
-                      <div style={calRoomRow}>
-                        <label htmlFor="booking-room-type" style={calRoomLabel}>
+                      <div className="hd-bm-cal-room">
+                        <label htmlFor="booking-room-type" className="hd-bm-cal-room-label">
                           Select Room Type:
                         </label>
                         <select
                           id="booking-room-type"
                           value={bookingForm.selectedRoomId || ''}
                           onChange={handleRoomSelectChange}
-                          style={calRoomSelect}
+                          className="hd-bm-cal-room-select"
                         >
                           <option value="">All room types</option>
                           {suitableRoomTypesForGuests.length > 0 ? (
@@ -1712,30 +1710,30 @@ export default function HotelDetail() {
                         </select>
                       </div>
                     )}
-                    <div style={calNavRow}>
-                      <button style={calNavBtn} onClick={() => changeCalendarMonth(-1)} aria-label={t('prev')}>
+                    <div className="hd-bm-cal-nav">
+                      <button className="hd-bm-cal-nav-btn" onClick={() => changeCalendarMonth(-1)} aria-label={t('prev')}>
                         &#8249;
                       </button>
-                      <div style={calMonthLabel}>
+                      <div className="hd-bm-cal-month">
                         {calendarMonth.toLocaleDateString(getCalendarLocale(language), { month: 'long', year: 'numeric' })}
                       </div>
-                      <button style={calNavBtn} onClick={() => changeCalendarMonth(1)} aria-label={t('next')}>
+                      <button className="hd-bm-cal-nav-btn" onClick={() => changeCalendarMonth(1)} aria-label={t('next')}>
                         &#8250;
                       </button>
                     </div>
 
                     {calendarLoading ? (
-                      <div style={calMessage}>{t('loading')}</div>
+                      <div className="hd-bm-cal-msg">{t('loading')}</div>
                     ) : calendarError ? (
-                      <div style={{ ...calMessage, color: '#c62828' }}>{calendarError}</div>
+                      <div className="hd-bm-cal-msg is-error">{calendarError}</div>
                     ) : (
                       <>
-                        <div style={calGrid}>
+                        <div className="hd-cal-grid">
                           {getWeekdayLabels(getCalendarLocale(language)).map((label, idx) => (
-                            <div key={`wd-${idx}`} style={calWeekday}>{label}</div>
+                            <div key={`wd-${idx}`} className="hd-cal-wd">{label}</div>
                           ))}
                           {buildCalendarDays(calendarMonth).map((date, idx) => {
-                            if (!date) return <div key={`empty-${idx}`} style={calDayEmpty} />;
+                            if (!date) return <div key={`empty-${idx}`} className="hd-cal-day is-empty" />;
 
                             const dateKey = toCalendarDateKey(date);
                             const day = calendarDays[dateKey];
@@ -1748,57 +1746,29 @@ export default function HotelDetail() {
                             const inRange = !!calendarRange.start && !!calendarRange.end
                               && dateKey > calendarRange.start && dateKey < calendarRange.end;
 
-                            let background = 'white';
-                            let color = '#1b5e20';
-                            let borderWidth = '1px';
-                            let borderColor = '#c8e6c9';
-                            let boxShadow = 'none';
-                            if (isPast) {
-                              background = '#f5f5f5';
-                              color = '#9ca3af';
-                            } else if (isSelected) {
-                              // Check-in / check-out: solid green so the picked
-                              // dates are obvious even without a confirm footer.
-                              background = '#2e7d32';
-                              color = '#ffffff';
-                              borderWidth = '2px';
-                              borderColor = '#1b5e20';
-                              boxShadow = '0 2px 6px rgba(46, 125, 50, 0.45)';
-                            } else if (inRange) {
-                              background = '#c8e6c9';
-                              color = '#1b5e20';
-                            } else if (isClosed) {
-                              background = '#ffcccc';
-                              color = '#c62828';
-                            } else if (isFull) {
-                              background = '#fff3cd';
-                              color = '#92400e';
-                            }
+                            const dayState = [
+                              isPast ? 'is-past' : '',
+                              isSelected ? 'is-selected' : '',
+                              inRange ? 'is-range' : '',
+                              isClosed ? 'is-closed' : '',
+                              isFull ? 'is-full' : '',
+                              isSelectable ? 'is-selectable' : ''
+                            ].filter(Boolean).join(' ');
 
                             return (
                               <div
                                 key={dateKey}
                                 onClick={() => isSelectable && handleCalendarDayClick(dateKey)}
                                 title={day && day.price != null ? `₱${Number(day.price).toLocaleString()}` : undefined}
-                                style={{
-                                  ...calDay,
-                                  background,
-                                  color,
-                                  borderStyle: 'solid',
-                                  borderWidth,
-                                  borderColor,
-                                  boxShadow,
-                                  cursor: isSelectable ? 'pointer' : 'not-allowed',
-                                  opacity: isPast ? 0.55 : 1
-                                }}
+                                className={`hd-cal-day${dayState ? ` ${dayState}` : ''}`}
                               >
-                                <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{date.getDate()}</div>
+                                <div className="hd-cal-day-num">{date.getDate()}</div>
                                 {isClosed ? (
-                                  <div style={{ fontSize: '0.65rem', fontWeight: 700 }}>Closed</div>
+                                  <div className="hd-cal-day-tag is-closed">Closed</div>
                                 ) : isFull ? (
-                                  <div style={{ fontSize: '0.65rem', fontWeight: 700 }}>{t('availability_sold_out')}</div>
+                                  <div className="hd-cal-day-tag is-full">{t('availability_sold_out')}</div>
                                 ) : day ? (
-                                  <div style={{ fontSize: '0.7rem', fontWeight: 600 }}>
+                                  <div className="hd-cal-day-tag">
                                     {Number(day.available)} {t('form_rooms').toLowerCase()}
                                   </div>
                                 ) : null}
@@ -1807,25 +1777,25 @@ export default function HotelDetail() {
                           })}
                         </div>
 
-                        <div style={calLegend}>
-                          <span style={calLegendItem}>
-                            <span style={{ ...calSwatch, background: 'white', border: '1px solid #c8e6c9' }} />
+                        <div className="hd-cal-legend">
+                          <span className="hd-cal-leg-item">
+                            <span className="hd-cal-swatch is-avail" />
                             {t('available_label')}
                           </span>
-                          <span style={calLegendItem}>
-                            <span style={{ ...calSwatch, background: '#2e7d32', border: '2px solid #1b5e20' }} />
+                          <span className="hd-cal-leg-item">
+                            <span className="hd-cal-swatch is-selected" />
                             Selected
                           </span>
-                          <span style={calLegendItem}>
-                            <span style={{ ...calSwatch, background: '#fff3cd', border: '1px solid #f0e0a0' }} />
+                          <span className="hd-cal-leg-item">
+                            <span className="hd-cal-swatch is-full" />
                             {t('availability_sold_out')}
                           </span>
-                          <span style={calLegendItem}>
-                            <span style={{ ...calSwatch, background: '#ffcccc', border: '1px solid #f5b5b5' }} />
+                          <span className="hd-cal-leg-item">
+                            <span className="hd-cal-swatch is-closed" />
                             Closed
                           </span>
-                          <span style={calLegendItem}>
-                            <span style={{ ...calSwatch, background: '#f5f5f5', border: '1px solid #ddd', opacity: 0.6 }} />
+                          <span className="hd-cal-leg-item">
+                            <span className="hd-cal-swatch is-past" />
                             Past
                           </span>
                         </div>
@@ -1835,45 +1805,36 @@ export default function HotelDetail() {
                 </div>
               </div>
 
-              <div style={sectionDivider}>
-                <h3 style={sectionHeading}><Icons.User size={17} /> {t('modal_guest_information')}</h3>
-              </div>
-              <div style={modalGrid}>
-                <div style={{gridColumn: '1 / -1'}}>
-                  <label style={inputLabel}><Icons.User size={16} /> {t('form_full_name')}</label>
+              <h3 className="hd-bm-sec-h"><Icons.User size={17} /> {t('modal_guest_information')}</h3>
+              <div className="hd-bm-grid">
+                <div className="hd-bm-grid-full">
+                  <label className="hd-bm-label"><Icons.User size={16} /> {t('form_full_name')}</label>
                   <input
                     type="text"
                     value={bookingForm.customerName}
                     onChange={(e) => setBookingForm({ ...bookingForm, customerName: e.target.value })}
-                    style={inputFieldEnhanced}
+                    className="hd-input"
                     placeholder={t('placeholder_full_name')}
                   />
                 </div>
                 <div>
-                  <label style={inputLabel}><Icons.Email size={16} /> {t('form_email')}</label>
+                  <label className="hd-bm-label"><Icons.Email size={16} /> {t('form_email')}</label>
                   <input
                     type="email"
                     value={bookingForm.customerEmail}
                     onChange={(e) => setBookingForm({ ...bookingForm, customerEmail: e.target.value })}
-                    style={inputFieldEnhanced}
+                    className="hd-input"
                     placeholder={t('placeholder_email')}
                   />
                 </div>
                 <div>
-                  <label style={inputLabel}><Icons.Phone size={16} /> {t('form_phone')}</label>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'stretch' }}>
+                  <label className="hd-bm-label"><Icons.Phone size={16} /> {t('form_phone')}</label>
+                  <div className="hd-bm-phone">
                     <input
                       type="text"
                       value="+63"
                       readOnly
-                      style={{
-                        ...inputFieldEnhanced,
-                        width: '72px',
-                        textAlign: 'center',
-                        background: '#f9fafb',
-                        color: '#374151',
-                        cursor: 'default'
-                      }}
+                      className="hd-input hd-bm-prefix"
                     />
                     <input
                       type="text"
@@ -1885,20 +1846,18 @@ export default function HotelDetail() {
                         setBookingForm({ ...bookingForm, customerPhone: digitsOnly });
                         setBookingError('');
                       }}
-                      style={inputFieldEnhanced}
+                      className="hd-input"
                       placeholder="9XXXXXXXXX"
                     />
                   </div>
                 </div>
               </div>
 
-              <div style={sectionDivider}>
-                <h3 style={sectionHeading}><Icons.Money size={17} /> {t('modal_payment_details')}</h3>
-              </div>
+              <h3 className="hd-bm-sec-h"><Icons.Money size={17} /> {t('modal_payment_details')}</h3>
 
               <div>
-                <label style={inputLabel}>Payment option</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '0.6rem' }}>
+                <label className="hd-bm-label">Payment option</label>
+                <div className="hd-bm-payopts">
                   {paymentOptionChoices.map((choice) => {
                     const isSelected = selectedPaymentOption === choice.value;
                     const due = computeDueNow(choice.value);
@@ -1907,45 +1866,34 @@ export default function HotelDetail() {
                         key={choice.value}
                         type="button"
                         onClick={() => setBookingForm({ ...bookingForm, paymentOption: choice.value })}
-                        style={{
-                          border: isSelected ? '2px solid #2563eb' : '1px solid #d1d5db',
-                          background: isSelected ? '#eff6ff' : '#ffffff',
-                          borderRadius: '10px',
-                          padding: '0.7rem 0.8rem',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          boxShadow: isSelected ? '0 1px 4px rgba(37, 99, 235, 0.18)' : 'none',
-                          transition: 'all 0.15s ease'
-                        }}
+                        className={`hd-bm-payopt${isSelected ? ' is-selected' : ''}`}
                       >
-                        <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#111827' }}>{choice.title}</div>
-                        <div style={{ fontSize: '0.78rem', color: '#6b7280', marginTop: '0.15rem', lineHeight: 1.3 }}>
-                          {choice.subtitle}
-                        </div>
-                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#2563eb', marginTop: '0.35rem' }}>
+                        <span className="hd-bm-payopt-t">{choice.title}</span>
+                        <span className="hd-bm-payopt-s">{choice.subtitle}</span>
+                        <span className="hd-bm-payopt-p">
                           {due !== null
                             ? `₱${due.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                             : modalNights > 0 ? 'Select room' : 'Enter dates'}
-                        </div>
+                        </span>
                       </button>
                     );
                   })}
                 </div>
                 {selectedDueNow !== null && selectedBalanceDue > 0 && (
-                  <div style={{ ...secureNote, marginTop: '0.55rem', color: '#b45309', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px', padding: '0.45rem 0.6rem' }}>
+                  <div className="hd-bm-balance">
                     <Icons.Money size={13} /> Balance of ₱{selectedBalanceDue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     {selectedBalanceDueAt ? ` due by ${selectedBalanceDueAt}` : ''} (before check-in).
                   </div>
                 )}
               </div>
 
-              <div style={modalGrid}>
-                <div style={{gridColumn: '1 / -1'}}>
-                  <label style={inputLabel}>{t('form_payment_method')}</label>
+              <div className="hd-bm-grid">
+                <div className="hd-bm-grid-full">
+                  <label className="hd-bm-label">{t('form_payment_method')}</label>
                   <select
                     value={bookingForm.paymentMethod}
                     onChange={(e) => setBookingForm({ ...bookingForm, paymentMethod: e.target.value })}
-                    style={inputFieldEnhanced}
+                    className="hd-input"
                   >
                     {paymentMethodOptions.map((option) => (
                       <option key={option.value} value={option.value}>{option.label}</option>
@@ -1956,109 +1904,73 @@ export default function HotelDetail() {
 
               {bookingForm.paymentMethod === 'card' && (
                 <div>
-                  <label style={inputLabel}><Icons.Shield size={16} /> {t('form_card_last_4')}</label>
+                  <label className="hd-bm-label"><Icons.Shield size={16} /> {t('form_card_last_4')}</label>
                   <input
                     type="text"
                     maxLength="4"
                     value={bookingForm.cardLast4}
                     onChange={(e) => setBookingForm({ ...bookingForm, cardLast4: e.target.value.replace(/\D/g, '') })}
-                    style={inputFieldEnhanced}
+                    className="hd-input"
                     placeholder={t('placeholder_card_last_4')}
                   />
-                  <div style={secureNote}><Icons.Shield size={13} /> {t('form_secure_note')}</div>
+                  <div className="hd-bm-note"><Icons.Shield size={13} /> {t('form_secure_note')}</div>
                 </div>
               )}
 
-              <div style={sectionDivider}>
-                <h3 style={sectionHeading}><Icons.Document size={17} /> {t('modal_additional_info')}</h3>
-              </div>
+              <h3 className="hd-bm-sec-h"><Icons.Document size={17} /> {t('modal_additional_info')}</h3>
               <div>
-                <label style={inputLabel}>{t('form_special_requests')}</label>
+                <label className="hd-bm-label">{t('form_special_requests')}</label>
                 <textarea
                   rows="4"
                   value={bookingForm.specialRequests}
                   onChange={(e) => setBookingForm({ ...bookingForm, specialRequests: e.target.value })}
-                  style={textareaFieldEnhanced}
+                  className="hd-textarea"
                   placeholder={t('placeholder_special_requests')}
                 />
               </div>
 
               {/* Booking policies — shown before payment confirmation */}
-              <div style={sectionDivider}>
-                <h3 style={sectionHeading}><Icons.ShieldCheck size={17} /> {t('booking_policies_title')}</h3>
-              </div>
-              <div style={{ border: '1.5px solid #c8e6c9', borderRadius: '10px', background: '#f8fdf7', padding: '1rem 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem', marginBottom: '1.5rem' }}>
+              <h3 className="hd-bm-sec-h"><Icons.ShieldCheck size={17} /> {t('booking_policies_title')}</h3>
+              <div className="hd-bm-policies">
                 {policyLines.map((line, idx) => {
                   const IconComp = Icons[POLICY_LINE_ICONS[line.icon] || 'Info'];
                   return (
-                    <div key={idx} style={{ display: 'flex', gap: '0.65rem', alignItems: 'flex-start', fontSize: '0.86rem', color: '#374151', lineHeight: 1.5 }}>
-                      <span style={{ flexShrink: 0, width: 26, height: 26, borderRadius: '50%', background: '#e8f5e9', color: '#2E7D32', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div key={idx} className="hd-bm-policyline">
+                      <span className="hd-bm-policyic">
                         <IconComp size={14} />
                       </span>
                       <span>{line.text}</span>
                     </div>
                   );
                 })}
-                <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginTop: '0.35rem', paddingTop: '0.85rem', borderTop: '1px dashed #c8e6c9', cursor: 'pointer', fontSize: '0.88rem', color: '#1B5E20', fontWeight: 600, lineHeight: 1.45 }}>
+                <label className="hd-bm-policyagree">
                   <input
                     type="checkbox"
                     checked={policyAgreed}
                     onChange={(e) => setPolicyAgreed(e.target.checked)}
-                    style={{ marginTop: '2px', width: '16px', height: '16px', accentColor: '#2E7D32', flexShrink: 0 }}
                   />
                   <span>{t('agree_policies_checkbox')}</span>
                 </label>
               </div>
 
               {slowConnection && !checkoutState && (
-                <div style={{
-                  background: '#fef3cd',
-                  border: '1.5px solid #ffc107',
-                  borderRadius: '10px',
-                  padding: '1rem',
-                  marginBottom: '1.5rem',
-                  fontSize: '0.9rem',
-                  color: '#856404',
-                  fontWeight: 500
-                }}>
+                <div className="hd-bm-slow">
                   Slow connection detected. Please wait while we process your booking...
                 </div>
               )}
 
               {checkoutState && (
-                <div style={{
-                  background: '#e3f2fd',
-                  border: '1.5px solid #2196F3',
-                  borderRadius: '10px',
-                  padding: '1.5rem',
-                  marginBottom: '1.5rem'
-                }}>
-                  <div style={{ marginBottom: '1rem' }}>
-                    <strong style={{ color: '#1565c0', fontSize: '0.95rem' }}>Payment Window Opening</strong>
-                    <p style={{ margin: '0.5rem 0 0 0', color: '#1565c0', fontSize: '0.9rem' }}>
+                <div className="hd-bm-checkout">
+                  <div>
+                    <strong>Payment Window Opening</strong>
+                    <p>
                       If the payment window doesn't open automatically, click the button below.
                     </p>
                   </div>
                   <button
                     type="button"
                     onClick={() => window.open(checkoutState.url, '_blank', 'noopener,noreferrer')}
-                    style={{
-                      background: '#2196F3',
-                      border: 'none',
-                      color: 'white',
-                      padding: '0.75rem 1.25rem',
-                      borderRadius: '8px',
-                      fontSize: '0.9rem',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      transition: 'all 0.3s'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.background = '#1976D2';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.background = '#2196F3';
-                    }}
+                    className="hd-bm-checkout-btn"
                   >
                     {t('open_payment')}
                   </button>
@@ -2066,15 +1978,15 @@ export default function HotelDetail() {
               )}
 
               {bookingError && (
-                <div style={errorBanner}>
-                  <div style={{display:'flex',alignItems:'center',gap:'0.5rem', lineHeight: 1.25}}>
+                <div className="hd-bm-error">
+                  <div className="hd-bm-error-row">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                     {getErrorMessage(bookingError)}
                   </div>
                   {pendingBookingId && (
                     <button
                       type="button"
-                      style={{ marginTop: '0.5rem', background: 'none', border: 'none', color: '#1d4ed8', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.88rem', padding: 0 }}
+                      className="hd-bm-goto"
                       onClick={() => { setShowBookingModal(false); navigate('/bookings'); }}
                     >
                       {t('go_to_bookings_cta')}
@@ -2084,21 +1996,21 @@ export default function HotelDetail() {
               )}
             </div>
 
-            <div style={modalFooter}>
-              <button style={cancelBtnEnhanced} onClick={() => setShowBookingModal(false)}>
-                <span style={{display:'flex',alignItems:'center',gap:'0.5rem', lineHeight: 1.2}}><Icons.X size={15} /> {t('cancel_button')}</span>
+            <div className="hd-bm-foot">
+              <button className="hd-bm-cancel" onClick={() => setShowBookingModal(false)}>
+                <span className="hd-bm-foot-ic"><Icons.X size={15} /> {t('cancel_button')}</span>
               </button>
               <button
-                style={isSubmitting || !policyAgreed ? confirmBtnDisabled : confirmBtnEnhanced}
+                className={`hd-bm-confirm${isSubmitting || !policyAgreed ? ' is-disabled' : ''}`}
                 onClick={handleSubmitBooking}
                 disabled={isSubmitting || !!checkoutState || !policyAgreed}
               >
                 {slowConnection ? (
-                  <span style={{display:'flex',alignItems:'center',gap:'0.5rem', lineHeight: 1.2}}><Icons.Clock size={15} /> {t('button_connecting_slow')}</span>
+                  <span className="hd-bm-foot-ic"><Icons.Clock size={15} /> {t('button_connecting_slow')}</span>
                 ) : isSubmitting ? (
-                  <span style={{display:'flex',alignItems:'center',gap:'0.5rem', lineHeight: 1.2}}><Icons.Clock size={15} /> {t('processing')}</span>
+                  <span className="hd-bm-foot-ic"><Icons.Clock size={15} /> {t('processing')}</span>
                 ) : (
-                  <span style={{display:'flex',alignItems:'center',gap:'0.5rem', lineHeight: 1.2}}><Icons.Check size={15} /> {t('confirm_booking')}</span>
+                  <span className="hd-bm-foot-ic"><Icons.Check size={15} /> {t('confirm_booking')}</span>
                 )}
               </button>
             </div>
@@ -2610,386 +2522,4 @@ export default function HotelDetail() {
 const mapStyle = {
   width: '100%',
   height: '100%'
-};
-
-const modalBackdrop = {
-  position: 'fixed',
-  top: 0,
-  left: 0,
-  width: '100%',
-  height: '100%',
-  backgroundColor: 'rgba(0,0,0,0.5)',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '1.5rem',
-  zIndex: 1000
-};
-
-const modalCard = {
-  backgroundColor: 'white',
-  borderRadius: '20px',
-  width: '100%',
-  maxWidth: '750px',
-  maxHeight: '90vh',
-  overflow: 'auto',
-  overscrollBehavior: 'contain',
-  boxShadow: '0 25px 50px rgba(0,0,0,0.4)',
-  animation: 'slideUp 0.3s ease-out'
-};
-
-const modalHeader = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'flex-start',
-  padding: '2rem 2.5rem',
-  background: 'linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)',
-  color: 'white',
-  borderTopLeftRadius: '20px',
-  borderTopRightRadius: '20px'
-};
-
-const modalTitle = {
-  margin: 0,
-  fontSize: '1.75rem',
-  fontWeight: '700',
-  color: 'white',
-  marginBottom: '0.25rem'
-};
-
-const modalSubtitle = {
-  margin: 0,
-  fontSize: '0.95rem',
-  color: 'rgba(255,255,255,0.9)',
-  fontWeight: '400'
-};
-
-const modalClose = {
-  border: 'none',
-  background: 'rgba(255,255,255,0.2)',
-  fontSize: '1.5rem',
-  cursor: 'pointer',
-  color: 'white',
-  width: '40px',
-  height: '40px',
-  borderRadius: '50%',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'all 0.3s ease',
-  ':hover': {
-    background: 'rgba(255,255,255,0.3)'
-  }
-};
-
-const modalBody = {
-  padding: '2rem 2.5rem',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1.5rem',
-  backgroundColor: '#fafafa'
-};
-
-const modalFooter = {
-  padding: '1.5rem 2.5rem',
-  display: 'flex',
-  justifyContent: 'flex-end',
-  gap: '1rem',
-  borderTop: '2px solid #e0e0e0',
-  backgroundColor: 'white',
-  borderBottomLeftRadius: '20px',
-  borderBottomRightRadius: '20px'
-};
-
-const modalGrid = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-  gap: '1rem'
-};
-
-const calBody = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1rem'
-};
-
-const calRoomRow = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.75rem'
-};
-
-const calRoomLabel = {
-  fontSize: '0.9rem',
-  fontWeight: 700,
-  color: '#1b5e20',
-  whiteSpace: 'nowrap'
-};
-
-const calRoomSelect = {
-  flex: 1,
-  minWidth: 0,
-  padding: '0.55rem 0.75rem',
-  border: '2px solid #c8e6c9',
-  borderRadius: '10px',
-  fontSize: '0.95rem',
-  fontWeight: 600,
-  color: '#1b5e20',
-  backgroundColor: '#ffffff',
-  cursor: 'pointer',
-  outline: 'none'
-};
-
-const calNavRow = {
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  gap: '1rem'
-};
-
-const calNavBtn = {
-  border: '2px solid #86efac',
-  background: '#f0fdf4',
-  color: '#16a34a',
-  fontSize: '1.4rem',
-  lineHeight: 1,
-  width: '38px',
-  height: '38px',
-  borderRadius: '10px',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  fontWeight: 700
-};
-
-const calMonthLabel = {
-  fontSize: '1.05rem',
-  fontWeight: 800,
-  color: '#1b5e20'
-};
-
-const calMessage = {
-  padding: '2rem',
-  textAlign: 'center',
-  color: '#718096',
-  fontWeight: 600
-};
-
-const calGrid = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(7, 1fr)',
-  gap: '0.4rem'
-};
-
-const calWeekday = {
-  padding: '0.4rem 0',
-  textAlign: 'center',
-  fontWeight: 800,
-  color: '#2e7d32',
-  fontSize: '0.8rem',
-  background: '#f8fdf7',
-  borderRadius: '6px'
-};
-
-const calDay = {
-  minHeight: '58px',
-  padding: '0.35rem 0.3rem',
-  borderRadius: '8px',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '0.15rem',
-  transition: 'all 0.15s ease',
-  boxSizing: 'border-box'
-};
-
-const calDayEmpty = {
-  minHeight: '58px'
-};
-
-const calLegend = {
-  display: 'flex',
-  flexWrap: 'wrap',
-  gap: '0.75rem 1.1rem',
-  fontSize: '0.8rem',
-  color: '#2d3748',
-  padding: '0.75rem 0.9rem',
-  background: '#f8fdf7',
-  borderWidth: '1px',
-  borderStyle: 'solid',
-  borderColor: '#c8e6c9',
-  borderRadius: '8px'
-};
-
-const calLegendItem = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.4rem'
-};
-
-const calSwatch = {
-  width: '16px',
-  height: '16px',
-  borderRadius: '4px',
-  display: 'inline-block',
-  flexShrink: 0
-};
-
-const inputLabel = {
-  fontSize: '0.9rem',
-  fontWeight: '600',
-  marginBottom: '0.5rem',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  lineHeight: 1.2,
-  color: '#333'
-};
-
-const inputField = {
-  width: '100%',
-  padding: '0.65rem 0.75rem',
-  borderRadius: '8px',
-  border: '1px solid #ddd',
-  fontSize: '1rem'
-};
-
-const inputFieldEnhanced = {
-  width: '100%',
-  padding: '0.85rem 1rem',
-  borderRadius: '10px',
-  border: '2px solid #e0e0e0',
-  fontSize: '1rem',
-  backgroundColor: 'white',
-  transition: 'all 0.3s ease',
-  outline: 'none',
-  ':focus': {
-    borderColor: '#2e7d32',
-    boxShadow: '0 0 0 3px rgba(46,125,50,0.1)'
-  }
-};
-
-const textareaFieldEnhanced = {
-  width: '100%',
-  padding: '0.85rem 1rem',
-  borderRadius: '10px',
-  border: '2px solid #e0e0e0',
-  fontSize: '0.95rem',
-  backgroundColor: 'white',
-  fontFamily: 'inherit',
-  resize: 'vertical',
-  transition: 'all 0.3s ease',
-  outline: 'none',
-  ':focus': {
-    borderColor: '#2e7d32',
-    boxShadow: '0 0 0 3px rgba(46,125,50,0.1)'
-  }
-};
-
-const sectionDivider = {
-  marginTop: '0.5rem',
-  marginBottom: '0.5rem'
-};
-
-const sectionHeading = {
-  fontSize: '1.1rem',
-  fontWeight: '600',
-  color: '#2e7d32',
-  margin: '0',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  lineHeight: 1.25
-};
-
-const secureNote = {
-  fontSize: '0.8rem',
-  color: '#666',
-  marginTop: '0.5rem',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '0.5rem',
-  lineHeight: 1.25
-};
-
-const checkoutBanner = {
-  backgroundColor: '#f1f8e9',
-  color: '#2e7d32',
-  padding: '1rem 1.25rem',
-  borderRadius: '12px',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '1rem',
-  border: '2px dashed #81c784'
-};
-
-const checkoutText = {
-  flex: 1
-};
-
-const checkoutButton = {
-  background: 'linear-gradient(135deg, #2e7d32, #4caf50)',
-  color: 'white',
-  border: 'none',
-  borderRadius: '10px',
-  padding: '0.7rem 1rem',
-  fontWeight: '700',
-  cursor: 'pointer'
-};
-
-const cancelBtnEnhanced = {
-  padding: '0.85rem 1.5rem',
-  background: 'white',
-  border: '2px solid #d0d0d0',
-  color: '#666',
-  borderRadius: '10px',
-  fontSize: '0.95rem',
-  fontWeight: '700',
-  cursor: 'pointer',
-  transition: 'all 0.3s ease'
-};
-
-const confirmBtnEnhanced = {
-  padding: '0.85rem 1.5rem',
-  background: '#2e7d32',
-  border: 'none',
-  color: 'white',
-  borderRadius: '10px',
-  fontSize: '0.95rem',
-  fontWeight: '700',
-  cursor: 'pointer',
-  transition: 'all 0.3s ease'
-};
-
-const confirmBtnDisabled = {
-  padding: '0.85rem 1.5rem',
-  background: '#ccc',
-  border: 'none',
-  color: '#999',
-  borderRadius: '10px',
-  fontSize: '0.95rem',
-  fontWeight: '700',
-  cursor: 'not-allowed',
-  transition: 'all 0.3s ease'
-};
-
-const errorBanner = {
-  backgroundColor: '#ffebee',
-  color: '#c62828',
-  padding: '0.75rem 1rem',
-  borderRadius: '8px',
-  fontWeight: '600'
-};
-
-const cancelBtn = {
-  background: 'transparent',
-  color: '#666',
-  border: '1px solid #ddd',
-  borderRadius: '8px',
-  padding: '0.75rem 1.5rem',
-  fontWeight: '600',
-  cursor: 'pointer'
 };
