@@ -544,7 +544,8 @@ router.get('/dashboard/stats', async (req, res) => {
       : 'SELECT COUNT(*) as count FROM hotel_owners WHERE user_id = ?';
     const [hotelCount] = await db.promise().query(hotelQuery, isAdmin ? [] : [userId]);
 
-    // Get booking statistics
+    // Get booking statistics (archived bookings live in the Archive tab only,
+    // so the dashboard breakdown matches the Reservations list)
     const bookingQuery = isAdmin
       ? `
         SELECT 
@@ -553,6 +554,7 @@ router.get('/dashboard/stats', async (req, res) => {
           SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
           SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
         FROM hotel_bookings
+        WHERE archived = 0
       `
       : `
         SELECT 
@@ -562,7 +564,7 @@ router.get('/dashboard/stats', async (req, res) => {
           SUM(CASE WHEN b.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
         FROM hotel_bookings b
         INNER JOIN hotel_owners ho ON b.hotel_id = ho.hotel_id
-        WHERE ho.user_id = ?
+        WHERE ho.user_id = ? AND b.archived = 0
       `;
     const [bookingStats] = await db.promise().query(bookingQuery, isAdmin ? [] : [userId]);
 
@@ -594,23 +596,33 @@ router.get('/dashboard/stats', async (req, res) => {
       `;
     const [recentBookings] = await db.promise().query(recentBookingsQuery, isAdmin ? [] : [userId]);
 
-    // Collected vs outstanding money across this owner's bookings
+    // Collected vs outstanding money across this owner's bookings.
+    // Data-quality guard: a pending booking whose payment window has lapsed
+    // (expires_at < NOW, no payment ever succeeded - paymentSync clears the
+    // deadline on any payment) is dead weight - typically abandoned test
+    // bookings - so it must not count as money guests still owe. Archived
+    // bookings are excluded to match the Reservations list. Confirmed
+    // reservations always count: the booking stands and the balance is owed.
     const [paymentStatsRows] = await db.promise().query(
       `SELECT
          COALESCE(SUM(COALESCE(paid.paid_amount, 0)), 0) AS collected,
          COALESCE(SUM(CASE
            WHEN b.status IN ('confirmed', 'pending') AND b.payment_status NOT IN ('paid', 'refunded')
+           AND b.archived = 0
+           AND NOT (b.status = 'pending' AND b.expires_at IS NOT NULL AND b.expires_at < NOW())
            THEN GREATEST(b.total_amount - COALESCE(paid.paid_amount, 0), 0)
            ELSE 0
          END), 0) AS outstanding,
-         COALESCE(SUM(CASE WHEN b.payment_status = 'partial' THEN 1 ELSE 0 END), 0) AS partial_bookings
+         COALESCE(SUM(CASE WHEN b.payment_status = 'partial' AND b.archived = 0 THEN 1 ELSE 0 END), 0) AS partial_bookings
        FROM hotel_bookings b
        LEFT JOIN (
          SELECT booking_id, SUM(CASE WHEN status = 'succeeded' THEN amount ELSE 0 END) AS paid_amount
          FROM hotel_payments
          GROUP BY booking_id
        ) paid ON paid.booking_id = b.booking_id
-       ${isAdmin ? '' : 'INNER JOIN hotel_owners ho ON b.hotel_id = ho.hotel_id'}`,
+       ${isAdmin
+         ? ''
+         : 'INNER JOIN hotel_owners ho ON b.hotel_id = ho.hotel_id WHERE ho.user_id = ?'}`,
       isAdmin ? [] : [userId]
     );
 
