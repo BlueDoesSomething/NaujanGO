@@ -1183,7 +1183,7 @@ export default function HotelDetail() {
 
       <main className="hd-layout">
         {/* Gallery */}
-        <section className="hd-card hd-span-2 hd-gallery">
+        <section className="hd-card hd-gallery">
           <div className="hd-gallery-main">
             <img
               className="hd-gallery-img"
@@ -1192,6 +1192,11 @@ export default function HotelDetail() {
               onClick={() => setFullscreenImage(activeImage)}
               onError={handleImageError}
             />
+            <span className="hd-gallery-chip">📸 {t('featured_short')}</span>
+            <div className="hd-gallery-overlay">
+              <Icons.Hotel size={14} />
+              {hotel.name}
+            </div>
             {gallery.length > 1 && (
               <>
                 <button className="hd-arrow hd-arrow-l" onClick={showPreviousImage} aria-label="Previous image">
@@ -1289,7 +1294,7 @@ export default function HotelDetail() {
         </section>
 
           {/* About */}
-          <section className="hd-card hd-span-2">
+          <section className="hd-card hd-about">
             <h2 className="hd-h2"><Icons.Hotel size={18} /> About {t('about_hotel_fallback')}</h2>
             <p className="hd-desc">{hotel.description}</p>
             <div className="hd-stats">
@@ -1318,7 +1323,7 @@ export default function HotelDetail() {
           </section>
 
           {/* Amenities */}
-          <section className="hd-card">
+          <section className="hd-card hd-amenities">
             <h2 className="hd-h2"><Icons.Check size={18} /> {t('section_amenities')}</h2>
             {sanitizedHotelAmenities.length > 0 ? (
               <ul className="hd-amen">
@@ -1336,7 +1341,7 @@ export default function HotelDetail() {
 
           {/* Room types */}
           {rooms && rooms.length > 0 && (
-            <section className="hd-card hd-span-3">
+            <section className="hd-card hd-roomtypes">
               <h2 className="hd-h2">
                 <Icons.Users size={18} />
                 {t('room_types_pattern').replace('{count}', String(rooms.length))}
@@ -1418,7 +1423,7 @@ export default function HotelDetail() {
 
           {/* Location */}
           {hotel.latitude && hotel.longitude && (
-            <section className="hd-card hd-span-2">
+            <section className="hd-card hd-location">
               <div className="hd-h2-row">
                 <h2 className="hd-h2"><Icons.MapPin size={18} /> {t('section_location')}</h2>
                 <a
@@ -1447,7 +1452,7 @@ export default function HotelDetail() {
           )}
 
           {/* Guest rating */}
-          <section className="hd-card">
+          <section className="hd-card hd-rating">
             <h2 className="hd-h2"><Icons.Star size={18} /> {t('guest_rating')}</h2>
             <div className="hd-rate">
               <strong className="hd-rate-num">{parseFloat(averageRating.average || 0).toFixed(1)}</strong>
@@ -1474,12 +1479,13 @@ export default function HotelDetail() {
           </section>
 
           {/* Reviews */}
-          <section className="hd-card hd-span-3">
+          <section className="hd-card hd-reviews">
             <div className="hd-h2-row">
               <h2 className="hd-h2">
                 <Icons.Chat size={18} />
-                {t('section_guest_reviews')} ({reviews.length})
+                {t('section_guest_reviews')}
               </h2>
+              <span className="hd-revcount">{reviews.length} {t('reviews_label')}</span>
               {isLoggedIn && canReview && (
                 <button className="hd-write" onClick={() => setShowReviewForm(!showReviewForm)}>
                   {showReviewForm ? t('cancel_button') : t('write_review_button')}
