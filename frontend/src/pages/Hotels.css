@@ -175,6 +175,21 @@ html[data-theme="dark"] .hotels-page {
 .hotels-page .attr-card { aspect-ratio: 3 / 3.8; }
 .hotels-page .attr-card-content { padding: 12px 12px 14px; gap: 6px; }
 
+/* Align grid with the search/filter panel (same metrics as attractions) */
+.hotels-page .attr-grid {
+  max-width: 1344px;
+  margin: 0 auto;
+  padding: 0 1rem;
+  gap: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+}
+
+@media (min-width: 640px) {
+  .hotels-page .attr-grid {
+    padding: 0 2rem;
+  }
+}
+
 /* Map shortcut chip (top-right, like attractions' heart button) */
 .hotel-map-chip {
   position: absolute;

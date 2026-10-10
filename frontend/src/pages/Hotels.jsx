@@ -495,7 +495,7 @@ export default function Hotels() {
         </div>
       ) : view === 'grid' ? (
         <section style={contentSection}>
-          <div style={cardsGrid}>
+          <div className="attr-grid">
             {filteredHotels.map((hotel) => {
               const rating = (Number(hotel.rating) || 0).toFixed(1)
               const rooms = Number(hotel.rooms_available)
@@ -1001,15 +1001,6 @@ const pageSubtitle = {
 
 const contentSection = {
   padding: 0
-}
-
-const cardsGrid = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(min(340px, 100%), 1fr))',
-  gap: '2rem',
-  padding: '2rem',
-  maxWidth: '1600px',
-  margin: '0 auto'
 }
 
 const paymentMethodsSection = {
