@@ -2612,13 +2612,13 @@ router.get('/hotels/:hotelId/reports/rooms', authenticateToken, requireFullAutho
     };
 
     const rooms_data = revenueData.map(room => {
-      totals.total_bookings += room.total_bookings || 0;
-      totals.confirmed_bookings += room.confirmed_bookings || 0;
-      totals.total_nights += room.total_nights || 0;
-      totals.confirmed_revenue += room.confirmed_revenue || 0;
-      totals.collected_revenue += room.collected_revenue || 0;
+      totals.total_bookings += Number(room.total_bookings || 0);
+      totals.confirmed_bookings += Number(room.confirmed_bookings || 0);
+      totals.total_nights += Number(room.total_nights || 0);
+      totals.confirmed_revenue += Number(room.confirmed_revenue || 0);
+      totals.collected_revenue += Number(room.collected_revenue || 0);
 
-      const occupancy_nights = room.total_nights || 0;
+      const occupancy_nights = Number(room.total_nights || 0);
       const occupancy_rate = (occupancy_nights / (room.quantity_available * 365)) * 100;
 
       return {
@@ -2626,9 +2626,9 @@ router.get('/hotels/:hotelId/reports/rooms', authenticateToken, requireFullAutho
         room_type_name: room.room_type_name,
         price_per_night: room.price_per_night,
         quantity_available: room.quantity_available,
-        total_bookings: room.total_bookings || 0,
-        confirmed_bookings: room.confirmed_bookings || 0,
-        total_nights: room.total_nights || 0,
+        total_bookings: Number(room.total_bookings || 0),
+        confirmed_bookings: Number(room.confirmed_bookings || 0),
+        total_nights: Number(room.total_nights || 0),
         confirmed_revenue: parseFloat(room.confirmed_revenue || 0),
         collected_revenue: parseFloat(room.collected_revenue || 0),
         average_rating: room.average_rating ? parseFloat(room.average_rating).toFixed(2) : null,
