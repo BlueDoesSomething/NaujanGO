@@ -38,7 +38,7 @@ const ReportsAndAnalyticsDashboard = ({
   initialCategory = null // scroll to this category on mount (deep links)
 }) => {
   const { t } = useLanguage();
-  const [selectedDateRange, setSelectedDateRange] = useState('30d');
+  const [selectedDateRange, setSelectedDateRange] = useState('monthly');
   const [visitorAnalytics, setVisitorAnalytics] = useState(null);
   const [activeCategory, setActiveCategory] = useState('overview');
   const trendSeries = selectedDateRange === '7d' && data?.dailyTrends?.length
@@ -209,20 +209,30 @@ const ReportsAndAnalyticsDashboard = ({
     ]
   };
 
-  // Performance Chart Data
+  // Performance Chart Data (role-aware, real counts only — no placeholder series)
+  const performanceEntries = userRole === 'admin'
+    ? [
+        { label: 'Bookings', value: stats?.totals?.bookings || 0 },
+        { label: 'Hotels', value: stats?.totals?.hotels || 0 },
+        { label: 'Users', value: stats?.totals?.users || 0 },
+        ...(stats?.totals?.attractions != null
+          ? [{ label: 'Attractions', value: stats.totals.attractions }]
+          : [])
+      ]
+    : [
+        { label: 'Bookings', value: stats?.totals?.bookings || 0 },
+        { label: 'Hotels', value: stats?.totals?.hotels || 0 }
+      ];
+  const performanceSwatches = ['#2E7D32CC', '#388E3CCC', '#43A047CC', '#4CAF50CC'];
+  const performanceSwatchBorders = ['#2E7D32', '#388E3C', '#43A047', '#4CAF50'];
   const performanceData = {
-    labels: ['Bookings', 'Hotels', 'Users', 'Attractions'].slice(0, stats?.totals ? Object.keys(stats.totals).length : 4),
+    labels: performanceEntries.map((entry) => entry.label),
     datasets: [
       {
         label: 'Count',
-        data: [
-          stats?.totals?.bookings || 0,
-          stats?.totals?.hotels || 0,
-          stats?.totals?.users || 0,
-          stats?.totals?.attractions || 0
-        ].slice(0, stats?.totals ? Object.keys(stats.totals).length : 4),
-        backgroundColor: ['#2E7D32CC', '#388E3CCC', '#43A047CC', '#4CAF50CC'],
-        borderColor: ['#2E7D32', '#388E3C', '#43A047', '#4CAF50'],
+        data: performanceEntries.map((entry) => entry.value),
+        backgroundColor: performanceSwatches.slice(0, performanceEntries.length),
+        borderColor: performanceSwatchBorders.slice(0, performanceEntries.length),
         borderWidth: 2,
         borderRadius: 10
       }
@@ -246,7 +256,7 @@ const ReportsAndAnalyticsDashboard = ({
     onExport(type, trendSeries);
   };
 
-  const KPICard = ({ label, value, change }) => (
+  const KPICard = ({ label, value, change, changeSuffix = 'vs previous month' }) => (
     <div className="kpi-card">
       <div className="kpi-header">
         <span className="kpi-label">{label}</span>
@@ -255,7 +265,7 @@ const ReportsAndAnalyticsDashboard = ({
       {change !== undefined && (
         <div className={`kpi-change ${change >= 0 ? 'positive' : 'negative'}`}>
           <span className="kpi-change-icon">{change >= 0 ? '↑' : '↓'}</span>
-          <span>{Math.abs(change)}% vs last month</span>
+          <span>{Math.abs(change)}% {changeSuffix}</span>
         </div>
       )}
     </div>
@@ -276,10 +286,8 @@ const ReportsAndAnalyticsDashboard = ({
             onChange={(e) => setSelectedDateRange(e.target.value)}
             className="date-range-select"
           >
-            <option value="7d">Daily</option>
-            <option value="30d">Last 30 Days</option>
-            <option value="90d">Last 90 Days</option>
-            <option value="1y">Last Year</option>
+            <option value="monthly">Monthly (last 6 months)</option>
+            <option value="7d">Daily (last 7 days)</option>
           </select>
           
           <button 
@@ -313,6 +321,7 @@ const ReportsAndAnalyticsDashboard = ({
           label={t('analytics_total_bookings')}
           value={kpis.totalBookings || 0}
           change={parseFloat(kpis.bookingGrowth) || 0}
+          changeSuffix={trendLabel === 'day' ? 'vs previous day' : 'vs previous month'}
         />
         <KPICard 
           label={t('analytics_total_revenue')}
@@ -413,10 +422,10 @@ const ReportsAndAnalyticsDashboard = ({
                 <table>
                   <thead>
                     <tr>
-                      <th>Month</th>
+                      <th>{trendLabel === 'day' ? 'Day' : 'Month'}</th>
                       <th>Bookings</th>
                       <th>Revenue</th>
-                      {userRole === 'admin' && <th>Occupancy %</th>}
+                      <th>Occupancy %</th>
                       <th>Growth</th>
                     </tr>
                   </thead>
@@ -432,7 +441,7 @@ const ReportsAndAnalyticsDashboard = ({
                           <td><strong>{period[trendLabel]}</strong></td>
                           <td>{period.bookings || period.count || 0}</td>
                           <td>₱{(period.revenue || 0).toLocaleString('en-US', { maximumFractionDigits: 0 })}</td>
-                          {userRole === 'admin' && <td>{(period.occupancy || 0).toFixed(1)}%</td>}
+                          <td>{(period.occupancy || 0).toFixed(1)}%</td>
                           <td>
                             <span className={`growth-badge ${growth >= 0 ? 'positive' : 'negative'}`}>
                               {growth >= 0 ? '+' : ''}{growth}%
@@ -540,6 +549,35 @@ const ReportsAndAnalyticsDashboard = ({
               )}
             </div>
             </div>
+
+            {/* Hotel Performance (real per-hotel bookings / revenue / rating) */}
+            {Array.isArray(data?.hotelPerformance) && data.hotelPerformance.length > 0 && (
+              <div className="details-section">
+                <h3 className="details-title">Hotel Performance</h3>
+                <div className="metrics-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Hotel</th>
+                        <th>Bookings</th>
+                        <th>Revenue</th>
+                        <th>Avg. Rating</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.hotelPerformance.map((hotel, idx) => (
+                        <tr key={idx}>
+                          <td><strong>{hotel.name}</strong></td>
+                          <td>{hotel.bookings || 0}</td>
+                          <td>₱{Number(hotel.revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                          <td>{hotel.avg_rating ? Number(hotel.avg_rating).toFixed(1) : '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* Visitor Analytics Section - Admin Only */}

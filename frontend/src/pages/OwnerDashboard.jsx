@@ -3283,8 +3283,7 @@ const OwnerDashboard = () => {
                 stats={{
                   totals: {
                     bookings: stats?.bookingStats?.total_bookings || 0,
-                    hotels: stats?.hotelCount || 0,
-                    users: 0
+                    hotels: stats?.hotelCount || 0
                   },
                   roleDistribution: []
                 }}
