@@ -1586,17 +1586,27 @@ export default function HotelDetail() {
           <div className="hd-bm-card">
             {/* Modal Header */}
             <div className="hd-bm-head">
-              <div>
+              <div className="hd-bm-head-main">
                 <h2>Book {hotel.name}</h2>
                 <p className="hd-bm-sub">{hotel.location}</p>
               </div>
-              <button className="hd-bm-close" onClick={() => {
-                setShowBookingModal(false);
-                setBookingError('');
-              }}><Icons.X size={18} /></button>
+              <div className="hd-bm-head-right">
+                <ol className="hd-bm-steps" aria-hidden="true">
+                  <li className="is-done"><span>1</span></li>
+                  <li className="is-done"><span>2</span></li>
+                  <li className="is-active"><span>3</span></li>
+                </ol>
+                <button className="hd-bm-close" onClick={() => {
+                  setShowBookingModal(false);
+                  setBookingError('');
+                }}><Icons.X size={18} /></button>
+              </div>
             </div>
 
             <div className="hd-bm-body">
+              <div className="hd-bm-layout">
+                <div className="hd-bm-main">
+              <section className="hd-bm-sec">
               <h3 className="hd-bm-sec-h"><Icons.Calendar size={17} /> {t('modal_stay_details')}</h3>
               <div className="hd-bm-grid">
                   <div>
@@ -1745,6 +1755,7 @@ export default function HotelDetail() {
                             const day = calendarDays[dateKey];
                             const todayKey = toCalendarDateKey(new Date());
                             const isPast = dateKey < todayKey;
+                            const isToday = dateKey === todayKey;
                             const isClosed = day?.closed === 1;
                             const isFull = !!day && Number(day.available) <= 0;
                             const isSelectable = isCalendarDayBookable(dateKey);
@@ -1754,6 +1765,7 @@ export default function HotelDetail() {
 
                             const dayState = [
                               isPast ? 'is-past' : '',
+                              isToday ? 'is-today' : '',
                               isSelected ? 'is-selected' : '',
                               inRange ? 'is-range' : '',
                               isClosed ? 'is-closed' : '',
@@ -1793,6 +1805,10 @@ export default function HotelDetail() {
                             Selected
                           </span>
                           <span className="hd-cal-leg-item">
+                            <span className="hd-cal-swatch is-today" />
+                            Today
+                          </span>
+                          <span className="hd-cal-leg-item">
                             <span className="hd-cal-swatch is-full" />
                             {t('availability_sold_out')}
                           </span>
@@ -1811,6 +1827,9 @@ export default function HotelDetail() {
                 </div>
               </div>
 
+              </section>
+
+              <section className="hd-bm-sec">
               <h3 className="hd-bm-sec-h"><Icons.User size={17} /> {t('modal_guest_information')}</h3>
               <div className="hd-bm-grid">
                 <div className="hd-bm-grid-full">
@@ -1859,6 +1878,9 @@ export default function HotelDetail() {
                 </div>
               </div>
 
+              </section>
+
+              <section className="hd-bm-sec">
               <h3 className="hd-bm-sec-h"><Icons.Money size={17} /> {t('modal_payment_details')}</h3>
 
               <div>
@@ -1874,7 +1896,10 @@ export default function HotelDetail() {
                         onClick={() => setBookingForm({ ...bookingForm, paymentOption: choice.value })}
                         className={`hd-bm-payopt${isSelected ? ' is-selected' : ''}`}
                       >
-                        <span className="hd-bm-payopt-t">{choice.title}</span>
+                        <span className="hd-bm-payopt-top">
+                          <span className="hd-bm-payopt-t">{choice.title}</span>
+                          <span className="hd-bm-payopt-radio" aria-hidden="true" />
+                        </span>
                         <span className="hd-bm-payopt-s">{choice.subtitle}</span>
                         <span className="hd-bm-payopt-p">
                           {due !== null
@@ -1893,13 +1918,15 @@ export default function HotelDetail() {
                 )}
               </div>
 
-              <div className="hd-bm-grid">
-                <div className="hd-bm-grid-full">
-                  <label className="hd-bm-label">{t('form_payment_method')}</label>
+              <div className="hd-bm-method">
+                <span className="hd-bm-method-ic"><Icons.Money size={17} /></span>
+                <div className="hd-bm-method-body">
+                  <label className="hd-bm-label" htmlFor="hd-bm-pay-method">{t('form_payment_method')}</label>
                   <select
+                    id="hd-bm-pay-method"
                     value={bookingForm.paymentMethod}
                     onChange={(e) => setBookingForm({ ...bookingForm, paymentMethod: e.target.value })}
-                    className="hd-input"
+                    className="hd-input hd-bm-method-select"
                   >
                     {paymentMethodOptions.map((option) => (
                       <option key={option.value} value={option.value}>{option.label}</option>
@@ -1923,6 +1950,9 @@ export default function HotelDetail() {
                 </div>
               )}
 
+              </section>
+
+              <section className="hd-bm-sec">
               <h3 className="hd-bm-sec-h"><Icons.Document size={17} /> {t('modal_additional_info')}</h3>
               <div>
                 <label className="hd-bm-label">{t('form_special_requests')}</label>
@@ -1935,6 +1965,9 @@ export default function HotelDetail() {
                 />
               </div>
 
+              </section>
+
+              <section className="hd-bm-sec">
               {/* Booking policies — shown before payment confirmation */}
               <h3 className="hd-bm-sec-h"><Icons.ShieldCheck size={17} /> {t('booking_policies_title')}</h3>
               <div className="hd-bm-policies">
@@ -1958,6 +1991,8 @@ export default function HotelDetail() {
                   <span>{t('agree_policies_checkbox')}</span>
                 </label>
               </div>
+
+              </section>
 
               {slowConnection && !checkoutState && (
                 <div className="hd-bm-slow">
@@ -2000,6 +2035,84 @@ export default function HotelDetail() {
                   )}
                 </div>
               )}
+                </div>
+
+                <aside className="hd-bm-side">
+                  <div className="hd-bm-sumcard">
+                    <div className="hd-bm-sumcard-h"><Icons.Calendar size={15} /> {t('booking_summary')}</div>
+                    <div className="hd-bm-sumrow">
+                      <span>{t('room_type')}</span>
+                      <strong>{bookingForm.selectedRoomType || (rooms.length ? 'All room types' : '—')}</strong>
+                    </div>
+                    <div className="hd-bm-sumrow">
+                      <span>{t('check_in')}</span>
+                      <strong>{bookingForm.checkIn || '—'}</strong>
+                    </div>
+                    <div className="hd-bm-sumrow">
+                      <span>{t('check_out')}</span>
+                      <strong>{bookingForm.checkOut || '—'}</strong>
+                    </div>
+                    <div className="hd-bm-sumrow">
+                      <span>{t('nights')}</span>
+                      <strong>{modalNights > 0 ? modalNights : '—'}</strong>
+                    </div>
+                    <div className="hd-bm-sumrow">
+                      <span>{t('form_guests')}</span>
+                      <strong>{bookingForm.guests}</strong>
+                    </div>
+                    <div className="hd-bm-sumrow">
+                      <span>{t('form_rooms')}</span>
+                      <strong>{bookingForm.rooms}</strong>
+                    </div>
+                    <div className="hd-bm-sumrow">
+                      <span>{t('per_night')}</span>
+                      <strong>{modalPricePerNight != null && modalPricePerNight !== '' ? `₱${Number(modalPricePerNight).toLocaleString()}` : '—'}</strong>
+                    </div>
+                    <div className="hd-bm-sumtotal">
+                      <span>Total</span>
+                      <strong>₱{bookingTotal.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                    </div>
+                  </div>
+
+                  <div className="hd-bm-sumcard">
+                    <div className="hd-bm-sumcard-h"><Icons.User size={15} /> {t('guest')}</div>
+                    <div className="hd-bm-sumrow">
+                      <span>{t('form_full_name')}</span>
+                      <strong>{bookingForm.customerName || '—'}</strong>
+                    </div>
+                    <div className="hd-bm-sumrow">
+                      <span>{t('form_email')}</span>
+                      <strong>{bookingForm.customerEmail || '—'}</strong>
+                    </div>
+                    <div className="hd-bm-sumrow">
+                      <span>{t('form_phone')}</span>
+                      <strong>{bookingForm.customerPhone ? `+63${bookingForm.customerPhone}` : '—'}</strong>
+                    </div>
+                  </div>
+
+                  <div className="hd-bm-sumcard">
+                    <div className="hd-bm-sumcard-h"><Icons.Money size={15} /> {t('form_payment_method')}</div>
+                    <div className="hd-bm-sumrow">
+                      <span>Option</span>
+                      <strong>{paymentOptionChoices.find(c => c.value === selectedPaymentOption)?.title || '—'}</strong>
+                    </div>
+                    <div className="hd-bm-sumrow">
+                      <span>Method</span>
+                      <strong>{paymentMethodOptions.find(o => o.value === bookingForm.paymentMethod)?.label || '—'}</strong>
+                    </div>
+                    <div className="hd-bm-sumrow is-due">
+                      <span>Due now</span>
+                      <strong>{selectedDueNow !== null ? `₱${selectedDueNow.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</strong>
+                    </div>
+                    {selectedBalanceDue > 0 && (
+                      <div className="hd-bm-sumrow">
+                        <span>Balance</span>
+                        <strong>₱{selectedBalanceDue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                      </div>
+                    )}
+                  </div>
+                </aside>
+              </div>
             </div>
 
             <div className="hd-bm-foot">
