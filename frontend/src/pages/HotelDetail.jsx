@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
@@ -1581,7 +1582,7 @@ export default function HotelDetail() {
       </main>
 
       {/* Booking Modal */}
-      {showBookingModal && (
+      {showBookingModal && createPortal(
         <div className="hd-bm-back">
           <div className="hd-bm-card">
             {/* Modal Header */}
@@ -2134,11 +2135,12 @@ export default function HotelDetail() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Contact Owner Modal */}
-      {showContactModal && (
+      {showContactModal && createPortal(
         <div className="hd-modal-back">
           <div className="hd-cmodal">
             {/* Modal header */}
@@ -2232,11 +2234,12 @@ export default function HotelDetail() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Room Details Modal */}
-      {selectedRoom && (
+      {selectedRoom && createPortal(
         <div className="hd-modal-back hd-rm-back">
           <div className="hd-rm-panel">
             <button className="hd-rm-close" onClick={closeRoomModal} aria-label="Close">
@@ -2596,11 +2599,12 @@ export default function HotelDetail() {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Room Management Modal */}
-      {managingRoomsHotel && (
+      {managingRoomsHotel && createPortal(
         <div className="hd-modal-back hd-rm-back" onClick={(e) => { if (e.target === e.currentTarget) setManagingRoomsHotel(null); }}>
           <div className="hd-rm-panel">
             <button className="hd-rm-close" onClick={() => setManagingRoomsHotel(null)} aria-label="Close">
@@ -2614,11 +2618,12 @@ export default function HotelDetail() {
               onRoomsChanged={refreshRooms}
             />
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Image lightbox */}
-      {fullscreenImage && (
+      {fullscreenImage && createPortal(
         <div className="hd-lightbox" onClick={() => setFullscreenImage(null)}>
           <img src={fullscreenImage} alt={hotel.name} onClick={(e) => e.stopPropagation()} />
           <button
@@ -2628,11 +2633,12 @@ export default function HotelDetail() {
           >
             <Icons.X size={20} />
           </button>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Copy toast */}
-      {toastText && <div className="hd-toast">{toastText}</div>}
+      {toastText && createPortal(<div className="hd-toast">{toastText}</div>, document.body)}
     </div>
   );
 }
