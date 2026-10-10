@@ -100,7 +100,6 @@ const OwnerDashboard = () => {
   const [galleryUrlInput, setGalleryUrlInput] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
   const [managingRoomsHotel, setManagingRoomsHotel] = useState(null);
-  const [reportHotel, setReportHotel] = useState(null);
   const [showCoordinatePicker, setShowCoordinatePicker] = useState(false);
   const [mapInstance, setMapInstance] = useState(null);
 
@@ -1025,9 +1024,6 @@ const OwnerDashboard = () => {
     if (isLimitedOwner && !['hotels', 'profile'].includes(activeTab)) {
       setActiveTab('hotels');
     }
-    if (isLimitedOwner && reportHotel) {
-      setReportHotel(null);
-    }
   }, [isLimitedOwner, activeTab]);
 
   const isCurrentUser = (userId) => String(userId) === String(user?.user_id);
@@ -1853,33 +1849,6 @@ const OwnerDashboard = () => {
               </div>
             )}
 
-            {/* Room revenue report modal (full authorization only) */}
-            {reportHotel && !isLimitedOwner && (
-              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
-                onClick={(e) => { if (e.target === e.currentTarget) setReportHotel(null); }}
-              >
-                <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '900px', maxHeight: '92vh', overflowY: 'auto', boxShadow: '0 24px 64px rgba(0,0,0,0.22)', display: 'flex', flexDirection: 'column' }}>
-                  {/* Header */}
-                  <div style={{ background: 'linear-gradient(135deg,#2E7D32 0%,#66bb6a 100%)', borderRadius: '16px 16px 0 0', padding: '1.4rem 1.5rem', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexShrink: 0 }}>
-                    <div>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 700, opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.3rem' }}>Room Revenue Report</div>
-                      <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>{reportHotel.hotel_name || reportHotel.name}</div>
-                      <div style={{ fontSize: '0.82rem', opacity: 0.8, marginTop: '2px' }}>{reportHotel.location}</div>
-                    </div>
-                    <button onClick={() => setReportHotel(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '34px', height: '34px', cursor: 'pointer', color: '#fff', fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>✕</button>
-                  </div>
-                  {/* Body */}
-                  <div style={{ overflowY: 'auto', flex: 1 }}>
-                    <RoomRevenueReport hotelId={reportHotel.hotel_id} hotelName={reportHotel.hotel_name || reportHotel.name} />
-                  </div>
-                  {/* Footer */}
-                  <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e5e7eb', background: '#f9fafb', borderRadius: '0 0 16px 16px', flexShrink: 0, textAlign: 'right' }}>
-                    <button className="gov-btn gov-btn-primary" onClick={() => setReportHotel(null)}>Done</button>
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
@@ -2003,18 +1972,6 @@ const OwnerDashboard = () => {
                       >
                         <Icons.Hotel size={16} style={{ verticalAlign: 'middle', marginRight: '0.3rem' }} /> Rooms
                       </button>
-                      {/* Financial reports follow the full-authorization gate
-                          (same rule as the Analytics tab). */}
-                      {!isLimitedOwner && (
-                        <button
-                          className="gov-btn gov-btn-secondary"
-                          onClick={() => setReportHotel(hotel)}
-                          style={{ flex: 1, whiteSpace: 'nowrap' }}
-                          title="View room revenue report"
-                        >
-                          <Icons.ChartPie size={16} style={{ verticalAlign: 'middle', marginRight: '0.3rem' }} /> Report
-                        </button>
-                      )}
                     </div>
                   </div>
                 </div>
@@ -3320,20 +3277,29 @@ const OwnerDashboard = () => {
 
           {/* Reports & Analytics */}
           {activeTab === 'analytics' && (
-            <ReportsAndAnalyticsDashboard
-              data={analyticsData}
-              stats={{
-                totals: {
-                  bookings: stats?.bookingStats?.total_bookings || 0,
-                  hotels: stats?.hotelCount || 0,
-                  users: 0
-                },
-                roleDistribution: []
-              }}
-              loading={analyticsLoading}
-              userRole="owner"
-              onExport={(type) => exportReport(type)}
-            />
+            <>
+              <ReportsAndAnalyticsDashboard
+                data={analyticsData}
+                stats={{
+                  totals: {
+                    bookings: stats?.bookingStats?.total_bookings || 0,
+                    hotels: stats?.hotelCount || 0,
+                    users: 0
+                  },
+                  roleDistribution: []
+                }}
+                loading={analyticsLoading}
+                userRole="owner"
+                onExport={(type) => exportReport(type)}
+              />
+              {hotels.map((hotel) => (
+                <RoomRevenueReport
+                  key={hotel.hotel_id}
+                  hotelId={hotel.hotel_id}
+                  hotelName={hotel.hotel_name || hotel.name}
+                />
+              ))}
+            </>
           )}
 
           {/* Business Profile Management */}
