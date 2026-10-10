@@ -157,6 +157,8 @@ const ItineraryBuilder = () => {
   
   const [itemsByDay, setItemsByDay] = useState({ 1: [] });
   const [currentDay, setCurrentDay] = useState(1);
+  const [openDayPickerId, setOpenDayPickerId] = useState(null);
+  const dayPickerRef = useRef(null);
   const [savedItineraries, setSavedItineraries] = useState([]);
   const [savedSearch, setSavedSearch] = useState('');
   const [templates, setTemplates] = useState([]);
@@ -836,6 +838,23 @@ const ItineraryBuilder = () => {
     [itemsByDay]
   );
 
+  const totalDays = useMemo(() => {
+    const fromDates = parseInt(itinerary.durationDays, 10) || 1;
+    const fromKeys = sortedDayNumbers.length ? sortedDayNumbers[sortedDayNumbers.length - 1] : 1;
+    return Math.max(fromDates, fromKeys, 1);
+  }, [itinerary.durationDays, sortedDayNumbers]);
+
+  useEffect(() => {
+    if (openDayPickerId === null || openDayPickerId === undefined) return undefined;
+    const handlePointerDown = (e) => {
+      if (dayPickerRef.current && !dayPickerRef.current.contains(e.target)) {
+        setOpenDayPickerId(null);
+      }
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [openDayPickerId]);
+
   const scrollToSection = (ref) => {
     ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -1182,16 +1201,41 @@ const ItineraryBuilder = () => {
                           >
                             + {t('day')} {currentDay}
                           </button>
-                          {sortedDayNumbers.map((day) => (
+                          <div
+                            className="atc-day-picker-wrap"
+                            ref={openDayPickerId === attraction.id ? dayPickerRef : null}
+                          >
                             <button
-                              key={day}
                               type="button"
-                              className={day === currentDay ? 'atc-day-btn-active' : 'atc-day-btn'}
-                              onClick={(e) => { e.stopPropagation(); addToDay(attraction, day); }}
+                              className={`atc-day-picker-trigger${openDayPickerId === attraction.id ? ' atc-day-picker-trigger--open' : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenDayPickerId(prev => (prev === attraction.id ? null : attraction.id));
+                              }}
                             >
-                              {t('day')} {day}
+                              {t('day')} <span className="atc-day-picker-caret">▾</span>
                             </button>
-                          ))}
+                            {openDayPickerId === attraction.id && (
+                              <div className="atc-day-picker" onClick={(e) => e.stopPropagation()}>
+                                <div className="atc-day-picker-grid">
+                                  {Array.from({ length: totalDays }, (_, i) => i + 1).map((day) => (
+                                    <button
+                                      key={day}
+                                      type="button"
+                                      className={day === currentDay ? 'atc-day-btn-active' : 'atc-day-btn'}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        addToDay(attraction, day);
+                                        setOpenDayPickerId(null);
+                                      }}
+                                    >
+                                      {day}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

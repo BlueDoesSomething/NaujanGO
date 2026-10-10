@@ -637,6 +637,69 @@
   color: white !important;
 }
 
+/* Compact day picker: scales to any trip length without flooding the card */
+.atc-day-picker-wrap {
+  position: relative;
+}
+
+.itinerary-attraction-day-actions .atc-day-picker-trigger {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.itinerary-attraction-day-actions .atc-day-picker-trigger:hover,
+.itinerary-attraction-day-actions .atc-day-picker-trigger--open {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+.atc-day-picker-caret {
+  font-size: 10px;
+  opacity: 0.8;
+  line-height: 1;
+}
+
+.atc-day-picker {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  min-width: 176px;
+  padding: 8px;
+  border-radius: 14px;
+  background: rgba(10, 22, 40, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+
+.atc-day-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+  max-height: 148px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.itinerary-attraction-day-actions .atc-day-picker-grid .atc-day-btn,
+.itinerary-attraction-day-actions .atc-day-picker-grid .atc-day-btn-active {
+  padding: 5px 0;
+  border-radius: 8px;
+  font-size: 11px;
+  text-align: center;
+  width: 100%;
+}
+
+[data-theme="light"] .atc-day-picker {
+  background: rgba(15, 23, 42, 0.9);
+}
+
 /* Mobile: horizontal scroll + itinerary responsive */
 @media (max-width: 768px) {
   .itinerary-attraction-grid {
