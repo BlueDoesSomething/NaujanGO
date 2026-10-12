@@ -682,16 +682,19 @@ router.get('/bookings/archived', async (req, res) => {
 // Get dashboard statistics
 router.get('/dashboard/stats', async (req, res) => {
   try {
-    // Get total counts
-    const [userCount] = await db.promise().query('SELECT COUNT(*) as count FROM users');
-    const [hotelCount] = await db.promise().query('SELECT COUNT(*) as count FROM hotels');
-    const [bookingCount] = await db.promise().query('SELECT COUNT(*) as count FROM hotel_bookings');
-    const [attractionCount] = await db.promise().query('SELECT COUNT(*) as count FROM attractions');
+    // Get total counts — archived records are excluded so the Overview always
+    // matches each management list (bookings/hotels/attractions/users hide
+    // archived rows by default; the Archive tab is their only home).
+    const [userCount] = await db.promise().query('SELECT COUNT(*) as count FROM users WHERE archived = 0');
+    const [hotelCount] = await db.promise().query('SELECT COUNT(*) as count FROM hotels WHERE archived = 0');
+    const [bookingCount] = await db.promise().query('SELECT COUNT(*) as count FROM hotel_bookings WHERE archived = 0');
+    const [attractionCount] = await db.promise().query('SELECT COUNT(*) as count FROM attractions WHERE archived = 0');
 
     // Get role distribution
     const [roleDistribution] = await db.promise().query(`
       SELECT role, COUNT(*) as count 
       FROM users 
+      WHERE archived = 0
       GROUP BY role
     `);
 
@@ -699,6 +702,7 @@ router.get('/dashboard/stats', async (req, res) => {
     const [recentUsers] = await db.promise().query(`
       SELECT user_id, username, email, role, created_at 
       FROM users 
+      WHERE archived = 0
       ORDER BY created_at DESC 
       LIMIT 10
     `);
@@ -711,6 +715,7 @@ router.get('/dashboard/stats', async (req, res) => {
         SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
         SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
       FROM hotel_bookings
+      WHERE archived = 0
     `);
 
     res.json({
