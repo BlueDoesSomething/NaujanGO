@@ -10,6 +10,7 @@ const DemographicsReminder = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [dismissed, setDismissed] = useState(false);
+  const [navOffset, setNavOffset] = useState(0);
 
   useEffect(() => {
     if (user?.user_id) {
@@ -17,6 +18,20 @@ const DemographicsReminder = () => {
       setDismissed(stored === 'true');
     }
   }, [user?.user_id]);
+
+  // On mobile the navbar is position: fixed and takes no flow space, so the
+  // banner must be pushed down by the navbar's real height (it changes with
+  // the .scrolled padding). Desktop navbar is sticky (in flow) → no offset.
+  useEffect(() => {
+    const measure = () => {
+      const nav = document.querySelector('.navbar');
+      const isFixed = window.matchMedia('(max-width: 768px)').matches;
+      setNavOffset(isFixed && nav ? nav.offsetHeight : 0);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, []);
 
   const needsDemographics =
     user?.is_oauth_user === true &&
@@ -35,7 +50,11 @@ const DemographicsReminder = () => {
   };
 
   return (
-    <div style={bannerStyle} role="alert" aria-live="polite">
+    <div
+      style={{ ...bannerStyle, marginTop: `calc(0.75rem + ${navOffset}px)` }}
+      role="alert"
+      aria-live="polite"
+    >
       <div style={iconStyle} aria-hidden="true">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
