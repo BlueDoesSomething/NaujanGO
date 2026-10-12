@@ -1862,6 +1862,37 @@ router.delete('/itineraries/:id', async (req, res) => {
   }
 });
 
+// Update itinerary details (admin)
+router.put('/itineraries/:id', async (req, res) => {
+  const { id } = req.params;
+  const { name, description, start_date, end_date, status } = req.body;
+
+  try {
+    const [result] = await db.promise().query(
+      `UPDATE itineraries
+       SET name = ?, description = ?, start_date = ?, end_date = ?, status = ?
+       WHERE itinerary_id = ?`,
+      [
+        name,
+        description || null,
+        start_date || null,
+        end_date || null,
+        status || 'planning',
+        id
+      ]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Itinerary not found' });
+    }
+
+    res.json({ success: true, message: 'Itinerary updated successfully' });
+  } catch (error) {
+    console.error('Update itinerary error:', error);
+    res.status(500).json({ error: 'Failed to update itinerary' });
+  }
+});
+
 // Restore archived booking
 router.put('/bookings/:bookingId/restore', async (req, res) => {
   const { bookingId } = req.params;
