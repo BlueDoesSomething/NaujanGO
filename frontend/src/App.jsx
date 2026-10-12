@@ -45,6 +45,7 @@ import OAuthCallback from './pages/OAuthCallback.jsx';
 import Terms from './pages/Terms.jsx';
 import Privacy from './pages/Privacy.jsx';
 import AnnouncementBar from './components/AnnouncementBar.jsx';
+import DemographicsReminder from './components/DemographicsReminder.jsx';
 import { getApiBaseUrl } from './api';
 import { loadCachedSetting, saveCachedSetting } from './utils/siteSettingsCache';
 
@@ -254,6 +255,7 @@ const App = () => {
         <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <AnnouncementBar />
           <Navbar />
+          <DemographicsReminder />
           <FloatingLeaves />
           <main key={`lang-content-${language}`} style={{ flexGrow: 1, width: '100%' }}>
             <Routes>

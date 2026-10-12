@@ -33,12 +33,6 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // OAuth users who skipped registration still have DB-default gender/user_type
-  const needsDemographics =
-    user?.is_oauth_user === true &&
-    (!user?.gender || user.gender === 'prefer_not_to_say') &&
-    (!user?.user_type || user.user_type === 'foreigner');
-
   // Debug logging
   React.useEffect(() => {
     console.log('[Navbar] isLoggedIn:', isLoggedIn, 'loading:', loading, 'path:', location.pathname, 'user:', user?.email);
@@ -391,18 +385,12 @@ const Navbar = () => {
                         alt="Profile" 
                         className="account-avatar-img"
                       />
-                      {needsDemographics && (
-                        <span className="account-alert-badge" aria-label="Profile incomplete">!</span>
-                      )}
                     </span>
                   ) : (
                     <span className="account-avatar-wrap">
                       <span className="account-avatar">
                         {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
                       </span>
-                      {needsDemographics && (
-                        <span className="account-alert-badge" aria-label="Profile incomplete">!</span>
-                      )}
                     </span>
                   )}
                   <span className="account-name">

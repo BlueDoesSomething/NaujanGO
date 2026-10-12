@@ -58,6 +58,19 @@ const Profile = () => {
     }
   };
 
+  // Deep-link from the navbar reminder banner: /profile?edit=demographics
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('edit') === 'demographics') {
+      setIsEditing(true);
+      const timer = setTimeout(() => {
+        const el = document.querySelector('select[name="gender"]');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   useEffect(() => {
     const loadProfile = async () => {
       try {

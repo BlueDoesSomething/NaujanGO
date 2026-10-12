@@ -2103,17 +2103,3 @@ body.menu-open .chatbot-container {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
-/* 4. Alert badge — bare yellow '!' at avatar top-left, no border/box */
-.account-alert-badge {
-  position: absolute;
-  top: -8px;
-  left: -7px;
-  color: #facc15;
-  font-size: 15px;
-  font-weight: 900;
-  line-height: 1;
-  pointer-events: none;
-  z-index: 2;
-  text-shadow: 0 0 3px rgba(0, 0, 0, 0.6);
-}
