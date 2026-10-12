@@ -33,6 +33,7 @@ import aboutRouter from './routes/about.js';
 import translationAdminRouter from './routes/translationAdmin.js';
 import { trackVisitorCount } from './middleware/trackVisitor.js';
 import detectLanguage from './middleware/detectLanguage.js';
+import { requestLogger, logEvent, startRetentionSweep } from './middleware/logger.js';
 import { SESSION_SECRET } from './config/security.js';
 import { csrfProtection } from './middleware/csrf.js';
 import { FRONTEND_URL } from './config/publicUrls.js';
@@ -153,6 +154,9 @@ app.use(trackVisitorCount);
 
 // Language detection middleware (sets req.language)
 app.use(detectLanguage);
+
+// Record every API/auth request in system_logs (admin System Logs page)
+app.use(requestLogger);
 
 // Routes
 app.use('/api/chatbot', chatbotRouter);
@@ -376,6 +380,55 @@ app.get('/payment-success', (req, res) => {
 app.get('/', (req, res) => {
   res.send('Backend server for Chatbot is running');
 });
+
+// 404 for unmatched API/auth routes (plain middleware so it works on Express 5)
+app.use((req, res, next) => {
+  const path = req.originalUrl || req.url || '';
+  if (!path.startsWith('/api') && !path.startsWith('/auth')) return next();
+  res.status(404).json({ error: 'Not found' });
+});
+
+// Central error handler: record it in system_logs, then return JSON.
+// Express 5 forwards rejected async route promises here automatically.
+app.use((err, req, res, next) => {
+  const status = err.status || err.statusCode || 500;
+  const path = (req.originalUrl || req.url || '').split('?')[0];
+  if (status >= 500) {
+    logEvent({
+      level: 'error',
+      source: 'http',
+      message: `${req.method} ${path} → ${status}: ${err.message}`,
+      meta: { method: req.method, path, status, stack: err.stack },
+      userId: req.user?.user_id ?? null,
+      ip: req.ip || req.socket?.remoteAddress || null
+    });
+  }
+  if (res.headersSent) return next(err);
+  res.status(status).json({ error: status >= 500 ? 'Internal server error' : err.message });
+});
+
+// Process-level failures: record them so the admin System Logs page can show them.
+process.on('unhandledRejection', (reason) => {
+  logEvent({
+    level: 'error',
+    source: 'process',
+    message: `Unhandled promise rejection: ${reason instanceof Error ? reason.message : String(reason)}`,
+    meta: { stack: reason instanceof Error ? reason.stack : undefined }
+  });
+});
+process.on('uncaughtException', (err) => {
+  logEvent({
+    level: 'error',
+    source: 'process',
+    message: `Uncaught exception: ${err.message}`,
+    meta: { name: err.name, stack: err.stack }
+  });
+  // Process state may be corrupted — flush the log then exit.
+  setTimeout(() => process.exit(1), 250).unref?.();
+});
+
+// Purge log entries older than LOG_RETENTION_DAYS (default 30)
+startRetentionSweep();
 
 import { initSocket } from './socket.js';
 import { ensureFlexiblePaymentSchema, ensureHotelPolicySchema, ensureBusinessLegitimacySchema, ensureRoomFieldsSchema, ensureReviewRoomIdBackfill } from './utils/dbSchema.js';

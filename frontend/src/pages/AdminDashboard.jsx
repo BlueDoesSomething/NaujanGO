@@ -872,6 +872,18 @@ const AdminDashboard = () => {
   const [archivedAttractions, setArchivedAttractions] = useState([]);
   const [archiveSubSection, setArchiveSubSection] = useState('bookings');
 
+  // ── System Logs ────────────────────────────────────────────────────────
+  const [systemLogs, setSystemLogs] = useState([]);
+  const [systemLogsTotal, setSystemLogsTotal] = useState(0);
+  const [systemLogsLoading, setSystemLogsLoading] = useState(false);
+  const [logLevel, setLogLevel] = useState('all');
+  const [logSearchInput, setLogSearchInput] = useState('');
+  const [logSearch, setLogSearch] = useState('');
+  const [logPage, setLogPage] = useState(1);
+  const [expandedLogId, setExpandedLogId] = useState(null);
+  const [logStats, setLogStats] = useState(null);
+  const [logClearing, setLogClearing] = useState(false);
+
   // ── Pagination ─────────────────────────────────────────────────────────
   const ADMIN_TABLE_SIZE = 10;
   const ADMIN_CARD_SIZE  = 8;
@@ -1729,6 +1741,7 @@ const AdminDashboard = () => {
   // Deep links: /admin/tourist-arrivals opens the consolidated Reports page
   // scrolled to Tourism Arrivals; /admin/reports opens Reports at the top.
   const arrivalsDeepLinkRef = useRef(false);
+  const systemLogsDeepLinkRef = useRef(false);
   useEffect(() => {
     const path = location.pathname;
     if (path.endsWith('/tourist-arrivals')) {
@@ -1740,8 +1753,16 @@ const AdminDashboard = () => {
     } else if (path.endsWith('/reports')) {
       arrivalsDeepLinkRef.current = false;
       if (activeModule !== 'reports') setActiveModule('reports');
+    } else if (path.endsWith('/system-logs')) {
+      arrivalsDeepLinkRef.current = false;
+      // One-shot: only jump on first entry so the nav isn't stuck on this module.
+      if (!systemLogsDeepLinkRef.current) {
+        systemLogsDeepLinkRef.current = true;
+        if (activeModule !== 'system-logs') setActiveModule('system-logs');
+      }
     } else {
       arrivalsDeepLinkRef.current = false;
+      systemLogsDeepLinkRef.current = false;
     }
   }, [location.pathname, activeModule]);
 
@@ -1920,6 +1941,70 @@ const AdminDashboard = () => {
     return () => clearInterval(poller);
   }, [chatbotTrainingJob?.jobId, chatbotTrainingJob?.status]);
 
+  const loadSystemLogs = async () => {
+    try {
+      setSystemLogsLoading(true);
+      const params = new URLSearchParams({ page: String(logPage), limit: '50' });
+      if (logLevel !== 'all') params.set('level', logLevel);
+      if (logSearch) params.set('q', logSearch);
+      const response = await api.get(`/admin/logs?${params.toString()}`);
+      setSystemLogs(response.data.rows || []);
+      setSystemLogsTotal(response.data.total || 0);
+    } catch (error) {
+      console.error('Error loading system logs:', error);
+      setSystemLogs([]);
+      setSystemLogsTotal(0);
+    } finally {
+      setSystemLogsLoading(false);
+    }
+  };
+
+  const loadLogStats = async () => {
+    try {
+      const response = await api.get('/admin/logs/stats?hours=24');
+      setLogStats(response.data);
+    } catch (error) {
+      console.error('Error loading log stats:', error);
+    }
+  };
+
+  const clearSystemLogs = async () => {
+    if (!window.confirm('Clear all system logs? This cannot be undone.')) return;
+    try {
+      setLogClearing(true);
+      await api.delete('/admin/logs');
+      setExpandedLogId(null);
+      await Promise.all([loadSystemLogs(), loadLogStats()]);
+    } catch (error) {
+      console.error('Error clearing system logs:', error);
+      alert('Failed to clear system logs.');
+    } finally {
+      setLogClearing(false);
+    }
+  };
+
+  const formatLogDetail = (row) => {
+    let meta = null;
+    if (row.meta) {
+      try {
+        meta = JSON.parse(row.meta);
+      } catch {
+        meta = row.meta;
+      }
+    }
+    const detail = {
+      id: row.id,
+      time: row.created_at,
+      level: row.level,
+      source: row.source,
+      message: row.message,
+      user_id: row.user_id ?? null,
+      ip: row.ip ?? null,
+      ...(meta && typeof meta === 'object' ? meta : meta ? { meta } : {})
+    };
+    return JSON.stringify(detail, null, 2);
+  };
+
   const loadArchivedBookings = async () => {
     try {
       const response = await api.get('/admin/bookings/archived');
@@ -1958,6 +2043,39 @@ const AdminDashboard = () => {
       setArchivedAttractions([]);
     }
   };
+
+  // System logs: load stats once for the nav badge + Overview card
+  useEffect(() => {
+    loadLogStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // System logs: debounce the search box into the applied query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLogSearch((prev) => {
+        const next = logSearchInput.trim();
+        if (prev === next) return prev;
+        setLogPage(1);
+        return next;
+      });
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [logSearchInput]);
+
+  // System logs: (re)fetch rows when the module opens or filters change
+  useEffect(() => {
+    if (activeModule !== 'system-logs') return;
+    loadSystemLogs();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeModule, logPage, logLevel, logSearch]);
+
+  // Overview: refresh 24h health counts each time the page opens
+  useEffect(() => {
+    if (activeModule !== 'overview') return;
+    loadLogStats();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeModule]);
 
   const handleItineraryView = async (itinerary) => {
     try {
@@ -2170,6 +2288,7 @@ const AdminDashboard = () => {
     { id: 'moderation', label: 'Moderation', icon: <Icons.Chat size={22} /> },
     { id: 'reports', label: 'Reports', icon: <Icons.ChartLineUp size={22} /> },
     { id: 'archive', label: 'Archive', icon: <Icons.Archive size={22} /> },
+    { id: 'system-logs', label: 'System Logs', icon: <Icons.Document size={22} /> },
   ];
 
   const filteredHotels = hotels.filter((hotel) => {
@@ -2302,10 +2421,24 @@ const AdminDashboard = () => {
                   if (mod.id === 'reports') { loadAnalytics(); setReportsInitialCategory('overview'); }
                   if (mod.id === 'moderation') navigate('/admin/moderation');
                   if (mod.id === 'archive') { loadArchivedBookings(); loadArchivedItineraries(); loadArchivedHotels(); loadArchivedAttractions(); }
+                  if (mod.id === 'system-logs') loadLogStats();
                 }}
               >
                 <span className="gov-nav-btn__icon">{mod.icon}</span>
                 <span className="gov-nav-btn__label">{mod.label}</span>
+                {mod.id === 'system-logs' && Number(logStats?.error || 0) > 0 && (
+                  <span
+                    title={`${logStats.error} error(s) in the last 24 hours`}
+                    style={{
+                      marginLeft: '0.4rem', minWidth: '18px', height: '18px', padding: '0 5px',
+                      borderRadius: '999px', background: '#dc2626', color: '#fff',
+                      fontSize: '0.68rem', fontWeight: 800, display: 'inline-flex',
+                      alignItems: 'center', justifyContent: 'center'
+                    }}
+                  >
+                    {logStats.error}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -2359,7 +2492,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Second Row: Booking Breakdown + Recent Users */}
-                <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div className="gov-grid-3" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
 
                   {/* Booking Status */}
                   <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.5rem' }}>
@@ -2422,6 +2555,50 @@ const AdminDashboard = () => {
                         ))}
                       </div>
                     </div>
+                  </div>
+
+                  {/* System Health */}
+                  <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                      <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>System Health</h2>
+                      <button className="gov-btn gov-btn-ghost" style={{ fontSize: '0.8rem', padding: '0.3rem 0.9rem' }}
+                        onClick={() => setActiveModule('system-logs')}>View logs →</button>
+                    </div>
+                    {!logStats ? (
+                      <div style={{ fontSize: '0.85rem', color: '#9ca3af' }}>Loading…</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                          <div style={{ background: Number(logStats.error) > 0 ? '#fef2f2' : '#f0fdf4', borderRadius: 8, padding: '0.75rem 0.9rem' }}>
+                            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: Number(logStats.error) > 0 ? '#dc2626' : '#16a34a', lineHeight: 1 }}>
+                              {Number(logStats.error) || 0}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151', marginTop: '0.25rem' }}>Errors (24h)</div>
+                          </div>
+                          <div style={{ background: Number(logStats.warn) > 0 ? '#fffbeb' : '#f0fdf4', borderRadius: 8, padding: '0.75rem 0.9rem' }}>
+                            <div style={{ fontSize: '1.35rem', fontWeight: 800, color: Number(logStats.warn) > 0 ? '#d97706' : '#16a34a', lineHeight: 1 }}>
+                              {Number(logStats.warn) || 0}
+                            </div>
+                            <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#374151', marginTop: '0.25rem' }}>Warnings (24h)</div>
+                          </div>
+                        </div>
+                        {logStats.latest_error ? (
+                          <div style={{ fontSize: '0.78rem', color: '#6b7280', background: '#f9fafb', border: '1px solid #f3f4f6', borderRadius: 8, padding: '0.6rem 0.75rem' }}>
+                            <div style={{ fontWeight: 700, color: '#374151', marginBottom: '0.2rem' }}>Latest error</div>
+                            <div style={{ color: '#dc2626', wordBreak: 'break-word' }}>
+                              {String(logStats.latest_error.message || '').slice(0, 160)}
+                            </div>
+                            <div style={{ color: '#9ca3af', marginTop: '0.15rem' }}>
+                              {new Date(logStats.latest_error.created_at).toLocaleString()}
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: 600 }}>
+                            No errors in the last 24 hours
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -5562,8 +5739,8 @@ const AdminDashboard = () => {
                         <label style={{ display: 'block', fontWeight: 700, fontSize: '0.875rem', color: '#374151', marginBottom: '0.4rem' }}>Message</label>
                         <input type="text" value={announcement.message} maxLength={200}
                           onChange={e => setAnnouncement(p => ({ ...p, message: e.target.value }))}
-                          className="gov-input" style={{ marginBottom: '1.25rem', marginTop: 0 }} placeholder="Enter your announcement message…" />
-                        <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
+                            className="gov-input" style={{ marginBottom: '1.25rem', marginTop: 0 }} placeholder="Enter your announcement message…" />
+                <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
                           <div>
                             <label style={{ display: 'block', fontWeight: 700, fontSize: '0.875rem', color: '#374151', marginBottom: '0.4rem' }}>Link Label <span style={{ fontWeight: 400, color: '#9ca3af' }}>(optional)</span></label>
                             <input type="text" value={announcement.linkLabel} maxLength={60}
@@ -7343,6 +7520,155 @@ const AdminDashboard = () => {
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* System Logs */}
+          {activeModule === 'system-logs' && (
+            <div>
+              <h1 className="gov-page-title">
+                <Icons.Document size={32} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> System Logs
+              </h1>
+
+              {/* Stats */}
+              <div className="gov-grid-4" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
+                {[
+                  { label: 'Errors (24h)', value: Number(logStats?.error) || 0, color: '#dc2626', bg: '#fef2f2' },
+                  { label: 'Warnings (24h)', value: Number(logStats?.warn) || 0, color: '#d97706', bg: '#fffbeb' },
+                  { label: 'Info (24h)', value: Number(logStats?.info) || 0, color: '#6b7280', bg: '#f3f4f6' },
+                  { label: 'Matching entries', value: systemLogsTotal, color: '#16a34a', bg: '#f0fdf4' }
+                ].map((card) => (
+                  <div key={card.label} style={{ background: card.bg, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1rem 1.25rem' }}>
+                    <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280' }}>
+                      {card.label}
+                    </div>
+                    <div style={{ fontSize: '1.6rem', fontWeight: 800, color: card.color, lineHeight: 1.2 }}>
+                      {card.value.toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Filter bar */}
+              <div className="gov-glass-panel" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', padding: '1rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                  {[{ id: 'all', label: 'All' }, { id: 'error', label: 'Error' }, { id: 'warn', label: 'Warn' }, { id: 'info', label: 'Info' }].map((lv) => (
+                    <button
+                      key={lv.id}
+                      className={`gov-btn ${logLevel === lv.id ? 'gov-btn-primary' : 'gov-btn-ghost'}`}
+                      style={{ fontSize: '0.8rem', padding: '0.35rem 0.9rem' }}
+                      onClick={() => { setLogLevel(lv.id); setLogPage(1); }}
+                    >
+                      {lv.label}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  className="gov-input"
+                  style={{ flex: '1 1 220px', minWidth: '180px', maxWidth: '360px' }}
+                  placeholder="Search message or source…"
+                  value={logSearchInput}
+                  onChange={(e) => setLogSearchInput(e.target.value)}
+                />
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+                  <button className="gov-btn gov-btn-ghost" onClick={() => { loadSystemLogs(); loadLogStats(); }} disabled={systemLogsLoading}>
+                    {systemLogsLoading ? 'Loading…' : 'Refresh'}
+                  </button>
+                  <button className="gov-btn gov-btn-danger" onClick={clearSystemLogs} disabled={logClearing}>
+                    {logClearing ? 'Clearing…' : 'Clear all'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Log table */}
+              <div className="gov-glass-panel">
+                <div className="gov-table-wrap">
+                  <table className="gov-table" style={{ fontSize: '0.85rem' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: '165px' }}>Time</th>
+                        <th style={{ width: '85px' }}>Level</th>
+                        <th style={{ width: '75px' }}>Source</th>
+                        <th>Message</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {systemLogs.map((row) => {
+                        const levelStyles = row.level === 'error'
+                          ? { bg: '#fef2f2', fg: '#dc2626' }
+                          : row.level === 'warn'
+                            ? { bg: '#fffbeb', fg: '#d97706' }
+                            : { bg: '#f3f4f6', fg: '#6b7280' };
+                        const isExpanded = expandedLogId === row.id;
+                        return (
+                          <React.Fragment key={row.id}>
+                            <tr
+                              onClick={() => setExpandedLogId(isExpanded ? null : row.id)}
+                              style={{ cursor: 'pointer', background: isExpanded ? '#f9fafb' : undefined }}
+                            >
+                              <td style={{ whiteSpace: 'nowrap', color: '#6b7280' }}>
+                                {new Date(row.created_at).toLocaleString()}
+                              </td>
+                              <td>
+                                <span style={{
+                                  display: 'inline-block', padding: '0.15rem 0.55rem', borderRadius: '999px',
+                                  background: levelStyles.bg, color: levelStyles.fg,
+                                  fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase'
+                                }}>
+                                  {row.level}
+                                </span>
+                              </td>
+                              <td style={{ color: '#6b7280' }}>{row.source}</td>
+                              <td style={{ wordBreak: 'break-word' }}>
+                                {row.message}
+                                <span style={{ marginLeft: '0.5rem', fontSize: '0.7rem', color: '#9ca3af' }}>
+                                  {isExpanded ? '▲' : '▼'}
+                                </span>
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr>
+                                <td colSpan={4} style={{ background: '#f9fafb', padding: '0.75rem 1rem' }}>
+                                  <pre style={{
+                                    whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '0.75rem',
+                                    margin: 0, maxHeight: '320px', overflow: 'auto', color: '#374151'
+                                  }}>
+                                    {formatLogDetail(row)}
+                                  </pre>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {systemLogsLoading && systemLogs.length === 0 && (
+                  <div className="gov-empty"><p>Loading…</p></div>
+                )}
+                {!systemLogsLoading && systemLogs.length === 0 && (
+                  <div className="gov-empty">
+                    <p>
+                      No log entries found
+                      {logLevel !== 'all' || logSearch ? ' for the current filters' : ''}
+                    </p>
+                  </div>
+                )}
+                {systemLogsTotal > 50 && (
+                  <div style={{ padding: '1rem', display: 'flex', justifyContent: 'center' }}>
+                    <Pagination
+                      page={logPage}
+                      totalPages={Math.max(1, Math.ceil(systemLogsTotal / 50))}
+                      onPageChange={(p) => { setLogPage(p); setExpandedLogId(null); }}
+                      totalItems={systemLogsTotal}
+                      pageSize={50}
+                      label="logs"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </main>

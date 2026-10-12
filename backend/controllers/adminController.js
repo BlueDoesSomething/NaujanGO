@@ -1937,6 +1937,95 @@ router.put('/payments/:paymentId/restore', async (req, res) => {
   }
 });
 
+// ---- System logs (admin "System Logs" page) ----
+
+// Get paginated system logs, newest first
+router.get('/logs', async (req, res) => {
+  try {
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const limit = Math.min(200, Math.max(1, Number.parseInt(req.query.limit, 10) || 50));
+    const offset = (page - 1) * limit;
+    const level = ['info', 'warn', 'error'].includes(req.query.level) ? req.query.level : null;
+    const q = String(req.query.q || '').trim().slice(0, 200);
+
+    const where = [];
+    const params = [];
+    if (level) {
+      where.push('level = ?');
+      params.push(level);
+    }
+    if (q) {
+      where.push('(message LIKE ? OR source LIKE ?)');
+      params.push(`%${q}%`, `%${q}%`);
+    }
+    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
+    const [countRows] = await db.promise().query(`SELECT COUNT(*) AS total FROM system_logs ${whereSql}`, params);
+    const total = Number(countRows[0]?.total || 0);
+
+    const [rows] = await db.promise().query(
+      `SELECT id, level, source, message, meta, user_id, ip, created_at
+       FROM system_logs ${whereSql}
+       ORDER BY id DESC
+       LIMIT ${limit} OFFSET ${offset}`,
+      params
+    );
+
+    res.json({ rows, total, page, limit });
+  } catch (error) {
+    console.error('Get system logs error:', error);
+    res.status(500).json({ error: 'Failed to fetch system logs' });
+  }
+});
+
+// Counts by level for a time window (Overview health card + nav badge)
+router.get('/logs/stats', async (req, res) => {
+  try {
+    const rawHours = Number.parseInt(req.query.hours, 10);
+    const hours = Math.min(24 * 90, Math.max(1, Number.isFinite(rawHours) ? rawHours : 24));
+
+    const [rows] = await db.promise().query(
+      `SELECT level, COUNT(*) AS count FROM system_logs
+       WHERE created_at >= NOW() - INTERVAL ${hours} HOUR
+       GROUP BY level`
+    );
+
+    const stats = { info: 0, warn: 0, error: 0 };
+    rows.forEach((row) => {
+      if (stats[row.level] !== undefined) stats[row.level] = Number(row.count);
+    });
+
+    const [latestRows] = await db.promise().query(
+      `SELECT message, created_at FROM system_logs
+       WHERE level = 'error' AND created_at >= NOW() - INTERVAL ${hours} HOUR
+       ORDER BY id DESC
+       LIMIT 1`
+    );
+
+    res.json({
+      window_hours: hours,
+      ...stats,
+      latest_error: latestRows[0]
+        ? { message: latestRows[0].message, created_at: latestRows[0].created_at }
+        : null
+    });
+  } catch (error) {
+    console.error('Get log stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch log stats' });
+  }
+});
+
+// Clear all system logs
+router.delete('/logs', async (req, res) => {
+  try {
+    const [result] = await db.promise().query('DELETE FROM system_logs');
+    res.json({ success: true, deleted: result.affectedRows });
+  } catch (error) {
+    console.error('Clear system logs error:', error);
+    res.status(500).json({ error: 'Failed to clear system logs' });
+  }
+});
+
 // Get visitor analytics - gender and user type statistics
 router.get('/visitor-analytics', authenticateToken, requireAdmin, async (req, res) => {
   try {
