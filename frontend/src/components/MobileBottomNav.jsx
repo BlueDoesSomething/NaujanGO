@@ -13,7 +13,7 @@ const MobileBottomNav = () => {
   const isActive = (key) => {
     if (key === 'home') return path === '/';
     if (key === 'attraction') return path.startsWith('/attractions');
-    if (key === 'explore') return path.startsWith('/map');
+    if (key === 'stay') return path.startsWith('/hotels');
     if (key === 'about') return path.startsWith('/about');
     return false;
   };
@@ -21,7 +21,7 @@ const MobileBottomNav = () => {
   const items = [
     { key: 'home', label: t('mobile_home'), icon: Icons.MapPin, to: '/' },
     { key: 'attraction', label: t('mobile_attraction'), icon: Icons.Attraction, to: '/attractions' },
-    { key: 'explore', label: t('mobile_explore'), icon: Icons.Compass, to: '/map' },
+    { key: 'stay', label: t('mobile_stay'), icon: Icons.Hotel, to: '/hotels' },
     { key: 'about', label: t('mobile_about'), icon: Icons.Info, to: '/about' },
   ];
 
