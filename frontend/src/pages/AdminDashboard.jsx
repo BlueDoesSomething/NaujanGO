@@ -1700,15 +1700,19 @@ const AdminDashboard = () => {
   const addHotelGalleryUrl = () => {
     const trimmed = hotelGalleryUrlInput.trim();
     if (!trimmed) return;
-    const next = Array.isArray(hotelForm.image_urls) ? hotelForm.image_urls.slice() : [];
-    if (!next.includes(trimmed)) next.push(trimmed);
-    setHotelForm({ ...hotelForm, image_urls: next });
+    setHotelForm((prev) => {
+      const next = Array.isArray(prev.image_urls) ? prev.image_urls.slice() : [];
+      if (!next.includes(trimmed)) next.push(trimmed);
+      return { ...prev, image_urls: next };
+    });
     setHotelGalleryUrlInput('');
   };
 
   const removeHotelGalleryUrl = (url) => {
-    const next = (Array.isArray(hotelForm.image_urls) ? hotelForm.image_urls : []).filter((item) => item !== url);
-    setHotelForm({ ...hotelForm, image_urls: next });
+    setHotelForm((prev) => ({
+      ...prev,
+      image_urls: (Array.isArray(prev.image_urls) ? prev.image_urls : []).filter((item) => item !== url)
+    }));
   };
 
   const handleHotelImageUpload = async (files) => {
@@ -1722,11 +1726,13 @@ const AdminDashboard = () => {
       });
       const uploaded = Array.isArray(res.data?.urls) ? res.data.urls : [];
       if (uploaded.length > 0) {
-        const next = Array.isArray(hotelForm.image_urls) ? hotelForm.image_urls.slice() : [];
-        uploaded.forEach((url) => {
-          if (url && !next.includes(url)) next.push(url);
+        setHotelForm((prev) => {
+          const next = Array.isArray(prev.image_urls) ? prev.image_urls.slice() : [];
+          uploaded.forEach((url) => {
+            if (url && !next.includes(url)) next.push(url);
+          });
+          return { ...prev, image_urls: next };
         });
-        setHotelForm({ ...hotelForm, image_urls: next });
       }
       await loadHotels();
     } catch (error) {

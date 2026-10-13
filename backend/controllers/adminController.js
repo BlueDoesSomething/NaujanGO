@@ -581,6 +581,7 @@ const getUserColumns = async () => {
 };
 
 let hotelColumnCache = null;
+let warnedMissingGalleryColumn = false;
 const getHotelColumns = async () => {
   if (hotelColumnCache) return hotelColumnCache;
 
@@ -1832,6 +1833,10 @@ router.put('/hotels/:id', async (req, res) => {
     if (hotelColumns.imageUrls && parsedImageUrls !== undefined) {
       fields.push('image_urls = ?');
       values.push(parsedImageUrls);
+    } else if (parsedImageUrls !== undefined && !warnedMissingGalleryColumn) {
+      // Other fields are still saved; just surface why the gallery was dropped.
+      warnedMissingGalleryColumn = true;
+      console.warn('Hotels update skipped gallery images: hotels.image_urls is missing. Restart the server to create the column.');
     }
     if (map_url !== undefined) { fields.push('map_url = ?'); values.push(map_url); }
     if (latitude !== undefined) { fields.push('latitude = ?'); values.push(latitude); }
@@ -1930,18 +1935,23 @@ router.post('/hotels/:id/gallery', async (req, res) => {
 
     try {
       const cols = await getHotelColumns();
-      if (cols.imageUrls) {
-        const [rows] = await db.promise().query('SELECT image_urls FROM hotels WHERE hotel_id = ?', [id]);
-        if (!rows.length) {
-          return res.status(404).json({ error: 'Hotel not found' });
-        }
-        const current = parseJsonArrayColumn(rows[0].image_urls);
-        const merged = [...current, ...urls];
-        await db.promise().query('UPDATE hotels SET image_urls = ? WHERE hotel_id = ?', [
-          JSON.stringify(merged),
-          id,
-        ]);
+      // Never report success when the images cannot be stored: an earlier
+      // version returned success here and silently dropped the upload.
+      if (!cols.imageUrls) {
+        return res.status(500).json({
+          error: 'Hotel gallery storage is unavailable: the hotels.image_urls column is missing. Restart the server to create it.'
+        });
       }
+      const [rows] = await db.promise().query('SELECT image_urls FROM hotels WHERE hotel_id = ?', [id]);
+      if (!rows.length) {
+        return res.status(404).json({ error: 'Hotel not found' });
+      }
+      const current = parseJsonArrayColumn(rows[0].image_urls);
+      const merged = [...current, ...urls];
+      await db.promise().query('UPDATE hotels SET image_urls = ? WHERE hotel_id = ?', [
+        JSON.stringify(merged),
+        id,
+      ]);
       res.json({ success: true, urls });
     } catch (error) {
       console.error('Hotel gallery upload error:', error);
