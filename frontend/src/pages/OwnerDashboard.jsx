@@ -971,30 +971,20 @@ const OwnerDashboard = () => {
   };
 
   const handleImageUpload = async (files) => {
-    if (!files || files.length === 0) return;
+    const picked = Array.from(files || []);
+    if (picked.length === 0 || !editingHotel) return;
     try {
       setImageUploading(true);
-      const uploads = Array.from(files).map(async (file) => {
-        const formData = new FormData();
-        formData.append('image', file);
-        const res = await api.post('/owner/hotels/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-        return res.data?.url;
-      });
-
-      const results = await Promise.all(uploads);
-      const validUrls = results.filter(Boolean);
-      if (validUrls.length > 0) {
-        const next = Array.isArray(hotelForm.image_urls) ? hotelForm.image_urls.slice() : [];
-        validUrls.forEach(url => {
-          if (!next.includes(url)) next.push(url);
-        });
-        setHotelForm({ ...hotelForm, image_urls: next });
+      const formData = new FormData();
+      picked.forEach((file) => formData.append('images', file));
+      const res = await api.post(`/owner/hotels/${editingHotel.hotel_id}/gallery`, formData);
+      const gallery = Array.isArray(res.data?.urls) ? res.data.urls : [];
+      if (gallery.length > 0) {
+        setHotelForm((prev) => ({ ...prev, image_urls: gallery }));
       }
     } catch (error) {
       console.error('Image upload failed:', error);
-      alert('Image upload failed. Please try again.');
+      alert(error.response?.data?.error || 'Image upload failed. Please try again.');
     } finally {
       setImageUploading(false);
     }
@@ -1644,7 +1634,7 @@ const OwnerDashboard = () => {
                             <button type="button" className="gov-btn gov-btn-primary" onClick={addGalleryUrl} style={{ whiteSpace:'nowrap' }}>Add URL</button>
                             <label style={{ padding:'0.6rem 1rem', background: imageUploading ? '#9CA3AF' : '#f1f5f9', color: imageUploading ? 'white' : '#1f2937', border:'1px solid #cbd5e1', borderRadius:'8px', cursor: imageUploading ? 'not-allowed' : 'pointer', fontWeight:700, fontSize:'0.85rem', whiteSpace:'nowrap' }}>
                               {imageUploading ? 'Uploading...' : 'Upload Images'}
-                              <input type="file" accept="image/*" multiple disabled={imageUploading} onChange={(e) => { handleImageUpload(e.target.files); e.target.value = ''; }} style={{ display:'none' }} />
+                              <input type="file" accept="image/*" multiple disabled={imageUploading} onChange={(e) => { const picked = Array.from(e.target.files || []); e.target.value = ''; handleImageUpload(picked); }} style={{ display:'none' }} />
                             </label>
                           </div>
                           {Array.isArray(hotelForm.image_urls) && hotelForm.image_urls.length > 0 && (

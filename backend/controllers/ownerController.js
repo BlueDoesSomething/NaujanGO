@@ -246,6 +246,59 @@ router.post('/hotels/upload', upload.single('image'), (req, res) => {
   res.json({ url });
 });
 
+// Append uploaded images to the hotel gallery. Writes to the database straight
+// away (mirroring the admin endpoint) so an uploaded photo is never lost just
+// because the owner closed the dialog, and returns the merged gallery so the
+// form can render exactly what is stored.
+router.post('/hotels/:hotelId/gallery', upload.array('images', 10), async (req, res) => {
+  const { hotelId } = req.params;
+  const userId = req.user.user_id;
+
+  try {
+    const [ownership] = await db.promise().query(
+      'SELECT hotel_id FROM hotel_owners WHERE user_id = ? AND hotel_id = ?',
+      [userId, hotelId]
+    );
+    if (ownership.length === 0) {
+      return res.status(403).json({ error: 'You do not have permission to edit this hotel' });
+    }
+    if (!req.files?.length) {
+      return res.status(400).json({ error: 'No files provided' });
+    }
+
+    const urls = req.files.map((f) => `/uploads/hotels/${f.filename}`);
+
+    const [rows] = await db.promise().query('SELECT image_urls FROM hotels WHERE hotel_id = ?', [hotelId]);
+    if (!rows.length) {
+      return res.status(404).json({ error: 'Hotel not found' });
+    }
+
+    const raw = rows[0].image_urls;
+    let current = [];
+    if (Array.isArray(raw)) {
+      current = raw.filter(Boolean);
+    } else if (typeof raw === 'string' && raw.trim()) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) current = parsed.filter(Boolean);
+      } catch {
+        current = [];
+      }
+    }
+
+    const merged = [...current, ...urls];
+    await db.promise().query('UPDATE hotels SET image_urls = ? WHERE hotel_id = ?', [
+      JSON.stringify(merged),
+      hotelId
+    ]);
+
+    res.json({ success: true, urls: merged });
+  } catch (error) {
+    console.error('Owner hotel gallery upload error:', error);
+    res.status(500).json({ error: 'Failed to save gallery images' });
+  }
+});
+
 // Create a new hotel listing for owner
 router.post('/hotels', async (req, res) => {
   const userId = req.user.user_id;

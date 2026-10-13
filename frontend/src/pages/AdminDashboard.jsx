@@ -1721,9 +1721,7 @@ const AdminDashboard = () => {
       setHotelImageUploading(true);
       const formData = new FormData();
       Array.from(files).forEach((file) => formData.append('images', file));
-      const res = await api.post(`/admin/hotels/${editingHotel.hotel_id}/gallery`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const res = await api.post(`/admin/hotels/${editingHotel.hotel_id}/gallery`, formData);
       const uploaded = Array.isArray(res.data?.urls) ? res.data.urls : [];
       if (uploaded.length > 0) {
         setHotelForm((prev) => {
@@ -1827,9 +1825,7 @@ const AdminDashboard = () => {
 
       if (editingAttraction) {
         // Endpoint appends to the stored gallery and returns the new URLs.
-        const res = await api.post(`/admin/attractions/${editingAttraction.id}/gallery`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+        const res = await api.post(`/admin/attractions/${editingAttraction.id}/gallery`, formData);
         const urls = Array.isArray(res.data?.urls) ? res.data.urls : [];
         if (urls.length) {
           setAttractionForm(prev => ({
@@ -3519,7 +3515,7 @@ const AdminDashboard = () => {
                               {editingHotel && (
                                 <label style={{ padding:'0.6rem 1rem', background: hotelImageUploading ? '#9CA3AF' : '#f1f5f9', color: hotelImageUploading ? 'white' : '#1f2937', border:'1px solid #cbd5e1', borderRadius:'8px', cursor: hotelImageUploading ? 'not-allowed' : 'pointer', fontWeight:700, fontSize:'0.85rem', whiteSpace:'nowrap' }}>
                                   {hotelImageUploading ? 'Uploading...' : 'Upload Images'}
-                                  <input type="file" accept="image/*" multiple disabled={hotelImageUploading} onChange={(e) => { handleHotelImageUpload(e.target.files); e.target.value = ''; }} style={{ display:'none' }} />
+                                  <input type="file" accept="image/*" multiple disabled={hotelImageUploading} onChange={(e) => { const picked = Array.from(e.target.files || []); e.target.value = ''; handleHotelImageUpload(picked); }} style={{ display:'none' }} />
                                 </label>
                               )}
                             </div>
@@ -4605,7 +4601,7 @@ const AdminDashboard = () => {
                               <button type="button" className="gov-btn gov-btn-primary" onClick={addAttractionGalleryUrl} style={{ whiteSpace:'nowrap' }}>Add URL</button>
                               <label style={{ padding:'0.6rem 1rem', background: attractionUploading ? '#9CA3AF' : '#f1f5f9', color: attractionUploading ? 'white' : '#1f2937', border:'1px solid #cbd5e1', borderRadius:'8px', cursor: attractionUploading ? 'not-allowed' : 'pointer', fontWeight:700, fontSize:'0.85rem', whiteSpace:'nowrap' }}>
                                 {attractionUploading ? 'Uploading...' : 'Upload Images'}
-                                <input type="file" accept="image/*" multiple disabled={attractionUploading} onChange={(e) => { handleAttractionImageUpload(e.target.files); e.target.value = ''; }} style={{ display:'none' }} />
+                                <input type="file" accept="image/*" multiple disabled={attractionUploading} onChange={(e) => { const picked = Array.from(e.target.files || []); e.target.value = ''; handleAttractionImageUpload(picked); }} style={{ display:'none' }} />
                               </label>
                             </div>
                             {(attractionForm.image_urls || []).length > 0 && (
