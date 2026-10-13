@@ -15,7 +15,7 @@ import {
   parseStoredPaymentMethods,
   HOTEL_UPLOAD_MAX_BYTES
 } from '../utils/paymentMethods.js';
-import { getHotelColumns, GALLERY_COLUMN_WARNING } from '../utils/hotelColumns.js';
+import { getHotelColumns, GALLERY_COLUMN_WARNING, parseJsonArrayColumn } from '../utils/hotelColumns.js';
 
 const router = express.Router();
 
@@ -222,24 +222,11 @@ router.get('/hotels', async (req, res) => {
 
     const [hotels] = await db.promise().query(query, [userId]);
     const formatted = hotels.map(hotel => {
-      let amenities = [];
-      let image_urls = [];
-
-      if (hotel.amenities) {
-        try {
-          amenities = JSON.parse(hotel.amenities);
-        } catch (error) {
-          amenities = [];
-        }
-      }
-
-      if (hotel.image_urls) {
-        try {
-          image_urls = JSON.parse(hotel.image_urls);
-        } catch (error) {
-          image_urls = [];
-        }
-      }
+      const amenities = hotel.amenities;
+      // hotels.image_urls is a native JSON column, so mysql2 hands back an
+      // already-decoded array; JSON.parse(array) throws and used to blank the
+      // gallery every time the owner reopened the editor.
+      const image_urls = parseJsonArrayColumn(hotel.image_urls);
 
       const allowed_payment_methods = parseStoredPaymentMethods(hotel.allowed_payment_methods);
 

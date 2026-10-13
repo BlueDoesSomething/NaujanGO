@@ -4,6 +4,7 @@ import { getTranslationsForEntities } from '../services/translations.js';
 import { getTranslationWithFallback } from '../services/machineTranslate.js';
 import { fetchHotelAvailabilityDays } from '../utils/hotelAvailability.js';
 import { attachHotelLegitimacy, attachHotelLegitimacyList } from '../utils/legitimacy.js';
+import { parseJsonArrayColumn } from '../utils/hotelColumns.js';
 
 let hotelsHasImageUrls;
 let hotelsHasAllowedPaymentMethods;
@@ -114,26 +115,14 @@ const parseAmenitiesServer = (raw) => {
 };
 
 const mapHotelRows = (rows) => rows.map(hotel => {
-  let amenities = [];
-  let images = [];
+  const amenities = parseAmenitiesServer(hotel.amenities);
+  const gallery = parseJsonArrayColumn(hotel.image_urls);
 
-  if (hotel.amenities) {
-    try {
-      amenities = JSON.parse(hotel.amenities);
-    } catch (error) {
-      amenities = [];
-    }
-  }
+  // The cover photo is part of the gallery; otherwise a hotel with a cover and
+  // a gallery would stop showing its cover on the public page.
+  const images = [...new Set([hotel.image_url, ...gallery].filter(Boolean))];
 
-  if (hotel.image_urls) {
-    try {
-      images = JSON.parse(hotel.image_urls);
-    } catch (error) {
-      images = [];
-    }
-  }
-
-  const primaryImage = hotel.image_url || images[0] || null;
+  const primaryImage = images[0] || null;
 
   return {
     ...hotel,

@@ -7,7 +7,7 @@ import db from '../db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { parsePolicyFields } from '../utils/policyFields.js';
 import { parsePaymentMethodsInput, HOTEL_UPLOAD_MAX_BYTES } from '../utils/paymentMethods.js';
-import { getHotelColumns, GALLERY_COLUMN_WARNING } from '../utils/hotelColumns.js';
+import { getHotelColumns, GALLERY_COLUMN_WARNING, parseJsonArrayColumn } from '../utils/hotelColumns.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -1204,17 +1204,6 @@ const parseJsonObjectInput = (value) => {
   return JSON.stringify([String(value)]);
 };
 
-const parseJsonArrayColumn = (value) => {
-  if (Array.isArray(value)) return value.filter(Boolean);
-  if (!value) return [];
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
-  } catch {
-    return [];
-  }
-};
-
 // Exposes the gallery as `images` (array of URL strings) — the exact shape
 // AttractionDetails.jsx builds its gallery from.
 const mapAdminAttraction = (row) => {
@@ -1618,22 +1607,10 @@ router.get('/hotels', async (req, res) => {
     `);
 
     const formatted = hotels.map(hotel => {
-      let amenities = [];
-      let image_urls = [];
-      if (hotel.amenities) {
-        try {
-          amenities = JSON.parse(hotel.amenities);
-        } catch (error) {
-          amenities = [];
-        }
-      }
-      if (hotel.image_urls) {
-        try {
-          image_urls = JSON.parse(hotel.image_urls);
-        } catch (error) {
-          image_urls = [];
-        }
-      }
+      // hotels.image_urls is a native JSON column: mysql2 already decoded it,
+      // so JSON.parse(array) threw and blanked the admin gallery.
+      const amenities = parseJsonArrayColumn(hotel.amenities);
+      const image_urls = parseJsonArrayColumn(hotel.image_urls);
 
       return {
         ...hotel,

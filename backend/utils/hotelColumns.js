@@ -1,3 +1,29 @@
+// mysql2 decodes a native JSON column into a JS array, but a longtext column
+// (amenities, rooms.image_urls) arrives as a string. Accept both so galleries
+// and amenities from either storage type survive. Doing this wrong silently
+// blanks a gallery: JSON.parse(array) throws and the catch swallows it.
+export const parseJsonArrayColumn = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (!value) return [];
+  if (typeof value === 'object') return Object.values(value).filter(Boolean).map(String);
+  if (typeof value !== 'string') return [];
+
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed)) return parsed.filter(Boolean);
+    } catch {
+      // Fall through to CSV parsing below.
+    }
+  }
+  return trimmed
+    .split(',')
+    .map((item) => item.trim().replace(/^["']|["']$/g, ''))
+    .filter(Boolean);
+};
+
 // Shared probe for optional hotels columns.
 //
 // These columns come from SQL migrations that were never applied to every
