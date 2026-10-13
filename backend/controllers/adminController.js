@@ -6,7 +6,7 @@ import multer from 'multer';
 import db from '../db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { parsePolicyFields } from '../utils/policyFields.js';
-import { parsePaymentMethodsInput } from '../utils/paymentMethods.js';
+import { parsePaymentMethodsInput, HOTEL_UPLOAD_MAX_BYTES } from '../utils/paymentMethods.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -1912,9 +1912,13 @@ const hotelGalleryUpload = multer({
       cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 10)}${ext}`);
     },
   }),
-  limits: { fileSize: 10 * 1024 * 1024 },
+  limits: { fileSize: HOTEL_UPLOAD_MAX_BYTES },
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) return cb(null, true);
+    if (file.mimetype?.startsWith('image/')) return cb(null, true);
+    const ext = path.extname(file.originalname || '').toLowerCase();
+    if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.bmp', '.svg'].includes(ext)) {
+      return cb(null, true);
+    }
     cb(new Error('Only image uploads are allowed'));
   },
 });
@@ -1924,6 +1928,11 @@ const hotelGalleryUpload = multer({
 router.post('/hotels/:id/gallery', async (req, res) => {
   hotelGalleryUpload.array('images', 10)(req, res, async (err) => {
     if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({
+          error: `Image is larger than ${Math.round(HOTEL_UPLOAD_MAX_BYTES / (1024 * 1024))}MB. Please pick a smaller file.`
+        });
+      }
       return res.status(400).json({ error: err.message || 'Upload failed' });
     }
     const { id } = req.params;

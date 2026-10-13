@@ -6,6 +6,11 @@
 // dashboards; the frontend renders the same keys via
 // frontend/src/utils/hotelPaymentMethods.js.
 
+// Upper bound for a single uploaded hotel image. Phone photos and screenshots
+// regularly exceed 6MB, so this is deliberately generous; shared with the
+// owner controller so both dashboards behave identically.
+export const HOTEL_UPLOAD_MAX_BYTES = 15 * 1024 * 1024;
+
 export const DEFAULT_PAYMENT_METHODS = [
   'card',
   'gcash',

@@ -12,7 +12,8 @@ import { computeAuthorization, LEGITIMACY_FIELDS, attachHotelLegitimacyList } fr
 import {
   DEFAULT_PAYMENT_METHODS,
   parsePaymentMethodsInput,
-  parseStoredPaymentMethods
+  parseStoredPaymentMethods,
+  HOTEL_UPLOAD_MAX_BYTES
 } from '../utils/paymentMethods.js';
 
 const router = express.Router();
@@ -47,11 +48,31 @@ const storage = multer.diskStorage({
   }
 });
 
+const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.avif', '.bmp', '.svg'];
+
+// Some browsers/OS report an empty or generic mimetype for perfectly valid
+// images, so fall back to the file extension rather than rejecting outright.
+const isAcceptedImage = (file) => {
+  if (typeof file.mimetype === 'string' && file.mimetype.startsWith('image/')) return true;
+  const ext = path.extname(file.originalname || '').toLowerCase();
+  return IMAGE_EXTENSIONS.includes(ext);
+};
+
+// Turns multer's terse errors into something an admin/owner can act on.
+const describeUploadError = (err) => {
+  if (err?.code === 'LIMIT_FILE_SIZE') {
+    return `Image is larger than ${Math.round(HOTEL_UPLOAD_MAX_BYTES / (1024 * 1024))}MB. Please pick a smaller file.`;
+  }
+  if (err?.code === 'LIMIT_FILE_COUNT') return 'Too many files selected at once.';
+  if (err?.message) return err.message;
+  return 'Upload failed';
+};
+
 const upload = multer({
   storage,
-  limits: { fileSize: 6 * 1024 * 1024 },
+  limits: { fileSize: HOTEL_UPLOAD_MAX_BYTES },
   fileFilter: (req, file, cb) => {
-    if (!file.mimetype.startsWith('image/')) {
+    if (!isAcceptedImage(file)) {
       return cb(new Error('Only image uploads are allowed'));
     }
     return cb(null, true);
@@ -250,53 +271,59 @@ router.post('/hotels/upload', upload.single('image'), (req, res) => {
 // away (mirroring the admin endpoint) so an uploaded photo is never lost just
 // because the owner closed the dialog, and returns the merged gallery so the
 // form can render exactly what is stored.
-router.post('/hotels/:hotelId/gallery', upload.array('images', 10), async (req, res) => {
+router.post('/hotels/:hotelId/gallery', async (req, res) => {
   const { hotelId } = req.params;
   const userId = req.user.user_id;
 
-  try {
-    const [ownership] = await db.promise().query(
-      'SELECT hotel_id FROM hotel_owners WHERE user_id = ? AND hotel_id = ?',
-      [userId, hotelId]
-    );
-    if (ownership.length === 0) {
-      return res.status(403).json({ error: 'You do not have permission to edit this hotel' });
-    }
-    if (!req.files?.length) {
-      return res.status(400).json({ error: 'No files provided' });
+  upload.array('images', 10)(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ error: describeUploadError(err) });
     }
 
-    const urls = req.files.map((f) => `/uploads/hotels/${f.filename}`);
-
-    const [rows] = await db.promise().query('SELECT image_urls FROM hotels WHERE hotel_id = ?', [hotelId]);
-    if (!rows.length) {
-      return res.status(404).json({ error: 'Hotel not found' });
-    }
-
-    const raw = rows[0].image_urls;
-    let current = [];
-    if (Array.isArray(raw)) {
-      current = raw.filter(Boolean);
-    } else if (typeof raw === 'string' && raw.trim()) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) current = parsed.filter(Boolean);
-      } catch {
-        current = [];
+    try {
+      const [ownership] = await db.promise().query(
+        'SELECT hotel_id FROM hotel_owners WHERE user_id = ? AND hotel_id = ?',
+        [userId, hotelId]
+      );
+      if (ownership.length === 0) {
+        return res.status(403).json({ error: 'You do not have permission to edit this hotel' });
       }
+      if (!req.files?.length) {
+        return res.status(400).json({ error: 'No files provided' });
+      }
+
+      const urls = req.files.map((f) => `/uploads/hotels/${f.filename}`);
+
+      const [rows] = await db.promise().query('SELECT image_urls FROM hotels WHERE hotel_id = ?', [hotelId]);
+      if (!rows.length) {
+        return res.status(404).json({ error: 'Hotel not found' });
+      }
+
+      const raw = rows[0].image_urls;
+      let current = [];
+      if (Array.isArray(raw)) {
+        current = raw.filter(Boolean);
+      } else if (typeof raw === 'string' && raw.trim()) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) current = parsed.filter(Boolean);
+        } catch {
+          current = [];
+        }
+      }
+
+      const merged = [...current, ...urls];
+      await db.promise().query('UPDATE hotels SET image_urls = ? WHERE hotel_id = ?', [
+        JSON.stringify(merged),
+        hotelId
+      ]);
+
+      res.json({ success: true, urls: merged });
+    } catch (error) {
+      console.error('Owner hotel gallery upload error:', error);
+      res.status(500).json({ error: 'Failed to save gallery images' });
     }
-
-    const merged = [...current, ...urls];
-    await db.promise().query('UPDATE hotels SET image_urls = ? WHERE hotel_id = ?', [
-      JSON.stringify(merged),
-      hotelId
-    ]);
-
-    res.json({ success: true, urls: merged });
-  } catch (error) {
-    console.error('Owner hotel gallery upload error:', error);
-    res.status(500).json({ error: 'Failed to save gallery images' });
-  }
+  });
 });
 
 // Create a new hotel listing for owner
