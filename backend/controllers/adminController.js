@@ -1,6 +1,8 @@
 import express from 'express';
 import bcrypt from 'bcryptjs';
 import { spawn } from 'child_process';
+import fs from 'fs';
+import multer from 'multer';
 import db from '../db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { parsePolicyFields } from '../utils/policyFields.js';
@@ -1150,39 +1152,190 @@ router.get('/role-changes', async (req, res) => {
   }
 });
 
+// ── Attractions ──────────────────────────────────────────────────────────────
+// Migration 019 adds the detail fields the public page renders plus a JSON
+// gallery column. Probe once so this controller keeps working on a database
+// that has not run the migration yet.
+let attractionColumnCache = null;
+const getAttractionColumns = async () => {
+  if (attractionColumnCache) return attractionColumnCache;
+
+  const [rows] = await db.promise().query(
+    `SELECT column_name FROM information_schema.columns
+     WHERE table_schema = DATABASE() AND table_name = 'attractions'
+       AND column_name IN ('municipality', 'category', 'image_urls', 'opening_hours',
+                           'entrance_fee', 'visit_duration', 'best_time_to_visit',
+                           'difficulty_level', 'category_tags', 'dangerous_animals')`
+  );
+
+  const present = new Set(rows.map((row) => row.COLUMN_NAME || row.column_name));
+  attractionColumnCache = {
+    municipality: present.has('municipality'),
+    category: present.has('category'),
+    imageUrls: present.has('image_urls'),
+    openingHours: present.has('opening_hours'),
+    entranceFee: present.has('entrance_fee'),
+    visitDuration: present.has('visit_duration'),
+    bestTimeToVisit: present.has('best_time_to_visit'),
+    difficultyLevel: present.has('difficulty_level'),
+    categoryTags: present.has('category_tags'),
+    dangerousAnimals: present.has('dangerous_animals'),
+  };
+  return attractionColumnCache;
+};
+
+const parseJsonObjectInput = (value) => {
+  if (value === undefined) return undefined;
+  if (value === null || value === '') return null;
+  if (Array.isArray(value)) return JSON.stringify(value.filter(Boolean));
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('[')) return trimmed; // already a JSON array
+    return JSON.stringify(trimmed.split(',').map((item) => item.trim()).filter(Boolean));
+  }
+  return JSON.stringify([String(value)]);
+};
+
+const parseJsonArrayColumn = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+};
+
+// Exposes the gallery as `images` (array of URL strings) — the exact shape
+// AttractionDetails.jsx builds its gallery from.
+const mapAdminAttraction = (row) => {
+  if (!row) return row;
+  const images = parseJsonArrayColumn(row.image_urls);
+  return {
+    ...row,
+    image_urls: images,
+    images,
+    category_tags: parseJsonArrayColumn(row.category_tags),
+    image_url: row.image_url || images[0] || null,
+  };
+};
+
 // Get all attractions
 router.get('/attractions', async (req, res) => {
   try {
+    const cols = await getAttractionColumns();
+
+    // Join reviews on attraction_id (matching the public query) — the old
+    // join used poi_id, which only a minority of reviews populate, so the
+    // admin saw different ratings than users did.
     const [attractions] = await db.promise().query(`
-      SELECT 
+      SELECT
         a.*,
         COUNT(DISTINCT r.review_id) as review_count,
-        AVG(r.rating) as avg_rating
+        COALESCE(ROUND(AVG(r.rating), 1), 0) as avg_rating
       FROM attractions a
-      LEFT JOIN reviews r ON a.id = r.poi_id AND r.moderated = 1
-      WHERE a.archived = 0
+      LEFT JOIN reviews r ON a.id = r.attraction_id AND r.moderated = 1
+      WHERE (a.archived IS NULL OR a.archived = 0)
       GROUP BY a.id
       ORDER BY a.name ASC
     `);
-    res.json(attractions);
+
+    res.json((attractions || []).map((row) => {
+      const mapped = mapAdminAttraction(row);
+      // Legacy columns that may not exist yet — keep the shape stable.
+      if (!cols.categoryTags) mapped.category_tags = [];
+      return mapped;
+    }));
   } catch (error) {
     console.error('Get attractions error:', error);
     res.status(500).json({ error: 'Failed to fetch attractions' });
   }
 });
 
+// Get a single attraction (admin) — used by the edit form
+router.get('/attractions/:id', async (req, res, next) => {
+  const { id } = req.params;
+  // `archived` is a real route registered further down — without this the
+  // param route would swallow it (id would be the literal "archived").
+  if (!/^\d+$/.test(String(id))) return next();
+
+  try {
+    // Archived rows are hidden, matching GET /attractions above.
+    const [rows] = await db.promise().query(
+      'SELECT * FROM attractions WHERE id = ? AND (archived IS NULL OR archived = 0)',
+      [id]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ error: 'Attraction not found' });
+    }
+    res.json(mapAdminAttraction(rows[0]));
+  } catch (error) {
+    console.error('Get attraction error:', error);
+    res.status(500).json({ error: 'Failed to fetch attraction' });
+  }
+});
+
 // Create attraction
 router.post('/attractions', async (req, res) => {
-  const { name, description, location, image_url, latitude, longitude } = req.body;
+  const body = req.body || {};
+  const { name, description, location, image_url, latitude, longitude } = body;
 
   if (!name || !location) {
     return res.status(400).json({ error: 'Name and location are required' });
   }
 
   try {
+    const cols = await getAttractionColumns();
+
+    const fields = ['name', 'description', 'location', 'image_url', 'latitude', 'longitude'];
+    const values = [
+      name,
+      description || null,
+      location,
+      image_url || null,
+      latitude === '' || latitude === null || latitude === undefined ? null : Number(latitude),
+      longitude === '' || longitude === null || longitude === undefined ? null : Number(longitude),
+    ];
+
+    const optional = [
+      ['municipality', 'municipality', (v) => v || null],
+      ['category', 'category', (v) => v || 'attraction'],
+      ['opening_hours', 'openingHours', (v) => v || null],
+      ['entrance_fee', 'entranceFee', (v) => (v === '' || v === null || v === undefined ? null : Number(v))],
+      ['visit_duration', 'visitDuration', (v) => v || null],
+      ['best_time_to_visit', 'bestTimeToVisit', (v) => v || null],
+      ['difficulty_level', 'difficultyLevel', (v) => v || null],
+      ['dangerous_animals', 'dangerousAnimals', (v) => v || null],
+    ];
+
+    for (const [key, column, normalise] of optional) {
+      if (!cols[column]) continue;
+      if (body[key] === undefined) continue;
+      fields.push(key);
+      values.push(normalise(body[key]));
+    }
+
+    if (cols.categoryTags && body.category_tags !== undefined) {
+      fields.push('category_tags');
+      values.push(parseJsonObjectInput(body.category_tags));
+    }
+
+    if (cols.imageUrls) {
+      const gallery = Array.isArray(body.image_urls) ? body.image_urls.filter(Boolean) : [];
+      fields.push('image_urls');
+      values.push(gallery.length ? JSON.stringify(gallery) : null);
+      // Derive the cover from the gallery when no cover was supplied.
+      if (!image_url && gallery.length) {
+        const idx = fields.indexOf('image_url');
+        if (idx !== -1) values[idx] = gallery[0];
+      }
+    }
+
     const [result] = await db.promise().query(
-      'INSERT INTO attractions (name, description, location, image_url, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?)',
-      [name, description, location, image_url, latitude, longitude]
+      `INSERT INTO attractions (${fields.join(', ')}) VALUES (${fields.map(() => '?').join(', ')})`,
+      values
     );
 
     res.json({ success: true, attractionId: result.insertId });
@@ -1192,29 +1345,175 @@ router.post('/attractions', async (req, res) => {
   }
 });
 
-// Update attraction
+// Update attraction — partial update: only keys present in the body are
+// written, so callers (e.g. the Maps module) can send just the coordinates
+// without nulling out the rest of the record.
 router.put('/attractions/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, description, location, image_url, latitude, longitude } = req.body;
+  const body = req.body || {};
+
+  if (body.name !== undefined && !String(body.name).trim()) {
+    return res.status(400).json({ error: 'Name cannot be empty' });
+  }
 
   try {
+    const [existingRows] = await db.promise().query('SELECT * FROM attractions WHERE id = ?', [id]);
+    if (!existingRows.length) {
+      return res.status(404).json({ error: 'Attraction not found' });
+    }
+    const existing = existingRows[0];
+    const cols = await getAttractionColumns();
+
+    const setClauses = [];
+    const values = [];
+
+    const simple = (key) => {
+      if (body[key] === undefined) return;
+      setClauses.push(`${key} = ?`);
+      values.push(body[key] === '' ? null : body[key]);
+    };
+
+    simple('name');
+    simple('description');
+    simple('location');
+    if (cols.municipality) simple('municipality');
+    if (cols.openingHours) simple('opening_hours');
+    if (cols.visitDuration) simple('visit_duration');
+    if (cols.bestTimeToVisit) simple('best_time_to_visit');
+    if (cols.difficultyLevel) simple('difficulty_level');
+    if (cols.dangerousAnimals) simple('dangerous_animals');
+
+    if (body.category !== undefined && cols.category) {
+      setClauses.push('category = ?');
+      values.push(body.category || 'attraction');
+    }
+
+    if (body.latitude !== undefined) {
+      setClauses.push('latitude = ?');
+      values.push(body.latitude === '' || body.latitude === null ? null : Number(body.latitude));
+    }
+    if (body.longitude !== undefined) {
+      setClauses.push('longitude = ?');
+      values.push(body.longitude === '' || body.longitude === null ? null : Number(body.longitude));
+    }
+
+    if (body.entrance_fee !== undefined && cols.entranceFee) {
+      setClauses.push('entrance_fee = ?');
+      values.push(body.entrance_fee === '' || body.entrance_fee === null ? null : Number(body.entrance_fee));
+    }
+
+    if (body.category_tags !== undefined && cols.categoryTags) {
+      setClauses.push('category_tags = ?');
+      values.push(parseJsonObjectInput(body.category_tags));
+    }
+
+    if (cols.imageUrls && body.image_urls !== undefined) {
+      const gallery = Array.isArray(body.image_urls) ? body.image_urls.filter(Boolean) : [];
+      setClauses.push('image_urls = ?');
+      values.push(gallery.length ? JSON.stringify(gallery) : null);
+      // Keep the cover in sync when it was not sent explicitly.
+      if (body.image_url === undefined) {
+        const cover = gallery[0] || null;
+        setClauses.push('image_url = ?');
+        values.push(cover);
+      }
+    } else if (body.image_url !== undefined) {
+      setClauses.push('image_url = ?');
+      values.push(body.image_url || null);
+    }
+
+    if (!setClauses.length) {
+      return res.json({ success: true, message: 'No changes to save' });
+    }
+
     await db.promise().query(
-      'UPDATE attractions SET name = ?, description = ?, location = ?, image_url = ?, latitude = ?, longitude = ? WHERE id = ?',
-      [name, description, location, image_url, latitude, longitude, id]
+      `UPDATE attractions SET ${setClauses.join(', ')} WHERE id = ?`,
+      [...values, id]
     );
 
-    res.json({ success: true, message: 'Attraction updated successfully' });
+    const [rows] = await db.promise().query('SELECT * FROM attractions WHERE id = ?', [id]);
+    res.json({
+      success: true,
+      message: 'Attraction updated successfully',
+      attraction: mapAdminAttraction(rows[0]),
+      // Handy for callers that only care whether the cover moved.
+      previous_image_url: existing.image_url,
+    });
   } catch (error) {
     console.error('Update attraction error:', error);
     res.status(500).json({ error: 'Failed to update attraction' });
   }
 });
 
-// Delete attraction - Changed to archive
+// Upload gallery images for an attraction.
+// Fixed destination directory (not driven by req.body) so the multer
+// destination callback can never race with FormData part ordering.
+const attractionGalleryDir = path.join(__dirname, '..', 'uploads', 'attractions');
+const attractionGalleryUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      if (!fs.existsSync(attractionGalleryDir)) {
+        fs.mkdirSync(attractionGalleryDir, { recursive: true });
+      }
+      cb(null, attractionGalleryDir);
+    },
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 10)}${ext}`);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) return cb(null, true);
+    cb(new Error('Only image uploads are allowed'));
+  },
+});
+
+router.post('/attractions/:id/gallery', async (req, res) => {
+  attractionGalleryUpload.array('images', 10)(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message || 'Upload failed' });
+    }
+    const { id } = req.params;
+    if (!req.files?.length) {
+      return res.status(400).json({ error: 'No files provided' });
+    }
+
+    const urls = req.files.map((f) => `/uploads/attractions/${f.filename}`);
+
+    try {
+      const cols = await getAttractionColumns();
+      if (cols.imageUrls) {
+        const [rows] = await db.promise().query('SELECT image_urls FROM attractions WHERE id = ?', [id]);
+        if (!rows.length) {
+          return res.status(404).json({ error: 'Attraction not found' });
+        }
+        const current = parseJsonArrayColumn(rows[0].image_urls);
+        const merged = [...current, ...urls];
+        await db.promise().query('UPDATE attractions SET image_urls = ? WHERE id = ?', [
+          JSON.stringify(merged),
+          id,
+        ]);
+      }
+      res.json({ success: true, urls });
+    } catch (error) {
+      console.error('Attraction gallery upload error:', error);
+      res.status(500).json({ error: 'Failed to save gallery images' });
+    }
+  });
+});
+
+// Delete attraction — archive by default; ?hardDelete=true removes it for good
 router.delete('/attractions/:id', async (req, res) => {
   const { id } = req.params;
+  const hardDelete = ['1', 'true', 'yes'].includes(String(req.query.hardDelete || '').toLowerCase());
 
   try {
+    if (hardDelete) {
+      await db.promise().query('DELETE FROM attractions WHERE id = ?', [id]);
+      return res.json({ success: true, message: 'Attraction deleted permanently' });
+    }
+
     await db.promise().query(
       'UPDATE attractions SET archived = 1, archived_at = NOW() WHERE id = ?',
       [id]
@@ -1608,7 +1907,7 @@ router.get('/attractions/archived', async (req, res) => {
       WHERE archived = 1
       ORDER BY archived_at DESC
     `);
-    res.json(attractions);
+    res.json((attractions || []).map(mapAdminAttraction));
   } catch (error) {
     console.error('Get archived attractions error:', error);
     res.status(500).json({ error: 'Failed to fetch archived attractions' });

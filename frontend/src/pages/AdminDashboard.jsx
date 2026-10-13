@@ -230,9 +230,20 @@ const AdminDashboard = () => {
     name: '',
     description: '',
     location: '',
+    municipality: 'Naujan',
+    category: 'attraction',
     image_url: '',
     latitude: '',
-    longitude: ''
+    longitude: '',
+    opening_hours: '',
+    entrance_fee: '',
+    visit_duration: '',
+    best_time_to_visit: '',
+    difficulty_level: '',
+    dangerous_animals: '',
+    category_tags: [],
+    image_urls: [],
+    pendingFiles: []
   };
 
   const [loading, setLoading] = useState(true);
@@ -269,6 +280,9 @@ const AdminDashboard = () => {
   const openedConversationIdRef = useRef(null);
   const [attractionSaving, setAttractionSaving] = useState(false);
   const [attractionActionLoading, setAttractionActionLoading] = useState({});
+  const [attractionGalleryInput, setAttractionGalleryInput] = useState('');
+  const [attractionUploading, setAttractionUploading] = useState(false);
+  const [attractionTagInput, setAttractionTagInput] = useState('');
   const [itineraries, setItineraries] = useState([]);
   const [itineraryTemplates, setItineraryTemplates] = useState([]);
   const [itinerarySearch, setItinerarySearch] = useState('');
@@ -1431,15 +1445,11 @@ const AdminDashboard = () => {
           await api.put(`/admin/hotels/${id}`, { latitude: lat, longitude: lng, image_url: currentImageUrl });
           await loadHotels();
         } else {
-          const base = sourceData || attractions.find((item) => item.id === id) || {};
-          await api.put(`/admin/attractions/${id}`, {
-            name: base.name || '',
-            description: base.description || '',
-            location: base.location || '',
-            image_url: currentImageUrl,
-            latitude: lat,
-            longitude: lng
-          });
+          // PUT is a partial update, so send only what a pin drag changes —
+          // resending name/description/location risks clearing them.
+          const payload = { latitude: lat, longitude: lng };
+          if (currentImageUrl) payload.image_url = currentImageUrl;
+          await api.put(`/admin/attractions/${id}`, payload);
           await loadAttractions();
         }
 
@@ -1498,10 +1508,13 @@ const AdminDashboard = () => {
         await api.put(`/admin/hotels/${mapSelection.id}`, payload);
         await loadHotels();
       } else {
-        await api.put(`/admin/attractions/${mapSelection.id}`, {
+        const attractionPayload = {
           ...payload,
           description: mapForm.description
-        });
+        };
+        // Never clear an existing cover with an empty string.
+        if (!attractionPayload.image_url) delete attractionPayload.image_url;
+        await api.put(`/admin/attractions/${mapSelection.id}`, attractionPayload);
         await loadAttractions();
       }
 
@@ -1632,23 +1645,115 @@ const AdminDashboard = () => {
     }
   };
 
-  const startAttractionCreate = () => {
-    setEditingAttraction(null);
-    setCreatingAttraction(true);
+  const resetAttractionForm = () => {
+    (attractionForm.pendingFiles || []).forEach(item => {
+      if (item.preview) URL.revokeObjectURL(item.preview);
+    });
     setAttractionForm(emptyAttractionForm);
+    setAttractionGalleryInput('');
+    setAttractionTagInput('');
+    setEditingAttraction(null);
+    setCreatingAttraction(false);
+  };
+
+  const startAttractionCreate = () => {
+    resetAttractionForm();
+    setCreatingAttraction(true);
   };
 
   const startAttractionEdit = (attraction) => {
     setCreatingAttraction(false);
+    setAttractionGalleryInput('');
+    setAttractionTagInput('');
     setEditingAttraction(attraction);
     setAttractionForm({
       name: attraction.name || '',
       description: attraction.description || '',
       location: attraction.location || '',
+      municipality: attraction.municipality || 'Naujan',
+      category: attraction.category || 'attraction',
       image_url: attraction.image_url || '',
       latitude: attraction.latitude ?? '',
-      longitude: attraction.longitude ?? ''
+      longitude: attraction.longitude ?? '',
+      opening_hours: attraction.opening_hours || '',
+      entrance_fee: attraction.entrance_fee === 0 || attraction.entrance_fee ? String(attraction.entrance_fee) : '',
+      visit_duration: attraction.visit_duration || '',
+      best_time_to_visit: attraction.best_time_to_visit || '',
+      difficulty_level: attraction.difficulty_level || '',
+      dangerous_animals: attraction.dangerous_animals || '',
+      category_tags: Array.isArray(attraction.category_tags) ? attraction.category_tags : [],
+      image_urls: Array.isArray(attraction.images)
+        ? attraction.images
+        : Array.isArray(attraction.image_urls) ? attraction.image_urls : []
     });
+  };
+
+  const addAttractionGalleryUrl = () => {
+    const trimmed = attractionGalleryInput.trim();
+    if (!trimmed) return;
+    const next = Array.isArray(attractionForm.image_urls) ? attractionForm.image_urls.slice() : [];
+    if (!next.includes(trimmed)) next.push(trimmed);
+    setAttractionForm({ ...attractionForm, image_urls: next });
+    setAttractionGalleryInput('');
+  };
+
+  const removeAttractionGalleryUrl = (url) => {
+    setAttractionForm({
+      ...attractionForm,
+      image_urls: (attractionForm.image_urls || []).filter(item => item !== url)
+    });
+  };
+
+  const addAttractionTag = () => {
+    const trimmed = attractionTagInput.trim().toLowerCase();
+    if (!trimmed) return;
+    const next = Array.isArray(attractionForm.category_tags) ? attractionForm.category_tags.slice() : [];
+    if (!next.includes(trimmed)) next.push(trimmed);
+    setAttractionForm({ ...attractionForm, category_tags: next });
+    setAttractionTagInput('');
+  };
+
+  const removeAttractionTag = (tag) => {
+    setAttractionForm({
+      ...attractionForm,
+      category_tags: (attractionForm.category_tags || []).filter(item => item !== tag)
+    });
+  };
+
+  const handleAttractionImageUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    setAttractionUploading(true);
+    try {
+      const formData = new FormData();
+      Array.from(files).forEach(file => formData.append('images', file));
+
+      if (editingAttraction) {
+        // Endpoint appends to the stored gallery and returns the new URLs.
+        const res = await api.post(`/admin/attractions/${editingAttraction.id}/gallery`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        const urls = Array.isArray(res.data?.urls) ? res.data.urls : [];
+        if (urls.length) {
+          setAttractionForm(prev => ({
+            ...prev,
+            image_urls: [...(prev.image_urls || []), ...urls.filter(url => !(prev.image_urls || []).includes(url))]
+          }));
+        }
+        await loadAttractions();
+      } else {
+        // Not created yet — hold the files and upload once on save.
+        const held = Array.from(files).map(file => ({
+          file,
+          preview: URL.createObjectURL(file)
+        }));
+        setAttractionForm(prev => ({ ...prev, pendingFiles: [...(prev.pendingFiles || []), ...held] }));
+      }
+    } catch (error) {
+      console.error('Attraction image upload failed:', error);
+      alert('Image upload failed. Please try again.');
+    } finally {
+      setAttractionUploading(false);
+    }
   };
 
   const handleAttractionSave = async () => {
@@ -1656,22 +1761,47 @@ const AdminDashboard = () => {
       name: attractionForm.name,
       description: attractionForm.description,
       location: attractionForm.location,
+      municipality: attractionForm.municipality,
+      category: attractionForm.category,
       image_url: attractionForm.image_url || null,
       latitude: attractionForm.latitude === '' ? null : Number(attractionForm.latitude),
-      longitude: attractionForm.longitude === '' ? null : Number(attractionForm.longitude)
+      longitude: attractionForm.longitude === '' ? null : Number(attractionForm.longitude),
+      opening_hours: attractionForm.opening_hours,
+      entrance_fee: attractionForm.entrance_fee === '' ? null : Number(attractionForm.entrance_fee),
+      visit_duration: attractionForm.visit_duration,
+      best_time_to_visit: attractionForm.best_time_to_visit,
+      difficulty_level: attractionForm.difficulty_level,
+      dangerous_animals: attractionForm.dangerous_animals,
+      category_tags: attractionForm.category_tags,
+      image_urls: attractionForm.image_urls
     };
 
     try {
       setAttractionSaving(true);
+      let attractionId = editingAttraction?.id;
       if (creatingAttraction) {
-        await api.post('/admin/attractions', payload);
+        const res = await api.post('/admin/attractions', payload);
+        attractionId = res.data?.attractionId;
       } else if (editingAttraction) {
         await api.put(`/admin/attractions/${editingAttraction.id}`, payload);
       }
+
+      // Newly added attractions get their queued files uploaded once the row
+      // exists (there is no row id to append to before then).
+      const pending = attractionForm.pendingFiles || [];
+      if (attractionId && pending.length) {
+        const formData = new FormData();
+        pending.forEach(item => formData.append('images', item.file));
+        await api.post(`/admin/attractions/${attractionId}/gallery`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        pending.forEach(item => {
+          if (item.preview) URL.revokeObjectURL(item.preview);
+        });
+      }
+
       await loadAttractions();
-      setEditingAttraction(null);
-      setCreatingAttraction(false);
-      setAttractionForm(emptyAttractionForm);
+      resetAttractionForm();
     } catch (error) {
       console.error('Error saving attraction:', error);
       alert('Failed to save attraction.');
@@ -1691,7 +1821,7 @@ const AdminDashboard = () => {
       await loadAttractions();
     } catch (error) {
       console.error('Error deleting attraction:', error);
-      alert('Failed to delete attraction.');
+      alert('Failed to archive attraction.');
     } finally {
       setActionLoading(setAttractionActionLoading, key, false);
     }
@@ -1708,7 +1838,7 @@ const AdminDashboard = () => {
   };
 
   const handleHotelDelete = async (hotel) => {
-    const confirmed = window.confirm(`Delete ${hotel.name}? This cannot be undone.`);
+    const confirmed = window.confirm(t('confirm_delete_hotel'));
     if (!confirmed) return;
 
     try {
@@ -2134,7 +2264,7 @@ const AdminDashboard = () => {
       await loadItineraries();
     } catch (error) {
       console.error('Error deleting itinerary:', error);
-      alert('Failed to delete itinerary.');
+      alert('Failed to archive itinerary.');
     } finally {
       setActionLoading(setItineraryActionLoading, key, false);
     }
@@ -2206,7 +2336,7 @@ const AdminDashboard = () => {
       await loadAdminData();
     } catch (error) {
       console.error('Error deleting booking:', error);
-      alert('Failed to delete booking.');
+      alert('Failed to archive booking.');
     } finally {
       setActionLoading(setBookingActionLoading, key, false);
     }
@@ -2316,6 +2446,19 @@ const AdminDashboard = () => {
       .toLowerCase()
       .includes(query);
   });
+
+  const attractionCategories = Array.from(
+    new Set(
+      attractions
+        .map((attraction) => (attraction.category || '').trim())
+        .filter(Boolean)
+        .concat('attraction')
+    )
+  ).sort();
+
+  // True when the current category is not one of the existing values, so the
+  // form shows a free-text input instead of the select.
+  const isCustomCategory = !attractionCategories.includes(attractionForm.category || '');
 
   const filteredItineraries = itineraries.filter((itinerary) => {
     const query = itinerarySearch.trim().toLowerCase();
@@ -4055,7 +4198,7 @@ const AdminDashboard = () => {
               {(creatingAttraction || editingAttraction) && (
                 <div
                   style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}
-                  onClick={(e) => { if (e.target === e.currentTarget) { setEditingAttraction(null); setCreatingAttraction(false); setAttractionForm(emptyAttractionForm); } }}
+                  onClick={(e) => { if (e.target === e.currentTarget) { resetAttractionForm(); } }}
                 >
                   <div style={{ background:'#fff', borderRadius:'16px', width:'100%', maxWidth:'580px', maxHeight:'92vh', overflowY:'auto', boxShadow:'0 24px 64px rgba(0,0,0,0.22)', display:'flex', flexDirection:'column' }}>
                     {/* Header */}
@@ -4065,7 +4208,7 @@ const AdminDashboard = () => {
                         <div style={{ fontSize:'1.25rem', fontWeight:800 }}>{creatingAttraction ? t('admin_add_new_attraction_btn') : editingAttraction.name}</div>
                         {editingAttraction && editingAttraction.location && <div style={{ fontSize:'0.82rem', opacity:0.8, marginTop:'2px' }}>{editingAttraction.location}</div>}
                       </div>
-                      <button onClick={() => { setEditingAttraction(null); setCreatingAttraction(false); setAttractionForm(emptyAttractionForm); }} style={{ background:'rgba(255,255,255,0.2)', border:'none', borderRadius:'50%', width:'34px', height:'34px', cursor:'pointer', color:'#fff', fontSize:'1.1rem', fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
+                      <button onClick={() => { resetAttractionForm(); }} style={{ background:'rgba(255,255,255,0.2)', border:'none', borderRadius:'50%', width:'34px', height:'34px', cursor:'pointer', color:'#fff', fontSize:'1.1rem', fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
                     </div>
                     {/* Image preview */}
                     {attractionForm.image_url && (
@@ -4085,11 +4228,124 @@ const AdminDashboard = () => {
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Location</span>
                             <input type="text" value={attractionForm.location} onChange={(e) => setAttractionForm({ ...attractionForm, location: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
                           </label>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Municipality</span>
+                            <input
+                              type="text"
+                              list="attraction-municipality-options"
+                              value={attractionForm.municipality}
+                              onChange={(e) => setAttractionForm({ ...attractionForm, municipality: e.target.value })}
+                              className="gov-input"
+                              style={{ borderRadius:'8px' }}
+                              placeholder="e.g. Naujan"
+                            />
+                            <datalist id="attraction-municipality-options">
+                              {Array.from(new Set(attractions.map((item) => item.municipality).filter(Boolean))).map((value) => (
+                                <option key={value} value={value} />
+                              ))}
+                            </datalist>
+                          </label>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Category</span>
+                            <select
+                              value={isCustomCategory ? '__custom__' : attractionForm.category}
+                              onChange={(e) => setAttractionForm({
+                                ...attractionForm,
+                                category: e.target.value === '__custom__' ? '' : e.target.value
+                              })}
+                              className="gov-input"
+                              style={{ borderRadius:'8px' }}
+                            >
+                              {attractionCategories.map((value) => (
+                                <option key={value} value={value}>{value.charAt(0).toUpperCase() + value.slice(1)}</option>
+                              ))}
+                              <option value="__custom__">Custom...</option>
+                            </select>
+                          </label>
+                          {isCustomCategory && (
+                            <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
+                              <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Custom Category</span>
+                              <input
+                                type="text"
+                                value={attractionForm.category}
+                                onChange={(e) => setAttractionForm({ ...attractionForm, category: e.target.value })}
+                                className="gov-input"
+                                style={{ borderRadius:'8px' }}
+                                placeholder="e.g. waterfall"
+                              />
+                            </label>
+                          )}
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Description</span>
                             <textarea value={attractionForm.description} onChange={(e) => setAttractionForm({ ...attractionForm, description: e.target.value })} rows={3} className="gov-input" style={{ borderRadius:'8px', resize:'vertical' }} />
                           </label>
                         </div>
+                      </div>
+                      {/* Visit Information */}
+                      <div>
+                        <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Visit Information</div>
+                        <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Opening Hours</span>
+                            <input type="text" value={attractionForm.opening_hours} onChange={(e) => setAttractionForm({ ...attractionForm, opening_hours: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} placeholder="e.g. 8:00 AM - 5:00 PM" />
+                          </label>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Entrance Fee (₱)</span>
+                            <input type="number" min="0" step="0.01" value={attractionForm.entrance_fee} onChange={(e) => setAttractionForm({ ...attractionForm, entrance_fee: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} placeholder="0 = free" />
+                          </label>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Visit Duration</span>
+                            <input type="text" value={attractionForm.visit_duration} onChange={(e) => setAttractionForm({ ...attractionForm, visit_duration: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} placeholder="e.g. 1-2 hours" />
+                          </label>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Best Time to Visit</span>
+                            <input type="text" value={attractionForm.best_time_to_visit} onChange={(e) => setAttractionForm({ ...attractionForm, best_time_to_visit: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} placeholder="e.g. Morning" />
+                          </label>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Difficulty Level</span>
+                            <select value={attractionForm.difficulty_level} onChange={(e) => setAttractionForm({ ...attractionForm, difficulty_level: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }}>
+                              <option value="">Not set</option>
+                              <option value="Easy">Easy</option>
+                              <option value="Easy to Moderate">Easy to Moderate</option>
+                              <option value="Moderate">Moderate</option>
+                              <option value="Difficult">Difficult</option>
+                            </select>
+                          </label>
+                        </div>
+                      </div>
+                      {/* Safety */}
+                      <div>
+                        <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Safety</div>
+                        <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                          <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Dangerous Animals</span>
+                          <textarea value={attractionForm.dangerous_animals} onChange={(e) => setAttractionForm({ ...attractionForm, dangerous_animals: e.target.value })} rows={2} className="gov-input" style={{ borderRadius:'8px', resize:'vertical' }} placeholder="e.g. None reported" />
+                        </label>
+                      </div>
+                      {/* Tags */}
+                      <div>
+                        <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Tags</div>
+                        <div style={{ display:'flex', gap:'0.5rem', alignItems:'center', flexWrap:'wrap' }}>
+                          <input
+                            type="text"
+                            value={attractionTagInput}
+                            onChange={(e) => setAttractionTagInput(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addAttractionTag(); } }}
+                            className="gov-input"
+                            style={{ flex:'1 1 200px', borderRadius:'8px' }}
+                            placeholder="e.g. waterfall"
+                          />
+                          <button type="button" className="gov-btn gov-btn-primary" onClick={addAttractionTag}>Add Tag</button>
+                        </div>
+                        {attractionForm.category_tags.length > 0 && (
+                          <div style={{ display:'flex', flexWrap:'wrap', gap:'0.5rem', marginTop:'0.75rem' }}>
+                            {attractionForm.category_tags.map((tag) => (
+                              <span key={tag} style={{ display:'inline-flex', alignItems:'center', gap:'0.4rem', background:'#f1f5f9', border:'1px solid #cbd5e1', borderRadius:'999px', padding:'0.3rem 0.7rem', fontSize:'0.8rem', color:'#1f2937', fontWeight:600 }}>
+                                {tag}
+                                <button type="button" onClick={() => removeAttractionTag(tag)} aria-label={`Remove ${tag}`} style={{ border:'none', background:'transparent', cursor:'pointer', color:'#6b7280', fontWeight:800, fontSize:'0.9rem', lineHeight:1 }}>×</button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                       {/* Coordinates */}
                       <div>
@@ -4108,15 +4364,52 @@ const AdminDashboard = () => {
                       {/* Media */}
                       <div>
                         <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Media</div>
-                        <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
-                          <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Image URL</span>
-                          <input type="text" value={attractionForm.image_url} onChange={(e) => setAttractionForm({ ...attractionForm, image_url: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} placeholder="https://..." />
-                        </label>
+                        <div style={{ display:'flex', flexDirection:'column', gap:'0.85rem' }}>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Cover Image URL</span>
+                            <input type="text" value={attractionForm.image_url} onChange={(e) => setAttractionForm({ ...attractionForm, image_url: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} placeholder="https://..." />
+                          </label>
+                          <div>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151', display:'block', marginBottom:'0.5rem' }}>Gallery Images</span>
+                            <div style={{ display:'flex', gap:'0.75rem', flexWrap:'wrap', alignItems:'center' }}>
+                              <input
+                                type="text"
+                                value={attractionGalleryInput}
+                                onChange={(e) => setAttractionGalleryInput(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addAttractionGalleryUrl(); } }}
+                                placeholder="https://..."
+                                className="gov-input"
+                                style={{ flex:'1 1 220px', borderRadius:'8px' }}
+                              />
+                              <button type="button" className="gov-btn gov-btn-primary" onClick={addAttractionGalleryUrl} style={{ whiteSpace:'nowrap' }}>Add URL</button>
+                              <label style={{ padding:'0.6rem 1rem', background: attractionUploading ? '#9CA3AF' : '#f1f5f9', color: attractionUploading ? 'white' : '#1f2937', border:'1px solid #cbd5e1', borderRadius:'8px', cursor: attractionUploading ? 'not-allowed' : 'pointer', fontWeight:700, fontSize:'0.85rem', whiteSpace:'nowrap' }}>
+                                {attractionUploading ? 'Uploading...' : 'Upload Images'}
+                                <input type="file" accept="image/*" multiple disabled={attractionUploading} onChange={(e) => { handleAttractionImageUpload(e.target.files); e.target.value = ''; }} style={{ display:'none' }} />
+                              </label>
+                            </div>
+                            {(attractionForm.image_urls || []).length > 0 && (
+                              <div style={{ display:'flex', flexWrap:'wrap', gap:'0.75rem', marginTop:'0.85rem' }}>
+                                {attractionForm.image_urls.map((url, index) => (
+                                  <div key={`${url}-${index}`} style={{ border:'1px solid #c8e6c9', borderRadius:'8px', padding:'0.5rem', background:'#f8fdf7', display:'flex', alignItems:'center', gap:'0.5rem' }}>
+                                    <img src={url} alt="" style={{ width:'56px', height:'42px', objectFit:'cover', borderRadius:'6px' }} />
+                                    <span style={{ fontSize:'0.7rem', color:'#6b7280', maxWidth:'110px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{url}</span>
+                                    <button type="button" className="gov-btn gov-btn-danger" style={{ fontSize:'0.78rem', padding:'0.3rem 0.6rem' }} onClick={() => removeAttractionGalleryUrl(url)}>Remove</button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {(attractionForm.pendingFiles || []).length > 0 && (
+                              <div style={{ marginTop:'0.85rem', fontSize:'0.78rem', color:'#6b7280' }}>
+                                {attractionForm.pendingFiles.length} image(s) will upload after this attraction is created.
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                     {/* Footer */}
                     <div style={{ padding:'1rem 1.5rem', borderTop:'1px solid #e5e7eb', display:'flex', gap:'0.75rem', justifyContent:'flex-end', background:'#f9fafb', borderRadius:'0 0 16px 16px' }}>
-                      <button className="gov-btn gov-btn-ghost" onClick={() => { setEditingAttraction(null); setCreatingAttraction(false); setAttractionForm(emptyAttractionForm); }}>{t('cancel')}</button>
+                      <button className="gov-btn gov-btn-ghost" onClick={() => { resetAttractionForm(); }}>{t('cancel')}</button>
                       <button onClick={handleAttractionSave} disabled={attractionSaving} className="gov-btn gov-btn-primary" style={{ minWidth:'150px' }}>
                         {attractionSaving ? t('saving') : creatingAttraction ? t('create_attraction') : t('button_save')}
                       </button>
@@ -4531,7 +4824,8 @@ const AdminDashboard = () => {
                                 }
                               } catch (error) {
                                 console.error('Error deleting attraction:', error);
-                                alert('Failed to delete attraction: ' + (error.response?.data?.message || error.message));
+                                const verb = hardDelete ? 'delete' : 'archive';
+                                alert(`Failed to ${verb} attraction: ` + (error.response?.data?.message || error.message));
                               } finally {
                                 setAttractionActionLoading(prev => ({ ...prev, [attractionId]: false }));
                               }
@@ -7447,6 +7741,9 @@ const AdminDashboard = () => {
                                 if (resp.data.success) {
                                   alert('Itinerary restored successfully');
                                   loadArchivedItineraries();
+                                  // Refresh the Itineraries module too, otherwise
+                                  // it keeps showing the itinerary as archived.
+                                  loadItineraries();
                                 }
                               } catch (error) {
                                 alert('Failed to restore itinerary');

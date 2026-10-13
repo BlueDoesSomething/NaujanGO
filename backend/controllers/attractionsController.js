@@ -55,29 +55,75 @@ export const getAttractionSuggestions = async (req, res) => {
   }
 };
 
+const parseJsonArray = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+};
+
+// Normalizes a raw attractions row into the shape the public pages consume.
+// `images` must be an array of plain URL strings — AttractionDetails.jsx
+// builds its gallery from it and unshifts `image_url` in front (see the
+// gallery memo there), matching how hotels expose `images`.
+const mapPublicAttraction = (row) => {
+  const images = parseJsonArray(row.image_urls);
+  return {
+    ...row,
+    category_tags: parseJsonArray(row.category_tags),
+    images,
+    // Keep image_urls consistent with `images` instead of leaking the raw
+    // JSON column string back to the client.
+    image_urls: images,
+    image_url: row.image_url || images[0] || null,
+  };
+};
+
 export const getAttractions = async (req, res) => {
   try {
     const language = req.language || 'en';
     console.log('[getAttractions] Requested language:', language, 'Headers:', req.headers['x-language'], 'Query:', req.query.lang);
 
-    const [colCheck] = await execute(
-      `SELECT COUNT(*) AS c FROM information_schema.columns
-       WHERE table_schema = DATABASE() AND table_name = 'attractions' AND column_name = 'entrance_fee'`
+    // The expanded columns come from migration 019; probe once so the
+    // endpoint still works on a database that has not run it yet.
+    const [colRows] = await execute(
+      `SELECT column_name FROM information_schema.columns
+       WHERE table_schema = DATABASE() AND table_name = 'attractions'
+         AND column_name IN ('entrance_fee', 'image_urls', 'opening_hours',
+                             'visit_duration', 'best_time_to_visit',
+                             'difficulty_level', 'category_tags', 'dangerous_animals')`
     );
-    const hasEntranceFee = Number(colCheck?.[0]?.c || 0) > 0;
+    const cols = new Set((colRows || []).map((r) => r.column_name || r.COLUMN_NAME));
+
+    const select = [
+      'a.id', 'a.name', 'a.description', 'a.municipality', 'a.location',
+      'a.image_url', 'a.latitude', 'a.longitude', 'a.category',
+      cols.has('entrance_fee') ? 'COALESCE(a.entrance_fee, 0) AS entrance_fee' : '0 AS entrance_fee',
+      cols.has('opening_hours') ? 'a.opening_hours' : 'NULL AS opening_hours',
+      cols.has('visit_duration') ? 'a.visit_duration' : 'NULL AS visit_duration',
+      cols.has('best_time_to_visit') ? 'a.best_time_to_visit' : 'NULL AS best_time_to_visit',
+      cols.has('difficulty_level') ? 'a.difficulty_level' : 'NULL AS difficulty_level',
+      cols.has('category_tags') ? 'a.category_tags' : 'NULL AS category_tags',
+      cols.has('dangerous_animals') ? 'a.dangerous_animals' : 'NULL AS dangerous_animals',
+      cols.has('image_urls') ? 'a.image_urls' : 'NULL AS image_urls',
+      'COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg_rating',
+      'COUNT(r.review_id) AS review_count',
+    ].join(', ');
 
     const [rows] = await execute(
-      `SELECT a.id, a.name, a.description, a.municipality, a.location,
-              a.image_url, a.latitude, a.longitude, a.category,
-              ${hasEntranceFee ? 'COALESCE(a.entrance_fee, 0)' : '0'} AS entrance_fee,
-              COALESCE(ROUND(AVG(r.rating), 1), 0) AS avg_rating,
-              COUNT(r.review_id) AS review_count
+      `SELECT ${select}
        FROM attractions a
        LEFT JOIN reviews r ON r.attraction_id = a.id AND r.moderated = 1
        WHERE (a.archived IS NULL OR a.archived = 0)
        GROUP BY a.id
        ORDER BY review_count DESC, avg_rating DESC, a.id ASC`
     );
+
+    const data = (rows || []).map(mapPublicAttraction);
 
     if (language && language !== 'en' && rows && rows.length > 0) {
       const ids = rows.map(r => r.id);
@@ -86,7 +132,7 @@ export const getAttractions = async (req, res) => {
       console.log('[getAttractions] Translations found:', Object.keys(translationsMap).length, 'attractions');
       
       // Try MT fallback for missing translations (async, in parallel)
-      const adapted = await Promise.all((rows || []).map(async r => {
+      const adapted = await Promise.all(data.map(async r => {
         const tr = translationsMap[String(r.id)] || {}; // Convert ID to string for map lookup
         let name = tr.name || await getTranslationWithFallback('attractions', r.id, 'name', language) || r.name;
         let description = tr.description || await getTranslationWithFallback('attractions', r.id, 'description', language) || r.description;
@@ -106,7 +152,7 @@ export const getAttractions = async (req, res) => {
 
     res.json({
       success: true,
-      data: rows || [],
+      data,
       language: 'en'
     });
   } catch (error) {
