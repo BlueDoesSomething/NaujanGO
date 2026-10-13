@@ -268,7 +268,9 @@ const ItineraryDetail = () => {
   };
   
   const deleteItinerary = async () => {
-    const confirmed = window.confirm(t('confirm_delete_itinerary'));
+    // Users cannot restore an archived itinerary (ItineraryBuilder filters
+    // them out), so this must not promise that it can be restored later.
+    const confirmed = window.confirm(t('confirm_archive_itinerary'));
     if (!confirmed) return;
     
     try {

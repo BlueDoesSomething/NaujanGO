@@ -778,11 +778,12 @@ const translations = {
     
     // Confirmation Messages
     confirm_delete_user: 'Delete this user? This cannot be undone.',
-    confirm_delete_hotel: 'Delete this hotel? This cannot be undone.',
-    confirm_delete_attraction: 'Delete this attraction? This cannot be undone.',
-    confirm_delete_itinerary: 'Delete this itinerary? This cannot be undone.',
-    confirm_delete_booking: 'Delete this booking? This cannot be undone.',
+    confirm_delete_hotel: 'Archive this hotel? It can be restored later.',
+    confirm_delete_attraction: 'Archive this attraction? It can be restored later.',
+    confirm_delete_itinerary: 'Archive this itinerary? It can be restored later.',
+    confirm_delete_booking: 'Archive this booking? It can be restored later.',
     confirm_delete_conversation: 'Are you sure you want to delete this conversation?',
+    confirm_archive_itinerary: 'Archive this itinerary? It will be removed from your list.',
     confirm_clear_history: 'Are you sure you want to clear all your conversation history? This cannot be undone.',
     
     // Messages
@@ -1888,11 +1889,12 @@ const translations = {
     
     // Confirmation Messages
     confirm_delete_user: 'Eliminar este usuario? Esto no se puede deshacer.',
-    confirm_delete_hotel: 'Eliminar este hotel? Esto no se puede deshacer.',
-    confirm_delete_attraction: 'Eliminar esta atracción? Esto no se puede deshacer.',
-    confirm_delete_itinerary: 'Eliminar este itinerario? Esto no se puede deshacer.',
-    confirm_delete_booking: 'Eliminar esta reserva? Esto no se puede deshacer.',
+    confirm_delete_hotel: 'Archivar este hotel? Se puede restaurar más tarde.',
+    confirm_delete_attraction: 'Archivar esta atracción? Se puede restaurar más tarde.',
+    confirm_delete_itinerary: 'Archivar este itinerario? Se puede restaurar más tarde.',
+    confirm_delete_booking: 'Archivar esta reserva? Se puede restaurar más tarde.',
     confirm_delete_conversation: 'Estás seguro de que quieres eliminar esta conversación?',
+    confirm_archive_itinerary: 'Archivar este itinerario? Se eliminará de tu lista.',
     confirm_clear_history: 'Estás seguro de que quieres eliminar todo tu historial de conversaciones? Esto no se puede deshacer.',
     
     // Payment Descriptions
@@ -2463,11 +2465,12 @@ const translations = {
     
     // Confirmation Messages
     confirm_delete_user: 'Tanggalin ang user na ito? Hindi ito mababawi.',
-    confirm_delete_hotel: 'Tanggalin ang hotel na ito? Hindi ito mababawi.',
-    confirm_delete_attraction: 'Tanggalin ang atraksyon na ito? Hindi ito mababawi.',
-    confirm_delete_itinerary: 'Tanggalin ang itinerary na ito? Hindi ito mababawi.',
-    confirm_delete_booking: 'Tanggalin ang booking na ito? Hindi ito mababawi.',
+    confirm_delete_hotel: 'I-archive ang hotel na ito? Maaari itong ibalik mamaya.',
+    confirm_delete_attraction: 'I-archive ang atraksyon na ito? Maaari itong ibalik mamaya.',
+    confirm_delete_itinerary: 'I-archive ang itinerary na ito? Maaari itong ibalik mamaya.',
+    confirm_delete_booking: 'I-archive ang booking na ito? Maaari itong ibalik mamaya.',
     confirm_delete_conversation: 'Sigurado ka ba na gustong tanggalin ang conversation na ito?',
+    confirm_archive_itinerary: 'I-archive ang itinerary na ito? Matatanggal ito sa iyong listahan.',
     confirm_clear_history: 'Sigurado ka ba na gustong i-clear ang lahat ng conversation history? Hindi ito mababawi.',
     
     // Payment Descriptions
@@ -3114,11 +3117,12 @@ const translations = {
     
     // Confirmation Messages
     confirm_delete_user: '删除此用户?这无法撤消。',
-    confirm_delete_hotel: '删除此酒店?这无法撤消。',
-    confirm_delete_attraction: '删除此景点?这无法撤消。',
-    confirm_delete_itinerary: '删除此行程?这无法撤消。',
-    confirm_delete_booking: '删除此预订?这无法撤消。',
+    confirm_delete_hotel: '归档此酒店?稍后可以恢复。',
+    confirm_delete_attraction: '归档此景点?稍后可以恢复。',
+    confirm_delete_itinerary: '归档此行程?稍后可以恢复。',
+    confirm_delete_booking: '归档此预订?稍后可以恢复。',
     confirm_delete_conversation: '确定要删除此对话吗?',
+    confirm_archive_itinerary: '归档此行程?它将从您的列表中移除。',
     confirm_clear_history: '确定要清除所有对话记录吗?这无法撤消。',
     
     // Payment & Hotel Keys
@@ -3672,11 +3676,12 @@ const translations = {
     
     // Confirmation Messages
     confirm_delete_user: 'このユーザーを削除しますか?これは元に戻せません。',
-    confirm_delete_hotel: 'このホテルを削除しますか?これは元に戻せません。',
-    confirm_delete_attraction: 'このアトラクションを削除しますか?これは元に戻せません。',
-    confirm_delete_itinerary: 'このイティナラリーを削除しますか?これは元に戻せません。',
-    confirm_delete_booking: 'この予約を削除しますか?これは元に戻せません。',
+    confirm_delete_hotel: 'このホテルをアーカイブしますか?後で元に戻せます。',
+    confirm_delete_attraction: 'このアトラクションをアーカイブしますか?後で元に戻せます。',
+    confirm_delete_itinerary: 'このイティナラリーをアーカイブしますか?後で元に戻せます。',
+    confirm_delete_booking: 'この予約をアーカイブしますか?後で元に戻せます。',
     confirm_delete_conversation: 'この会話を削除してもよろしいですか?',
+    confirm_archive_itinerary: 'このイティナラリーをアーカイブしますか?一覧から削除されます。',
     confirm_clear_history: 'すべての会話履歴をクリアしてもよろしいですか?これは元に戻せません。',
     hero_location_badge: 'NAUJAN · ORIENTAL MINDORO ナウハン・東ミンドロ',
     hero_title_pre: '発見',
@@ -4082,11 +4087,12 @@ const translations = {
     
     // Confirmation Messages
     confirm_delete_user: '이 사용자를 삭제하시겠어요? 이 작업은 취소할 수 없습니다.',
-    confirm_delete_hotel: '이 호텔을 삭제하시겠어요? 이 작업은 취소할 수 없습니다.',
-    confirm_delete_attraction: '이 명소를 삭제하시겠어요? 이 작업은 취소할 수 없습니다.',
-    confirm_delete_itinerary: '이 일정을 삭제하시겠어요? 이 작업은 취소할 수 없습니다.',
-    confirm_delete_booking: '이 예약을 삭제하시겠어요? 이 작업은 취소할 수 없습니다.',
+    confirm_delete_hotel: '이 호텔을 보관하시겠어요? 나중에 복원할 수 있습니다.',
+    confirm_delete_attraction: '이 명소를 보관하시겠어요? 나중에 복원할 수 있습니다.',
+    confirm_delete_itinerary: '이 일정을 보관하시겠어요? 나중에 복원할 수 있습니다.',
+    confirm_delete_booking: '이 예약을 보관하시겠어요? 나중에 복원할 수 있습니다.',
     confirm_delete_conversation: '이 대화를 삭제하시겠어요?',
+    confirm_archive_itinerary: '이 일정을 보관하시겠어요? 목록에서 제거됩니다.',
     confirm_clear_history: '모든 대화 기록을 삭제하시겠어요? 이 작업은 취소할 수 없습니다.',
     hero_location_badge: 'NAUJAN · ORIENTAL MINDORO 나우한 · 오리엔탈 민도로',
     hero_title_pre: '발견',
@@ -4492,11 +4498,12 @@ const translations = {
     
     // Confirmation Messages
     confirm_delete_user: 'Supprimer cet utilisateur? Cela ne peut pas être annulé.',
-    confirm_delete_hotel: 'Supprimer cet hôtel? Cela ne peut pas être annulé.',
-    confirm_delete_attraction: 'Supprimer cette attraction? Cela ne peut pas être annulé.',
-    confirm_delete_itinerary: 'Supprimer cet itinéraire? Cela ne peut pas être annulé.',
-    confirm_delete_booking: 'Supprimer cette réservation? Cela ne peut pas être annulé.',
+    confirm_delete_hotel: 'Archiver cet hôtel? Il pourra être restauré plus tard.',
+    confirm_delete_attraction: 'Archiver cette attraction? Elle pourra être restaurée plus tard.',
+    confirm_delete_itinerary: 'Archiver cet itinéraire? Il pourra être restauré plus tard.',
+    confirm_delete_booking: 'Archiver cette réservation? Elle pourra être restaurée plus tard.',
     confirm_delete_conversation: 'Êtes-vous sûr de vouloir supprimer cette conversation?',
+    confirm_archive_itinerary: 'Archiver cet itinéraire? Il sera retiré de votre liste.',
     confirm_clear_history: 'Êtes-vous sûr de vouloir effacer tout l\'historique des conversations? Cela ne peut pas être annulé.',
     hero_location_badge: 'NAUJAN · ORIENTAL MINDORO',
     hero_title_pre: 'Découvrez',
@@ -4939,11 +4946,12 @@ const translations = {
     
     // Confirmation Messages
     confirm_delete_user: 'Diesen Benutzer löschen? Dies kann nicht rückgängig gemacht werden.',
-    confirm_delete_hotel: 'Dieses Hotel löschen? Dies kann nicht rückgängig gemacht werden.',
-    confirm_delete_attraction: 'Diese Attraktion löschen? Dies kann nicht rückgängig gemacht werden.',
-    confirm_delete_itinerary: 'Diesen Reiseplan löschen? Dies kann nicht rückgängig gemacht werden.',
-    confirm_delete_booking: 'Diese Buchung löschen? Dies kann nicht rückgängig gemacht werden.',
+    confirm_delete_hotel: 'Dieses Hotel archivieren? Es kann später wiederhergestellt werden.',
+    confirm_delete_attraction: 'Diese Attraktion archivieren? Sie kann später wiederhergestellt werden.',
+    confirm_delete_itinerary: 'Diesen Reiseplan archivieren? Er kann später wiederhergestellt werden.',
+    confirm_delete_booking: 'Diese Buchung archivieren? Sie kann später wiederhergestellt werden.',
     confirm_delete_conversation: 'Möchten Sie dieses Gespräch wirklich löschen?',
+    confirm_archive_itinerary: 'Diesen Reiseplan archivieren? Er wird aus Ihrer Liste entfernt.',
     confirm_clear_history: 'Möchten Sie wirklich den gesamten Gesprächsverlauf löschen? Dies kann nicht rückgängig gemacht werden.',
     hero_location_badge: 'NAUJAN · ORIENTAL MINDORO',
     hero_title_pre: 'Entdecke',
