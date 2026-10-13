@@ -8,6 +8,7 @@ import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { parsePolicyFields } from '../utils/policyFields.js';
 import { parsePaymentMethodsInput, HOTEL_UPLOAD_MAX_BYTES } from '../utils/paymentMethods.js';
 import { getHotelColumns, GALLERY_COLUMN_WARNING, parseJsonArrayColumn } from '../utils/hotelColumns.js';
+import { setReviewModerated } from '../utils/reviewModeration.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -1548,6 +1549,60 @@ router.get('/business-profiles', async (req, res) => {
   } catch (error) {
     console.error('Get business profiles error:', error);
     res.status(500).json({ error: 'Failed to fetch business profiles' });
+  }
+});
+
+// GET /api/admin/reviews - every review across hotels and attractions.
+// LEFT JOINs are deliberate: the owner-side review list INNER JOINs hotels,
+// which silently drops every attraction review.
+router.get('/reviews', async (req, res) => {
+  try {
+    const [reviews] = await db.promise().query(
+      `SELECT
+         r.review_id, r.user_id, r.hotel_id, r.attraction_id, r.room_id,
+         r.booking_id, r.rating, r.comment,
+         r.owner_reply, r.owner_reply_date, r.review_date,
+         r.moderated, r.helpful_count,
+         h.name AS hotel_name,
+         a.name AS attraction_name,
+         u.username, u.email, u.first_name, u.last_name
+       FROM reviews r
+       LEFT JOIN hotels h ON r.hotel_id = h.hotel_id
+       LEFT JOIN attractions a ON r.attraction_id = a.id
+       LEFT JOIN users u ON r.user_id = u.user_id
+       ORDER BY r.review_date DESC`
+    );
+
+    res.json(reviews);
+  } catch (error) {
+    console.error('Get reviews error:', error);
+    res.status(500).json({ error: 'Failed to fetch reviews' });
+  }
+});
+
+// PUT /api/admin/reviews/:reviewId/moderate - hide (moderated=0) or restore (moderated=1)
+router.put('/reviews/:reviewId/moderate', async (req, res) => {
+  const { moderated } = req.body;
+
+  if (typeof moderated !== 'boolean') {
+    return res.status(400).json({ error: 'moderated must be a boolean' });
+  }
+
+  try {
+    const result = await setReviewModerated({
+      reviewId: req.params.reviewId,
+      moderator: req.user,
+      moderated,
+    });
+
+    if (result.status !== 200) {
+      return res.status(result.status).json(result.body);
+    }
+
+    res.json(result.body);
+  } catch (error) {
+    console.error('Moderate review error:', error);
+    res.status(500).json({ error: 'Failed to moderate review' });
   }
 });
 

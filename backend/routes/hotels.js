@@ -24,6 +24,6 @@ router.get('/:id/reviews', getHotelReviews);
 router.get('/:id/can-review', getCanReviewHotel);
 router.post('/:id/reviews', authenticateToken, createHotelReview);
 router.get('/:id/average-rating', getHotelAverageRating);
-router.put('/:id/reviews/:reviewId/helpful', markHotelReviewHelpful);
+router.put('/:id/reviews/:reviewId/helpful', authenticateToken, markHotelReviewHelpful);
 
 export default router;

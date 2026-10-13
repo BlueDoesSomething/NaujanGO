@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { fetchAttractionHeroSettings, fetchAttractions, fetchHotels, fetchReviews, fetchUserItineraries, submitReview } from '../api';
+import { fetchAttractionHeroSettings, fetchAttractions, fetchHotels, fetchReviews, fetchUserItineraries, submitReview, moderateReview } from '../api';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import LeafletMap from '../components/LeafletMap';
 import WeatherWidget from '../components/WeatherWidget';
@@ -13,6 +14,7 @@ import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ClockIcon,
+  EyeOffIcon,
   CloudSunIcon,
   CompassIcon,
   HeartIcon,
@@ -158,6 +160,8 @@ const AttractionDetails = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useLanguage();
+  const { user } = useAuth();
+  const canModerateReviews = user?.role === 'admin';
   const themeContext = useTheme();
   const isDark = themeContext?.isDark ?? false;
   const { id } = useParams();
@@ -530,6 +534,18 @@ const AttractionDetails = () => {
       comment: '',
       itinerary_id: eligibleItineraries[0]?.itinerary_id || null
     });
+  };
+
+  const handleHideReview = async (reviewId) => {
+    if (!window.confirm(t('confirm_hide_review'))) return;
+    try {
+      await moderateReview(reviewId, false, 'admin');
+      const res = await fetchReviews(attraction.id);
+      setReviews(res.data || []);
+    } catch (error) {
+      console.error('Error hiding review:', error);
+      alert(error.response?.data?.error || t('review_moderation_failed'));
+    }
   };
 
   const handleCloseReviewModal = () => {
@@ -978,6 +994,12 @@ const AttractionDetails = () => {
                     <span className="ad-rating-pill">{Number(review.rating || 0).toFixed(1)}/5</span>
                   </div>
                   <p>{review.comment || 'No written comment.'}</p>
+                  {canModerateReviews && (
+                    <button className="ad-help" onClick={() => handleHideReview(review.review_id)}>
+                      <EyeOffIcon size={13} />
+                      {t('hide_review')}
+                    </button>
+                  )}
                 </article>
               ))}
             </div>

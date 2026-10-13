@@ -277,6 +277,11 @@ const AdminDashboard = () => {
   const [bookingSearch, setBookingSearch] = useState('');
   const [bookingStatusFilter, setBookingStatusFilter] = useState('all');
   const [attractionSearch, setAttractionSearch] = useState('');
+  const [reviews, setReviews] = useState([]);
+  const [reviewSearch, setReviewSearch] = useState('');
+  const [reviewTargetFilter, setReviewTargetFilter] = useState('all');
+  const [reviewStatusFilter, setReviewStatusFilter] = useState('all');
+  const [reviewActionLoading, setReviewActionLoading] = useState({});
   const [editingHotel, setEditingHotel] = useState(null);
   const [creatingHotel, setCreatingHotel] = useState(false);
   const [hotelForm, setHotelForm] = useState(emptyHotelForm);
@@ -927,6 +932,7 @@ const AdminDashboard = () => {
   const [hotelsPage,      setHotelsPage]      = useState(1);
   const [itinerariesPage, setItinerariesPage] = useState(1);
   const [attractionsPage, setAttractionsPage] = useState(1);
+  const [reviewsPage,     setReviewsPage]     = useState(1);
 
   useEffect(() => {
     if (!user || user.role !== 'admin') {
@@ -948,6 +954,7 @@ const AdminDashboard = () => {
   useEffect(() => { setHotelsPage(1);      }, [hotelSearch]);
   useEffect(() => { setItinerariesPage(1); }, [itinerarySearch]);
   useEffect(() => { setAttractionsPage(1); }, [attractionSearch]);
+  useEffect(() => { setReviewsPage(1);     }, [reviewSearch, reviewTargetFilter, reviewStatusFilter]);
 
   const loadAdminData = async () => {
     try {
@@ -1371,6 +1378,37 @@ const AdminDashboard = () => {
       setAttractions(response.data);
     } catch (error) {
       console.error('Error loading attractions:', error);
+    }
+  };
+
+  const loadReviews = async () => {
+    try {
+      const response = await api.get('/admin/reviews');
+      setReviews(response.data);
+    } catch (error) {
+      console.error('Error loading reviews:', error);
+    }
+  };
+
+  const handleModerateReview = async (review, moderated) => {
+    const confirmed = window.confirm(
+      moderated ? t('confirm_restore_review') : t('confirm_hide_review')
+    );
+    if (!confirmed) return;
+
+    const key = String(review.review_id);
+    setReviewActionLoading((prev) => ({ ...prev, [key]: true }));
+    try {
+      await api.put(`/admin/reviews/${review.review_id}/moderate`, { moderated });
+      await loadReviews();
+    } catch (e) {
+      alert(e.response?.data?.error || t('review_moderation_failed'));
+    } finally {
+      setReviewActionLoading((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
     }
   };
 
@@ -2507,6 +2545,7 @@ const AdminDashboard = () => {
     { id: 'hotels', label: 'Hotels', icon: <Icons.Hotel size={22} /> },
     { id: 'itineraries', label: 'Itineraries', icon: <Icons.Route size={22} /> },
     { id: 'attractions', label: 'Attractions', icon: <Icons.Attraction size={22} /> },
+    { id: 'reviews', label: 'Reviews', icon: <Icons.Star size={22} /> },
     { id: 'maps', label: 'Maps', icon: <Icons.Map size={22} /> },
     { id: 'hero', label: 'Customization', icon: <Icons.Sun size={22} /> },
     { id: 'chatbot', label: 'Chatbot', icon: <Icons.Chat size={22} /> },
@@ -2538,6 +2577,21 @@ const AdminDashboard = () => {
     const query = attractionSearch.trim().toLowerCase();
     if (!query) return true;
     return `${attraction.name || ''} ${attraction.location || ''} ${attraction.description || ''}`
+      .toLowerCase()
+      .includes(query);
+  });
+
+  const filteredReviews = reviews.filter((review) => {
+    const target = review.attraction_id != null ? 'attraction' : 'hotel';
+    if (reviewTargetFilter !== 'all' && target !== reviewTargetFilter) return false;
+
+    if (reviewStatusFilter === 'hidden' && Number(review.moderated) !== 0) return false;
+    if (reviewStatusFilter === 'visible' && Number(review.moderated) === 0) return false;
+
+    const query = reviewSearch.trim().toLowerCase();
+    if (!query) return true;
+    const author = `${review.first_name || ''} ${review.last_name || ''}`.trim();
+    return `${author} ${review.username || ''} ${review.email || ''} ${review.comment || ''} ${review.hotel_name || ''} ${review.attraction_name || ''}`
       .toLowerCase()
       .includes(query);
   });
@@ -2652,6 +2706,7 @@ const AdminDashboard = () => {
                   if (mod.id === 'hotels') { loadHotels(); loadUsers(); }
                   if (mod.id === 'itineraries') { loadItineraries(); loadItineraryTemplates(); }
                   if (mod.id === 'attractions') loadAttractions();
+                  if (mod.id === 'reviews') loadReviews();
                   if (mod.id === 'maps') { loadHotels(); loadAttractions(); }
                   if (mod.id === 'about') loadCustomizationSettings();
                   if (mod.id === 'hero') loadCustomizationSettings();
@@ -4690,6 +4745,112 @@ const AdminDashboard = () => {
               {filteredAttractions.length === 0 && (
                 <div className="gov-glass-panel gov-empty">
                   <p style={{ color: '#718096' }}>{t('msg_no_attractions')}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Reviews */}
+          {activeModule === 'reviews' && (
+            <div>
+              <h1 className="gov-page-title">
+                <Icons.Star size={32} style={{ verticalAlign: 'middle' }} /> {t('reviews_management')}
+              </h1>
+              <div className="gov-glass-panel">
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+                  <input
+                    type="text"
+                    value={reviewSearch}
+                    onChange={(e) => setReviewSearch(e.target.value)}
+                    placeholder={t('search_reviews_placeholder')}
+                    className="gov-input" style={{ flex: '1 1 280px' }}
+                  />
+                  <select
+                    value={reviewTargetFilter}
+                    onChange={(e) => setReviewTargetFilter(e.target.value)}
+                    className="gov-select" style={{ minWidth: '180px' }}
+                  >
+                    <option value="all">{t('all_properties')}</option>
+                    <option value="hotel">{t('accommodation')}</option>
+                    <option value="attraction">{t('attraction')}</option>
+                  </select>
+                  <select
+                    value={reviewStatusFilter}
+                    onChange={(e) => setReviewStatusFilter(e.target.value)}
+                    className="gov-select" style={{ minWidth: '180px' }}
+                  >
+                    <option value="all">{t('all_statuses')}</option>
+                    <option value="visible">{t('visible')}</option>
+                    <option value="hidden">{t('hidden')}</option>
+                  </select>
+                </div>
+                <div className="gov-table-wrap">
+                  <table className="gov-table">
+                    <thead>
+                      <tr>
+                        <th>{t('id')}</th>
+                        <th>{t('property')}</th>
+                        <th>{t('guest')}</th>
+                        <th>{t('rating')}</th>
+                        <th>{t('review')}</th>
+                        <th>{t('status')}</th>
+                        <th>{t('actions')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredReviews.slice((reviewsPage - 1) * ADMIN_TABLE_SIZE, reviewsPage * ADMIN_TABLE_SIZE).map((review) => {
+                        const isHidden = Number(review.moderated) === 0;
+                        const busy = !!reviewActionLoading[String(review.review_id)];
+                        return (
+                          <tr key={review.review_id} style={isHidden ? { opacity: 0.55 } : undefined}>
+                            <td>#{review.review_id}</td>
+                            <td>
+                              <div style={{ fontWeight: 600 }}>{review.attraction_id != null ? review.attraction_name : review.hotel_name}</div>
+                              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                                {review.attraction_id != null ? t('attraction') : t('accommodation')}
+                              </div>
+                            </td>
+                            <td>
+                              <div>{`${review.first_name || ''} ${review.last_name || ''}`.trim() || review.username || '-'}</div>
+                              <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{review.email}</div>
+                            </td>
+                            <td>{review.rating}</td>
+                            <td style={{ maxWidth: '320px' }}>{review.comment || '-'}</td>
+                            <td>
+                              <span className={`gov-badge-status gov-badge-status--${isHidden ? 'cancelled' : 'confirmed'}`}>
+                                {isHidden ? t('hidden') : t('visible')}
+                              </span>
+                            </td>
+                            <td>
+                              {isHidden ? (
+                                <button
+                                  className="gov-btn gov-btn-primary"
+                                  onClick={() => handleModerateReview(review, true)}
+                                  disabled={busy}
+                                >
+                                  {busy ? t('saving') : t('restore_review')}
+                                </button>
+                              ) : (
+                                <button
+                                  className="gov-btn gov-btn-danger"
+                                  onClick={() => handleModerateReview(review, false)}
+                                  disabled={busy}
+                                >
+                                  {busy ? t('saving') : t('hide_review')}
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <Pagination page={reviewsPage} totalPages={Math.ceil(filteredReviews.length / ADMIN_TABLE_SIZE)} onPageChange={setReviewsPage} totalItems={filteredReviews.length} pageSize={ADMIN_TABLE_SIZE} label="reviews" />
+              {filteredReviews.length === 0 && (
+                <div className="gov-glass-panel gov-empty">
+                  <p style={{ color: '#718096' }}>{t('msg_no_reviews')}</p>
                 </div>
               )}
             </div>

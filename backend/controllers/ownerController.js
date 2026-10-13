@@ -16,6 +16,7 @@ import {
   HOTEL_UPLOAD_MAX_BYTES
 } from '../utils/paymentMethods.js';
 import { getHotelColumns, GALLERY_COLUMN_WARNING, parseJsonArrayColumn } from '../utils/hotelColumns.js';
+import { setReviewModerated } from '../utils/reviewModeration.js';
 
 const router = express.Router();
 
@@ -1283,6 +1284,32 @@ router.post('/reviews/:reviewId/reply', async (req, res) => {
   } catch (error) {
     console.error('Post review reply error:', error);
     res.status(500).json({ error: 'Failed to post reply' });
+  }
+});
+
+// PUT /owner/reviews/:reviewId/moderate - owner hides or restores a review on their own hotel
+router.put('/reviews/:reviewId/moderate', async (req, res) => {
+  const { moderated } = req.body;
+
+  if (typeof moderated !== 'boolean') {
+    return res.status(400).json({ error: 'moderated must be a boolean' });
+  }
+
+  try {
+    const result = await setReviewModerated({
+      reviewId: req.params.reviewId,
+      moderator: req.user,
+      moderated,
+    });
+
+    if (result.status !== 200) {
+      return res.status(result.status).json(result.body);
+    }
+
+    res.json(result.body);
+  } catch (error) {
+    console.error('Moderate review error:', error);
+    res.status(500).json({ error: 'Failed to moderate review' });
   }
 });
 

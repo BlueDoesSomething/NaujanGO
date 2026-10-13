@@ -134,6 +134,11 @@ export const fetchReviews = (attractionId) => {
   return apiClient.get(`/attractions/${attractionId}/reviews`);
 };
 
+export const moderateReview = (reviewId, moderated, role) => {
+  const prefix = role === 'admin' ? '/admin' : '/owner';
+  return apiClient.put(`${prefix}/reviews/${reviewId}/moderate`, { moderated });
+};
+
 export const submitReview = (attractionId, reviewData) => {
   return apiClient.post(`/attractions/${attractionId}/reviews`, reviewData);
 };

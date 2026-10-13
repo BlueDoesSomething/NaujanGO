@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { fetchHotels, fetchHotelCalendar, createHotelBooking, startPaymentCheckout, getApiBaseUrl } from '../api';
+import { fetchHotels, fetchHotelCalendar, createHotelBooking, startPaymentCheckout, getApiBaseUrl, moderateReview } from '../api';
 import * as api from '../api';
 import axios from 'axios';
 import LeafletMap from '../components/LeafletMap';
@@ -229,6 +229,7 @@ export default function HotelDetail() {
   
   const [hotel, setHotel] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [ownedHotelIds, setOwnedHotelIds] = useState(new Set());
   const [rooms, setRooms] = useState([]);
   const [managingRoomsHotel, setManagingRoomsHotel] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -405,6 +406,22 @@ export default function HotelDetail() {
     setRoomImageIndex(0);
   };
 
+  useEffect(() => {
+    if (user?.role !== 'owner') {
+      setOwnedHotelIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    api.get('/owner/hotels')
+      .then((res) => {
+        if (cancelled) return;
+        const list = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        setOwnedHotelIds(new Set(list.map((h) => String(h.hotel_id ?? h.id))));
+      })
+      .catch(() => { if (!cancelled) setOwnedHotelIds(new Set()); });
+    return () => { cancelled = true; };
+  }, [user?.role]);
+
   const loadHotelData = async () => {
     try {
       setLoading(true);
@@ -493,6 +510,25 @@ export default function HotelDetail() {
       loadHotelData(); // Reload to update count
     } catch (error) {
       console.error('Error marking review as helpful:', error);
+      alert(error.response?.data?.error || t('helpful_failed'));
+    }
+  };
+
+  const canModerateReviews = useMemo(() => {
+    if (!user) return false;
+    if (user.role === 'admin') return true;
+    if (user.role !== 'owner') return false;
+    return ownedHotelIds.has(String(id));
+  }, [user, id, ownedHotelIds]);
+
+  const handleHideReview = async (reviewId) => {
+    if (!window.confirm(t('confirm_hide_review'))) return;
+    try {
+      await moderateReview(reviewId, false, user.role);
+      await loadHotelData();
+    } catch (error) {
+      console.error('Error hiding review:', error);
+      alert(error.response?.data?.error || t('review_moderation_failed'));
     }
   };
 
@@ -1570,10 +1606,16 @@ export default function HotelDetail() {
                         <div className="hd-rev-reply-body">{review.owner_reply}</div>
                       </div>
                     )}
-                    <button className="hd-help" onClick={() => handleMarkHelpful(review.review_id)}>
+                    <button className="hd-help" onClick={() => handleMarkHelpful(review.review_id)} disabled={!isLoggedIn}>
                       <Icons.ThumbUp size={13} />
                       {t('helpful_label')} ({review.helpful_count || 0})
                     </button>
+                    {canModerateReviews && (
+                      <button className="hd-help" onClick={() => handleHideReview(review.review_id)}>
+                        <Icons.EyeOff size={13} />
+                        {t('hide_review')}
+                      </button>
+                    )}
                   </article>
                 ))
               )}

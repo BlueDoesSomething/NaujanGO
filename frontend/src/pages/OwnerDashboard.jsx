@@ -1094,6 +1094,20 @@ const OwnerDashboard = () => {
         alert('Failed to send reply');
       }
     };
+
+    const handleModerateReview = async (review, moderated) => {
+      const confirmed = window.confirm(
+        moderated ? t('confirm_restore_review') : t('confirm_hide_review')
+      );
+      if (!confirmed) return;
+      try {
+        await api.put(`/owner/reviews/${review.review_id}/moderate`, { moderated });
+        await fetchReviews();
+      } catch (error) {
+        console.error('Error moderating review:', error);
+        alert(error.response?.data?.error || t('review_moderation_failed'));
+      }
+    };
   
     const loadAnalytics = async () => {
       try {
@@ -2785,6 +2799,33 @@ const OwnerDashboard = () => {
                     <p style={{ margin: '1rem 0 0 0', color: '#2d3748', fontSize: '0.9rem', lineHeight: '1.6' }}>
                       {review.comment}
                     </p>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap' }}>
+                      <span style={{
+                        fontSize: '0.72rem', fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase',
+                        padding: '0.2rem 0.55rem', borderRadius: '999px',
+                        background: Number(review.moderated) === 0 ? '#fef3c7' : '#e8f5e9',
+                        color: Number(review.moderated) === 0 ? '#92400e' : '#1B5E20'
+                      }}>
+                        {Number(review.moderated) === 0 ? t('hidden') : t('visible')}
+                      </span>
+                      {Number(review.moderated) === 0 ? (
+                        <button
+                          className="gov-btn-primary"
+                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                          onClick={() => handleModerateReview(review, true)}
+                        >
+                          {t('restore_review')}
+                        </button>
+                      ) : (
+                        <button
+                          className="gov-btn-ghost"
+                          style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                          onClick={() => handleModerateReview(review, false)}
+                        >
+                          {t('hide_review')}
+                        </button>
+                      )}
+                    </div>
                       {review.owner_reply && (
                         <div style={{
                           marginTop: '1rem',
