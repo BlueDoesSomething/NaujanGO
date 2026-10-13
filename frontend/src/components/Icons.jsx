@@ -622,6 +622,13 @@ export const CopyIcon = ({ size = 24, className = "" }) => (
   </svg>
 );
 
+export const TagIcon = ({ size = 24, className = "" }) => (
+  <svg width={size} height={size} className={className} {...iconProps}>
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+    <circle cx="7" cy="7" r="1.5" />
+  </svg>
+);
+
 // Export all icons as a collection
 export const Icons = {
   // Primary names
@@ -794,6 +801,7 @@ export const Icons = {
   ThumbUpIcon: ThumbUpIcon,
   RulerIcon: RulerIcon,
   CopyIcon: CopyIcon,
+  TagIcon: TagIcon,
 };
 
 export default Icons;

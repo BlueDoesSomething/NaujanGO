@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import LeafletMap from '../components/LeafletMap';
 import WeatherWidget from '../components/WeatherWidget';
 import {
+  AlertTriangleIcon,
   ArrowUpRightIcon,
   CalendarIcon,
   CameraIcon,
@@ -27,7 +28,8 @@ import {
   PlusIcon,
   RouteIcon,
   StarIcon,
-  SunIcon
+  SunIcon,
+  TagIcon
 } from '../components/Icons';
 import { loadCachedSetting, saveCachedSetting } from '../utils/siteSettingsCache';
 import './AttractionDetails.css';
@@ -424,6 +426,13 @@ const AttractionDetails = () => {
     if (attraction.description.length <= DESCRIPTION_PREVIEW) return attraction.description;
     return `${attraction.description.slice(0, DESCRIPTION_PREVIEW)}...`;
   }, [attraction?.description]);
+
+  const attractionTags = useMemo(() => {
+    const source = attraction?.category_tags || attraction?.tags;
+    if (!Array.isArray(source)) return [];
+    const tags = source.filter((tag) => typeof tag === 'string' && tag.trim());
+    return Array.from(new Set(tags));
+  }, [attraction?.category_tags, attraction?.tags]);
 
   const ratingStats = useMemo(() => {
     const total = reviews.length;
@@ -828,6 +837,28 @@ const AttractionDetails = () => {
               <div>
                 <p className="ad-info-label">{t('difficulty')}</p>
                 <p className="ad-info-value">{formatLabel(attraction.difficulty_level || t('easy_to_moderate'), t('not_available'))}</p>
+              </div>
+            </li>
+            <li>
+              <span className="ad-info-icon"><TagIcon size={16} /></span>
+              <div>
+                <p className="ad-info-label">{t('category_tags')}</p>
+                {attractionTags.length > 0 ? (
+                  <div className="ad-info-tags">
+                    {attractionTags.map((tag) => (
+                      <span key={tag}>{tag}</span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="ad-info-value">{t('not_available')}</p>
+                )}
+              </div>
+            </li>
+            <li>
+              <span className="ad-info-icon ad-info-icon--warning"><AlertTriangleIcon size={16} /></span>
+              <div>
+                <p className="ad-info-label">{t('dangerous_animals')}</p>
+                <p className="ad-info-value">{formatLabel(attraction.dangerous_animals, t('not_available'))}</p>
               </div>
             </li>
             {travelFromUser && (

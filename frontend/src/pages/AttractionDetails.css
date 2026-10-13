@@ -780,6 +780,31 @@
   color: #0f172a;
 }
 
+.ad-info-icon--warning {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.ad-info-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 5px;
+}
+
+.ad-info-tags span {
+  display: inline-flex;
+  align-items: center;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
 .ad-eco-card {
   border-radius: 18px;
   padding: 18px;
@@ -1230,6 +1255,17 @@
 
 [data-theme="dark"] .ad-info-value {
   color: #f1f5f9;
+}
+
+[data-theme="dark"] .ad-info-icon--warning {
+  background: rgba(217, 119, 6, 0.16);
+  color: #fbbf24;
+}
+
+[data-theme="dark"] .ad-info-tags span {
+  background: rgba(16, 185, 129, 0.14);
+  border-color: rgba(52, 211, 153, 0.35);
+  color: #6ee7b7;
 }
 
 [data-theme="dark"] .ad-share-grid a,
