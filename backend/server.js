@@ -431,11 +431,13 @@ process.on('uncaughtException', (err) => {
 startRetentionSweep();
 
 import { initSocket } from './socket.js';
-import { ensureFlexiblePaymentSchema, ensureHotelPolicySchema, ensureBusinessLegitimacySchema, ensureRoomFieldsSchema, ensureReviewRoomIdBackfill } from './utils/dbSchema.js';
+import { ensureFlexiblePaymentSchema, ensureHotelPolicySchema, ensureBusinessLegitimacySchema, ensureRoomFieldsSchema, ensureReviewRoomIdBackfill, ensureHotelGallerySchema } from './utils/dbSchema.js';
 
 // Flexible payment options: make sure reservation_fee / payment_option /
 // payment_status('partial') exist before any request can hit them.
 await ensureFlexiblePaymentSchema();
+// Hotel gallery column (migration 008) so gallery uploads actually persist.
+await ensureHotelGallerySchema();
 // Cancellation policy / house rules / balance deadline columns (migration 041).
 await ensureHotelPolicySchema();
 // Business permit / DOT / PhilGEPS columns on business_profiles (migration 042).

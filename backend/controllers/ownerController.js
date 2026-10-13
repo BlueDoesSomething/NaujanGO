@@ -9,6 +9,11 @@ import { syncBookingPaymentStatus } from '../utils/paymentSync.js';
 import { balanceOf } from '../utils/paymentAmounts.js';
 import { parsePolicyFields } from '../utils/policyFields.js';
 import { computeAuthorization, LEGITIMACY_FIELDS, attachHotelLegitimacyList } from '../utils/legitimacy.js';
+import {
+  DEFAULT_PAYMENT_METHODS,
+  parsePaymentMethodsInput,
+  parseStoredPaymentMethods
+} from '../utils/paymentMethods.js';
 
 const router = express.Router();
 
@@ -143,50 +148,6 @@ const parseCoordinateInput = (value) => {
   const num = Number(value);
   if (!Number.isFinite(num)) return { error: 'Coordinates must be valid numbers' };
   return { value: num };
-};
-
-const DEFAULT_PAYMENT_METHODS = ['card', 'gcash', 'grabpay', 'qrph', 'paypal', 'bank_transfer', 'pay_at_property'];
-const PAYMENT_METHOD_SET = new Set(DEFAULT_PAYMENT_METHODS);
-
-const parsePaymentMethodsInput = (methods) => {
-  if (methods === null || methods === undefined) return DEFAULT_PAYMENT_METHODS.join(',');
-  let parsed = [];
-
-  if (Array.isArray(methods)) {
-    parsed = methods;
-  } else if (typeof methods === 'string') {
-    const trimmed = methods.trim();
-    if (!trimmed) return DEFAULT_PAYMENT_METHODS.join(',');
-    if (trimmed.startsWith('[')) {
-      try {
-        const arr = JSON.parse(trimmed);
-        if (Array.isArray(arr)) {
-          parsed = arr;
-        }
-      } catch (error) {
-        parsed = trimmed.split(',');
-      }
-    } else {
-      parsed = trimmed.split(',');
-    }
-  } else {
-    parsed = [String(methods)];
-  }
-
-  const normalized = parsed
-    .map((item) => String(item || '').trim().toLowerCase())
-    .filter((item) => PAYMENT_METHOD_SET.has(item));
-
-  const unique = [...new Set(normalized)];
-  return (unique.length ? unique : DEFAULT_PAYMENT_METHODS).join(',');
-};
-
-const parseStoredPaymentMethods = (value) => {
-  const parsed = parsePaymentMethodsInput(value)
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-  return parsed.length ? parsed : DEFAULT_PAYMENT_METHODS;
 };
 
 const toDateKey = (value) => {
@@ -684,7 +645,17 @@ router.put('/hotels/:hotelId', async (req, res) => {
     if (name !== undefined) { fields.push('name = ?'); values.push(name); }
     if (location !== undefined) { fields.push('location = ?'); values.push(location); }
     if (description !== undefined) { fields.push('description = ?'); values.push(description); }
-    // Note: Hotel pricing is now managed at the room level, not hotel level
+    // Hotel-level nightly price is the listing/"from" price shown when a
+    // property has no rooms; exact per-type pricing lives on rooms.price_per_night.
+    // The column is NOT NULL, so an empty value is skipped rather than nulled.
+    if (price_per_night !== undefined && price_per_night !== null && price_per_night !== '') {
+      const price = Number(price_per_night);
+      if (!Number.isFinite(price) || price < 0) {
+        return res.status(400).json({ error: 'Price per night must be a non-negative number' });
+      }
+      fields.push('price_per_night = ?');
+      values.push(price);
+    }
     if (currency !== undefined) { fields.push('currency = ?'); values.push(currency); }
     if (rating !== undefined) { fields.push('rating = ?'); values.push(rating); }
     if (rooms_total !== undefined) { fields.push('rooms_total = ?'); values.push(rooms_total); }

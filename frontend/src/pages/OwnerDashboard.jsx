@@ -7,6 +7,7 @@ import Pagination from '../components/Pagination';
 import RoomManagement from '../components/RoomManagement';
 import RoomRevenueReport from '../components/RoomRevenueReport';
 import { policyChip } from '../utils/bookingPolicy';
+import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import naujanGoLogo from '../assets/552820828_1195483019268738_3720769628710779316_n.png';
@@ -15,15 +16,7 @@ import L from 'leaflet';
 import './OwnerDashboard.css';
 import './HotelDetail.css';
 
-const getHotelPaymentMethodOptions = (t) => [
-  { value: 'card', label: t('payment_provider_card') },
-  { value: 'gcash', label: t('payment_provider_gcash') },
-  { value: 'grabpay', label: t('payment_provider_grabpay') },
-  { value: 'qrph', label: t('payment_provider_qrph') || 'QR PH' },
-  { value: 'paypal', label: t('payment_provider_paypal') },
-  { value: 'bank_transfer', label: t('payment_provider_bank_transfer') },
-  { value: 'pay_at_property', label: t('payment_method_pay_at_property') }
-];
+const getHotelPaymentMethodOptions = HOTEL_PAYMENT_METHOD_OPTIONS;
 
 const PAYMENT_METHOD_LABELS = {
   card: 'Credit/Debit Card',
@@ -56,7 +49,7 @@ const OwnerDashboard = () => {
     amenities: '',
     image_url: '',
     image_urls: [],
-    allowed_payment_methods: ['card', 'gcash', 'grabpay', 'qrph', 'paypal', 'bank_transfer', 'pay_at_property'],
+    allowed_payment_methods: [...DEFAULT_HOTEL_PAYMENT_METHODS],
     reservation_fee: '',
     map_url: '',
     contact_phone: '',
@@ -699,10 +692,13 @@ const OwnerDashboard = () => {
 
   const handleAvailabilitySave = async () => {
     if (!selectedHotelForCalendar) return;
+    const priceChanged = availabilityForm.price_per_night !== '' && availabilityForm.price_per_night != null;
     const payload = {
       rooms_total: availabilityForm.rooms_total === '' ? null : Number(availabilityForm.rooms_total),
       rooms_available: availabilityForm.rooms_available === '' ? null : Number(availabilityForm.rooms_available),
-      price_per_night: availabilityForm.price_per_night === '' ? null : Number(availabilityForm.price_per_night),
+      // Only sent when filled in: hotels.price_per_night is NOT NULL, so an
+      // empty value must leave the stored price untouched rather than clear it.
+      ...(priceChanged ? { price_per_night: Number(availabilityForm.price_per_night) } : {}),
       is_active: availabilityForm.is_active ? 1 : 0
     };
 
@@ -716,7 +712,7 @@ const OwnerDashboard = () => {
               ...prev,
               rooms_total: payload.rooms_total ?? prev.rooms_total,
               rooms_available: payload.rooms_available ?? prev.rooms_available,
-              price_per_night: payload.price_per_night ?? prev.price_per_night,
+              ...(priceChanged ? { price_per_night: payload.price_per_night } : {}),
               is_active: payload.is_active
             }
           : prev
@@ -816,7 +812,9 @@ const OwnerDashboard = () => {
         name: hotelForm.name,
         location: hotelForm.location,
         description: hotelForm.description,
-        price_per_night: hotelForm.price_per_night === '' ? null : Number(hotelForm.price_per_night),
+        ...(hotelForm.price_per_night !== '' && hotelForm.price_per_night != null
+          ? { price_per_night: Number(hotelForm.price_per_night) }
+          : {}),
         currency: hotelForm.currency || 'PHP',
         rating: hotelForm.rating === '' ? null : Number(hotelForm.rating),
         amenities: hotelForm.amenities,
@@ -871,7 +869,9 @@ const OwnerDashboard = () => {
         name: hotelForm.name,
         location: hotelForm.location,
         description: hotelForm.description,
-        price_per_night: hotelForm.price_per_night === '' ? null : Number(hotelForm.price_per_night),
+        ...(hotelForm.price_per_night !== '' && hotelForm.price_per_night != null
+          ? { price_per_night: Number(hotelForm.price_per_night) }
+          : {}),
         currency: hotelForm.currency || 'PHP',
         rating: hotelForm.rating === '' ? null : Number(hotelForm.rating),
         amenities: hotelForm.amenities,

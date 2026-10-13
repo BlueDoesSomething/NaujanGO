@@ -88,6 +88,17 @@ export const ensureBusinessLegitimacySchema = async () => {
   }
 };
 
+// Hotel gallery (migration 008). Both the owner editor and the admin editor
+// collect gallery images, but without this column the values were written to
+// nowhere and silently dropped on save. Idempotent; runs on every boot.
+export const ensureHotelGallerySchema = async () => {
+  try {
+    await ensureColumn('hotels', 'image_urls', 'JSON NULL DEFAULT NULL AFTER `image_url`');
+  } catch (error) {
+    console.error('Schema ensure (hotel gallery) failed:', error.message);
+  }
+};
+
 // Room policy / detail fields (migration 043): the owner Room Management form
 // collects these but the rooms table had no columns for them, so the values
 // were silently dropped on save.

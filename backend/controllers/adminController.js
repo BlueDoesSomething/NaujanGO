@@ -6,6 +6,7 @@ import multer from 'multer';
 import db from '../db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { parsePolicyFields } from '../utils/policyFields.js';
+import { parsePaymentMethodsInput } from '../utils/paymentMethods.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -587,14 +588,39 @@ const getHotelColumns = async () => {
     `SELECT column_name FROM information_schema.columns
      WHERE table_schema = DATABASE()
        AND table_name = 'hotels'
-       AND column_name IN ('image_urls')`
+       AND column_name IN ('image_urls', 'allowed_payment_methods', 'reservation_fee')`
   );
 
   const present = new Set(rows.map((row) => row.COLUMN_NAME));
   hotelColumnCache = {
-    imageUrls: present.has('image_urls')
+    imageUrls: present.has('image_urls'),
+    allowedPaymentMethods: present.has('allowed_payment_methods'),
+    reservationFee: present.has('reservation_fee')
   };
   return hotelColumnCache;
+};
+
+// Hotel-level listing price. The column is NOT NULL, so an empty value is
+// skipped instead of written as NULL; callers that require a price (create)
+// validate separately.
+const parsePriceInput = (price) => {
+  if (price === undefined) return { skip: true };
+  if (price === null || price === '') return { skip: true };
+  const value = Number(price);
+  if (!Number.isFinite(value) || value < 0) {
+    return { error: 'Price per night must be a non-negative number' };
+  }
+  return { value };
+};
+
+const parseReservationFeeInput = (fee) => {
+  if (fee === undefined) return { skip: true };
+  if (fee === null || fee === '') return { value: null };
+  const value = Number(fee);
+  if (!Number.isFinite(value) || value < 0) {
+    return { error: 'Reservation fee must be a non-negative number' };
+  }
+  return { value };
 };
 
 const parseAmenitiesInput = (amenities) => {
@@ -1664,16 +1690,29 @@ router.post('/hotels', async (req, res) => {
     longitude,
     contact_phone,
     contact_email,
-    is_active
+    is_active,
+    allowed_payment_methods,
+    reservation_fee
   } = req.body;
 
   if (!name || !location) {
     return res.status(400).json({ error: 'Hotel name and location are required' });
   }
 
-  const price = Number(price_per_night);
-  if (!Number.isFinite(price) || price < 0) {
-    return res.status(400).json({ error: 'Price per night must be a valid number' });
+  // price_per_night is NOT NULL: reject an omitted/blank value outright rather
+  // than letting Number('') coerce it to 0 and create a ₱0.00 listing.
+  const priceResult = parsePriceInput(price_per_night);
+  if (priceResult.error) {
+    return res.status(400).json({ error: priceResult.error });
+  }
+  if (priceResult.skip) {
+    return res.status(400).json({ error: 'Price per night is required' });
+  }
+  const price = priceResult.value;
+
+  const feeResult = parseReservationFeeInput(reservation_fee);
+  if (feeResult.error) {
+    return res.status(400).json({ error: feeResult.error });
   }
 
   try {
@@ -1710,6 +1749,16 @@ router.post('/hotels', async (req, res) => {
     if (hotelColumns.imageUrls) {
       insertColumns.splice(10, 0, 'image_urls');
       insertValues.splice(10, 0, parsedImageUrls ?? null);
+    }
+
+    if (hotelColumns.allowedPaymentMethods) {
+      insertColumns.push('allowed_payment_methods');
+      insertValues.push(parsePaymentMethodsInput(allowed_payment_methods));
+    }
+
+    if (hotelColumns.reservationFee) {
+      insertColumns.push('reservation_fee');
+      insertValues.push(feeResult.value ?? null);
     }
 
     // Policy / house-rule fields (is_active handled above via normalizeIsActive)
@@ -1756,7 +1805,9 @@ router.put('/hotels/:id', async (req, res) => {
     longitude,
     contact_phone,
     contact_email,
-    is_active
+    is_active,
+    allowed_payment_methods,
+    reservation_fee
   } = req.body;
 
   try {
@@ -1767,7 +1818,11 @@ router.put('/hotels/:id', async (req, res) => {
     if (name !== undefined) { fields.push('name = ?'); values.push(name); }
     if (location !== undefined) { fields.push('location = ?'); values.push(location); }
     if (description !== undefined) { fields.push('description = ?'); values.push(description); }
-    if (price_per_night !== undefined) { fields.push('price_per_night = ?'); values.push(price_per_night); }
+    const priceResult = parsePriceInput(price_per_night);
+    if (priceResult.error) {
+      return res.status(400).json({ error: priceResult.error });
+    }
+    if (!priceResult.skip) { fields.push('price_per_night = ?'); values.push(priceResult.value); }
     if (currency !== undefined) { fields.push('currency = ?'); values.push(currency); }
     if (rating !== undefined) { fields.push('rating = ?'); values.push(rating); }
     if (rooms_total !== undefined) { fields.push('rooms_total = ?'); values.push(rooms_total); }
@@ -1783,6 +1838,18 @@ router.put('/hotels/:id', async (req, res) => {
     if (longitude !== undefined) { fields.push('longitude = ?'); values.push(longitude); }
     if (contact_phone !== undefined) { fields.push('contact_phone = ?'); values.push(contact_phone); }
     if (contact_email !== undefined) { fields.push('contact_email = ?'); values.push(contact_email); }
+
+    if (hotelColumns.allowedPaymentMethods && allowed_payment_methods !== undefined) {
+      fields.push('allowed_payment_methods = ?');
+      values.push(parsePaymentMethodsInput(allowed_payment_methods));
+    }
+    if (hotelColumns.reservationFee) {
+      const feeResult = parseReservationFeeInput(reservation_fee);
+      if (feeResult.error) {
+        return res.status(400).json({ error: feeResult.error });
+      }
+      if (!feeResult.skip) { fields.push('reservation_fee = ?'); values.push(feeResult.value); }
+    }
 
     const parsedAmenities = parseAmenitiesInput(amenities);
     if (parsedAmenities !== undefined) {
@@ -1822,6 +1889,65 @@ router.put('/hotels/:id', async (req, res) => {
     console.error('Update hotel error:', error);
     res.status(500).json({ error: 'Failed to update hotel' });
   }
+});
+
+// Fixed destination directory (not driven by req.body) so the multer destination
+// callback can never race with FormData part ordering.
+const hotelGalleryDir = path.join(__dirname, '..', 'uploads', 'hotels');
+const hotelGalleryUpload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      if (!fs.existsSync(hotelGalleryDir)) {
+        fs.mkdirSync(hotelGalleryDir, { recursive: true });
+      }
+      cb(null, hotelGalleryDir);
+    },
+    filename: (req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 10)}${ext}`);
+    },
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) return cb(null, true);
+    cb(new Error('Only image uploads are allowed'));
+  },
+});
+
+// Upload hotel gallery images. Appends to the existing image_urls array so an
+// admin never has to resend the whole gallery to add a photo.
+router.post('/hotels/:id/gallery', async (req, res) => {
+  hotelGalleryUpload.array('images', 10)(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message || 'Upload failed' });
+    }
+    const { id } = req.params;
+    if (!req.files?.length) {
+      return res.status(400).json({ error: 'No files provided' });
+    }
+
+    const urls = req.files.map((f) => `/uploads/hotels/${f.filename}`);
+
+    try {
+      const cols = await getHotelColumns();
+      if (cols.imageUrls) {
+        const [rows] = await db.promise().query('SELECT image_urls FROM hotels WHERE hotel_id = ?', [id]);
+        if (!rows.length) {
+          return res.status(404).json({ error: 'Hotel not found' });
+        }
+        const current = parseJsonArrayColumn(rows[0].image_urls);
+        const merged = [...current, ...urls];
+        await db.promise().query('UPDATE hotels SET image_urls = ? WHERE hotel_id = ?', [
+          JSON.stringify(merged),
+          id,
+        ]);
+      }
+      res.json({ success: true, urls });
+    } catch (error) {
+      console.error('Hotel gallery upload error:', error);
+      res.status(500).json({ error: 'Failed to save gallery images' });
+    }
+  });
 });
 
 // Update hotel status

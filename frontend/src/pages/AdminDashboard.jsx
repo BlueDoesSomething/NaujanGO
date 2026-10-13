@@ -29,6 +29,7 @@ import {
   createRestoreAttractionHandler,
   AttractionActionButtons
 } from '../components/AdminDashboardAttractionHelpers.jsx';
+import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
 
 const CHATBOT_TRAINING_LANGUAGES = [
   { value: 'all', label: 'All languages' },
@@ -200,6 +201,19 @@ const toBooleanSetting = (value, fallback = false) => {
   return fallback;
 };
 
+// The hotels gallery is a JSON column. The admin list endpoint returns an
+// array, but the archived list does not parse it, so tolerate both shapes.
+const parseHotelImageUrls = (value) => {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value !== 'string' || !value.trim()) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+};
+
 const AdminDashboard = () => {
   const { user, logout, refreshProfile } = useAuth();
   const { t } = useLanguage();
@@ -214,10 +228,15 @@ const AdminDashboard = () => {
     rating: '',
     amenities: '',
     image_url: '',
+    image_urls: [],
     map_url: '',
+    latitude: '',
+    longitude: '',
     contact_phone: '',
     contact_email: '',
     is_active: 1,
+    reservation_fee: '',
+    allowed_payment_methods: [...DEFAULT_HOTEL_PAYMENT_METHODS],
     cancellation_type: 'free_until',
     free_cancellation_days: 1,
     balance_due_days: 1,
@@ -262,6 +281,8 @@ const AdminDashboard = () => {
   const [creatingHotel, setCreatingHotel] = useState(false);
   const [hotelForm, setHotelForm] = useState(emptyHotelForm);
   const [hotelSaving, setHotelSaving] = useState(false);
+  const [hotelGalleryUrlInput, setHotelGalleryUrlInput] = useState('');
+  const [hotelImageUploading, setHotelImageUploading] = useState(false);
   const [chatbotData, setChatbotData] = useState(null);
   const [chatbotConvSearch, setChatbotConvSearch] = useState('');
   const [viewingConversation, setViewingConversation] = useState(null);
@@ -1550,10 +1571,17 @@ const AdminDashboard = () => {
       rating: hotel.rating ?? '',
       amenities: Array.isArray(hotel.amenities) ? hotel.amenities.join(', ') : '',
       image_url: hotel.image_url || '',
+      image_urls: parseHotelImageUrls(hotel.image_urls),
       map_url: hotel.map_url || '',
+      latitude: hotel.latitude ?? '',
+      longitude: hotel.longitude ?? '',
       contact_phone: hotel.contact_phone || '',
       contact_email: hotel.contact_email || '',
       is_active: hotel.is_active ? 1 : 0,
+      reservation_fee: hotel.reservation_fee ?? '',
+      allowed_payment_methods: Array.isArray(hotel.allowed_payment_methods) && hotel.allowed_payment_methods.length
+        ? hotel.allowed_payment_methods
+        : [...DEFAULT_HOTEL_PAYMENT_METHODS],
       cancellation_type: hotel.cancellation_type || 'free_until',
       free_cancellation_days: hotel.free_cancellation_days ?? 1,
       balance_due_days: hotel.balance_due_days ?? 1,
@@ -1569,19 +1597,27 @@ const AdminDashboard = () => {
 
     try {
       setHotelSaving(true);
+      const imageUrls = Array.isArray(hotelForm.image_urls) ? hotelForm.image_urls.filter(Boolean) : [];
       const payload = {
         name: hotelForm.name,
         location: hotelForm.location,
         description: hotelForm.description,
-        price_per_night: hotelForm.price_per_night === '' ? null : Number(hotelForm.price_per_night),
+        ...(hotelForm.price_per_night !== '' && hotelForm.price_per_night != null
+          ? { price_per_night: Number(hotelForm.price_per_night) }
+          : {}),
         currency: hotelForm.currency || 'PHP',
         rating: hotelForm.rating === '' ? null : Number(hotelForm.rating),
         amenities: hotelForm.amenities,
         image_url: hotelForm.image_url,
+        image_urls: imageUrls,
         map_url: hotelForm.map_url,
+        latitude: hotelForm.latitude === '' ? null : Number(hotelForm.latitude),
+        longitude: hotelForm.longitude === '' ? null : Number(hotelForm.longitude),
         contact_phone: hotelForm.contact_phone,
         contact_email: hotelForm.contact_email,
         is_active: hotelForm.is_active ? 1 : 0,
+        reservation_fee: hotelForm.reservation_fee === '' ? null : Number(hotelForm.reservation_fee),
+        allowed_payment_methods: hotelForm.allowed_payment_methods,
         cancellation_type: hotelForm.cancellation_type || 'free_until',
         free_cancellation_days: hotelForm.free_cancellation_days === '' || hotelForm.free_cancellation_days == null ? 1 : Number(hotelForm.free_cancellation_days),
         balance_due_days: hotelForm.balance_due_days === '' || hotelForm.balance_due_days == null ? 1 : Number(hotelForm.balance_due_days),
@@ -1594,9 +1630,11 @@ const AdminDashboard = () => {
       await api.put(`/admin/hotels/${editingHotel.hotel_id}`, payload);
       setEditingHotel(null);
       setHotelForm(emptyHotelForm);
+      setHotelGalleryUrlInput('');
       await loadHotels();
     } catch (error) {
       console.error('Error saving hotel:', error);
+      alert(error.response?.data?.error || 'Failed to save hotel. Please try again.');
     } finally {
       setHotelSaving(false);
     }
@@ -1608,9 +1646,17 @@ const AdminDashboard = () => {
     setHotelForm(emptyHotelForm);
   };
 
+  const closeHotelModal = () => {
+    setEditingHotel(null);
+    setCreatingHotel(false);
+    setHotelForm(emptyHotelForm);
+    setHotelGalleryUrlInput('');
+  };
+
   const handleHotelCreate = async () => {
     try {
       setHotelSaving(true);
+      const createImageUrls = Array.isArray(hotelForm.image_urls) ? hotelForm.image_urls.filter(Boolean) : [];
       const payload = {
         name: hotelForm.name,
         location: hotelForm.location,
@@ -1620,10 +1666,15 @@ const AdminDashboard = () => {
         rating: hotelForm.rating === '' ? null : Number(hotelForm.rating),
         amenities: hotelForm.amenities,
         image_url: hotelForm.image_url,
+        image_urls: createImageUrls,
         map_url: hotelForm.map_url,
+        latitude: hotelForm.latitude === '' ? null : Number(hotelForm.latitude),
+        longitude: hotelForm.longitude === '' ? null : Number(hotelForm.longitude),
         contact_phone: hotelForm.contact_phone,
         contact_email: hotelForm.contact_email,
         is_active: hotelForm.is_active ? 1 : 0,
+        reservation_fee: hotelForm.reservation_fee === '' ? null : Number(hotelForm.reservation_fee),
+        allowed_payment_methods: hotelForm.allowed_payment_methods,
         cancellation_type: hotelForm.cancellation_type || 'free_until',
         free_cancellation_days: hotelForm.free_cancellation_days === '' || hotelForm.free_cancellation_days == null ? 1 : Number(hotelForm.free_cancellation_days),
         balance_due_days: hotelForm.balance_due_days === '' || hotelForm.balance_due_days == null ? 1 : Number(hotelForm.balance_due_days),
@@ -1636,12 +1687,53 @@ const AdminDashboard = () => {
       await api.post('/admin/hotels', payload);
       setCreatingHotel(false);
       setHotelForm(emptyHotelForm);
+      setHotelGalleryUrlInput('');
       await loadHotels();
     } catch (error) {
       console.error('Error creating hotel:', error);
-      alert('Failed to create hotel. Please check required fields.');
+      alert(error.response?.data?.error || 'Failed to create hotel. Please check required fields.');
     } finally {
       setHotelSaving(false);
+    }
+  };
+
+  const addHotelGalleryUrl = () => {
+    const trimmed = hotelGalleryUrlInput.trim();
+    if (!trimmed) return;
+    const next = Array.isArray(hotelForm.image_urls) ? hotelForm.image_urls.slice() : [];
+    if (!next.includes(trimmed)) next.push(trimmed);
+    setHotelForm({ ...hotelForm, image_urls: next });
+    setHotelGalleryUrlInput('');
+  };
+
+  const removeHotelGalleryUrl = (url) => {
+    const next = (Array.isArray(hotelForm.image_urls) ? hotelForm.image_urls : []).filter((item) => item !== url);
+    setHotelForm({ ...hotelForm, image_urls: next });
+  };
+
+  const handleHotelImageUpload = async (files) => {
+    if (!files || files.length === 0 || !editingHotel) return;
+    try {
+      setHotelImageUploading(true);
+      const formData = new FormData();
+      Array.from(files).forEach((file) => formData.append('images', file));
+      const res = await api.post(`/admin/hotels/${editingHotel.hotel_id}/gallery`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      const uploaded = Array.isArray(res.data?.urls) ? res.data.urls : [];
+      if (uploaded.length > 0) {
+        const next = Array.isArray(hotelForm.image_urls) ? hotelForm.image_urls.slice() : [];
+        uploaded.forEach((url) => {
+          if (url && !next.includes(url)) next.push(url);
+        });
+        setHotelForm({ ...hotelForm, image_urls: next });
+      }
+      await loadHotels();
+    } catch (error) {
+      console.error('Hotel gallery upload failed:', error);
+      alert(error.response?.data?.error || 'Image upload failed. Please try again.');
+    } finally {
+      setHotelImageUploading(false);
     }
   };
 
@@ -3323,7 +3415,7 @@ const AdminDashboard = () => {
               {(editingHotel || creatingHotel) && (
                 <div
                   style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}
-                  onClick={(e) => { if (e.target === e.currentTarget) { setEditingHotel(null); setCreatingHotel(false); setHotelForm(emptyHotelForm); } }}
+                  onClick={(e) => { if (e.target === e.currentTarget) closeHotelModal(); }}
                 >
                   <div style={{ background:'#fff', borderRadius:'16px', width:'100%', maxWidth:'660px', maxHeight:'92vh', overflowY:'auto', boxShadow:'0 24px 64px rgba(0,0,0,0.22)', display:'flex', flexDirection:'column' }}>
                     {/* Header */}
@@ -3333,7 +3425,7 @@ const AdminDashboard = () => {
                         <div style={{ fontSize:'1.25rem', fontWeight:800 }}>{creatingHotel ? t('admin_add_new_hotel_btn') : editingHotel.name}</div>
                         {editingHotel && <div style={{ fontSize:'0.82rem', opacity:0.8, marginTop:'2px' }}>{editingHotel.location}</div>}
                       </div>
-                      <button onClick={() => { setEditingHotel(null); setCreatingHotel(false); setHotelForm(emptyHotelForm); }} style={{ background:'rgba(255,255,255,0.2)', border:'none', borderRadius:'50%', width:'34px', height:'34px', cursor:'pointer', color:'#fff', fontSize:'1.1rem', fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
+                      <button onClick={closeHotelModal} style={{ background:'rgba(255,255,255,0.2)', border:'none', borderRadius:'50%', width:'34px', height:'34px', cursor:'pointer', color:'#fff', fontSize:'1.1rem', fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
                     </div>
                     {/* Image preview */}
                     {hotelForm.image_url && (
@@ -3353,13 +3445,26 @@ const AdminDashboard = () => {
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Location</span>
                             <input type="text" value={hotelForm.location} onChange={(e) => setHotelForm({ ...hotelForm, location: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
                           </label>
-                          <div style={{ gridColumn:'1 / -1', padding:'0.75rem 1rem', background:'#fffbeb', border:'1px solid #fde68a', borderRadius:'8px', fontSize:'0.8rem', color:'#92400e' }}>
-                            💡 <strong>Room Pricing:</strong> Set per-room-type prices in the rooms manager, not at the hotel level.
-                          </div>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Price per Night (₱)</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={hotelForm.price_per_night}
+                              onChange={(e) => setHotelForm({ ...hotelForm, price_per_night: e.target.value })}
+                              className="gov-input"
+                              style={{ borderRadius:'8px' }}
+                              placeholder="0.00"
+                            />
+                          </label>
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Rating (0–5)</span>
                             <input type="number" step="0.1" min="0" max="5" value={hotelForm.rating} onChange={(e) => setHotelForm({ ...hotelForm, rating: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
                           </label>
+                          <div style={{ gridColumn:'1 / -1', padding:'0.75rem 1rem', background:'#f8fafc', border:'1px solid #e2e8f0', borderRadius:'8px', fontSize:'0.8rem', color:'#475569' }}>
+                            <strong>Nightly price:</strong> shown on the public listing and used as the fallback when a property has no rooms. Exact per-room-type prices are set by the owner.
+                          </div>
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Description</span>
                             <textarea value={hotelForm.description} onChange={(e) => setHotelForm({ ...hotelForm, description: e.target.value })} rows={3} className="gov-input" style={{ borderRadius:'8px', resize:'vertical' }} />
@@ -3392,10 +3497,79 @@ const AdminDashboard = () => {
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Image URL</span>
                             <input type="text" value={hotelForm.image_url} onChange={(e) => setHotelForm({ ...hotelForm, image_url: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} placeholder="https://..." />
                           </label>
+                          <div>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151', display:'block', marginBottom:'0.5rem' }}>Gallery Images</span>
+                            <div style={{ display:'flex', gap:'0.75rem', flexWrap:'wrap', alignItems:'center' }}>
+                              <input
+                                type="text"
+                                value={hotelGalleryUrlInput}
+                                onChange={(e) => setHotelGalleryUrlInput(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addHotelGalleryUrl(); } }}
+                                placeholder="https://example.com/photo.jpg"
+                                className="gov-input"
+                                style={{ flex:'1 1 220px', borderRadius:'8px' }}
+                              />
+                              <button type="button" className="gov-btn gov-btn-primary" onClick={addHotelGalleryUrl} style={{ whiteSpace:'nowrap' }}>Add URL</button>
+                              {editingHotel && (
+                                <label style={{ padding:'0.6rem 1rem', background: hotelImageUploading ? '#9CA3AF' : '#f1f5f9', color: hotelImageUploading ? 'white' : '#1f2937', border:'1px solid #cbd5e1', borderRadius:'8px', cursor: hotelImageUploading ? 'not-allowed' : 'pointer', fontWeight:700, fontSize:'0.85rem', whiteSpace:'nowrap' }}>
+                                  {hotelImageUploading ? 'Uploading...' : 'Upload Images'}
+                                  <input type="file" accept="image/*" multiple disabled={hotelImageUploading} onChange={(e) => { handleHotelImageUpload(e.target.files); e.target.value = ''; }} style={{ display:'none' }} />
+                                </label>
+                              )}
+                            </div>
+                            {!editingHotel && (
+                              <div style={{ fontSize:'0.75rem', color:'#6b7280', marginTop:'0.4rem' }}>
+                                Save the hotel first to enable image uploads.
+                              </div>
+                            )}
+                            {Array.isArray(hotelForm.image_urls) && hotelForm.image_urls.length > 0 && (
+                              <div style={{ display:'flex', flexWrap:'wrap', gap:'0.75rem', marginTop:'0.85rem' }}>
+                                {hotelForm.image_urls.map((url) => (
+                                  <div key={url} style={{ border:'1px solid #c8e6c9', borderRadius:'8px', padding:'0.5rem', background:'#f8fdf7', display:'flex', alignItems:'center', gap:'0.5rem' }}>
+                                    <img src={url} alt="Gallery" style={{ width:'56px', height:'42px', objectFit:'cover', borderRadius:'6px' }} />
+                                    <button type="button" className="gov-btn gov-btn-danger" style={{ fontSize:'0.78rem', padding:'0.3rem 0.6rem' }} onClick={() => removeHotelGalleryUrl(url)}>Remove</button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Map URL</span>
                             <input type="text" value={hotelForm.map_url} onChange={(e) => setHotelForm({ ...hotelForm, map_url: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} placeholder="https://maps.google.com/..." />
                           </label>
+                        </div>
+                      </div>
+                      {/* Location */}
+                      <div>
+                        <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Location</div>
+                        <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Latitude</span>
+                            <input
+                              type="number"
+                              step="0.00000001"
+                              value={hotelForm.latitude}
+                              onChange={(e) => setHotelForm({ ...hotelForm, latitude: e.target.value })}
+                              className="gov-input"
+                              style={{ borderRadius:'8px' }}
+                              placeholder="12.56670000"
+                            />
+                          </label>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Longitude</span>
+                            <input
+                              type="number"
+                              step="0.00000001"
+                              value={hotelForm.longitude}
+                              onChange={(e) => setHotelForm({ ...hotelForm, longitude: e.target.value })}
+                              className="gov-input"
+                              style={{ borderRadius:'8px' }}
+                              placeholder="121.46670000"
+                            />
+                          </label>
+                          <div style={{ gridColumn:'1 / -1', fontSize:'0.75rem', color:'#6b7280' }}>
+                            Coordinates can also be set by dragging the pin on the Maps tab.
+                          </div>
                         </div>
                       </div>
                       {/* Policies */}
@@ -3500,6 +3674,47 @@ const AdminDashboard = () => {
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Currency</span>
                             <input type="text" value={hotelForm.currency} onChange={(e) => setHotelForm({ ...hotelForm, currency: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
                           </label>
+                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Reservation Fee (₱)</span>
+                            <input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={hotelForm.reservation_fee}
+                              onChange={(e) => setHotelForm({ ...hotelForm, reservation_fee: e.target.value })}
+                              className="gov-input"
+                              style={{ borderRadius:'8px' }}
+                              placeholder="0.00"
+                            />
+                          </label>
+                          <div style={{ gridColumn:'1 / -1', display:'flex', flexDirection:'column', gap:'0.55rem' }}>
+                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Allowed Payment Methods</span>
+                            <div style={{ display:'flex', flexWrap:'wrap', gap:'0.75rem 1rem' }}>
+                              {HOTEL_PAYMENT_METHOD_OPTIONS(t).map((option) => {
+                                const current = Array.isArray(hotelForm.allowed_payment_methods)
+                                  ? hotelForm.allowed_payment_methods
+                                  : [];
+                                return (
+                                  <label key={option.value} style={{ display:'inline-flex', alignItems:'center', gap:'0.45rem', fontSize:'0.85rem', color:'#374151' }}>
+                                    <input
+                                      type="checkbox"
+                                      checked={current.includes(option.value)}
+                                      onChange={(event) => {
+                                        const next = event.target.checked
+                                          ? [...new Set([...current, option.value])]
+                                          : current.filter((item) => item !== option.value);
+                                        setHotelForm({ ...hotelForm, allowed_payment_methods: next });
+                                      }}
+                                    />
+                                    {option.label}
+                                  </label>
+                                );
+                              })}
+                            </div>
+                            <div style={{ fontSize:'0.75rem', color:'#6b7280' }}>
+                              Guests only see and can pay with the methods enabled here.
+                            </div>
+                          </div>
                           {editingHotel && (
                             <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
                               <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Assign Owner</span>
@@ -3527,7 +3742,7 @@ const AdminDashboard = () => {
                     </div>
                     {/* Footer */}
                     <div style={{ padding:'1rem 1.5rem', borderTop:'1px solid #e5e7eb', display:'flex', gap:'0.75rem', justifyContent:'flex-end', background:'#f9fafb', borderRadius:'0 0 16px 16px' }}>
-                      <button className="gov-btn gov-btn-ghost" onClick={() => { setEditingHotel(null); setCreatingHotel(false); setHotelForm(emptyHotelForm); }}>{t('cancel')}</button>
+                      <button className="gov-btn gov-btn-ghost" onClick={closeHotelModal}>{t('cancel')}</button>
                       <button onClick={creatingHotel ? handleHotelCreate : handleHotelSave} disabled={hotelSaving} className="gov-btn gov-btn-primary" style={{ minWidth:'140px' }}>
                         {hotelSaving ? t('saving') : creatingHotel ? t('create_hotel') : t('button_save')}
                       </button>
