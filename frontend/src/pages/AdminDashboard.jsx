@@ -1627,7 +1627,8 @@ const AdminDashboard = () => {
         custom_policy_text: (hotelForm.custom_policy_text || '').trim() || null
       };
 
-      await api.put(`/admin/hotels/${editingHotel.hotel_id}`, payload);
+      const res = await api.put(`/admin/hotels/${editingHotel.hotel_id}`, payload);
+      if (res.data?.warning) alert(res.data.warning);
       setEditingHotel(null);
       setHotelForm(emptyHotelForm);
       setHotelGalleryUrlInput('');

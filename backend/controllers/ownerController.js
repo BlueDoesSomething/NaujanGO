@@ -15,6 +15,7 @@ import {
   parseStoredPaymentMethods,
   HOTEL_UPLOAD_MAX_BYTES
 } from '../utils/paymentMethods.js';
+import { getHotelColumns, GALLERY_COLUMN_WARNING } from '../utils/hotelColumns.js';
 
 const router = express.Router();
 
@@ -742,7 +743,16 @@ router.put('/hotels/:hotelId', async (req, res) => {
     if (rooms_available !== undefined) { fields.push('rooms_available = ?'); values.push(rooms_available); }
     if (image_url !== undefined) { fields.push('image_url = ?'); values.push(image_url); }
     // Hotel gallery (JSON array column); image_url above stays the primary/cover image.
-    if (image_urls !== undefined) { fields.push('image_urls = ?'); values.push(parseImageUrlsInput(image_urls)); }
+    let galleryDropped = false;
+    if (image_urls !== undefined) {
+      const hotelColumns = await getHotelColumns();
+      if (hotelColumns.imageUrls) {
+        fields.push('image_urls = ?');
+        values.push(parseImageUrlsInput(image_urls));
+      } else {
+        galleryDropped = true;
+      }
+    }
     if (map_url !== undefined) { fields.push('map_url = ?'); values.push(map_url); }
     if (contact_phone !== undefined) { fields.push('contact_phone = ?'); values.push(contact_phone); }
     if (contact_email !== undefined) { fields.push('contact_email = ?'); values.push(contact_email); }
@@ -824,7 +834,11 @@ router.put('/hotels/:hotelId', async (req, res) => {
       values
     );
 
-    res.json({ success: true, message: 'Hotel updated successfully' });
+    res.json({
+      success: true,
+      message: 'Hotel updated successfully',
+      ...(galleryDropped ? { warning: GALLERY_COLUMN_WARNING } : {})
+    });
   } catch (error) {
     console.error('Update hotel error:', error);
     res.status(500).json({ error: 'Failed to update hotel' });

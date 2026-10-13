@@ -837,7 +837,8 @@ const OwnerDashboard = () => {
         is_active: Number(hotelForm.is_active) || 0
       };
 
-      await api.put(`/owner/hotels/${editingHotel.hotel_id}`, payload);
+      const res = await api.put(`/owner/hotels/${editingHotel.hotel_id}`, payload);
+      if (res.data?.warning) alert(res.data.warning);
       setEditingHotel(null);
       setHotelForm(emptyHotelForm);
       await fetchDashboardData();

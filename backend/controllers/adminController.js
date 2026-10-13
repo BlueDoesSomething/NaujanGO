@@ -7,6 +7,7 @@ import db from '../db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
 import { parsePolicyFields } from '../utils/policyFields.js';
 import { parsePaymentMethodsInput, HOTEL_UPLOAD_MAX_BYTES } from '../utils/paymentMethods.js';
+import { getHotelColumns, GALLERY_COLUMN_WARNING } from '../utils/hotelColumns.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -578,27 +579,6 @@ const getUserColumns = async () => {
     phone: present.has('phone') ? 'phone' : present.has('phone_number') ? 'phone_number' : null
   };
   return userColumnCache;
-};
-
-let hotelColumnCache = null;
-let warnedMissingGalleryColumn = false;
-const getHotelColumns = async () => {
-  if (hotelColumnCache) return hotelColumnCache;
-
-  const [rows] = await db.promise().query(
-    `SELECT column_name FROM information_schema.columns
-     WHERE table_schema = DATABASE()
-       AND table_name = 'hotels'
-       AND column_name IN ('image_urls', 'allowed_payment_methods', 'reservation_fee')`
-  );
-
-  const present = new Set(rows.map((row) => row.COLUMN_NAME));
-  hotelColumnCache = {
-    imageUrls: present.has('image_urls'),
-    allowedPaymentMethods: present.has('allowed_payment_methods'),
-    reservationFee: present.has('reservation_fee')
-  };
-  return hotelColumnCache;
 };
 
 // Hotel-level listing price. The column is NOT NULL, so an empty value is
@@ -1830,13 +1810,14 @@ router.put('/hotels/:id', async (req, res) => {
     if (rooms_available !== undefined) { fields.push('rooms_available = ?'); values.push(rooms_available); }
     if (image_url !== undefined) { fields.push('image_url = ?'); values.push(image_url); }
     const parsedImageUrls = parseImageUrlsInput(image_urls);
-    if (hotelColumns.imageUrls && parsedImageUrls !== undefined) {
-      fields.push('image_urls = ?');
-      values.push(parsedImageUrls);
-    } else if (parsedImageUrls !== undefined && !warnedMissingGalleryColumn) {
-      // Other fields are still saved; just surface why the gallery was dropped.
-      warnedMissingGalleryColumn = true;
-      console.warn('Hotels update skipped gallery images: hotels.image_urls is missing. Restart the server to create the column.');
+    let galleryDropped = false;
+    if (parsedImageUrls !== undefined) {
+      if (hotelColumns.imageUrls) {
+        fields.push('image_urls = ?');
+        values.push(parsedImageUrls);
+      } else {
+        galleryDropped = true;
+      }
     }
     if (map_url !== undefined) { fields.push('map_url = ?'); values.push(map_url); }
     if (latitude !== undefined) { fields.push('latitude = ?'); values.push(latitude); }
@@ -1889,7 +1870,11 @@ router.put('/hotels/:id', async (req, res) => {
       values
     );
 
-    res.json({ success: true, message: 'Hotel updated successfully' });
+    res.json({
+      success: true,
+      message: 'Hotel updated successfully',
+      ...(galleryDropped ? { warning: GALLERY_COLUMN_WARNING } : {})
+    });
   } catch (error) {
     console.error('Update hotel error:', error);
     res.status(500).json({ error: 'Failed to update hotel' });
