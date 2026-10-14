@@ -476,7 +476,21 @@
   color: var(--eco-text-faint);
   font-family: ui-monospace, monospace;
 }
-.info-body { position: relative; z-index: 1; min-height: 0; transition: opacity 0.25s ease; }
+.info-body {
+  position: relative;
+  z-index: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+  transition: opacity 0.25s ease;
+}
+.info-body::-webkit-scrollbar { width: 5px; }
+.info-body::-webkit-scrollbar-track { background: transparent; }
+.info-body::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 999px; }
+.info-body::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.6); }
 .swap-in { animation: swapIn 0.65s cubic-bezier(0.22,1,0.36,1) both; }
 @keyframes swapIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 .info-cat {
@@ -580,7 +594,7 @@
   border-radius: 999px;
   padding: 4px 10px;
 }
-.info-actions { margin-top: auto; display: flex; gap: 10px; flex: 0 0 auto; }
+.info-actions { margin-top: auto; padding-top: 18px; display: flex; gap: 10px; flex: 0 0 auto; }
 .btn-primary-hero {
   flex: 1;
   min-width: 0;

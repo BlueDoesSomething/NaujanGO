@@ -652,24 +652,26 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                       <span>{t('stat_category')}</span>
                     </div>
                   </div>
-                  <div className="info-tags" id="infoTags">
-                    {(active.category_tags || active.tags || []).slice(0, 4).map((tag, i) => (
-                      <span className="info-tag" key={i}>{tag}</span>
-                    ))}
-                  </div>
+                  {(active.category_tags || active.tags || []).length > 0 && (
+                    <div className="info-tags" id="infoTags">
+                      {(active.category_tags || active.tags || []).slice(0, 4).map((tag, i) => (
+                        <span className="info-tag" key={i}>{tag}</span>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
-              <div className="info-actions">
-                <button className="btn-primary-hero" id="heroExploreBtn" onClick={() => active && navigate(`/attractions/${active.id}`, { state: { attraction: active } })}>
-                  <Icons.Route size={16} />
-                  {t('explore_destination')}
+            </div>
+            <div className="info-actions">
+              <button className="btn-primary-hero" id="heroExploreBtn" onClick={() => active && navigate(`/attractions/${active.id}`, { state: { attraction: active } })}>
+                <Icons.Route size={16} />
+                {t('explore_destination')}
+              </button>
+              {isGuest === false && (
+                <button className="btn-ghost-hero hero-save-btn" onClick={() => navigate('/itinerary')} aria-label={t('my_itineraries')}>
+                  <Icons.Heart size={16} />
                 </button>
-                {isGuest === false && (
-                  <button className="btn-ghost-hero hero-save-btn" onClick={() => navigate('/itinerary')} aria-label={t('my_itineraries')}>
-                    <Icons.Heart size={16} />
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
           {featured.length > 1 && slideshowExt.showArrows !== false && (
