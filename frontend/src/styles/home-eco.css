@@ -598,11 +598,12 @@
 .btn-primary-hero {
   flex: 1;
   min-width: 0;
+  height: 46px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 13px 16px;
+  padding: 0 16px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 600;
@@ -673,7 +674,7 @@
   .info-stat b { font-size: 14px; }
   .info-tags { display: none; }
   .info-actions { gap: 8px; }
-  .btn-primary-hero { padding: 12px 14px; font-size: 12.5px; }
+  .btn-primary-hero { height: 44px; padding: 0 14px; font-size: 12.5px; }
   .btn-ghost-hero { height: 44px; padding: 0 14px; }
   .thumb-card { flex: 0 0 104px; height: 76px; border-radius: 14px; }
   .thumb-name { font-size: 10px; }
