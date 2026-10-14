@@ -616,7 +616,8 @@
 .btn-ghost-hero {
   width: auto;
   height: 46px;
-  flex: 0 0 auto;
+  flex: 1 1 0;
+  min-width: 0;
   border-radius: 999px;
   padding: 0 18px;
   display: inline-flex;

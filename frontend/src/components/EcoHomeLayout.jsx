@@ -663,16 +663,16 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               )}
             </div>
             <div className="info-actions">
+              <button className="btn-primary-hero" id="heroExploreBtn" onClick={() => active && navigate(`/attractions/${active.id}`, { state: { attraction: active } })}>
+                <Icons.Route size={16} />
+                {t('explore_destination')}
+              </button>
               {isGuest === false && (
                 <button className="btn-ghost-hero hero-save-btn" onClick={() => navigate('/itinerary')}>
                   <Icons.Heart size={16} />
                   <span className="btn-ghost-hero-label">{t('my_itineraries')}</span>
                 </button>
               )}
-              <button className="btn-primary-hero" id="heroExploreBtn" onClick={() => active && navigate(`/attractions/${active.id}`, { state: { attraction: active } })}>
-                <Icons.Route size={16} />
-                {t('explore_destination')}
-              </button>
             </div>
           </div>
           {featured.length > 1 && slideshowExt.showArrows !== false && (
