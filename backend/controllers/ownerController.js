@@ -1774,12 +1774,20 @@ router.get('/payments', async (req, res) => {
   const isAdmin = req.user.role === 'admin';
   const { status, method, limit = 100, startDate, endDate, search } = req.query;
 
+  // The stats endpoint counts every payment, archived or not, so this list
+  // includes archived rows by default to keep the two reconcilable. Owners who
+  // want only live records pass archived=0.
+  const { archived = 'all' } = req.query;
+
   try {
     let query, params;
 
     const filters = [];
     const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 500);
 
+    if (archived === '0') {
+      filters.push({ clause: 'hp.archived = 0', value: [] });
+    }
     if (status) {
       filters.push({ clause: 'hp.status = ?', value: status });
     }
@@ -1819,7 +1827,7 @@ router.get('/payments', async (req, res) => {
           hb.booking_reference
         FROM hotel_payments hp
         INNER JOIN hotel_bookings hb ON hp.booking_id = hb.booking_id
-        WHERE hp.archived = 0${additionalWhere}
+        WHERE hp.archived >= 0${additionalWhere}
         ORDER BY hp.created_at DESC
         LIMIT ?
       `;
@@ -1848,7 +1856,7 @@ router.get('/payments', async (req, res) => {
         FROM hotel_payments hp
         INNER JOIN hotel_bookings hb ON hp.booking_id = hb.booking_id
         INNER JOIN hotel_owners ho ON hb.hotel_id = ho.hotel_id
-        WHERE ho.user_id = ? AND hp.archived = 0${additionalWhere}
+        WHERE ho.user_id = ?${additionalWhere}
         ORDER BY hp.created_at DESC
         LIMIT ?
       `;

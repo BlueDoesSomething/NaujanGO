@@ -75,6 +75,7 @@ const OwnerDashboard = () => {
   const [paymentStats, setPaymentStats] = useState(null);
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
+  const [showArchivedPayments, setShowArchivedPayments] = useState(true);
   const [paymentDateFrom, setPaymentDateFrom] = useState('');
   const [paymentDateTo, setPaymentDateTo] = useState('');
   const [paymentSearch, setPaymentSearch] = useState('');
@@ -232,7 +233,7 @@ const OwnerDashboard = () => {
     if (activeTab === 'payments') {
       fetchPayments();
     }
-  }, [activeTab, paymentFilter, paymentMethodFilter, paymentDateFrom, paymentDateTo, paymentSearch]);
+  }, [activeTab, paymentFilter, paymentMethodFilter, paymentDateFrom, paymentDateTo, paymentSearch, showArchivedPayments]);
 
   useEffect(() => {
     if (!hotels.length) return;
@@ -406,6 +407,7 @@ const OwnerDashboard = () => {
       if (paymentDateFrom) params.startDate = paymentDateFrom;
       if (paymentDateTo) params.endDate = paymentDateTo;
       if (paymentSearch.trim()) params.search = paymentSearch.trim();
+      if (!showArchivedPayments) params.archived = '0';
 
       const res = await api.get('/owner/payments', { params });
       setPayments(dedupePaymentsByBooking(res.data));
@@ -2327,7 +2329,14 @@ const OwnerDashboard = () => {
               </div>
 
               {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button
+                  className={showArchivedPayments ? 'gov-btn-primary' : 'gov-btn-ghost'}
+                  onClick={() => setShowArchivedPayments((prev) => !prev)}
+                  aria-pressed={showArchivedPayments}
+                >
+                  {showArchivedPayments ? t('payments_hiding_archived') : t('payments_showing_archived')}
+                </button>
                 <button
                   className="gov-btn-ghost"
                   onClick={() => {
@@ -2406,7 +2415,10 @@ const OwnerDashboard = () => {
                   </thead>
                   <tbody>
                     {filteredPayments.slice((paymentsPage - 1) * OWNER_TABLE_SIZE, paymentsPage * OWNER_TABLE_SIZE).map((payment) => (
-                      <tr key={payment.payment_id}>
+                      <tr
+                        key={payment.payment_id}
+                        style={payment.archived ? { opacity: 0.6, background: 'rgba(148, 163, 184, 0.06)' } : undefined}
+                      >
                         <td>#{payment.payment_id}</td>
                         <td>
                           {payment.booking_id ? (
@@ -2443,6 +2455,11 @@ const OwnerDashboard = () => {
                           )}
                         </td>
                         <td>
+                          {Number(payment.archived) === 1 && (
+                            <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.4px', color: '#6b7280', textTransform: 'uppercase', marginTop: '4px' }}>
+                              {t('payments_archived_label')}
+                            </div>
+                          )}
                           <span className={`gov-badge-status gov-badge-status--${payment.status}`}>
                             {payment.status}
                           </span>
