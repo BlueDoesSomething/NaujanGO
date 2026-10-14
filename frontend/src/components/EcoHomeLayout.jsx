@@ -668,8 +668,9 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                 {t('explore_destination')}
               </button>
               {isGuest === false && (
-                <button className="btn-ghost-hero hero-save-btn" onClick={() => navigate('/itinerary')} aria-label={t('my_itineraries')}>
+                <button className="btn-ghost-hero hero-save-btn" onClick={() => navigate('/itinerary')}>
                   <Icons.Heart size={16} />
+                  <span className="btn-ghost-hero-label">{t('my_itineraries')}</span>
                 </button>
               )}
             </div>
