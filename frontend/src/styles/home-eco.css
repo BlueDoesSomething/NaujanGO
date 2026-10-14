@@ -1282,9 +1282,10 @@
 .pb-haz-title { display: flex; align-items: center; gap: 8px; }
 .pb-haz-title span { display: inline-flex; }
 .pb-haz-title p { color: #fff; font-weight: 700; font-size: 14px; margin: 0; }
-.pb-haz-toggle { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; min-width: 0; min-height: 0; padding: 0; border-radius: 9px; background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(239, 68, 68, 0.30); color: #fca5a5; cursor: pointer; transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease; flex: 0 0 auto; }
+.pb-haz-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 6px; width: auto; height: 30px; min-width: 0; min-height: 0; padding: 0 12px; border-radius: 999px; background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(239, 68, 68, 0.30); color: #fca5a5; cursor: pointer; transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease; flex: 0 0 auto; }
 .pb-haz-toggle:hover { background: rgba(239, 68, 68, 0.24); border-color: rgba(239, 68, 68, 0.5); color: #fecaca; transform: none; }
-.pb-haz-toggle svg { transition: transform 0.35s cubic-bezier(0.22,1,0.36,1); }
+.pb-haz-toggle svg { transition: transform 0.35s cubic-bezier(0.22,1,0.36,1); flex: 0 0 auto; }
+.pb-haz-toggle-label { font-size: 11.5px; font-weight: 700; letter-spacing: 0.2px; white-space: nowrap; }
 .pb-haz.open .pb-haz-toggle svg { transform: rotate(180deg); }
 .pb-haz-total { color: #f87171; font-size: 24px; font-weight: 700; margin: 0 0 4px; line-height: 1.2; }
 .pb-haz-sub { color: rgba(254, 202, 202, 0.7); font-size: 12px; margin: 0; }

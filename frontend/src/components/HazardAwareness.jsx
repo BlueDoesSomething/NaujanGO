@@ -424,7 +424,8 @@ const HazardAwareness = ({
             aria-label={expanded ? t('collapse') : t('expand')}
             aria-expanded={expanded}
           >
-            <Icons.ChevronDown size={11} />
+            <Icons.ChevronDown size={14} />
+            <span className="pb-haz-toggle-label">{expanded ? t('collapse') : t('expand')}</span>
           </button>
         </div>
         <p className="pb-haz-total">{criticalCount}</p>
