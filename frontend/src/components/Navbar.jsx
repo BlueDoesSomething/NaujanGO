@@ -44,18 +44,24 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [ecoSiteCount, setEcoSiteCount] = useState(null);
+  const [ecoRating, setEcoRating] = useState(null);
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
-  // Top meta bar: real one-time attraction count
+  // Top meta bar: real one-time attraction count and average rating
   useEffect(() => {
     let mounted = true;
     fetchAttractions()
       .then(res => {
-        const list = Array.isArray(res) ? res : res?.data;
-        if (mounted) setEcoSiteCount(Array.isArray(list) ? list.length : null);
+        const list = Array.isArray(res?.data?.data) ? res.data.data : null;
+        if (!mounted) return;
+        setEcoSiteCount(list ? list.length : null);
+        const rated = (list || [])
+          .map(a => Number.parseFloat(a.avg_rating))
+          .filter(r => Number.isFinite(r) && r > 0);
+        setEcoRating(rated.length ? (rated.reduce((s, r) => s + r, 0) / rated.length).toFixed(1) : null);
       })
-      .catch(() => { if (mounted) setEcoSiteCount(null); });
+      .catch(() => { if (mounted) { setEcoSiteCount(null); setEcoRating(null); } });
     return () => { mounted = false; };
   }, []);
 
@@ -155,7 +161,7 @@ const Navbar = () => {
             <span className="navbar-meta-stat">{supportedLanguages.length} {t('hero_stat_languages')}</span>
             <span className="navbar-meta-sep" aria-hidden="true">·</span>
             <span className="navbar-meta-stat">
-              <span className="navbar-meta-star" aria-hidden="true">★</span> 4.9 {t('hero_stat_eco_rating')}
+              {ecoRating !== null && <span className="navbar-meta-star" aria-hidden="true">★</span>} {ecoRating ?? '—'} {t('hero_stat_eco_rating')}
             </span>
           </span>
         </div>

@@ -364,12 +364,14 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   }, [attractions]);
 
   const heroStats = useMemo(() => {
-    const ratings = attractions.map(a => toNumericRating(a.avg_rating)).filter(r => r !== null);
-    const avg = ratings.length > 0 ? ratings.reduce((s, r) => s + r, 0) / ratings.length : 4.9;
+    // Attractions with no reviews come back as avg_rating 0, which would drag
+    // the mean down, so only genuinely rated attractions are counted.
+    const ratings = attractions.map(a => toNumericRating(a.avg_rating)).filter(r => r !== null && r > 0);
+    const avg = ratings.length > 0 ? ratings.reduce((s, r) => s + r, 0) / ratings.length : null;
     return {
       ecoSites: attractions.length,
       languages: supportedLanguages?.length || 8,
-      ecoRating: avg.toFixed(1),
+      ecoRating: avg !== null ? avg.toFixed(1) : '—',
     };
   }, [attractions, supportedLanguages]);
 
