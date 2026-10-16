@@ -753,7 +753,7 @@ const InteractiveMap = () => {
                 <button
                   key={view}
                   onClick={() => setMapView(view)}
-                  className="view-button"
+                  className="map-style-btn"
                   style={{
                     ...styles.viewButton,
                     ...(mapView === view ? styles.viewButtonActive : {})
@@ -1330,7 +1330,7 @@ const InteractiveMap = () => {
           border-color: #16a34a !important;
           background: #f0fdf4 !important;
         }
-        .view-button:hover {
+        .map-style-btn:hover {
           border-color: #16a34a !important;
           background: #f0fdf4 !important;
         }
