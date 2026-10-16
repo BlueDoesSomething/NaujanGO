@@ -643,7 +643,7 @@ const InteractiveMap = () => {
             )}
             <button
               onClick={() => setShowSidebar(!showSidebar)}
-              className="imap-sidebar-toggle"
+              className="imap-sidebar-collapse"
               title={showSidebar ? t('hide_sidebar') : t('show_sidebar')}
             >
               {showSidebar ? (

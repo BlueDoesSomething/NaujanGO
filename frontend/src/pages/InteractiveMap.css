@@ -70,7 +70,7 @@ html[data-theme="dark"] .imap-container {
   white-space: nowrap;
 }
 
-.imap-sidebar-toggle {
+.imap-sidebar-collapse {
   background: #16a34a;
   color: white;
   border: none;
@@ -86,7 +86,7 @@ html[data-theme="dark"] .imap-container {
   flex-shrink: 0;
 }
 
-.imap-sidebar-toggle:hover {
+.imap-sidebar-collapse:hover {
   background: #15803d;
   transform: scale(1.05);
 }
