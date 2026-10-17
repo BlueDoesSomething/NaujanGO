@@ -36,7 +36,7 @@ const Footer = () => {
   const copyright  = footerSettings?.copyright  || t('footer_copyright_default');
   const address    = footerSettings?.contactAddress || 'Naujan, Oriental Mindoro';
   const phone      = footerSettings?.contactPhone   || '+63 43 XXX-XXXX';
-  const email      = footerSettings?.contactEmail   || 'info@naujango.ph';
+  const email      = footerSettings?.contactEmail   || 'turismonaujan@gmail.com';
   const facebook   = footerSettings?.facebook   || 'https://facebook.com/naujantourism';
   const instagram  = footerSettings?.instagram  || 'https://instagram.com/naujantourism';
   const twitter    = footerSettings?.twitter    || '';
