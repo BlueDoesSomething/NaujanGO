@@ -506,7 +506,7 @@ a.navbar-link.active,
 
 .account-name {
   color: #ffffff;
-  max-width: 110px;
+  max-width: 170px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2098,6 +2098,7 @@ body.menu-open .chatbot-container {
   font-size: 0.85rem;
   color: #0f172a;
   border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+  opacity: 0.85;
   margin-bottom: 0.25rem;
   white-space: nowrap;
   overflow: hidden;
