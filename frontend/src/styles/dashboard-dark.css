@@ -1,0 +1,299 @@
+/* ============================================================
+   29. Admin & Owner Dashboard — gov-* component library
+   ============================================================
+   Both dashboards are built from the same gov-* classes, but the
+   dark theme previously covered only six of them: gov-dashboard,
+   gov-sidebar, gov-nav, gov-panel, gov-card and gov-table. Every
+   other surface fell through to its light definition, so the main
+   content panel (.gov-glass-panel, used 49 times in the admin
+   dashboard and 16 in the owner one) stayed white-on-white.
+
+   The form controls needed special handling: the generic
+   [data-theme="dark"] input[type="text"] rules elsewhere in this
+   file do not match .gov-input or .gov-select, because those are
+   styled by AdminDashboard.css by class rather than by type.
+
+   Loaded after dark-mode.css so it wins on equal specificity. */
+
+[data-theme="dark"] .gov-shell {
+  background: #0f172a;
+  color: #f1f5f9;
+}
+
+/* ---------- Surfaces ---------- */
+[data-theme="dark"] .gov-glass-panel,
+[data-theme="dark"] .gov-card,
+[data-theme="dark"] .gov-panel {
+  background: #1e293b;
+  border-color: #334155;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .gov-glass-panel__title {
+  color: #4ade80;
+}
+
+[data-theme="dark"] .gov-table-wrap {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .gov-empty {
+  background: #1e293b;
+  color: #94a3b8;
+  border-color: #334155;
+}
+
+/* ---------- Sidebar ---------- */
+[data-theme="dark"] .gov-sidebar {
+  background: #16213a;
+  border-right-color: #334155;
+}
+
+[data-theme="dark"] .gov-sidebar-brand,
+[data-theme="dark"] .gov-brand {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .gov-nav-btn {
+  color: #cbd5e1;
+  background: transparent;
+  border-color: transparent;
+}
+
+[data-theme="dark"] .gov-nav-btn:hover {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+}
+
+[data-theme="dark"] .gov-nav-btn.is-active {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+[data-theme="dark"] .gov-user {
+  color: #cbd5e1;
+  border-color: #334155;
+  background: #1e293b;
+}
+
+/* ---------- Typography ---------- */
+[data-theme="dark"] .gov-page-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .gov-label {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .gov-metric-value {
+  color: #f8fafc;
+}
+
+/* ---------- Forms ---------- */
+[data-theme="dark"] .gov-input,
+[data-theme="dark"] .gov-select,
+[data-theme="dark"] .gov-role-select {
+  background: #0f172a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .gov-input::placeholder {
+  color: #64748b;
+}
+
+[data-theme="dark"] .gov-input:focus,
+[data-theme="dark"] .gov-select:focus,
+[data-theme="dark"] .gov-role-select:focus {
+  border-color: #16a34a;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18);
+}
+
+[data-theme="dark"] .gov-select option {
+  background: #1e293b;
+  color: #f1f5f9;
+}
+
+/* ---------- Buttons ---------- */
+[data-theme="dark"] .gov-btn-ghost {
+  background: #24334a;
+  color: #cbd5e1;
+  border-color: #334155;
+}
+
+[data-theme="dark"] .gov-btn-ghost:hover {
+  background: rgba(34, 197, 94, 0.16);
+  color: #4ade80;
+  border-color: #16a34a;
+}
+
+[data-theme="dark"] .gov-btn-danger {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+[data-theme="dark"] .gov-btn-danger:hover {
+  background: rgba(239, 68, 68, 0.26);
+  color: #fecaca;
+  border-color: rgba(239, 68, 68, 0.6);
+}
+
+[data-theme="dark"] .gov-btn-warning {
+  background: rgba(250, 204, 21, 0.16);
+  color: #fde68a;
+  border-color: rgba(250, 204, 21, 0.45);
+}
+
+[data-theme="dark"] .gov-btn-warning:hover {
+  background: rgba(250, 204, 21, 0.26);
+  color: #fef08a;
+  border-color: rgba(250, 204, 21, 0.6);
+}
+
+[data-theme="dark"] .gov-btn-primary {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #ffffff;
+  border-color: #16a34a;
+  box-shadow: 0 3px 10px rgba(22, 163, 74, 0.35);
+}
+
+/* ---------- Status badges ---------- */
+[data-theme="dark"] .gov-badge-status--confirmed,
+[data-theme="dark"] .gov-badge-status--active,
+[data-theme="dark"] .gov-badge-status--succeeded {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.45);
+}
+
+[data-theme="dark"] .gov-badge-status--inactive {
+  background: rgba(148, 163, 184, 0.18);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+[data-theme="dark"] .gov-badge-status--pending {
+  background: rgba(250, 204, 21, 0.18);
+  color: #fde68a;
+  border-color: rgba(250, 204, 21, 0.45);
+}
+
+[data-theme="dark"] .gov-badge-status--cancelled,
+[data-theme="dark"] .gov-badge-status--failed {
+  background: rgba(239, 68, 68, 0.18);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.45);
+}
+
+[data-theme="dark"] .gov-badge-status--user {
+  background: rgba(56, 189, 248, 0.18);
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.45);
+}
+
+[data-theme="dark"] .gov-badge-status--owner {
+  background: rgba(168, 85, 247, 0.18);
+  color: #d8b4fe;
+  border-color: rgba(168, 85, 247, 0.45);
+}
+
+[data-theme="dark"] .gov-badge-status--admin {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+/* ---------- Loading skeleton & splash ---------- */
+[data-theme="dark"] .gov-splash-screen {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .gov-splash-bar,
+[data-theme="dark"] .gov-skel-line,
+[data-theme="dark"] .gov-skel-card {
+  background: #24334a;
+}
+
+[data-theme="dark"] .gov-splash-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .gov-splash-subtitle {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .gov-loader {
+  border-top-color: #4ade80;
+  border-right-color: #334155;
+}
+
+/* ---------- Edit panel ---------- */
+[data-theme="dark"] .gov-edit-panel {
+  background: #16213a;
+  border-color: #334155;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .gov-edit-panel__title {
+  color: #f8fafc;
+}
+
+/* ---------- Page background ----------
+   .gov-main was light #eef2f5, which is what the whole dashboard
+   background rendered as in dark mode regardless of the panels
+   sitting on top of it. */
+[data-theme="dark"] .gov-main,
+[data-theme="dark"] .gov-dashboard--admin,
+[data-theme="dark"] .gov-dashboard--owner {
+  background: #0f172a;
+}
+
+/* ---------- Sidebar footer / menu ---------- */
+[data-theme="dark"] .gov-sidebar-user {
+  background: #16213a;
+  border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .gov-logout {
+  background: #24334a;
+  color: #4ade80;
+  border-color: rgba(34, 197, 94, 0.4);
+}
+
+[data-theme="dark"] .gov-logout:hover {
+  background: rgba(239, 68, 68, 0.16);
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+[data-theme="dark"] .gov-menu-btn,
+[data-theme="dark"] .gov-nav-scrim {
+  background: #24334a;
+  border-color: #334155;
+  color: #cbd5e1;
+}
+
+/* ---------- Splash screen ----------
+   The splash is a light gradient with pale text, so it flashed
+   bright before the dashboard painted. */
+[data-theme="dark"] .gov-splash-skeleton,
+[data-theme="dark"] .gov-splash-inner {
+  background: #0f172a;
+}
+
+[data-theme="dark"] .gov-splash-skel-content,
+[data-theme="dark"] .gov-splash-skel-sidebar {
+  background: #1e293b;
+}
+
+[data-theme="dark"] .gov-splash-bar-wrap {
+  background: #24334a;
+}
+
+[data-theme="dark"] .gov-splash-hint,
+[data-theme="dark"] .gov-splash-dots {
+  color: #64748b;
+}

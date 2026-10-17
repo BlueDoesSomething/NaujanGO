@@ -3,6 +3,7 @@
 @import './styles/global-modern.css';
 @import './styles/responsive.css';
 @import './styles/dark-mode.css';
+@import './styles/dashboard-dark.css';
 
 :root {
   --bg: #f9fafb;

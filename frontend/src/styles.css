@@ -1,4 +1,5 @@
 @import './styles/dark-mode.css';
+@import './styles/dashboard-dark.css';
 @import './styles/site-responsive.css';
 
 /* Restoring old navbar and footer styles from backup or typical defaults */
