@@ -48,21 +48,6 @@ const Navbar = () => {
   const dropdownRef = useRef(null);
   const buttonRef = useRef(null);
 
-  // Prefer the real name over the handle. Both first_name and last_name come
-  // from GET /auth/profile, so fall back to whichever single name exists and
-  // only then to the username.
-  const fullName = [user?.first_name, user?.last_name]
-    .map((part) => (part || '').trim())
-    .filter(Boolean)
-    .join(' ');
-  const displayName = fullName || user?.username || t('myAccount');
-
-  const initials = (
-    fullName
-      ? fullName.split(/\s+/).slice(0, 2).map((part) => part.charAt(0)).join('')
-      : (user?.username || 'U').charAt(0)
-  ).toUpperCase();
-
   // Top meta bar: real one-time attraction count and average rating
   useEffect(() => {
     let mounted = true;
@@ -318,7 +303,7 @@ const Navbar = () => {
             {loading ? null : isLoggedIn ? (
               <>
                 <div className="mobile-auth-heading">
-                  {displayName}
+                  {user?.username || t('myAccount')}
                 </div>
                 <div className="mobile-auth-links">
                   <Link to="/profile" className="mobile-auth-link" onClick={handleNavClick}>
@@ -397,7 +382,7 @@ const Navbar = () => {
                   aria-expanded={showDropdown}
                   aria-controls="account-menu"
                   role="menuitem"
-                  title={displayName}
+                  title={user?.username || t('myAccount')}
                 >
                   {!loading && user?.profile_picture ? (
                     <span className="account-avatar-wrap">
@@ -410,12 +395,12 @@ const Navbar = () => {
                   ) : (
                     <span className="account-avatar-wrap">
                       <span className="account-avatar">
-                        {initials}
+                        {user?.username ? user.username.charAt(0).toUpperCase() : 'U'}
                       </span>
                     </span>
                   )}
                   <span className="account-name">
-                    {displayName}
+                    {user?.username || t('myAccount')}
                   </span>
                   <span className="dropdown-arrow">▼</span>
                 </button>
@@ -426,9 +411,9 @@ const Navbar = () => {
                     role="menu"
                     aria-label="Account options"
                   >
-                    {displayName !== user?.username && (
+                    {user?.username && (
                       <li className="dropdown-username-header" role="none">
-                        {user?.username}
+                        {user.username}
                       </li>
                     )}
                     <li className="dropdown-item" role="none">
@@ -573,7 +558,7 @@ const Navbar = () => {
         <div className="mobile-menu-auth">
           {loading ? null : isLoggedIn ? (
             <>
-              <div className="mobile-auth-heading">{displayName}</div>
+              <div className="mobile-auth-heading">{user?.username || t('myAccount')}</div>
               <Link to="/profile" className="mobile-menu-link" onClick={handleNavClick}>
                 <span className="mobile-menu-icon"><UserIcon size={17} /></span>{t('profile')}
               </Link>

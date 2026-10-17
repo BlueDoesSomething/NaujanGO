@@ -251,6 +251,11 @@
   color: #4ade80;
 }
 
+[data-theme="dark"] .dropdown-username-header {
+  color: #cbd5e1;
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+
 [data-theme="dark"] .logout-button {
   color: #fca5a5 !important;
 }

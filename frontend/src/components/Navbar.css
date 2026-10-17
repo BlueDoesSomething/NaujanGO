@@ -506,7 +506,7 @@ a.navbar-link.active,
 
 .account-name {
   color: #ffffff;
-  max-width: 170px;
+  max-width: 110px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2096,11 +2096,18 @@ body.menu-open .chatbot-container {
   padding: 0.65rem 1rem 0.35rem;
   font-weight: 700;
   font-size: 0.85rem;
-  color: #0f172a;
-  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
-  opacity: 0.85;
+  color: #cbd5e1;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   margin-bottom: 0.25rem;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* The dark value above is the default, since the dropdown panel is a dark
+   surface by design. The light theme needs the ink colour back. */
+[data-theme="light"] .dropdown-username-header {
+  color: #0f172a;
+  border-bottom-color: rgba(15, 23, 42, 0.08);
+  opacity: 0.85;
 }
