@@ -217,7 +217,7 @@
   background: var(--header-bg);
   padding: var(--header-padding);
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   flex-shrink: 0;
 }
 
@@ -495,8 +495,10 @@
   border: 1px solid var(--border-color);
   border-radius: 14px;
   box-shadow: var(--shadow-lg);
-  overflow: hidden;
+  overflow: hidden auto;
   min-width: 180px;
+  max-width: min(220px, calc(100vw - 32px));
+  max-height: min(320px, 42vh);
   z-index: 10001;
   animation: cbFadeIn 0.2s ease;
 }
