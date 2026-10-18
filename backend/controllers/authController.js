@@ -151,7 +151,11 @@ const sendVerificationEmail = async ({ email, username, token }) => {
   const delivery = await sendAuthEmail({ to: email, subject, text, html });
 
   if (!delivery.delivered) {
-    console.info(`Verification email fallback for ${email}: ${verificationUrl}`);
+    console.error(
+      `[EMAIL_VERIFY] Not delivered to ${email}. reason=${delivery.reason} code=${delivery.code || 'n/a'} err=${delivery.error || 'n/a'}\n[EMAIL_VERIFY] Fallback link: ${verificationUrl}`
+    );
+  } else {
+    console.log(`[EMAIL_VERIFY] Delivered to ${email}. messageId=${delivery.messageId}`);
   }
 
   return { delivery, verificationUrl };
@@ -165,7 +169,14 @@ const sendPasswordResetEmail = async ({ email, username, token }) => {
   const delivery = await sendAuthEmail({ to: email, subject, text, html });
 
   if (!delivery.delivered) {
-    console.info(`Password reset email fallback for ${email}: ${resetUrl}`);
+    // Logged at error level, not info: the forgot-password handler deliberately
+    // returns a generic success so it cannot be used to enumerate accounts, so
+    // this line is the ONLY signal that a delivery failed.
+    console.error(
+      `[PASSWORD_RESET] Not delivered to ${email}. reason=${delivery.reason} code=${delivery.code || 'n/a'} err=${delivery.error || 'n/a'}\n[PASSWORD_RESET] Fallback link: ${resetUrl}`
+    );
+  } else {
+    console.log(`[PASSWORD_RESET] Delivered to ${email}. messageId=${delivery.messageId}`);
   }
 
   return { delivery, resetUrl };
