@@ -50,7 +50,8 @@ export const sendAuthEmail = async ({ to, subject, text, html }) => {
   if (!transporter) {
     console.warn(`[EMAIL] SMTP not configured. Email would be sent to: ${to}`);
     console.warn(`[EMAIL] Subject: ${subject}`);
-    console.warn(`[EMAIL] Verification URL would be in the email. Check console for dev link.`);
+    console.warn(`[EMAIL] Body follows for local debugging:`);
+    console.warn(`[EMAIL] ----\n${text || '(no text body)'}\n[EMAIL] ----`);
     return { delivered: false, reason: 'SMTP_NOT_CONFIGURED' };
   }
 
@@ -66,7 +67,18 @@ export const sendAuthEmail = async ({ to, subject, text, html }) => {
     console.log(`[EMAIL] Successfully sent to ${to}. Message ID: ${info.messageId}`);
     return { delivered: true, messageId: info.messageId };
   } catch (error) {
-    console.error(`[EMAIL] Failed to send email to ${to}:`, error.message);
-    return { delivered: false, reason: 'SEND_FAILED', error: error.message };
+    // 535 from Gmail means the server accepted the connection but rejected the
+    // username or app password, which is almost always a config problem rather
+    // than a code problem. Log enough to tell the two apart.
+    const code = error?.code || error?.responseCode || 'UNKNOWN';
+    const hint =
+      code === 'EAUTH' || String(code).startsWith('535')
+        ? 'Check SMTP_USER and SMTP_PASS. For Gmail, SMTP_PASS must be an App Password, not the account password.'
+        : 'Check network access to the SMTP host and port.';
+
+    console.error(
+      `[EMAIL] Failed to send email to ${to}. code=${code} msg=${error.message}\n[EMAIL] ${hint}`
+    );
+    return { delivered: false, reason: 'SEND_FAILED', error: error.message, code };
   }
 };
