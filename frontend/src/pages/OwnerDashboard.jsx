@@ -7,6 +7,7 @@ import Pagination from '../components/Pagination';
 import RoomManagement from '../components/RoomManagement';
 import RoomRevenueReport from '../components/RoomRevenueReport';
 import { policyChip } from '../utils/bookingPolicy';
+import BookingIssuedCell from '../components/BookingIssuedCell';
 import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -2054,6 +2055,7 @@ const OwnerDashboard = () => {
                       <th>Room Type</th>
                       <th>Guest</th>
                       <th>Dates</th>
+                      <th>Booked On</th>
                       <th>Amount</th>
                       <th>Status</th>
                       <th>Actions</th>
@@ -2078,6 +2080,7 @@ const OwnerDashboard = () => {
                         <td>
                           {new Date(booking.check_in).toLocaleDateString()} → {new Date(booking.check_out).toLocaleDateString()}
                         </td>
+                        <td><BookingIssuedCell booking={booking} /></td>
                         <td>
                           <div style={{ fontWeight: 700 }}>₱{parseFloat(booking.total_amount || 0).toLocaleString()}</div>
                           <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>
@@ -3866,6 +3869,7 @@ const OwnerDashboard = () => {
                           <th>Hotel</th>
                           <th>Guest</th>
                           <th>Dates</th>
+                          <th>Booked On</th>
                           <th>Amount</th>
                           <th>Status</th>
                           <th>Actions</th>
@@ -3880,6 +3884,7 @@ const OwnerDashboard = () => {
                             <td>
                               {new Date(booking.check_in).toLocaleDateString()} → {new Date(booking.check_out).toLocaleDateString()}
                             </td>
+                            <td><BookingIssuedCell booking={booking} /></td>
                             <td style={{ padding: '1rem', fontWeight: 700, color: '#2E7D32' }}>
                               ₱{parseFloat(booking.total_amount || 0).toLocaleString()}
                             </td>

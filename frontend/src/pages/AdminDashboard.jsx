@@ -16,6 +16,7 @@ import ReportsAndAnalyticsDashboard from '../components/ReportsAndAnalyticsDashb
 import TouristArrivalsReport from '../components/TouristArrivalsReport';
 import api from '../api';
 import Pagination from '../components/Pagination';
+import BookingIssuedCell from '../components/BookingIssuedCell';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import LeafletMap from '../components/LeafletMap';
@@ -3351,6 +3352,7 @@ const AdminDashboard = () => {
                         <th>Room Type</th>
                         <th>{t('guest')}</th>
                         <th>{t('dates')}</th>
+                        <th>Booked On</th>
                         <th>{t('amount')}</th>
                         <th>{t('status')}</th>
                         <th>{t('actions')}</th>
@@ -3375,6 +3377,7 @@ const AdminDashboard = () => {
                           <td>
                             {new Date(booking.check_in).toLocaleDateString()} → {new Date(booking.check_out).toLocaleDateString()}
                           </td>
+                          <td><BookingIssuedCell booking={booking} /></td>
                           <td>
                             ₱{parseFloat(booking.total_amount || 0).toLocaleString()}
                           </td>
@@ -7990,6 +7993,7 @@ const AdminDashboard = () => {
                           <th>Hotel</th>
                           <th>Guest</th>
                           <th>Dates</th>
+                          <th>Booked On</th>
                           <th>Amount</th>
                           <th>Status</th>
                           <th>Actions</th>
@@ -8004,6 +8008,7 @@ const AdminDashboard = () => {
                             <td>
                               {new Date(booking.check_in_date).toLocaleDateString()} → {new Date(booking.check_out_date).toLocaleDateString()}
                             </td>
+                            <td><BookingIssuedCell booking={booking} /></td>
                             <td>
                               ₱{parseFloat(booking.total_amount || 0).toLocaleString()}
                             </td>
