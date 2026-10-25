@@ -17,6 +17,7 @@ import TouristArrivalsReport from '../components/TouristArrivalsReport';
 import api from '../api';
 import Pagination from '../components/Pagination';
 import BookingIssuedCell from '../components/BookingIssuedCell';
+import { getBookingGuestName } from '../utils/bookingGuestName';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import LeafletMap from '../components/LeafletMap';
@@ -2569,7 +2570,7 @@ const AdminDashboard = () => {
     if (!statusMatch) return false;
     if (!query) return true;
     const dateText = `${booking.check_in || ''} ${booking.check_out || ''}`;
-    return `${booking.booking_id} ${booking.hotel_name || ''} ${booking.username || ''} ${booking.email || ''} ${dateText}`
+    return `${booking.booking_id} ${booking.hotel_name || ''} ${getBookingGuestName(booking)} ${booking.username || ''} ${booking.email || ''} ${dateText}`
       .toLowerCase()
       .includes(query);
   });
@@ -2919,7 +2920,7 @@ const AdminDashboard = () => {
                           <tr key={booking.booking_id}>
                             <td><span style={{ fontWeight: 700, color: '#374151' }}>#{booking.booking_id}</span></td>
                             <td style={{ color: '#374151' }}>{booking.hotel_name || '—'}</td>
-                            <td style={{ color: '#374151' }}>{booking.username || '—'}</td>
+                            <td style={{ color: '#374151' }}>{getBookingGuestName(booking)}</td>
                             <td style={{ color: '#6b7280' }}>{new Date(booking.check_in).toLocaleDateString()}</td>
                             <td>
                               <span className={`gov-badge-status gov-badge-status--${booking.status}`}>{t(booking.status) || booking.status}</span>
@@ -3373,7 +3374,7 @@ const AdminDashboard = () => {
                               <span style={{ color: '#9ca3af' }}>-</span>
                             )}
                           </td>
-                          <td>{booking.username}</td>
+                          <td>{getBookingGuestName(booking)}</td>
                           <td>
                             {new Date(booking.check_in).toLocaleDateString()} → {new Date(booking.check_out).toLocaleDateString()}
                           </td>
@@ -8004,7 +8005,7 @@ const AdminDashboard = () => {
                           <tr key={booking.booking_id}>
                             <td>#{booking.booking_id}</td>
                             <td>{booking.hotel_name}</td>
-                            <td>{booking.username}</td>
+                            <td>{getBookingGuestName(booking)}</td>
                             <td>
                               {new Date(booking.check_in_date).toLocaleDateString()} → {new Date(booking.check_out_date).toLocaleDateString()}
                             </td>

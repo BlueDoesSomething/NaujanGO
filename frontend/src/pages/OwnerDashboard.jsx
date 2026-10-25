@@ -8,6 +8,7 @@ import RoomManagement from '../components/RoomManagement';
 import RoomRevenueReport from '../components/RoomRevenueReport';
 import { policyChip } from '../utils/bookingPolicy';
 import BookingIssuedCell from '../components/BookingIssuedCell';
+import { getBookingGuestName } from '../utils/bookingGuestName';
 import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -1464,7 +1465,7 @@ const OwnerDashboard = () => {
                         <tr key={booking.booking_id}>
                           <td><span style={{ fontWeight: 700, color: '#374151' }}>#{booking.booking_id}</span></td>
                           <td style={{ color: '#374151' }}>{booking.hotel_name || '—'}</td>
-                          <td style={{ color: '#374151' }}>{booking.username || '—'}</td>
+                          <td style={{ color: '#374151' }}>{getBookingGuestName(booking)}</td>
                           <td style={{ color: '#6b7280' }}>{new Date(booking.check_in).toLocaleDateString()}</td>
                           <td>
                             <span className={`gov-badge-status gov-badge-status--${booking.status}`}>{t(booking.status) || booking.status}</span>
@@ -2076,7 +2077,7 @@ const OwnerDashboard = () => {
                             <span style={{ color: '#9ca3af' }}> -</span>
                           )}
                         </td>
-                        <td>{booking.username}</td>
+                        <td>{getBookingGuestName(booking)}</td>
                         <td>
                           {new Date(booking.check_in).toLocaleDateString()} → {new Date(booking.check_out).toLocaleDateString()}
                         </td>
@@ -3880,7 +3881,7 @@ const OwnerDashboard = () => {
                           <tr key={booking.booking_id}>
                             <td>#{booking.booking_id}</td>
                             <td>{booking.hotel_name}</td>
-                            <td>{booking.username}</td>
+                            <td>{getBookingGuestName(booking)}</td>
                             <td>
                               {new Date(booking.check_in).toLocaleDateString()} → {new Date(booking.check_out).toLocaleDateString()}
                             </td>
