@@ -112,10 +112,6 @@ const HotelPayment = () => {
   const [paymentMethod, setPaymentMethod] = useState('paypal');
   const [checkoutState, setCheckoutState] = useState(null);
   const [slowConnection, setSlowConnection] = useState(false);
-  const [manualStatus, setManualStatus] = useState('');
-  const [manualStatusLoading, setManualStatusLoading] = useState(false);
-  const [manualStatusError, setManualStatusError] = useState('');
-  const [manualStatusSuccess, setManualStatusSuccess] = useState('');
   const [policyAgreed, setPolicyAgreed] = useState(false);
 
   const safeBookingId = useMemo(() => Number(bookingId), [bookingId]);
@@ -130,6 +126,11 @@ const HotelPayment = () => {
     }),
     [booking, t]
   );
+
+  // The single payment method the user has chosen — only this one is shown/focused.
+  const selectedMethod = useMemo(() => {
+    return getPaymentMethods(t).find((m) => m.value === paymentMethod) || getPaymentMethods(t)[0];
+  }, [paymentMethod, t]);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -371,179 +372,119 @@ const HotelPayment = () => {
                 <div style={paidBannerStyle}>{t('payment_already_completed')}</div>
               ) : (
                 <>
-                  {/* Payment Methods Grid */}
-                  <div style={{ marginTop: '1rem' }}>
-                    <div style={paymentMethodsContainerStyle}>
-                      {getPaymentMethods(t).map((method) => (
-                        <div
-                          key={method.value}
-                          style={{
-                            ...paymentMethodCardStyle(paymentMethod === method.value),
-                            cursor: 'pointer'
-                          }}
-                          onClick={() => setPaymentMethod(method.value)}
-                          role="button"
-                          tabIndex={0}
-                          onKeyPress={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              setPaymentMethod(method.value);
-                            }
-                          }}
-                        >
-                          <div style={paymentMethodIconStyle}>{method.icon}</div>
-                          <div style={paymentMethodLabelStyle}>{method.label}</div>
-                          <div style={paymentMethodDescStyle}>{method.description}</div>
-                          <div style={methodProviderStyle}>{method.provider}</div>
-                          {method.badge && (
-                            <div style={{ marginTop: '0.5rem' }}>
-                              <span style={badgeStyle}>{method.badge}</span>
-                            </div>
-                          )}
+                    {/* Payment method selector — only the chosen method is shown focused below */}
+                    <div style={paymentMethodSelectorStyle}>
+                      <label style={labelStyle}>{t('choose_payment_method') || 'Choose Payment Method'}</label>
+                      <select
+                        value={paymentMethod}
+                        onChange={(e) => setPaymentMethod(e.target.value)}
+                        style={selectStyle}
+                      >
+                        {getPaymentMethods(t).map((method) => (
+                          <option key={method.value} value={method.value}>
+                            {method.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Focused view of the selected payment method */}
+                    <div style={selectedPaymentMethodContainerStyle}>
+                      <div style={selectedPaymentMethodCardStyle}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginBottom: '0.75rem' }}>
+                        <div style={selectedPaymentMethodIconStyle}>{selectedMethod.icon}</div>
+                        <div>
+                          <div style={selectedPaymentMethodTitleStyle}>{selectedMethod.label}</div>
+                          <div style={selectedPaymentMethodProviderStyle}>{selectedMethod.provider}</div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Xendit Security Info */}
-                  {(['card', 'gcash', 'grabpay', 'qrph'].includes(paymentMethod)) && (paymentMethod === 'card' || paymentMethod === 'grabpay' || paymentMethod === 'qrph') ? (
-                    <div style={paymongoSecurityBannerStyle}>
-                      <span style={paymongoSecurityIconStyle}>🔐</span>
-                      <span>
-                        <strong>{t('payment_secured_by_paymongo')}</strong> — {t('payment_paymongo_description')}
-                      </span>
-                    </div>
-                  ) : paymentMethod === 'gcash' ? (
-                    <div style={paymongoSecurityBannerStyle}>
-                      <span style={paymongoSecurityIconStyle}>🔐</span>
-                      <span>
-                        <strong>Secured by Xendit</strong> — Bank-level security for all GCash payments
-                      </span>
-                    </div>
-                  ) : null}
-
-                  {/* Booking policies — final agreement before paying */}
-                  {policyLines.length > 0 && (
-                    <div style={{ marginTop: '1rem', border: '1.5px solid #c8e6c9', borderRadius: '10px', background: '#f8fdf7', padding: '1rem 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
-                      <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                        {t('booking_policies_title')}
                       </div>
-                      {policyLines.map((line, idx) => {
-                        const IconComp = Icons[POLICY_LINE_ICONS[line.icon] || 'Info'];
-                        return (
-                          <div key={idx} style={{ display: 'flex', gap: '0.65rem', alignItems: 'flex-start', fontSize: '0.86rem', color: '#374151', lineHeight: 1.5 }}>
-                            <span style={{ flexShrink: 0, width: 26, height: 26, borderRadius: '50%', background: '#e8f5e9', color: '#2E7D32', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <IconComp size={14} />
-                            </span>
-                            <span>{line.text}</span>
-                          </div>
-                        );
-                      })}
-                      <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginTop: '0.35rem', paddingTop: '0.85rem', borderTop: '1px dashed #c8e6c9', cursor: 'pointer', fontSize: '0.88rem', color: '#1B5E20', fontWeight: 600, lineHeight: 1.45 }}>
-                        <input
-                          type="checkbox"
-                          checked={policyAgreed}
-                          onChange={(e) => setPolicyAgreed(e.target.checked)}
-                          style={{ marginTop: '2px', width: '16px', height: '16px', accentColor: '#2E7D32', flexShrink: 0 }}
-                        />
-                        <span>{t('agree_policies_checkbox')}</span>
-                      </label>
-                    </div>
-                  )}
-
-                  <button
-                    style={{ ...primaryButtonStyle, ...(checkoutState?.status === 'loading' || (policyLines.length > 0 && !policyAgreed) ? { opacity: 0.7, cursor: 'not-allowed' } : {}) }}
-                    onClick={handleCheckout}
-                    disabled={checkoutState?.status === 'loading' || (policyLines.length > 0 && !policyAgreed)}
-                  >
-                    {checkoutState?.status === 'loading'
-                      ? (slowConnection ? (t('button_connecting_slow') || '\u23f3 Connecting (slow network)\u2026') : (t('processing') || '\u23f3 Processing...'))
-                        : t('continue_to_payment')}
-                  </button>
-
-                  {slowConnection && checkoutState?.status === 'loading' && (
-                    <div style={{ marginTop: '0.75rem', padding: '0.75rem 1rem', borderRadius: '10px', background: '#fef9c3', color: '#78350f', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span>\u23f3</span>
-                      <span>{t('error_slow_connection')}</span>
-                    </div>
-                  )}
-
-                  {checkoutState && (
-                    <div style={checkoutBannerStyle(checkoutState.status)}>
-                      {checkoutState.resumed && (
-                          <div style={{ fontWeight: 700, marginBottom: '0.35rem' }}>{t('resume_payment')}</div>
-                      )}
-                      <div>{checkoutState.message}</div>
-                      {checkoutState.url && (
-                        <button
-                          style={secondaryButtonStyle}
-                          onClick={() => window.open(checkoutState.url, '_blank', 'noopener,noreferrer')}
-                        >
-                          {t('open_payment')}
-                        </button>
+                      <div style={selectedPaymentMethodDescStyle}>{selectedMethod.description}</div>
+                      {selectedMethod.badge && (
+                        <span style={badgeStyle}>{selectedMethod.badge}</span>
                       )}
                     </div>
-                  )}
-                </>
-              )}
 
-              {/* Manual Status Update (Admin Only) */}
-              {payment && (
-                  <div style={{ marginTop: '2rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
-                  <div style={sectionHeading}>{t('manual_status_update_admin')}</div>
-                  <div style={fieldStyle}>
-                    <label style={labelStyle}>{t('set_payment_status')}</label>
-                    <select
-                      value={manualStatus}
-                      onChange={e => setManualStatus(e.target.value)}
-                      style={selectStyle}
+                    {/* Security banner for the selected method */}
+                    {(['card', 'gcash', 'grabpay', 'qrph'].includes(paymentMethod)) && (paymentMethod === 'card' || paymentMethod === 'grabpay' || paymentMethod === 'qrph') ? (
+                      <div style={paymongoSecurityBannerStyle}>
+                        <span style={paymongoSecurityIconStyle}>🔐</span>
+                        <span>
+                          <strong>{t('payment_secured_by_paymongo')}</strong> — {t('payment_paymongo_description')}
+                        </span>
+                      </div>
+                    ) : paymentMethod === 'gcash' ? (
+                      <div style={paymongoSecurityBannerStyle}>
+                        <span style={paymongoSecurityIconStyle}>🔐</span>
+                        <span>
+                          <strong>Secured by Xendit</strong> — Bank-level security for all GCash payments
+                        </span>
+                      </div>
+                    ) : null}
+
+                    {/* Booking policies — final agreement before paying */}
+                    {policyLines.length > 0 && (
+                      <div style={{ marginTop: '1rem', border: '1.5px solid #c8e6c9', borderRadius: '10px', background: '#f8fdf7', padding: '1rem 1.1rem', display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+                        <div style={{ fontSize: '0.72rem', fontWeight: 800, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                          {t('booking_policies_title')}
+                        </div>
+                        {policyLines.map((line, idx) => {
+                          const IconComp = Icons[POLICY_LINE_ICONS[line.icon] || 'Info'];
+                          return (
+                            <div key={idx} style={{ display: 'flex', gap: '0.65rem', alignItems: 'flex-start', fontSize: '0.86rem', color: '#374151', lineHeight: 1.5 }}>
+                              <span style={{ flexShrink: 0, width: 26, height: 26, borderRadius: '50%', background: '#e8f5e9', color: '#2E7D32', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <IconComp size={14} />
+                              </span>
+                              <span>{line.text}</span>
+                            </div>
+                          );
+                        })}
+                        <label style={{ display: 'flex', gap: '0.6rem', alignItems: 'flex-start', marginTop: '0.35rem', paddingTop: '0.85rem', borderTop: '1px dashed #c8e6c9', cursor: 'pointer', fontSize: '0.88rem', color: '#1B5E20', fontWeight: 600, lineHeight: 1.45 }}>
+                          <input
+                            type="checkbox"
+                            checked={policyAgreed}
+                            onChange={(e) => setPolicyAgreed(e.target.checked)}
+                            style={{ marginTop: '2px', width: '16px', height: '16px', accentColor: '#2E7D32', flexShrink: 0 }}
+                          />
+                          <span>{t('agree_policies_checkbox')}</span>
+                        </label>
+                      </div>
+                    )}
+
+                    <button
+                      style={{ ...primaryButtonStyle, ...(checkoutState?.status === 'loading' || (policyLines.length > 0 && !policyAgreed) ? { opacity: 0.7, cursor: 'not-allowed' } : {}) }}
+                      onClick={handleCheckout}
+                      disabled={checkoutState?.status === 'loading' || (policyLines.length > 0 && !policyAgreed)}
                     >
-                      <option value="">{t('select_status') || 'Select status...'}</option>
-                      <option value="succeeded">{t('succeeded') || 'Succeeded'}</option>
-                      <option value="pending">{t('pending_status') || 'Pending'}</option>
-                      <option value="failed">{t('failed_status') || 'Failed'}</option>
-                      <option value="refunded">{t('refunded_status') || 'Refunded'}</option>
-                    </select>
+                      {checkoutState?.status === 'loading'
+                        ? (slowConnection ? (t('button_connecting_slow') || '\u23f3 Connecting (slow network)\u2026') : (t('processing') || '\u23f3 Processing...'))
+                          : t('continue_to_payment')}
+                    </button>
+
+                    {slowConnection && checkoutState?.status === 'loading' && (
+                      <div style={{ marginTop: '0.75rem', padding: '0.75rem 1rem', borderRadius: '10px', background: '#fef9c3', color: '#78350f', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span>\u23f3</span>
+                        <span>{t('error_slow_connection')}</span>
+                      </div>
+                    )}
+
+                    {checkoutState && (
+                      <div style={checkoutBannerStyle(checkoutState.status)}>
+                        {checkoutState.resumed && (
+                            <div style={{ fontWeight: 700, marginBottom: '0.35rem' }}>{t('resume_payment')}</div>
+                        )}
+                        <div>{checkoutState.message}</div>
+                        {checkoutState.url && (
+                          <button
+                            style={secondaryButtonStyle}
+                            onClick={() => window.open(checkoutState.url, '_blank', 'noopener,noreferrer')}
+                          >
+                            {t('open_payment')}
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  <button
-                    style={primaryButtonStyle}
-                    disabled={!manualStatus || manualStatusLoading}
-                    onClick={async () => {
-                      setManualStatusLoading(true);
-                      setManualStatusError('');
-                      setManualStatusSuccess('');
-                      try {
-                        const resp = await fetch(`${getApiBaseUrl()}/api/payments/${payment.payment_id}/status`, {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json', ...(getCsrfToken() ? { 'X-CSRF-Token': getCsrfToken() } : {}) },
-                          credentials: 'include',
-                          body: JSON.stringify({ status: manualStatus })
-                        });
-                        const data = await resp.json();
-                        if (!resp.ok) {
-                          setManualStatusError(data.error || t('failed_to_update_status'));
-                        } else {
-                          setManualStatusSuccess(t('status_updated_successfully'));
-                          // Reload booking data
-                          setTimeout(() => {
-                            window.location.reload();
-                          }, 1500);
-                        }
-                      } catch (err) {
-                        setManualStatusError(t('failed_to_update_status'));
-                      } finally {
-                        setManualStatusLoading(false);
-                      }
-                    }}
-                  >
-                    {manualStatusLoading ? t('updating_status') : t('update_status')}
-                  </button>
-                  {manualStatusError && (
-                    <div style={checkoutBannerStyle('error')}>{manualStatusError}</div>
-                  )}
-                  {manualStatusSuccess && (
-                    <div style={checkoutBannerStyle('ready')}>{manualStatusSuccess}</div>
-                  )}
-                </div>
+                </>
               )}
             </div>
           </div>
@@ -634,45 +575,60 @@ const selectStyle = {
   border: '1px solid #d1d5db'
 };
 
-const paymentMethodsContainerStyle = {
-  display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-  gap: '1rem',
-  marginTop: '0.75rem'
+const selectedPaymentMethodContainerStyle = {
+  marginTop: '1rem'
 };
 
-const paymentMethodCardStyle = (isSelected) => ({
-  padding: '1.25rem 1rem',
+const paymentMethodSelectorStyle = {
+  marginBottom: '1rem',
+  padding: '0.75rem 1rem',
   borderRadius: '12px',
-  border: isSelected ? '2px solid #2e7d32' : '2px solid #e5e7eb',
-  backgroundColor: isSelected ? '#f0f9ff' : '#fff',
-  cursor: 'pointer',
-  transition: 'all 0.3s ease',
-  textAlign: 'center',
-  boxShadow: isSelected ? '0 0 0 3px rgba(46, 125, 50, 0.1)' : 'none',
-  transform: isSelected ? 'scale(1.02)' : 'scale(1)',
-  '&:hover': {
-    borderColor: '#2e7d32',
-    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-  }
-});
-
-const paymentMethodIconStyle = {
-  fontSize: '2.5rem',
-  marginBottom: '0.5rem'
+  border: '1.5px solid #e5e7eb',
+  backgroundColor: '#f9fafb',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '0.5rem'
 };
 
-const paymentMethodLabelStyle = {
-  fontSize: '0.95rem',
-  fontWeight: 600,
-  color: '#1f2937',
+const selectedPaymentMethodCardStyle = {
+  padding: '1.5rem 1.25rem',
+  borderRadius: '16px',
+  border: '2px solid #2e7d32',
+  backgroundColor: '#f0fdf4',
+  textAlign: 'center',
+  boxShadow: '0 0 0 4px rgba(46, 125, 50, 0.08)',
+  transition: 'all 0.3s ease',
+  '&:hover': {
+    borderColor: '#1b5e20',
+    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)'
+  }
+};
+
+const selectedPaymentMethodIconStyle = {
+  fontSize: '3rem',
+  marginBottom: '0.75rem'
+};
+
+const selectedPaymentMethodTitleStyle = {
+  fontSize: '1.25rem',
+  fontWeight: 700,
+  color: '#1b5e20',
   marginBottom: '0.25rem'
 };
 
-const paymentMethodDescStyle = {
+const selectedPaymentMethodProviderStyle = {
   fontSize: '0.75rem',
   color: '#6b7280',
-  marginBottom: '0.5rem'
+  textTransform: 'uppercase',
+  letterSpacing: '0.05em',
+  marginBottom: '0.75rem'
+};
+
+const selectedPaymentMethodDescStyle = {
+  fontSize: '0.9rem',
+  color: '#374151',
+  marginBottom: '0.75rem',
+  lineHeight: 1.5
 };
 
 const badgeStyle = {
@@ -700,12 +656,6 @@ const paymongoSecurityBannerStyle = {
 
 const paymongoSecurityIconStyle = {
   fontSize: '1.5rem'
-};
-
-const methodProviderStyle = {
-  fontSize: '0.7rem',
-  color: '#9ca3af',
-  marginTop: '0.25rem'
 };
 
 const primaryButtonStyle = {
