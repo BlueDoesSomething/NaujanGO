@@ -17,6 +17,9 @@ import {
 } from '../utils/paymentMethods.js';
 import { getHotelColumns, GALLERY_COLUMN_WARNING, parseJsonArrayColumn } from '../utils/hotelColumns.js';
 import { setReviewModerated } from '../utils/reviewModeration.js';
+import { parseRoomListColumn, serializeRoomListInput } from '../utils/roomFields.js';
+import { logEvent } from '../middleware/logger.js';
+import { parseRoomContentColumn, serializeRoomContentInput } from '../utils/roomContent.js';
 
 const router = express.Router();
 
@@ -2190,6 +2193,53 @@ router.put('/bookings/:bookingId/restore', async (req, res) => {
 
 // ==================== ROOM MANAGEMENT ENDPOINTS ====================
 
+const uploadRoomImages = (req, res, next) => {
+  upload.array('images', 10)(req, res, (error) => {
+    if (error) return res.status(400).json({ error: describeUploadError(error) });
+    return next();
+  });
+};
+
+const roomSaveError = (req, res, error, fallback) => {
+  let status = 500;
+  let body = { error: fallback };
+  if (error.status === 400) {
+    status = 400;
+    body = { error: error.message };
+  } else if (error.code === 'ER_BAD_FIELD_ERROR') {
+    status = 503;
+    body = {
+      error: 'Room storage needs a database update. Run migrations/046_repair_room_fields.sql and migrations/048_room_guest_content.sql on the backend database, then try again.',
+      code: 'ROOM_SCHEMA_MISSING'
+    };
+  } else if (['ER_DATA_TOO_LONG', 'ER_TRUNCATED_WRONG_VALUE', 'ER_TRUNCATED_WRONG_VALUE_FOR_FIELD'].includes(error.code)) {
+    status = 400;
+    body = { error: 'A room field is too long or has an invalid value. Check the room name, bed type, numbers, and times.' };
+  }
+
+  // These errors are caught here, so the central error handler never sees them.
+  // Persist a safe diagnostic for System Logs, not SQL, raw DB messages, or form data.
+  const databaseCode = typeof error.code === 'string' && /^[A-Z][A-Z0-9_]{0,63}$/.test(error.code)
+    ? error.code : undefined;
+  logEvent({
+    level: status >= 500 ? 'error' : 'warn',
+    source: 'rooms',
+    message: `${fallback}${databaseCode ? ` (${databaseCode})` : ''}`,
+    meta: {
+      method: req.method,
+      path: (req.originalUrl || req.url || '').split('?')[0],
+      hotel_id: req.params.hotelId,
+      room_id: req.params.roomId,
+      status,
+      reason: body.error,
+      database_code: databaseCode
+    },
+    userId: req.user?.user_id ?? null,
+    ip: req.ip || req.socket?.remoteAddress || null
+  });
+  return res.status(status).json(body);
+};
+
 // Get all rooms for a specific hotel
 router.get('/hotels/:hotelId/rooms', async (req, res) => {
   try {
@@ -2210,7 +2260,7 @@ router.get('/hotels/:hotelId/rooms', async (req, res) => {
         `SELECT room_id, hotel_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
                 price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
                 primary_image_url, check_in_time, check_out_time,
-                smoking_allowed, pets_allowed, events_allowed,
+                smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions,
                 is_active, created_at, updated_at
          FROM rooms
          WHERE hotel_id = ?
@@ -2220,9 +2270,11 @@ router.get('/hotels/:hotelId/rooms', async (req, res) => {
 
       const formatted = rooms.map(room => ({
         ...room,
-        amenities: room.amenities ? JSON.parse(room.amenities) : [],
-        room_features: parseJsonArrayField(room.room_features) || [],
-        image_urls: room.image_urls ? JSON.parse(room.image_urls) : []
+        amenities: parseRoomListColumn(room.amenities),
+        room_features: parseRoomListColumn(room.room_features),
+        image_urls: parseRoomListColumn(room.image_urls),
+        perfect_for: parseRoomContentColumn(room.perfect_for, 'perfect_for'),
+        common_questions: parseRoomContentColumn(room.common_questions, 'common_questions')
       }));
 
     res.json(formatted);
@@ -2232,25 +2284,14 @@ router.get('/hotels/:hotelId/rooms', async (req, res) => {
   }
 });
 
-// Safely parse a JSON-array column (amenities / image_urls / room_features).
-const parseJsonArrayField = (value) => {
-  if (!value) return null;
-  try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : null;
-  } catch (e) {
-    return null;
-  }
-};
-
 // Create a new room type
-router.post('/hotels/:hotelId/rooms', upload.array('images', 10), async (req, res) => {
+router.post('/hotels/:hotelId/rooms', uploadRoomImages, async (req, res) => {
   try {
     const { hotelId } = req.params;
     const { room_type_name, description, capacity, room_size_sqm, price_per_night, 
             currency, quantity_available, amenities, image_urls,
             bed_type, room_features, check_in_time, check_out_time,
-            smoking_allowed, pets_allowed, events_allowed } = req.body;
+            smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions } = req.body;
     const userId = req.user.user_id;
 
     // Verify ownership
@@ -2268,47 +2309,14 @@ router.post('/hotels/:hotelId/rooms', upload.array('images', 10), async (req, re
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Parse amenities
-    let amenitiesJson = null;
-    if (amenities) {
-      try {
-        amenitiesJson = JSON.stringify(
-          Array.isArray(amenities) ? amenities : 
-          typeof amenities === 'string' ? amenities.split(',').map(a => a.trim()) : []
-        );
-      } catch (e) {
-        amenitiesJson = null;
-      }
-    }
-
-    // Parse room features ("why guests love this room")
-    let roomFeaturesJson = null;
-    if (room_features) {
-      try {
-        roomFeaturesJson = JSON.stringify(
-          Array.isArray(room_features) ? room_features :
-          typeof room_features === 'string' ? room_features.split(',').map(f => f.trim()).filter(Boolean) : []
-        );
-      } catch (e) {
-        roomFeaturesJson = null;
-      }
-    }
-
-    // Parse image URLs
-    let imageUrlsJson = null;
-    if (image_urls) {
-      try {
-        imageUrlsJson = JSON.stringify(
-          Array.isArray(image_urls) ? image_urls.filter(Boolean) : 
-          typeof image_urls === 'string' ? image_urls.split(',').map(u => u.trim()).filter(Boolean) : []
-        );
-      } catch (e) {
-        imageUrlsJson = null;
-      }
-    }
+    const amenitiesJson = serializeRoomListInput(amenities, 'amenities');
+    const roomFeaturesJson = serializeRoomListInput(room_features, 'room_features');
+    const perfectForJson = serializeRoomContentInput(perfect_for, 'perfect_for');
+    const commonQuestionsJson = serializeRoomContentInput(common_questions, 'common_questions');
+    let imageUrlsJson = serializeRoomListInput(image_urls, 'image_urls');
 
     // Add uploaded images to image_urls if provided
-    let primaryImage = null;
+    let primaryImage = imageUrlsJson ? JSON.parse(imageUrlsJson)[0] || null : null;
     if (req.files && req.files.length > 0) {
       const imageArray = imageUrlsJson ? JSON.parse(imageUrlsJson) : [];
       req.files.forEach(file => {
@@ -2323,12 +2331,13 @@ router.post('/hotels/:hotelId/rooms', upload.array('images', 10), async (req, re
       `INSERT INTO rooms (hotel_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
                          price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
                          primary_image_url, check_in_time, check_out_time,
-                         smoking_allowed, pets_allowed, events_allowed, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+                         smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [hotelId, room_type_name, bed_type || null, description || null, capacity, room_size_sqm || null, 
        price_per_night, currency || 'PHP', quantity_available, amenitiesJson, roomFeaturesJson,
        imageUrlsJson, primaryImage, check_in_time || '14:00', check_out_time || '11:00',
-       Number(smoking_allowed) ? 1 : 0, Number(pets_allowed) ? 1 : 0, Number(events_allowed) ? 1 : 0]
+        Number(smoking_allowed) ? 1 : 0, Number(pets_allowed) ? 1 : 0, Number(events_allowed) ? 1 : 0,
+        perfectForJson, commonQuestionsJson]
     );
 
     res.status(201).json({
@@ -2338,18 +2347,18 @@ router.post('/hotels/:hotelId/rooms', upload.array('images', 10), async (req, re
     });
   } catch (error) {
     console.error('Create room error:', error);
-    res.status(500).json({ error: 'Failed to create room' });
+    return roomSaveError(req, res, error, 'Failed to create room');
   }
 });
 
 // Update an existing room type
-router.put('/hotels/:hotelId/rooms/:roomId', upload.array('images', 10), async (req, res) => {
+router.put('/hotels/:hotelId/rooms/:roomId', uploadRoomImages, async (req, res) => {
   try {
     const { hotelId, roomId } = req.params;
     const { room_type_name, description, capacity, room_size_sqm, price_per_night, 
             currency, quantity_available, amenities, image_urls, is_active,
             bed_type, room_features, check_in_time, check_out_time,
-            smoking_allowed, pets_allowed, events_allowed } = req.body;
+            smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions } = req.body;
     const userId = req.user.user_id;
 
     // Verify ownership
@@ -2364,44 +2373,11 @@ router.put('/hotels/:hotelId/rooms/:roomId', upload.array('images', 10), async (
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    // Parse amenities
-    let amenitiesJson = null;
-    if (amenities) {
-      try {
-        amenitiesJson = JSON.stringify(
-          Array.isArray(amenities) ? amenities : 
-          typeof amenities === 'string' ? amenities.split(',').map(a => a.trim()) : []
-        );
-      } catch (e) {
-        amenitiesJson = null;
-      }
-    }
-
-    // Parse room features ("why guests love this room")
-    let roomFeaturesJson = null;
-    if (room_features) {
-      try {
-        roomFeaturesJson = JSON.stringify(
-          Array.isArray(room_features) ? room_features :
-          typeof room_features === 'string' ? room_features.split(',').map(f => f.trim()).filter(Boolean) : []
-        );
-      } catch (e) {
-        roomFeaturesJson = null;
-      }
-    }
-
-    // Parse image URLs
-    let imageUrlsJson = null;
-    if (image_urls) {
-      try {
-        imageUrlsJson = JSON.stringify(
-          Array.isArray(image_urls) ? image_urls.filter(Boolean) : 
-          typeof image_urls === 'string' ? image_urls.split(',').map(u => u.trim()).filter(Boolean) : []
-        );
-      } catch (e) {
-        imageUrlsJson = null;
-      }
-    }
+    const amenitiesJson = serializeRoomListInput(amenities, 'amenities');
+    const roomFeaturesJson = serializeRoomListInput(room_features, 'room_features');
+    const perfectForJson = serializeRoomContentInput(perfect_for, 'perfect_for');
+    const commonQuestionsJson = serializeRoomContentInput(common_questions, 'common_questions');
+    let imageUrlsJson = serializeRoomListInput(image_urls, 'image_urls');
 
     // Add uploaded images if provided
     if (req.files && req.files.length > 0) {
@@ -2417,7 +2393,7 @@ router.put('/hotels/:hotelId/rooms/:roomId', upload.array('images', 10), async (
     // a stale primary_image_url behind.
     let primaryImage;
     if (imageUrlsJson !== null) {
-      const imageArray = parseJsonArrayField(imageUrlsJson) || [];
+      const imageArray = JSON.parse(imageUrlsJson);
       primaryImage = imageArray.length > 0 ? imageArray[0] : null;
     }
 
@@ -2484,6 +2460,14 @@ router.put('/hotels/:hotelId/rooms/:roomId', upload.array('images', 10), async (
       updates.push('room_features = ?');
       params.push(roomFeaturesJson);
     }
+    if (perfectForJson !== null) {
+      updates.push('perfect_for = ?');
+      params.push(perfectForJson);
+    }
+    if (commonQuestionsJson !== null) {
+      updates.push('common_questions = ?');
+      params.push(commonQuestionsJson);
+    }
     if (imageUrlsJson !== null) {
       updates.push('image_urls = ?');
       params.push(imageUrlsJson);
@@ -2509,7 +2493,7 @@ router.put('/hotels/:hotelId/rooms/:roomId', upload.array('images', 10), async (
     res.json({ success: true, message: 'Room type updated successfully' });
   } catch (error) {
     console.error('Update room error:', error);
-    res.status(500).json({ error: 'Failed to update room' });
+    return roomSaveError(req, res, error, 'Failed to update room');
   }
 });
 
@@ -2628,7 +2612,7 @@ router.get('/public/hotels/:hotelId/rooms', async (req, res) => {
       `SELECT room_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
               price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
               primary_image_url, check_in_time, check_out_time,
-              smoking_allowed, pets_allowed, events_allowed
+              smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions
        FROM rooms
        WHERE hotel_id = ? AND is_active = 1
        ORDER BY price_per_night`,
@@ -2637,9 +2621,11 @@ router.get('/public/hotels/:hotelId/rooms', async (req, res) => {
 
     const formatted = rooms.map(room => ({
       ...room,
-      amenities: room.amenities ? JSON.parse(room.amenities) : [],
-      room_features: parseJsonArrayField(room.room_features) || [],
-      image_urls: room.image_urls ? JSON.parse(room.image_urls) : []
+      amenities: parseRoomListColumn(room.amenities),
+      room_features: parseRoomListColumn(room.room_features),
+      image_urls: parseRoomListColumn(room.image_urls),
+      perfect_for: parseRoomContentColumn(room.perfect_for, 'perfect_for'),
+      common_questions: parseRoomContentColumn(room.common_questions, 'common_questions')
     }));
 
     res.json(formatted);

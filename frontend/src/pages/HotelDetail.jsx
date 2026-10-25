@@ -9,6 +9,7 @@ import axios from 'axios';
 import LeafletMap from '../components/LeafletMap';
 import Icons from '../components/Icons';
 import RoomManagement from '../components/RoomManagement';
+import { RoomPerfectFor, RoomCommonQuestions } from '../components/RoomGuestContent';
 import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
 import './HotelDetail.css';
 
@@ -2501,51 +2502,14 @@ export default function HotelDetail() {
                   </div>
 
                   {/* FAQ */}
-                  <div className="hd-rm-sec">
-                    <p className="hd-rm-sec-title">Common questions</p>
-                    <div className="hd-rm-faq">
-                      {[
-                        { q: 'Can I modify my booking?', a: 'Yes, free modifications up to 7 days before check-in' },
-                        { q: 'What is the earliest check-in?', a: '2:00 PM standard, subject to availability' },
-                        { q: 'Is breakfast included?', a: 'Yes, complimentary daily breakfast' },
-                        { q: 'Is WiFi available?', a: 'Yes, free high-speed WiFi throughout' }
-                      ].map((item, i) => (
-                        <details className="hd-rm-faq-item" key={i}>
-                          <summary>
-                            <span><Icons.Info size={13} /> {item.q}</span>
-                            <span className="hd-rm-chev"><Icons.ChevronDown size={14} /></span>
-                          </summary>
-                          <p>{item.a}</p>
-                        </details>
-                      ))}
-                    </div>
-                  </div>
+                  <RoomCommonQuestions items={selectedRoom.common_questions} />
                 </div>
 
                 {/* Right: booking panel */}
                 <div className="hd-rm-side">
                   <div className="hd-rm-side-inner">
                     {/* Perfect for */}
-                    <div className="hd-rm-sec">
-                      <p className="hd-rm-sec-title">Perfect for</p>
-                      <div className="hd-rm-grid2">
-                        {[
-                          { icon: Icons.Users, label: 'Family Trips', detail: '3–4 guests with comfort' },
-                          { icon: Icons.Heart, label: 'Couples', detail: 'Romantic getaway' },
-                          { icon: Icons.MapPin, label: 'Business Travel', detail: 'Work & relaxation' },
-                          { icon: Icons.User, label: 'Solo Travelers', detail: 'Independent exploration' }
-                        ].map((item, idx) => {
-                          const IconComponent = item.icon;
-                          return (
-                            <div className="hd-rm-perfect" key={idx}>
-                              <IconComponent size={14} />
-                              <p className="hd-rm-perfect-l">{item.label}</p>
-                              <p className="hd-rm-perfect-d">{item.detail}</p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                    <RoomPerfectFor items={selectedRoom.perfect_for} />
 
                     {/* Price + availability */}
                     <div className="hd-rm-pricebox">

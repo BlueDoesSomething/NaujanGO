@@ -5,6 +5,7 @@ import { getTranslationWithFallback } from '../services/machineTranslate.js';
 import { fetchHotelAvailabilityDays } from '../utils/hotelAvailability.js';
 import { attachHotelLegitimacy, attachHotelLegitimacyList } from '../utils/legitimacy.js';
 import { parseJsonArrayColumn } from '../utils/hotelColumns.js';
+import { parseRoomContentColumn } from '../utils/roomContent.js';
 
 let hotelsHasImageUrls;
 let hotelsHasAllowedPaymentMethods;
@@ -650,7 +651,7 @@ export const getHotelRooms = async (req, res) => {
       `SELECT room_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
               price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
               primary_image_url, check_in_time, check_out_time,
-              smoking_allowed, pets_allowed, events_allowed, is_active
+              smoking_allowed, pets_allowed, events_allowed, is_active, perfect_for, common_questions
        FROM rooms
        WHERE hotel_id = ? AND is_active = 1
        ORDER BY price_per_night`,
@@ -659,6 +660,8 @@ export const getHotelRooms = async (req, res) => {
 
     let formatted = rooms.map(room => ({
       ...room,
+      perfect_for: parseRoomContentColumn(room.perfect_for, 'perfect_for'),
+      common_questions: parseRoomContentColumn(room.common_questions, 'common_questions'),
       amenities: parseAmenitiesServer(room.amenities),
       room_features: (() => {
         try {

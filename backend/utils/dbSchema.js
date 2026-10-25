@@ -116,6 +116,17 @@ export const ensureRoomFieldsSchema = async () => {
   }
 };
 
+// Owner-authored guest categories and FAQs (migration 048). Existing rooms
+// remain unconfigured (NULL), so no sample content is published on upgrade.
+export const ensureRoomGuestContentSchema = async () => {
+  try {
+    await ensureColumn('rooms', 'perfect_for', 'TEXT NULL');
+    await ensureColumn('rooms', 'common_questions', 'TEXT NULL');
+  } catch (error) {
+    console.error('Schema ensure (room guest content) failed:', error.message);
+  }
+};
+
 // reviews.room_id (migration 024) is what the public Room Details modal uses
 // to show room-specific guest quotes. createHotelReview writes it for new
 // reviews; this backfills historic ones from their booking. Idempotent and

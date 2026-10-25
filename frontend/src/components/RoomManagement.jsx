@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Icons from '../components/Icons';
 import api from '../api';
+import RoomContentEditor from './RoomContentEditor';
+import { getRoomContentItems, prepareRoomGuestContent } from '../utils/roomContent';
 import './RoomManagement.css';
 import '../pages/HotelDetail.css';
 
@@ -49,6 +51,8 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
     image_urls: [],
     is_active: 1,
     room_features: [], // NEW: Why guests love this room
+    perfect_for: [],
+    common_questions: [],
     check_in_time: '14:00', // NEW: Check-in policy (24h for <input type="time">)
     check_out_time: '11:00', // NEW: Check-out policy (24h for <input type="time">)
     smoking_allowed: false, // NEW: Smoking policy
@@ -116,6 +120,14 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
       return;
     }
 
+    let guestContent;
+    try {
+      guestContent = prepareRoomGuestContent(roomForm);
+    } catch (error) {
+      alert(error.message);
+      return;
+    }
+
     try {
       setRoomSaving(true);
       const amenities = amenitiesInput
@@ -139,6 +151,8 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
       formData.append('quantity_available', roomForm.quantity_available);
       formData.append('amenities', JSON.stringify(amenities));
       formData.append('room_features', JSON.stringify(roomFeatures));
+      formData.append('perfect_for', JSON.stringify(guestContent.perfect_for));
+      formData.append('common_questions', JSON.stringify(guestContent.common_questions));
       
       // Append existing image URLs
       formData.append('image_urls', JSON.stringify(roomForm.image_urls));
@@ -211,6 +225,8 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
       check_out_time: String(room.check_out_time || emptyRoom.check_out_time).slice(0, 5),
       amenities: Array.isArray(room.amenities) ? room.amenities : [],
       room_features: Array.isArray(room.room_features) ? room.room_features : [],
+      perfect_for: getRoomContentItems(room.perfect_for, 'perfect_for'),
+      common_questions: getRoomContentItems(room.common_questions, 'common_questions'),
       image_urls: Array.isArray(room.image_urls) ? room.image_urls : []
     });
     setAmenitiesInput(Array.isArray(room.amenities) ? room.amenities.join(', ') : '');
@@ -651,6 +667,11 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
                         </div>
                       )}
                     </div>
+                    <RoomContentEditor
+                      room={roomForm}
+                      disabled={roomSaving}
+                      onChange={(field, entries) => setRoomForm(current => ({ ...current, [field]: entries }))}
+                    />
                       </div>
 
                       <div className="rm-form-col rm-form-col-sticky">

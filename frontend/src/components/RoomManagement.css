@@ -349,6 +349,37 @@ textarea.rm-input {
   color: #047857;
 }
 
+.rm-content-entry {
+  margin: 0;
+  padding: 0.8rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.rm-content-entry legend {
+  padding: 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.rm-content-entry .rm-btn,
+.rm-content-add {
+  align-self: flex-start;
+}
+
+[data-theme="dark"] .rm-content-entry {
+  border-color: #334155;
+}
+
+[data-theme="dark"] .rm-content-entry legend {
+  color: #cbd5e1;
+}
+
 /* Photos */
 .rm-file {
   width: 100%;

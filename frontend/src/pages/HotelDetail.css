@@ -2512,7 +2512,15 @@
   gap: 0.4rem;
 }
 
-.hd-rm-faq-item summary svg { color: #2d6a4f; }
+.hd-rm-faq-item summary svg {
+  color: #2d6a4f;
+  flex-shrink: 0;
+}
+
+.hd-rm-faq-item summary > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 
 .hd-rm-chev {
   display: inline-flex;
@@ -2529,6 +2537,8 @@
   font-size: 0.72rem;
   color: #64748b;
   line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 
 /* ── Right column ── */
@@ -2565,6 +2575,7 @@
   border-radius: 12px;
   padding: 0.6rem;
   color: #1b4332;
+  overflow-wrap: anywhere;
 }
 
 .hd-rm-perfect-l {
