@@ -961,6 +961,7 @@ const translations = {
     
     // HotelPayment Page
     complete_your_payment: 'Complete Your Payment',
+    choose_payment_method: 'Choose Payment Method',
     finalize_hotel_booking: 'Finalize your hotel booking in Naujan',
     loading_payment_details: 'Loading payment details...',
     booking_summary: 'Booking Summary',
