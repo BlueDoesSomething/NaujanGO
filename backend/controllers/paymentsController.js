@@ -5,12 +5,50 @@ import db from '../db.js';
 import * as paymentProviders from '../services/paymentProviders.js';
 import nodemailer from 'nodemailer';
 import { authenticateToken, requireAdmin, requireOwnerOrAdmin } from '../middleware/auth.js';
+import { createRateLimiter } from '../middleware/rateLimit.js';
 
 const router = express.Router();
 import { JWT_SECRET } from '../config/security.js';
 import { FRONTEND_URL, WEBHOOK_BASE_URL } from '../config/publicUrls.js';
 import { balanceOf, dueNow, MIN_GATEWAY_AMOUNT } from '../utils/paymentAmounts.js';
 import { syncBookingPaymentStatus, fetchAmountPaid } from '../utils/paymentSync.js';
+
+// Rate limiters for payment endpoints
+const checkoutLimiter = createRateLimiter({
+  name: 'payment-checkout',
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  maxRequests: 10,
+  message: 'Too many checkout attempts. Please try again later.',
+  errorCode: 'CHECKOUT_RATE_LIMITED',
+  keyGenerator: (req) => `${req.ip}::checkout`
+});
+
+const paymongoWebhookLimiter = createRateLimiter({
+  name: 'paymongo-webhook',
+  windowMs: 1 * 60 * 1000, // 1 minute
+  maxRequests: 30,
+  message: 'Too many webhook requests.',
+  errorCode: 'WEBHOOK_RATE_LIMITED',
+  keyGenerator: (req) => `${req.ip}::paymongo-webhook`
+});
+
+const paymongoWebhook2Limiter = createRateLimiter({
+  name: 'paymongo-webhook-2',
+  windowMs: 1 * 60 * 1000, // 1 minute
+  maxRequests: 30,
+  message: 'Too many webhook requests.',
+  errorCode: 'WEBHOOK_RATE_LIMITED',
+  keyGenerator: (req) => `${req.ip}::paymongo-webhook-2`
+});
+
+const xenditWebhookLimiter = createRateLimiter({
+  name: 'xendit-webhook',
+  windowMs: 1 * 60 * 1000, // 1 minute
+  maxRequests: 30,
+  message: 'Too many webhook requests.',
+  errorCode: 'WEBHOOK_RATE_LIMITED',
+  keyGenerator: (req) => `${req.ip}::xendit-webhook`
+});
 
 // What this booking must pay right now: the remaining balance once anything has
 // been paid, otherwise the first instalment chosen at checkout (fee/half/full).
@@ -519,7 +557,7 @@ const processRealPayment = async (paymentData) => {
 };
 
 // Process payment for a booking
-router.post('/checkout', async (req, res) => {
+router.post('/checkout', checkoutLimiter, async (req, res) => {
   const userId = getUserIdFromToken(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -2277,7 +2315,7 @@ router.post('/:paymentId/refund', authenticateToken, requireOwnerOrAdmin, async 
 });
 
 // 🟢 NEW: Xendit webhook handler for payment status updates
-router.post('/webhook/xendit', express.json(), async (req, res) => {
+router.post('/webhook/xendit', express.json(), xenditWebhookLimiter, async (req, res) => {
   const signature = req.headers['x-xendit-callback-verification'];
   const rawBody = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
   
@@ -2468,101 +2506,123 @@ router.post('/webhook/paypal', async (req, res) => {
   }
 });
 
-// PayMongo webhook handler (for GCash, GrabPay)
-router.post('/webhook/paymongo', express.raw({ type: 'application/json' }), async (req, res) => {
+// Helper to process a PayMongo webhook event for a specific account.
+// `webhookSecret` is the HMAC secret for the account that sent the webhook.
+// `accountLabel` is used only for log messages.
+const processPayMongoWebhookEvent = async (rawBody, signature, webhookSecret, accountLabel) => {
+  // Verify signature if configured
+  if (webhookSecret) {
+    const verification = paymentProviders.verifyPaymongoWebhook(rawBody, signature, webhookSecret);
+    if (!verification.valid) {
+      console.error(`Invalid ${accountLabel} webhook signature:`, verification.reason);
+      return { ok: false, status: 400, body: { error: 'Invalid signature' } };
+    }
+  }
+
+  const payload = JSON.parse(rawBody || '{}');
+  const event = payload.data;
+
+  if (!event) {
+    return { ok: false, status: 400, body: { error: 'Invalid payload' } };
+  }
+
+  if (event.attributes && event.attributes.type === 'source.chargeable') {
+    const sourceData = event.attributes.data || event.attributes;
+    const sourceId = sourceData.id;
+    // Update provider response and mark payment chargeable
+    await updatePaymentStatusByProvider(sourceId, 'chargeable', sourceData);
+
+    // Try to auto-match submitted customer_reference_number with provider metadata (if any)
+    const possibleRef = sourceData.data?.reference || sourceData.reference || null;
+    if (possibleRef) {
+      try {
+        const [rows] = await db.promise().query(
+          `SELECT p.payment_id, p.booking_id, p.amount, p.currency, p.customer_reference_number
+           FROM hotel_payments p
+           WHERE p.transaction_reference = ? OR p.customer_reference_number = ?
+           LIMIT 1`,
+          [sourceId, possibleRef]
+        );
+
+        if (rows.length) {
+          const p = rows[0];
+          // If amounts match, auto-verify (best-effort)
+          const providerAmount = (sourceData.amount || sourceData.amount_in_cents || 0) / 100;
+          if (Math.abs(Number(p.amount) - providerAmount) < 0.01) {
+            await db.promise().query(
+              `UPDATE hotel_payments SET customer_reference_number = ?, reference_submitted_at = NOW(), reference_status = 'verified', status = 'succeeded', provider_response = ?, verified_at = NOW(), verified_by = NULL, paid_at = NOW(), updated_at = NOW() WHERE payment_id = ?`,
+              [possibleRef, JSON.stringify(sourceData), p.payment_id]
+            );
+            await syncBookingPaymentStatus(p.booking_id, { confirm: true });
+            console.log(`Auto-verified payment ${p.payment_id} via ${accountLabel} webhook (reference match)`);
+          }
+        }
+      } catch (err) {
+        console.error('Error attempting auto-verify from PayMongo webhook:', err);
+      }
+    }
+  }
+
+  // 🟢 QRPH uses Checkout Session API - handle payment confirmation events
+  if (event.attributes && event.attributes.type === 'checkout_session.payment.paid') {
+    const sessionData = event.attributes.data;
+    const sessionId = sessionData?.id;
+    const sessionAttrs = sessionData?.attributes || {};
+    const referenceNumber = sessionAttrs.reference_number || null;
+    const paymentObj = (sessionAttrs.payments || [])[0] || null;
+
+    console.log(`✅ ${accountLabel} checkout_session.payment.paid received:`, {
+      session_id: sessionId,
+      reference_number: referenceNumber
+    });
+
+    if (sessionId) {
+      // updatePaymentStatus also flips the booking to paid when status is 'succeeded'
+      await updatePaymentStatus(sessionId, 'succeeded', sessionData);
+      await updatePaymentStatusByProvider(sessionId, 'succeeded', sessionData);
+    }
+    if (paymentObj?.id) {
+      await updatePaymentStatusByProvider(paymentObj.id, 'succeeded', paymentObj);
+    }
+  } else if (event.attributes && event.attributes.type === 'checkout_session.payment.failed') {
+    const sessionData = event.attributes.data;
+    const sessionId = sessionData?.id;
+
+    console.log(`❌ ${accountLabel} checkout_session.payment.failed received:`, { session_id: sessionId });
+
+    if (sessionId) {
+      await updatePaymentStatus(sessionId, 'failed', sessionData);
+      await updatePaymentStatusByProvider(sessionId, 'failed', sessionData);
+    }
+  }
+
+  return { ok: true, status: 200, body: { received: true } };
+};
+
+// PayMongo webhook handler (Account 1 - for GCash, GrabPay, QRPH)
+router.post('/webhook/paymongo', express.raw({ type: 'application/json' }), paymongoWebhookLimiter, async (req, res) => {
   const rawBody = req.body && req.body.toString ? req.body.toString('utf8') : '';
   const signature = req.headers['paymongo-signature'] || req.headers['x-paymongo-signature'] || '';
 
   try {
-    // Verify signature if configured
-    if (process.env.PAYMONGO_WEBHOOK_SECRET) {
-      const verification = paymentProviders.verifyPaymongoWebhook(rawBody, signature);
-      if (!verification.valid) {
-        console.error('Invalid PayMongo webhook signature:', verification.reason);
-        return res.status(400).json({ error: 'Invalid signature' });
-      }
-    }
-
-    const payload = JSON.parse(rawBody || '{}');
-    const event = payload.data;
-
-    if (!event) {
-      return res.status(400).json({ error: 'Invalid payload' });
-    }
-
-    if (event.attributes && event.attributes.type === 'source.chargeable') {
-      const sourceData = event.attributes.data || event.attributes;
-      const sourceId = sourceData.id;
-      // Update provider response and mark payment chargeable
-      await updatePaymentStatusByProvider(sourceId, 'chargeable', sourceData);
-
-      // Try to auto-match submitted customer_reference_number with provider metadata (if any)
-      const possibleRef = sourceData.data?.reference || sourceData.reference || null;
-      if (possibleRef) {
-        try {
-          const [rows] = await db.promise().query(
-            `SELECT p.payment_id, p.booking_id, p.amount, p.currency, p.customer_reference_number
-             FROM hotel_payments p
-             WHERE p.transaction_reference = ? OR p.customer_reference_number = ?
-             LIMIT 1`,
-            [sourceId, possibleRef]
-          );
-
-          if (rows.length) {
-            const p = rows[0];
-            // If amounts match, auto-verify (best-effort)
-            const providerAmount = (sourceData.amount || sourceData.amount_in_cents || 0) / 100;
-            if (Math.abs(Number(p.amount) - providerAmount) < 0.01) {
-              await db.promise().query(
-                `UPDATE hotel_payments SET customer_reference_number = ?, reference_submitted_at = NOW(), reference_status = 'verified', status = 'succeeded', provider_response = ?, verified_at = NOW(), verified_by = NULL, paid_at = NOW(), updated_at = NOW() WHERE payment_id = ?`,
-                [possibleRef, JSON.stringify(sourceData), p.payment_id]
-              );
-              await syncBookingPaymentStatus(p.booking_id, { confirm: true });
-              console.log(`Auto-verified payment ${p.payment_id} via PayMongo webhook (reference match)`);
-            }
-          }
-        } catch (err) {
-          console.error('Error attempting auto-verify from PayMongo webhook:', err);
-        }
-      }
-    }
-
-    // 🟢 QRPH uses Checkout Session API - handle payment confirmation events
-    if (event.attributes && event.attributes.type === 'checkout_session.payment.paid') {
-      const sessionData = event.attributes.data;
-      const sessionId = sessionData?.id;
-      const sessionAttrs = sessionData?.attributes || {};
-      const referenceNumber = sessionAttrs.reference_number || null;
-      const paymentObj = (sessionAttrs.payments || [])[0] || null;
-
-      console.log('✅ checkout_session.payment.paid received:', {
-        session_id: sessionId,
-        reference_number: referenceNumber
-      });
-
-      if (sessionId) {
-        // updatePaymentStatus also flips the booking to paid when status is 'succeeded'
-        await updatePaymentStatus(sessionId, 'succeeded', sessionData);
-        await updatePaymentStatusByProvider(sessionId, 'succeeded', sessionData);
-      }
-      if (paymentObj?.id) {
-        await updatePaymentStatusByProvider(paymentObj.id, 'succeeded', paymentObj);
-      }
-    } else if (event.attributes && event.attributes.type === 'checkout_session.payment.failed') {
-      const sessionData = event.attributes.data;
-      const sessionId = sessionData?.id;
-
-      console.log('❌ checkout_session.payment.failed received:', { session_id: sessionId });
-
-      if (sessionId) {
-        await updatePaymentStatus(sessionId, 'failed', sessionData);
-        await updatePaymentStatusByProvider(sessionId, 'failed', sessionData);
-      }
-    }
-
-    res.json({ received: true });
+    const result = await processPayMongoWebhookEvent(rawBody, signature, process.env.PAYMONGO_WEBHOOK_SECRET, 'PayMongo');
+    return res.status(result.status).json(result.body);
   } catch (err) {
     console.error('PayMongo webhook error:', err);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// PayMongo webhook handler (Account 2 - for QRPH / QR code payments from a second PayMongo account)
+router.post('/webhook/paymongo-2', express.raw({ type: 'application/json' }), paymongoWebhook2Limiter, async (req, res) => {
+  const rawBody = req.body && req.body.toString ? req.body.toString('utf8') : '';
+  const signature = req.headers['paymongo-signature'] || req.headers['x-paymongo-signature'] || '';
+
+  try {
+    const result = await processPayMongoWebhookEvent(rawBody, signature, process.env.PAYMONGO_WEBHOOK_SECRET_2, 'PayMongo (Account 2)');
+    return res.status(result.status).json(result.body);
+  } catch (err) {
+    console.error('PayMongo Account 2 webhook error:', err);
     res.status(400).json({ error: err.message });
   }
 });

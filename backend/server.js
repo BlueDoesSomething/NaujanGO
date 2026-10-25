@@ -58,10 +58,18 @@ const defaultAllowedOrigins = process.env.NODE_ENV === 'production'
 const configuredOrigins = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim()).filter(Boolean)
   : [];
+
+// In production, strip out localhost and private IP origins for security
+const productionSafeOrigins = process.env.NODE_ENV === 'production'
+  ? configuredOrigins.filter(o => !/^https?:\/\/localhost(:[0-9]+)?$/.test(o)
+    && !/^https?:\/\/127\.0\.0\.1(:[0-9]+)?$/.test(o)
+    && !/^https?:\/\/(192\.168\.|10\.|172\.1[6-9]\.|172\.2[0-9]\.|172\.3[01]\.)[0-9.]+:[0-9]+$/.test(o))
+  : configuredOrigins;
+
 const frontendOrigin = FRONTEND_URL;
 const allowedOrigins = [...new Set([
   ...defaultAllowedOrigins,
-  ...configuredOrigins,
+  ...productionSafeOrigins,
   ...(frontendOrigin ? [frontendOrigin] : [])
 ])];
 
