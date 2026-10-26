@@ -10,7 +10,7 @@ import { policyChip } from '../utils/bookingPolicy';
 import BookingIssuedCell from '../components/BookingIssuedCell';
 import { getBookingGuestName } from '../utils/bookingGuestName';
 import ReferenceDetails from '../components/ReferenceDetails';
-import { getPaymentMethodLabel, getBookingPaymentMethod, getBookingReferences, getPaymentReferences } from '../utils/paymentDisplay';
+import { getPaymentMethodLabel, getBookingPaymentMethod, getPaymentReferences } from '../utils/paymentDisplay';
 import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -2046,7 +2046,6 @@ const OwnerDashboard = () => {
                       <th>Booked On</th>
                       <th>Amount</th>
                       <th>{t('payment_method_section')}</th>
-                      <th>References</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
@@ -2097,7 +2096,6 @@ const OwnerDashboard = () => {
                           )}
                         </td>
                         <td>{getPaymentMethodLabel(getBookingPaymentMethod(booking), t)}</td>
-                        <td><ReferenceDetails entries={getBookingReferences(booking)} /></td>
                         <td>
                           <span className={`gov-badge-status gov-badge-status--${booking.status}`}>
                             {booking.status}
@@ -3858,7 +3856,6 @@ const OwnerDashboard = () => {
                           <th>Booked On</th>
                           <th>Amount</th>
                           <th>{t('payment_method_section')}</th>
-                          <th>References</th>
                           <th>Status</th>
                           <th>Actions</th>
                         </tr>
@@ -3877,7 +3874,6 @@ const OwnerDashboard = () => {
                               ₱{parseFloat(booking.total_amount || 0).toLocaleString()}
                             </td>
                             <td>{getPaymentMethodLabel(getBookingPaymentMethod(booking), t)}</td>
-                            <td><ReferenceDetails entries={getBookingReferences(booking)} /></td>
                             <td>
                               <span className="gov-badge-status gov-badge-status--cancelled">
                                 {booking.status}

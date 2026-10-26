@@ -88,11 +88,17 @@ test('reference text is escaped and long references remain complete', () => {
   assert.match(html, /&lt;img/);
 });
 
-test('active and archived owner tables include the new method and reference cells', () => {
+test('active and archived reservations retain payment methods without a References column', () => {
   const source = readFileSync(new URL('../src/pages/OwnerDashboard.jsx', import.meta.url), 'utf8');
-  assert.equal((source.match(/entries=\{getBookingReferences\(booking\)\}/g) || []).length, 2);
-  assert.equal((source.match(/entries=\{getPaymentReferences\(payment\)\}/g) || []).length, 2);
+  assert.doesNotMatch(source, /<th>References<\/th>/);
+  assert.doesNotMatch(source, /entries=\{getBookingReferences\(booking\)\}/);
   assert.equal((source.match(/<td>\{getPaymentMethodLabel\(getBookingPaymentMethod\(booking\), t\)\}<\/td>/g) || []).length, 2);
   assert.ok(!source.includes('payment_provider_${String(method)'));
   assert.match(source, /booking\.payment_customer_reference, booking\.payment_transaction_reference/);
+});
+
+test('active and archived payment tables still display payment references', () => {
+  const source = readFileSync(new URL('../src/pages/OwnerDashboard.jsx', import.meta.url), 'utf8');
+  assert.equal((source.match(/<th>Payment References<\/th>/g) || []).length, 2);
+  assert.equal((source.match(/entries=\{getPaymentReferences\(payment\)\}/g) || []).length, 2);
 });
