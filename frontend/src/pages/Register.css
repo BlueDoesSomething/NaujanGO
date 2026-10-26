@@ -1,150 +1,275 @@
-.register-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 80vh;
-  padding: 20px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+/* Registration uses explicit classes, not fragile inline-style selectors from
+   auth.css. In particular, stacked fields must never retain a 260px flex basis. */
+.register-page {
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  place-items: start center;
+  padding: clamp(1rem, 4vw, 2rem);
+  position: relative;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 650px;
+  min-width: 0;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 24px;
+  background: var(--surface, #ffffff);
+  color: var(--text, #111827);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.register-header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.register-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.75rem, 6vw, 3rem);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--text, #111827);
+  overflow-wrap: anywhere;
+}
+
+.register-header p {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--muted, #4b5563);
 }
 
 .register-form {
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  display: grid;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+/* Shared legacy themes treat .register-form as the card itself. The card is
+   now a separate wrapper, so do not add a second surface or inset padding. */
+.register-page .register-card form {
   width: 100%;
-  max-width: 500px;
+  max-width: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-.logo-container {
-  text-align: center;
-  margin-bottom: 20px;
+.register-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1rem;
+  min-width: 0;
 }
 
-.register-logo {
-  height: 60px;
-  width: auto;
-  margin-bottom: 10px;
-}
-
-
-
-.logo-container::after {
-  content: '';
-  display: block;
-  width: 100%;
-  height: 2px;
-  background-color: #000;
-  margin-top: 20px;
-}
-
-.register-form h2 {
-  text-align: center;
-  margin-bottom: 30px;
-  color: #333;
-  font-size: 28px;
-  font-weight: 600;
-}
-
-.form-row {
+.register-field {
   display: flex;
-  gap: 20px;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
-.form-row .form-group {
-  flex: 1;
+.register-page .register-field > label {
+  display: block !important;
+  margin: 0 !important;
+  color: var(--text, #111827) !important;
+  font-size: 0.95rem !important;
+  line-height: 1.5;
 }
 
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  color: #555;
-  font-weight: 500;
-}
-
-.form-group input {
+/* Form IDs deliberately outrank the global !important input/select rules.
+   Keep controls at 16px even when the mobile root font is reduced to 14px,
+   so iOS does not zoom the page when a field receives focus. */
+.register-page :is(#register-form, #register-verification-form) .register-input {
   width: 100%;
-  padding: 12px 16px;
-  border: 2px solid #e1e5e9;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 0.3s ease;
-  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0.75rem 1rem !important;
+  border: 1px solid var(--border, #d1d5db) !important;
+  border-radius: 12px !important;
+  background-color: var(--surface, #ffffff) !important;
+  color: var(--text, #111827) !important;
+  font-size: 16px !important;
+  line-height: 1.5 !important;
 }
 
-.form-group input:focus {
-  outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+.register-page #register-form select.register-input {
+  padding-right: 2.5rem !important;
 }
 
-.register-btn {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 16px;
-  font-weight: 600;
+.register-page :is(#register-form, #register-verification-form) .register-input::placeholder {
+  color: var(--muted, #4b5563) !important;
+  font-size: inherit !important;
+  opacity: 1 !important;
+}
+
+.register-page :is(#register-form, #register-verification-form) .register-input:focus {
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.18) !important;
+}
+
+.register-password {
+  position: relative;
+  min-width: 0;
+}
+
+.register-page #register-form .register-input-password {
+  padding-right: 3.5rem !important;
+}
+
+.register-page .register-reveal {
+  position: absolute;
+  inset: 50% 0.25rem auto auto;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  min-height: 44px;
+  padding: 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--muted, #4b5563);
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.register-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+.register-page .register-reveal:hover {
+  transform: translateY(-50%);
 }
 
-.register-btn:active {
-  transform: translateY(0);
+.register-page .register-hint {
+  margin: 0;
+  color: var(--muted, #4b5563);
+  font-size: 0.9rem;
+  line-height: 1.5;
 }
 
-.error-message {
-  background: #f8d7da;
-  color: #721c24;
-  padding: 12px;
-  border-radius: 6px;
-  margin-bottom: 20px;
-  border: 1px solid #f5c6cb;
-  text-align: center;
+.register-page .register-terms {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 0.75rem;
+  margin: 0 !important;
+  color: var(--text, #111827) !important;
+  font-size: 0.95rem !important;
+  line-height: 1.6;
 }
 
-.login-link {
-  text-align: center;
-  margin-top: 20px;
-  color: #666;
+.register-page .register-terms-checkbox {
+  flex: 0 0 20px;
+  width: 20px !important;
+  height: 20px !important;
+  min-height: 20px;
+  margin-top: 0.2rem;
+  accent-color: #15803d;
 }
 
-.login-link a {
-  color: #007bff;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.login-link a:hover {
+.register-page .register-link {
+  color: #15803d;
+  font-weight: 700;
   text-decoration: underline;
 }
 
-@media (max-width: 600px) {
-  .register-container {
-    padding: 10px;
+[data-theme="dark"] .register-page .register-link {
+  color: #86efac;
+}
+
+.register-page .register-submit,
+.register-page .register-social,
+.register-page .register-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--border, #d1d5db);
+  border-radius: 12px;
+  background: var(--surface, #ffffff);
+  color: var(--text, #111827);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: normal;
+  cursor: pointer;
+}
+
+.register-page .register-submit {
+  border-color: #15803d;
+  background: #15803d;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.register-page .register-submit:hover:enabled {
+  background: #166534;
+}
+
+.register-page button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.register-page button:focus-visible,
+.register-page .register-link:focus-visible,
+.register-page .register-terms-checkbox:focus-visible {
+  outline: 2px solid #16a34a;
+  outline-offset: 3px;
+}
+
+.register-divider {
+  margin: 1.5rem 0;
+  text-align: center;
+  color: var(--muted, #4b5563);
+  font-size: 0.95rem;
+}
+
+.register-social-buttons {
+  margin-bottom: 1.5rem;
+}
+
+.register-footer {
+  text-align: center;
+  color: var(--muted, #4b5563);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.register-page #register-verification-form .register-code {
+  text-align: center !important;
+  letter-spacing: 0.2rem;
+}
+
+@media (max-width: 768px) {
+  .register-page {
+    /* Keep the final controls clear of the floating mobile nav and safe area. */
+    padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .register-page :is(input, select, button, a) {
+    scroll-margin-block: 1rem 7rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .register-card {
+    border-radius: 16px;
+  }
+
+  .register-row {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .register-form {
-    padding: 30px 20px;
-  }
-
-  .register-form h2 {
-    font-size: 24px;
-  }
-
-  .form-row {
-    flex-direction: column;
-    gap: 0;
+    gap: 1rem;
   }
 }

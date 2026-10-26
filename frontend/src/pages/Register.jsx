@@ -5,135 +5,11 @@ import '../styles/auth.css';
 import { useLanguage } from '../context/LanguageContext';
 import Icons from '../components/Icons';
 import { loadCachedSetting } from '../utils/siteSettingsCache';
-
-// Style definitions moved before component to fix initialization order
-const containerStyle = {
-  minHeight: '100vh',
-  backgroundSize: 'cover',
-  backgroundPosition: 'center',
-  backgroundRepeat: 'no-repeat',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '2rem',
-  position: 'relative'
-};
+import './Register.css';
 
 const DEFAULT_REGISTER_BG_STYLE = {
   backgroundColor: 'transparent',
   backgroundImage: 'none'
-};
-
-const cardStyle = {
-  backgroundColor: 'rgba(255, 255, 255, 0.25)',
-  backdropFilter: 'blur(30px)',
-  WebkitBackdropFilter: 'blur(30px)',
-  borderRadius: '24px',
-  padding: 'clamp(1.5rem, 5vw, 3rem)',
-  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), 0 0 20px rgba(255, 255, 255, 0.3)',
-  width: '100%',
-  maxWidth: '650px',
-  border: '1px solid rgba(255, 255, 255, 0.18)'
-};
-
-const headerStyle = {
-  textAlign: 'center',
-  marginBottom: '2rem'
-};
-
-const titleStyle = {
-  fontSize: '3rem',
-  fontWeight: '800',
-  color: 'white',
-  margin: '0 0 0.5rem 0',
-  textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-};
-
-const subtitleStyle = {
-  color: 'white',
-  fontSize: '1.1rem',
-  margin: 0
-};
-
-const formStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '1.5rem'
-};
-
-const rowStyle = {
-  display: 'flex',
-  gap: '1rem',
-  flexWrap: 'wrap'
-};
-
-const rowFieldStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.5rem',
-  flex: '1 1 260px',
-  minWidth: 0
-};
-
-const inputGroupStyle = {
-  display: 'flex',
-  flexDirection: 'column',
-  gap: '0.5rem',
-  flex: 1
-};
-
-const labelStyle = {
-  fontSize: '0.9rem',
-  fontWeight: '600',
-  color: 'white'
-};
-
-const inputStyle = {
-  padding: '1rem 1.2rem',
-  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  backdropFilter: 'blur(10px)',
-  WebkitBackdropFilter: 'blur(10px)',
-  border: '2px solid rgba(255, 255, 255, 0.3)',
-  borderRadius: '12px',
-  fontSize: '1rem',
-  outline: 'none',
-  transition: 'all 0.3s ease',
-  color: 'white'
-};
-
-const passwordContainerStyle = {
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center'
-};
-
-const passwordInputStyle = {
-  padding: '1rem 1.2rem',
-  paddingRight: '3.5rem',
-  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  backdropFilter: 'blur(10px)',
-  WebkitBackdropFilter: 'blur(10px)',
-  border: '2px solid rgba(255, 255, 255, 0.3)',
-  borderRadius: '12px',
-  fontSize: '1rem',
-  outline: 'none',
-  width: '100%',
-  transition: 'all 0.3s ease',
-  color: 'white'
-};
-
-const eyeButtonStyle = {
-  position: 'absolute',
-  right: '1rem',
-  background: 'none',
-  border: 'none',
-  cursor: 'pointer',
-  color: '#6b7280',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  padding: '0.25rem',
-  transition: 'color 0.2s ease'
 };
 
 const passwordStrengthStyle = {
@@ -141,14 +17,6 @@ const passwordStrengthStyle = {
   alignItems: 'center',
   gap: '0.5rem',
   marginTop: '0.5rem'
-};
-
-const passwordHintStyle = {
-  marginTop: '0.75rem',
-  marginBottom: 0,
-  color: 'rgba(255, 255, 255, 0.9)',
-  fontSize: '0.85rem',
-  lineHeight: 1.5
 };
 
 const strengthBarStyle = {
@@ -162,122 +30,6 @@ const strengthBarStyle = {
 const strengthFillStyle = {
   height: '100%',
   transition: 'all 0.3s ease'
-};
-
-const checkboxContainerStyle = {
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: '0.5rem'
-};
-
-const checkboxLabelStyle = {
-  display: 'flex',
-  alignItems: 'flex-start',
-  gap: '0.5rem',
-  fontSize: '0.9rem',
-  color: 'white',
-  lineHeight: '1.4'
-};
-
-const checkBoxStyle = {
-  display: 'block',
-  cursor: 'pointer',
-  width: '20px',
-  height: '20px',
-  border: '3px solid rgba(255, 255, 255, 0)',
-  borderRadius: '6px',
-  position: 'relative',
-  overflow: 'hidden',
-  boxShadow: '0px 0px 0px 2px #fff',
-  flexShrink: 0
-};
-
-const checkBoxDivStyle = {
-  width: '40px',
-  height: '40px',
-  backgroundColor: '#fff',
-  top: '-35px',
-  left: '-35px',
-  position: 'absolute',
-  transform: 'rotateZ(45deg)',
-  zIndex: 100,
-  transition: '300ms ease'
-};
-
-const buttonStyle = {
-  background: 'rgba(22, 163, 74, 0.3)',
-  backdropFilter: 'blur(10px)',
-  WebkitBackdropFilter: 'blur(10px)',
-  color: 'white',
-  padding: '1.1rem',
-  border: '2px solid #16a34a',
-  borderRadius: '12px',
-  fontSize: '1.1rem',
-  fontWeight: '700',
-  cursor: 'pointer',
-  transition: 'all 0.3s ease',
-  boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3), 0 0 20px rgba(22, 163, 74, 0.4)'
-};
-
-const dividerStyle = {
-  textAlign: 'center',
-  margin: '2rem 0',
-  position: 'relative'
-};
-
-const dividerTextStyle = {
-  padding: '0 1rem',
-  color: 'white',
-  fontSize: '0.9rem'
-};
-
-const socialButtonsStyle = {
-  display: 'flex',
-  gap: '1rem',
-  marginBottom: '2rem'
-};
-
-const socialButtonStyle = {
-  flex: 1,
-  padding: '1rem',
-  backgroundColor: 'rgba(255, 255, 255, 0.3)',
-  backdropFilter: 'blur(10px)',
-  WebkitBackdropFilter: 'blur(10px)',
-  border: '2px solid rgba(255, 255, 255, 0.3)',
-  borderRadius: '12px',
-  cursor: 'pointer',
-  fontSize: '1rem',
-  fontWeight: '600',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
-  transition: 'all 0.3s ease',
-  color: 'white'
-};
-
-const footerStyle = {
-  textAlign: 'center',
-  color: 'white',
-  fontSize: '0.9rem'
-};
-
-const postRegisterButtonStyle = {
-  display: 'block',
-  margin: '1rem auto 0',
-  border: '1px solid rgba(255, 255, 255, 0.45)',
-  background: 'rgba(255, 255, 255, 0.12)',
-  color: '#fff',
-  borderRadius: '999px',
-  padding: '0.75rem 1.25rem',
-  cursor: 'pointer',
-  fontWeight: '700'
-};
-
-const linkStyle = {
-  color: 'white',
-  textDecoration: 'none',
-  fontWeight: '700',
-  transition: 'color 0.2s ease'
 };
 
 const errorStyle = {
@@ -338,7 +90,7 @@ const Register = () => {
   const [verificationCode, setVerificationCode] = useState('');
   const [tempUserData, setTempUserData] = useState(null); // Store user data waiting for verification
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [registerBgStyle, setRegisterBgStyle] = useState({ ...containerStyle, ...DEFAULT_REGISTER_BG_STYLE });
+  const [registerBgStyle, setRegisterBgStyle] = useState({ ...DEFAULT_REGISTER_BG_STYLE });
   const navigate = useNavigate();
 
   const { t } = useLanguage();
@@ -355,7 +107,7 @@ const Register = () => {
 
       if (isMounted) {
         console.log('[REGISTER] Generated BG style:', bgStyle);
-        setRegisterBgStyle({ ...containerStyle, ...bgStyle });
+        setRegisterBgStyle(bgStyle);
       }
     };
 
@@ -373,7 +125,7 @@ const Register = () => {
       } catch (err) {
         console.error('[REGISTER] Error loading auth pages settings:', err);
         if (!cachedSettings && isMounted) {
-          setRegisterBgStyle({ ...containerStyle, ...DEFAULT_REGISTER_BG_STYLE });
+          setRegisterBgStyle({ ...DEFAULT_REGISTER_BG_STYLE });
         }
       }
     };
@@ -413,17 +165,6 @@ const Register = () => {
 
     if (name === 'password') {
       calculatePasswordStrength(value);
-    }
-    
-    if (name === 'agreeToTerms' && type === 'checkbox') {
-      const checkBoxDiv = e.target.nextElementSibling;
-      if (checked) {
-        checkBoxDiv.style.left = '-7px';
-        checkBoxDiv.style.top = '-7px';
-      } else {
-        checkBoxDiv.style.left = '-35px';
-        checkBoxDiv.style.top = '-35px';
-      }
     }
   };
 
@@ -614,11 +355,11 @@ const Register = () => {
   };
 
   return (
-    <div style={registerBgStyle}>
-      <div style={cardStyle}>
-        <div style={headerStyle}>
-          <h1 style={titleStyle}>{t('create_account')}</h1>
-          <p style={subtitleStyle}>{t('join_us_start_exploring')}</p>
+    <div className="register-page" style={registerBgStyle}>
+      <div className="register-card">
+        <div className="register-header">
+          <h1>{t('create_account')}</h1>
+          <p>{t('join_us_start_exploring')}</p>
         </div>
 
         {error && <div style={errorStyle}>{error}</div>}
@@ -635,92 +376,105 @@ const Register = () => {
         )}
 
         {registrationStage === 'form' && !successMessage && (
-        <form onSubmit={handleRegister} style={formStyle}>
-          <div style={rowStyle}>
-            <div style={rowFieldStyle}>
-              <label style={labelStyle}>{t('first_name')}</label>
+        <form id="register-form" className="register-form" onSubmit={handleRegister}>
+          <div className="register-row">
+            <div className="register-field">
+              <label htmlFor="register-first-name">{t('first_name')}</label>
               <input
                 type="text"
                 name="firstName"
+                id="register-first-name"
+                autoComplete="given-name"
                 placeholder={t('enter_first_name')}
                 value={formData.firstName}
                 onChange={handleInputChange}
                 required
-                style={inputStyle}
+                className="register-input"
               />
             </div>
-            <div style={rowFieldStyle}>
-              <label style={labelStyle}>{t('last_name')}</label>
+            <div className="register-field">
+              <label htmlFor="register-last-name">{t('last_name')}</label>
               <input
                 type="text"
                 name="lastName"
+                id="register-last-name"
+                autoComplete="family-name"
                 placeholder={t('enter_last_name')}
                 value={formData.lastName}
                 onChange={handleInputChange}
                 required
-                style={inputStyle}
+                className="register-input"
               />
             </div>
           </div>
 
-          <div style={inputGroupStyle}>
-            <label style={labelStyle}>{t('username')}</label>
+          <div className="register-field">
+            <label htmlFor="register-username">{t('username')}</label>
             <input
               type="text"
               name="username"
+              id="register-username"
+              autoComplete="username"
               placeholder={t('choose_username')}
               value={formData.username}
               onChange={handleInputChange}
               required
-              style={inputStyle}
+              className="register-input"
             />
           </div>
 
-          <div style={inputGroupStyle}>
-            <label style={labelStyle}>{t('email_address')}</label>
+          <div className="register-field">
+            <label htmlFor="register-email">{t('email_address')}</label>
             <input
               type="email"
               name="email"
+              id="register-email"
+              autoComplete="email"
               placeholder={t('enter_your_email')}
               value={formData.email}
               onChange={handleInputChange}
               required
-              style={inputStyle}
+              className="register-input"
             />
           </div>
 
-          <div style={rowStyle}>
-            <div style={rowFieldStyle}>
-              <label style={labelStyle}>{t('phone_number')}</label>
+          <div className="register-row">
+            <div className="register-field">
+              <label htmlFor="register-phone">{t('phone_number')}</label>
               <input
                 type="tel"
                 name="phone"
+                id="register-phone"
+                autoComplete="tel"
                 placeholder={t('enter_phone_number')}
                 value={formData.phone}
                 onChange={handleInputChange}
-                style={inputStyle}
+                className="register-input"
               />
             </div>
-            <div style={rowFieldStyle}>
-              <label style={labelStyle}>{t('date_of_birth')}</label>
+            <div className="register-field">
+              <label htmlFor="register-birth-date">{t('date_of_birth')}</label>
               <input
                 type="date"
                 name="dateOfBirth"
+                id="register-birth-date"
+                autoComplete="bday"
                 value={formData.dateOfBirth}
                 onChange={handleInputChange}
-                style={inputStyle}
+                className="register-input"
               />
             </div>
           </div>
 
-          <div style={rowStyle}>
-            <div style={rowFieldStyle}>
-              <label style={labelStyle}>Gender</label>
+          <div className="register-row">
+            <div className="register-field">
+              <label htmlFor="register-gender">Gender</label>
               <select
                 name="gender"
+                id="register-gender"
                 value={formData.gender}
                 onChange={handleInputChange}
-                style={inputStyle}
+                className="register-input"
               >
                 <option value="prefer_not_to_say">Prefer not to say</option>
                 <option value="male">Male</option>
@@ -728,13 +482,14 @@ const Register = () => {
                 <option value="other">Other</option>
               </select>
             </div>
-            <div style={rowFieldStyle}>
-              <label style={labelStyle}>Visitor Type</label>
+            <div className="register-field">
+              <label htmlFor="register-visitor-type">Visitor Type</label>
               <select
                 name="userType"
+                id="register-visitor-type"
                 value={formData.userType}
                 onChange={handleInputChange}
-                style={inputStyle}
+                className="register-input"
               >
                 <option value="foreigner">Foreigner</option>
                 <option value="resident">Resident</option>
@@ -743,22 +498,27 @@ const Register = () => {
             </div>
           </div>
 
-          <div style={inputGroupStyle}>
-            <label style={labelStyle}>{t('password')}</label>
-            <div style={passwordContainerStyle}>
+          <div className="register-field">
+            <label htmlFor="register-password">{t('password')}</label>
+            <div className="register-password">
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
+                id="register-password"
+                autoComplete="new-password"
+                aria-describedby="register-password-hint"
                 placeholder={t('create_password')}
                 value={formData.password}
                 onChange={handleInputChange}
                 required
-                style={passwordInputStyle}
+                className="register-input register-input-password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={eyeButtonStyle}
+                className="register-reveal"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
               >
                 {showPassword ? <Icons.Eye size={20} /> : <Icons.EyeOff size={20} />}
               </button>
@@ -779,52 +539,53 @@ const Register = () => {
                 </span>
               </div>
             )}
-            <p style={passwordHintStyle}>{t('password_requirements')}</p>
+            <p id="register-password-hint" className="register-hint">{t('password_requirements')}</p>
           </div>
 
-          <div style={inputGroupStyle}>
-            <label style={labelStyle}>{t('confirm_password')}</label>
-            <div style={passwordContainerStyle}>
+          <div className="register-field">
+            <label htmlFor="register-confirm-password">{t('confirm_password')}</label>
+            <div className="register-password">
               <input
                 type={showConfirmPassword ? 'text' : 'password'}
                 name="confirmPassword"
+                id="register-confirm-password"
+                autoComplete="new-password"
                 placeholder={t('confirm_your_password')}
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
                 required
-                style={passwordInputStyle}
+                className="register-input register-input-password"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={eyeButtonStyle}
+                className="register-reveal"
+                aria-label={showConfirmPassword ? 'Hide confirmation password' : 'Show confirmation password'}
+                aria-pressed={showConfirmPassword}
               >
                 {showConfirmPassword ? <Icons.Eye size={20} /> : <Icons.EyeOff size={20} />}
               </button>
             </div>
           </div>
 
-          <div style={checkboxContainerStyle}>
-            <label style={checkboxLabelStyle}>
-              <div style={checkBoxStyle}>
-                <input
-                  type="checkbox"
-                  name="agreeToTerms"
-                  checked={formData.agreeToTerms}
-                  onChange={handleInputChange}
-                  required
-                  style={{position: 'absolute', left: '50px', visibility: 'hidden'}}
-                />
-                <div style={formData.agreeToTerms ? {...checkBoxDivStyle, left: '-7px', top: '-7px'} : checkBoxDivStyle}></div>
-              </div>
-              I agree to the <Link to="/terms" style={linkStyle}>Terms of Service</Link> and <Link to="/privacy" style={linkStyle}>Privacy Policy</Link>
-            </label>
-          </div>
+          <label className="register-terms">
+            <input
+              type="checkbox"
+              name="agreeToTerms"
+              checked={formData.agreeToTerms}
+              onChange={handleInputChange}
+              required
+              className="register-terms-checkbox"
+            />
+            <span>
+              I agree to the <Link to="/terms" className="register-link">Terms of Service</Link> and <Link to="/privacy" className="register-link">Privacy Policy</Link>
+            </span>
+          </label>
 
           <button 
             type="submit" 
             disabled={isLoading}
-            style={isLoading ? { ...buttonStyle, opacity: 0.7 } : buttonStyle}
+            className="register-submit"
           >
             {isLoading ? t('creating_account') : t('create_account')}
           </button>
@@ -832,20 +593,23 @@ const Register = () => {
         )}
 
         {registrationStage === 'verify' && successMessage && (
-        <form onSubmit={handleVerifyCode} style={formStyle}>
-          <div style={inputGroupStyle}>
-            <label style={labelStyle}>Verification Code</label>
+        <form id="register-verification-form" className="register-form" onSubmit={handleVerifyCode}>
+          <div className="register-field">
+            <label htmlFor="register-verification-code">Verification Code</label>
             <input
               type="text"
               name="verificationCode"
+              id="register-verification-code"
+              inputMode="numeric"
+              autoComplete="one-time-code"
               placeholder="Enter 6-digit code from email"
               value={verificationCode}
               onChange={(e) => setVerificationCode(e.target.value)}
               required
               maxLength="6"
-              style={{...inputStyle, fontSize: '1.2rem', letterSpacing: '0.2rem', textAlign: 'center'}}
+              className="register-input register-code"
             />
-            <p style={{fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', margin: '0.5rem 0 0 0'}}>
+            <p className="register-hint">
               Check your email for the 6-digit verification code
             </p>
           </div>
@@ -853,7 +617,7 @@ const Register = () => {
           <button 
             type="submit" 
             disabled={isLoading || verificationCode.length !== 6}
-            style={isLoading || verificationCode.length !== 6 ? { ...buttonStyle, opacity: 0.5 } : buttonStyle}
+            className="register-submit"
           >
             {isLoading ? 'Verifying...' : 'Verify and Create Account'}
           </button>
@@ -862,19 +626,7 @@ const Register = () => {
             type="button"
             onClick={handleResendCode}
             disabled={isLoading || resendCooldown > 0}
-            style={{
-              marginTop: '1rem',
-              display: 'block',
-              margin: '0.75rem auto 0',
-              border: '1px solid rgba(255, 255, 255, 0.45)',
-              background: resendCooldown > 0 ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.12)',
-              color: resendCooldown > 0 ? 'rgba(255, 255, 255, 0.5)' : '#fff',
-              borderRadius: '999px',
-              padding: '0.75rem 1.25rem',
-              cursor: resendCooldown > 0 ? 'not-allowed' : 'pointer',
-              fontWeight: '700',
-              transition: 'all 0.3s ease'
-            }}
+            className="register-secondary"
           >
             {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
           </button>
@@ -888,18 +640,7 @@ const Register = () => {
               setVerificationCode('');
               setResendCooldown(0);
             }}
-            style={{
-              marginTop: '1rem',
-              display: 'block',
-              margin: '0.75rem auto 0',
-              border: '1px solid rgba(255, 255, 255, 0.45)',
-              background: 'rgba(255, 255, 255, 0.12)',
-              color: '#fff',
-              borderRadius: '999px',
-              padding: '0.75rem 1.25rem',
-              cursor: 'pointer',
-              fontWeight: '700'
-            }}
+            className="register-secondary"
           >
             Back to Registration
           </button>
@@ -908,22 +649,22 @@ const Register = () => {
 
         {!successMessage && (
         <>
-        <div style={dividerStyle}>
-          <span style={dividerTextStyle}>{t('or_sign_up_with')}</span>
+        <div className="register-divider">
+          <span>{t('or_sign_up_with')}</span>
         </div>
 
-        <div style={socialButtonsStyle}>
-          <button style={socialButtonStyle} onClick={() => handleOAuthLogin('google')}>
+        <div className="register-social-buttons">
+          <button type="button" className="register-social" onClick={() => handleOAuthLogin('google')}>
             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style={{width: '18px', height: '18px', marginRight: '8px'}} />
             {t('google')}
           </button>
         </div>
 
-        <div style={footerStyle}>
+        <div className="register-footer">
           <span>{t('already_have_account')} </span>
-          <Link to="/login" style={linkStyle}>{t('sign_in_link')}</Link>
+          <Link to="/login" className="register-link">{t('sign_in_link')}</Link>
           {successMessage ? (
-            <button type="button" onClick={() => navigate('/login')} style={postRegisterButtonStyle}>
+            <button type="button" onClick={() => navigate('/login')} className="register-secondary">
               {t('continue_to_login')}
             </button>
           ) : null}
