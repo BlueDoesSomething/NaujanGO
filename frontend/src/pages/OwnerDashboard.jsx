@@ -9,6 +9,8 @@ import RoomRevenueReport from '../components/RoomRevenueReport';
 import { policyChip } from '../utils/bookingPolicy';
 import BookingIssuedCell from '../components/BookingIssuedCell';
 import { getBookingGuestName } from '../utils/bookingGuestName';
+import ReferenceDetails from '../components/ReferenceDetails';
+import { getPaymentMethodLabel, getBookingPaymentMethod, getBookingReferences, getPaymentReferences } from '../utils/paymentDisplay';
 import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -19,23 +21,6 @@ import './OwnerDashboard.css';
 import './HotelDetail.css';
 
 const getHotelPaymentMethodOptions = HOTEL_PAYMENT_METHOD_OPTIONS;
-
-const PAYMENT_METHOD_LABELS = {
-  card: 'Credit/Debit Card',
-  gcash: 'GCash',
-  grabpay: 'GrabPay',
-  qrph: 'QR PH',
-  paypal: 'PayPal',
-  bank_transfer: 'Bank Transfer',
-  pay_at_property: 'Pay at Property'
-};
-
-const getPaymentMethodLabel = (method, t) => {
-  if (!method) return 'N/A';
-  const key = PAYMENT_METHOD_LABELS[String(method).toLowerCase()];
-  if (key) return t(`payment_provider_${String(method).toLowerCase()}`) || PAYMENT_METHOD_LABELS[String(method).toLowerCase()];
-  return method;
-};
 
 const OwnerDashboard = () => {
   const { user, logout } = useAuth();
@@ -1036,13 +1021,15 @@ const OwnerDashboard = () => {
         if (booking.status !== bookingFilter) return false;
       }
       
-      if (bookingSearch) {
-        const search = bookingSearch.toLowerCase();
-        return (
-          booking.hotel_name?.toLowerCase().includes(search) ||
-          booking.username?.toLowerCase().includes(search) ||
-          booking.customer_name?.toLowerCase().includes(search)
-        );
+      const search = bookingSearch.trim().toLowerCase();
+      if (search) {
+        return [
+          booking.hotel_name, booking.username, getBookingGuestName(booking),
+          booking.booking_reference, booking.receipt_number,
+          booking.payment_customer_reference, booking.payment_transaction_reference,
+          booking.payment_reference,
+          getPaymentMethodLabel(getBookingPaymentMethod(booking), t)
+        ].some(value => typeof value === 'string' && value.toLowerCase().includes(search));
       }
       return true;
     });
@@ -2058,6 +2045,8 @@ const OwnerDashboard = () => {
                       <th>Dates</th>
                       <th>Booked On</th>
                       <th>Amount</th>
+                      <th>{t('payment_method_section')}</th>
+                      <th>References</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
@@ -2107,6 +2096,8 @@ const OwnerDashboard = () => {
                             </span>
                           )}
                         </td>
+                        <td>{getPaymentMethodLabel(getBookingPaymentMethod(booking), t)}</td>
+                        <td><ReferenceDetails entries={getBookingReferences(booking)} /></td>
                         <td>
                           <span className={`gov-badge-status gov-badge-status--${booking.status}`}>
                             {booking.status}
@@ -2411,8 +2402,8 @@ const OwnerDashboard = () => {
                       <th>Room Type</th>
                       <th>Customer</th>
                       <th>Amount</th>
-                      <th>Method</th>
-                      <th>Reference</th>
+                      <th>{t('payment_method_section')}</th>
+                      <th>Payment References</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
@@ -2451,13 +2442,7 @@ const OwnerDashboard = () => {
                         <td>
                           {getPaymentMethodLabel(payment.method, t)}
                         </td>
-                        <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {payment.customer_reference_number ? (
-                            <div style={{ fontWeight: 700 }}>{payment.customer_reference_number}</div>
-                          ) : (
-                            <div style={{ color: '#9ca3af', fontStyle: 'italic' }}>—</div>
-                          )}
-                        </td>
+                        <td><ReferenceDetails entries={getPaymentReferences(payment)} /></td>
                         <td>
                           {Number(payment.archived) === 1 && (
                             <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.4px', color: '#6b7280', textTransform: 'uppercase', marginTop: '4px' }}>
@@ -3872,6 +3857,8 @@ const OwnerDashboard = () => {
                           <th>Dates</th>
                           <th>Booked On</th>
                           <th>Amount</th>
+                          <th>{t('payment_method_section')}</th>
+                          <th>References</th>
                           <th>Status</th>
                           <th>Actions</th>
                         </tr>
@@ -3889,6 +3876,8 @@ const OwnerDashboard = () => {
                             <td style={{ padding: '1rem', fontWeight: 700, color: '#2E7D32' }}>
                               ₱{parseFloat(booking.total_amount || 0).toLocaleString()}
                             </td>
+                            <td>{getPaymentMethodLabel(getBookingPaymentMethod(booking), t)}</td>
+                            <td><ReferenceDetails entries={getBookingReferences(booking)} /></td>
                             <td>
                               <span className="gov-badge-status gov-badge-status--cancelled">
                                 {booking.status}
@@ -3937,7 +3926,8 @@ const OwnerDashboard = () => {
                           <th>ID</th>
                           <th>Customer</th>
                           <th>Amount</th>
-                          <th>Method</th>
+                          <th>{t('payment_method_section')}</th>
+                          <th>Payment References</th>
                           <th>Status</th>
                           <th>Date</th>
                           <th>Actions</th>
@@ -3952,8 +3942,9 @@ const OwnerDashboard = () => {
                               ₱{parseFloat(payment.amount || 0).toLocaleString()}
                             </td>
                             <td>
-                              {payment.method}
+                              {getPaymentMethodLabel(payment.method, t)}
                             </td>
+                            <td><ReferenceDetails entries={getPaymentReferences(payment)} /></td>
                             <td>
                               <span className="gov-badge-status gov-badge-status--cancelled">
                                 {payment.status}

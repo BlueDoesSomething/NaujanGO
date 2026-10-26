@@ -7,6 +7,7 @@ import db from '../db.js';
 import { authenticateToken, requireOwnerOrAdmin, requireFullAuthorization } from '../middleware/auth.js';
 import { syncBookingPaymentStatus } from '../utils/paymentSync.js';
 import { balanceOf } from '../utils/paymentAmounts.js';
+import { fetchBookingPaymentDetails, getBookingPaymentFields } from '../utils/bookingPayments.js';
 import { parsePolicyFields } from '../utils/policyFields.js';
 import { computeAuthorization, LEGITIMACY_FIELDS, attachHotelLegitimacyList } from '../utils/legitimacy.js';
 import {
@@ -460,7 +461,8 @@ router.get('/bookings/archived', async (req, res) => {
       ORDER BY b.archived_at DESC
     `;
     const [bookings] = await db.promise().query(query, [userId]);
-    res.json(bookings);
+    const paymentDetails = await fetchBookingPaymentDetails(db.promise(), bookings.map(booking => booking.booking_id));
+    res.json(bookings.map(booking => ({ ...booking, ...getBookingPaymentFields(booking, paymentDetails) })));
   } catch (error) {
     console.error('Get archived bookings error:', error);
     res.status(500).json({ error: 'Failed to fetch archived bookings' });
@@ -506,6 +508,7 @@ router.get('/bookings', async (req, res) => {
       paidMap = Object.fromEntries(paidRows.map(r => [r.booking_id, Number(r.paid) || 0]));
     }
 
+    const paymentDetails = await fetchBookingPaymentDetails(db.promise(), bookingIds);
     const enriched = bookings.map(b => {
       const amount_paid = paidMap[b.booking_id] || 0;
       const balance_due = balanceOf(b.total_amount, amount_paid, b.payment_status);
@@ -515,7 +518,7 @@ router.get('/bookings', async (req, res) => {
         d.setDate(d.getDate() - 1);
         balance_due_at = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       }
-      return { ...b, amount_paid, balance_due, balance_due_at };
+      return { ...b, ...getBookingPaymentFields(b, paymentDetails), amount_paid, balance_due, balance_due_at };
     });
 
     res.json(enriched);
