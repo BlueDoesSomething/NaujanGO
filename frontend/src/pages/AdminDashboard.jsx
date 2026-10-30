@@ -34,7 +34,6 @@ import {
 import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
 import ArchiveRecordModal from '../components/ArchiveRecordModal';
 import DashboardPaymentsPanel from '../components/DashboardPaymentsPanel';
-import PaymentSummaryCards from '../components/PaymentSummaryCards';
 
 const CHATBOT_TRAINING_LANGUAGES = [
   { value: 'all', label: 'All languages' },
@@ -2801,7 +2800,6 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Second Row: Booking Breakdown + Recent Users */}
-                <PaymentSummaryCards stats={stats.paymentStats} />
                 <div className="gov-grid-3" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
 
                   {/* Booking Status */}
