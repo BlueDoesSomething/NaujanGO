@@ -11,6 +11,9 @@ import { getHotelColumns, GALLERY_COLUMN_WARNING, parseJsonArrayColumn } from '.
 import { setReviewModerated } from '../utils/reviewModeration.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { archiveSql, setPersonalArchive, respondArchiveError, archiveTransaction, archiveFailure, auditArchive } from '../services/dashboardArchive.js';
+import { dashboardPaymentStats, dashboardPayments } from '../services/dashboardPayments.js';
+import { reviewContentDeletion, deleteArchivedContent, setContentArchive } from '../services/archiveContent.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -356,6 +359,29 @@ makePublicGet('auth-pages', AUTH_PAGES_DEFAULT);
 router.use(authenticateToken);
 router.use(requireAdmin);
 
+// Financial archives are personal visibility settings, never DELETEs.
+router.get('/payments/stats', async (req, res) => {
+  try { res.json(await dashboardPaymentStats(req.user, req.query)); }
+  catch (error) { return respondArchiveError(res, error, 'Failed to fetch payment statistics'); }
+});
+router.get('/payments', async (req, res) => {
+  try { res.json(await dashboardPayments(req.user, req.query)); }
+  catch (error) { return respondArchiveError(res, error, 'Failed to fetch payments'); }
+});
+router.put('/payments/:paymentId/archive', async (req, res) => {
+  try { res.json(await setPersonalArchive(req.user, 'payment', req.params.paymentId, true, req.body?.reason)); }
+  catch (error) { return respondArchiveError(res, error, 'Failed to archive payment'); }
+});
+router.delete('/payments/:paymentId', (req, res) => res.status(403).json({ error: 'Financial records cannot be permanently deleted. Use Archive/Restore.' }));
+router.get('/archive/:type/:id/deletion-review', async (req, res) => {
+  try { res.json(await reviewContentDeletion(req.user, req.params.type, req.params.id)); }
+  catch (error) { return respondArchiveError(res, error, 'Could not verify deletion eligibility'); }
+});
+router.delete('/archive/:type/:id', async (req, res) => {
+  try { res.json(await deleteArchivedContent(req.user, req.params.type, req.params.id, req.body)); }
+  catch (error) { return respondArchiveError(res, error, 'Permanent deletion failed; the record was retained'); }
+});
+
 // ── helper: admin PUT for simple JSON settings ──────────────────────────────
 const makeAdminPut = (key, defaults) => {
   router.put(`/${key}`, async (req, res) => {
@@ -669,7 +695,8 @@ router.get('/bookings/archived', async (req, res) => {
   try {
     const [bookings] = await db.promise().query(`
       SELECT 
-        b.*,
+        b.*, ${archiveSql('booking', 'b', req.user.user_id)} AS archived,
+        ${archiveSql('booking', 'b', req.user.user_id, true)} AS archived_at,
         u.username,
         u.email,
         b.hotel_name,
@@ -679,13 +706,13 @@ router.get('/bookings/archived', async (req, res) => {
         b.created_at as booking_date
       FROM hotel_bookings b
       JOIN users u ON b.user_id = u.user_id
-      WHERE b.archived = 1
-      ORDER BY b.archived_at DESC
+      WHERE ${archiveSql('booking', 'b', req.user.user_id)} = 1
+      ORDER BY ${archiveSql('booking', 'b', req.user.user_id, true)} DESC
     `);
     res.json(bookings);
   } catch (error) {
     console.error('Get archived bookings error:', error);
-    res.status(500).json({ error: 'Failed to fetch archived bookings' });
+    return respondArchiveError(res, error, 'Failed to fetch archived bookings');
   }
 });
 
@@ -697,7 +724,7 @@ router.get('/dashboard/stats', async (req, res) => {
     // archived rows by default; the Archive tab is their only home).
     const [userCount] = await db.promise().query('SELECT COUNT(*) as count FROM users WHERE archived = 0');
     const [hotelCount] = await db.promise().query('SELECT COUNT(*) as count FROM hotels WHERE archived = 0');
-    const [bookingCount] = await db.promise().query('SELECT COUNT(*) as count FROM hotel_bookings WHERE archived = 0');
+    const [bookingCount] = await db.promise().query(`SELECT COUNT(*) as count FROM hotel_bookings b WHERE ${archiveSql('booking', 'b', req.user.user_id)} = 0`);
     const [attractionCount] = await db.promise().query('SELECT COUNT(*) as count FROM attractions WHERE archived = 0');
 
     // Get role distribution
@@ -721,14 +748,16 @@ router.get('/dashboard/stats', async (req, res) => {
     const [bookingStats] = await db.promise().query(`
       SELECT 
         COUNT(*) as total_bookings,
-        SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed,
-        SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-        SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
-      FROM hotel_bookings
-      WHERE archived = 0
+        SUM(CASE WHEN b.status = 'confirmed' THEN 1 ELSE 0 END) as confirmed,
+        SUM(CASE WHEN b.status = 'pending' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN b.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
+      FROM hotel_bookings b
+      WHERE ${archiveSql('booking', 'b', req.user.user_id)} = 0
     `);
 
+    const paymentStats = await dashboardPaymentStats(req.user);
     res.json({
+      paymentStats,
       totals: {
         users: userCount[0].count,
         hotels: hotelCount[0].count,
@@ -1017,25 +1046,22 @@ router.delete('/users/:userId', async (req, res) => {
   }
 
   try {
-    const [existing] = await db.promise().query(
-      'SELECT user_id FROM users WHERE user_id = ?',
-      [userId]
-    );
-
-    if (existing.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Permanently delete the user from database
-    await db.promise().query(
-      'DELETE FROM users WHERE user_id = ?',
-      [userId]
-    );
+    await archiveTransaction(async connection => {
+      const [existing] = await connection.query('SELECT user_id FROM users WHERE user_id = ? FOR UPDATE', [userId]);
+      if (!existing.length) throw archiveFailure('User not found.', 404);
+      const [financialLinks] = await connection.query(
+        `SELECT booking_id FROM hotel_bookings WHERE user_id = ? OR hotel_id IN
+         (SELECT hotel_id FROM hotel_owners WHERE user_id = ?) LIMIT 1 FOR UPDATE`, [userId, userId]
+      );
+      if (financialLinks.length) throw archiveFailure('This account is linked to booking/payment history. Archive the account instead of deleting it.');
+      await auditArchive(connection, req.user, 'user', Number(userId), 'permanent_delete', 'Legacy admin cleanup: no linked booking history');
+      await connection.query('DELETE FROM users WHERE user_id = ?', [userId]);
+    });
 
     res.json({ success: true, message: 'User deleted permanently' });
   } catch (error) {
     console.error('Delete user error:', error);
-    res.status(500).json({ error: 'Failed to delete user' });
+    return respondArchiveError(res, error, 'Failed to delete user');
   }
 });
 
@@ -1044,7 +1070,8 @@ router.get('/bookings', async (req, res) => {
   try {
     const [bookings] = await db.promise().query(`
       SELECT 
-        b.*,
+        b.*, ${archiveSql('booking', 'b', req.user.user_id)} AS archived,
+        ${archiveSql('booking', 'b', req.user.user_id, true)} AS archived_at,
         u.username,
         u.email,
         b.hotel_name,
@@ -1054,7 +1081,7 @@ router.get('/bookings', async (req, res) => {
         b.created_at as booking_date
       FROM hotel_bookings b
       JOIN users u ON b.user_id = u.user_id
-      WHERE b.archived = 0
+      WHERE ${archiveSql('booking', 'b', req.user.user_id)} = 0
       ORDER BY b.created_at DESC
     `);
     res.json(bookings);
@@ -1126,15 +1153,11 @@ router.delete('/bookings/:bookingId', async (req, res) => {
   const { bookingId } = req.params;
 
   try {
-    await db.promise().query(
-      'UPDATE hotel_bookings SET archived = 1, archived_at = NOW() WHERE booking_id = ?',
-      [bookingId]
-    );
-
-    res.json({ success: true, message: 'Booking archived successfully' });
+    if (req.query.hardDelete || req.body?.hardDelete) return res.status(403).json({ error: 'Financial records cannot be permanently deleted.' });
+    res.json(await setPersonalArchive(req.user, 'booking', bookingId, true, req.body?.reason));
   } catch (error) {
     console.error('Archive booking error:', error);
-    res.status(500).json({ error: 'Failed to archive booking' });
+    return respondArchiveError(res, error, 'Failed to archive booking');
   }
 });
 
@@ -1507,18 +1530,13 @@ router.delete('/attractions/:id', async (req, res) => {
 
   try {
     if (hardDelete) {
-      await db.promise().query('DELETE FROM attractions WHERE id = ?', [id]);
-      return res.json({ success: true, message: 'Attraction deleted permanently' });
+      return res.json(await deleteArchivedContent(req.user, 'attraction', id, req.body));
     }
 
-    await db.promise().query(
-      'UPDATE attractions SET archived = 1, archived_at = NOW() WHERE id = ?',
-      [id]
-    );
-    res.json({ success: true, message: 'Attraction archived successfully' });
+    res.json(await setContentArchive(req.user, 'attraction', id, true));
   } catch (error) {
     console.error('Archive attraction error:', error);
-    res.status(500).json({ error: 'Failed to archive attraction' });
+    return respondArchiveError(res, error, 'Failed to archive attraction');
   }
 });
 
@@ -2012,14 +2030,10 @@ router.delete('/hotels/:id', async (req, res) => {
   const { id } = req.params;
 
   try {
-    await db.promise().query(
-      'UPDATE hotels SET archived = 1, archived_at = NOW() WHERE hotel_id = ?',
-      [id]
-    );
-    res.json({ success: true, message: 'Hotel archived successfully' });
+    res.json(await setContentArchive(req.user, 'hotel', id, true));
   } catch (error) {
     console.error('Archive hotel error:', error);
-    res.status(500).json({ error: 'Failed to archive hotel' });
+    return respondArchiveError(res, error, 'Failed to archive hotel');
   }
 });
 
@@ -2079,17 +2093,10 @@ router.get('/attractions/archived', async (req, res) => {
 // Get archived payments
 router.get('/payments/archived', async (req, res) => {
   try {
-    const [payments] = await db.promise().query(`
-      SELECT hp.*, hb.hotel_name, hb.customer_name, hb.customer_email
-      FROM hotel_payments hp
-      INNER JOIN hotel_bookings hb ON hp.booking_id = hb.booking_id
-      WHERE hp.archived = 1
-      ORDER BY hp.archived_at DESC
-    `);
-    res.json(payments);
+    res.json(await dashboardPayments(req.user, { archived: '1', allArchived: true }));
   } catch (error) {
     console.error('Get archived payments error:', error);
-    res.status(500).json({ error: 'Failed to fetch archived payments' });
+    return respondArchiveError(res, error, 'Failed to fetch archived payments');
   }
 });
 
@@ -2311,15 +2318,10 @@ router.delete('/itineraries/:id', async (req, res) => {
   const { id } = req.params;
   
   try {
-    await db.promise().query(
-      'UPDATE itineraries SET archived = 1, archived_at = NOW() WHERE itinerary_id = ?',
-      [id]
-    );
-    
-    res.json({ success: true, message: 'Itinerary archived successfully' });
+    res.json(await setContentArchive(req.user, 'itinerary', id, true));
   } catch (error) {
     console.error('Archive itinerary error:', error);
-    res.status(500).json({ error: 'Failed to archive itinerary' });
+    return respondArchiveError(res, error, 'Failed to archive itinerary');
   }
 });
 
@@ -2359,14 +2361,10 @@ router.put('/bookings/:bookingId/restore', async (req, res) => {
   const { bookingId } = req.params;
 
   try {
-    await db.promise().query(
-      'UPDATE hotel_bookings SET archived = 0, archived_at = NULL WHERE booking_id = ?',
-      [bookingId]
-    );
-    res.json({ success: true, message: 'Booking restored successfully' });
+    res.json(await setPersonalArchive(req.user, 'booking', bookingId, false));
   } catch (error) {
     console.error('Restore booking error:', error);
-    res.status(500).json({ error: 'Failed to restore booking' });
+    return respondArchiveError(res, error, 'Failed to restore booking');
   }
 });
 
@@ -2375,14 +2373,10 @@ router.put('/hotels/:hotelId/restore', async (req, res) => {
   const { hotelId } = req.params;
 
   try {
-    await db.promise().query(
-      'UPDATE hotels SET archived = 0, archived_at = NULL WHERE hotel_id = ?',
-      [hotelId]
-    );
-    res.json({ success: true, message: 'Hotel restored successfully' });
+    res.json(await setContentArchive(req.user, 'hotel', hotelId, false));
   } catch (error) {
     console.error('Restore hotel error:', error);
-    res.status(500).json({ error: 'Failed to restore hotel' });
+    return respondArchiveError(res, error, 'Failed to restore hotel');
   }
 });
 
@@ -2391,14 +2385,10 @@ router.put('/itineraries/:itineraryId/restore', async (req, res) => {
   const { itineraryId } = req.params;
 
   try {
-    await db.promise().query(
-      'UPDATE itineraries SET archived = 0, archived_at = NULL WHERE itinerary_id = ?',
-      [itineraryId]
-    );
-    res.json({ success: true, message: 'Itinerary restored successfully' });
+    res.json(await setContentArchive(req.user, 'itinerary', itineraryId, false));
   } catch (error) {
     console.error('Restore itinerary error:', error);
-    res.status(500).json({ error: 'Failed to restore itinerary' });
+    return respondArchiveError(res, error, 'Failed to restore itinerary');
   }
 });
 
@@ -2407,14 +2397,10 @@ router.put('/attractions/:attractionId/restore', async (req, res) => {
   const { attractionId } = req.params;
 
   try {
-    await db.promise().query(
-      'UPDATE attractions SET archived = 0, archived_at = NULL WHERE id = ?',
-      [attractionId]
-    );
-    res.json({ success: true, message: 'Attraction restored successfully' });
+    res.json(await setContentArchive(req.user, 'attraction', attractionId, false));
   } catch (error) {
     console.error('Restore attraction error:', error);
-    res.status(500).json({ error: 'Failed to restore attraction' });
+    return respondArchiveError(res, error, 'Failed to restore attraction');
   }
 });
 
@@ -2423,14 +2409,10 @@ router.put('/payments/:paymentId/restore', async (req, res) => {
   const { paymentId } = req.params;
 
   try {
-    await db.promise().query(
-      'UPDATE hotel_payments SET archived = 0, archived_at = NULL WHERE payment_id = ?',
-      [paymentId]
-    );
-    res.json({ success: true, message: 'Payment restored successfully' });
+    res.json(await setPersonalArchive(req.user, 'payment', paymentId, false));
   } catch (error) {
     console.error('Restore payment error:', error);
-    res.status(500).json({ error: 'Failed to restore payment' });
+    return respondArchiveError(res, error, 'Failed to restore payment');
   }
 });
 

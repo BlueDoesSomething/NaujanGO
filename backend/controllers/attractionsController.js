@@ -1,6 +1,8 @@
 import { execute } from '../db.js';
 import { getTranslationsForEntities } from '../services/translations.js';
 import { getTranslationWithFallback } from '../services/machineTranslate.js';
+import { deleteArchivedContent, setContentArchive } from '../services/archiveContent.js';
+import { respondArchiveError } from '../services/dashboardArchive.js';
 
 let reviewsItineraryColumnSupportPromise;
 
@@ -321,29 +323,13 @@ export const deleteAttraction = async (req, res) => {
     }
 
     if (hardDelete) {
-      // Hard delete - remove completely
-      const [result] = await execute('DELETE FROM attractions WHERE id = ?', [attractionId]);
-      // Some DB drivers return affectedRows in result. Check and respond accordingly.
-      const affected = result?.affectedRows ?? result?.affectedRows === 0 ? result.affectedRows : undefined;
-      if (typeof affected !== 'undefined' && affected === 0) {
-        return res.status(404).json({ success: false, message: 'Attraction not found' });
-      }
-      return res.json({ success: true, message: 'Attraction permanently deleted' });
+      return res.json(await deleteArchivedContent(req.user, 'attraction', attractionId, req.body));
     } else {
-      // Soft delete - archive
-      const [result] = await execute(
-        'UPDATE attractions SET archived = 1, archived_at = NOW() WHERE id = ?',
-        [attractionId]
-      );
-      const affected = result?.affectedRows ?? result?.affectedRows === 0 ? result.affectedRows : undefined;
-      if (typeof affected !== 'undefined' && affected === 0) {
-        return res.status(404).json({ success: false, message: 'Attraction not found' });
-      }
-      return res.json({ success: true, message: 'Attraction archived successfully' });
+      return res.json(await setContentArchive(req.user, 'attraction', attractionId, true));
     }
   } catch (error) {
     console.error('Error deleting attraction:', error);
-    res.status(500).json({ success: false, error: error.message });
+    return respondArchiveError(res, error, 'Failed to archive attraction');
   }
 };
 
@@ -351,17 +337,9 @@ export const deleteAttraction = async (req, res) => {
 export const restoreAttraction = async (req, res) => {
   try {
     const attractionId = req.params.id;
-    const [result] = await execute(
-      'UPDATE attractions SET archived = 0, archived_at = NULL WHERE id = ?',
-      [attractionId]
-    );
-    const affected = result?.affectedRows ?? result?.affectedRows === 0 ? result.affectedRows : undefined;
-    if (typeof affected !== 'undefined' && affected === 0) {
-      return res.status(404).json({ success: false, message: 'Attraction not found' });
-    }
-    res.json({ success: true, message: 'Attraction restored successfully' });
+    res.json(await setContentArchive(req.user, 'attraction', attractionId, false));
   } catch (error) {
     console.error('Error restoring attraction:', error);
-    res.status(500).json({ success: false, error: error.message });
+    return respondArchiveError(res, error, 'Failed to restore attraction');
   }
 };

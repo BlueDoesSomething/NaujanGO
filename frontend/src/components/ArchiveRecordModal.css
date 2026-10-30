@@ -1,0 +1,33 @@
+.archive-record-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.65);
+}
+.archive-record-dialog {
+  width: min(640px, 100%);
+  min-width: 0;
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 1.5rem;
+  border-radius: 16px;
+  background: var(--surface, white);
+  color: var(--text, #111827);
+}
+.archive-record-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
+.archive-record-heading h2 { font-size: 1.25rem; }
+.archive-record-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 0.5rem 1rem; margin-bottom: 1.5rem; }
+.archive-record-fields dt { font-weight: 700; text-transform: capitalize; }
+.archive-record-fields dd { margin: 0; overflow-wrap: anywhere; }
+.archive-record-deletion { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border, #ddd); }
+.archive-record-deletion label { display: flex; flex-direction: column; align-items: stretch !important; gap: 0.5rem; margin-top: 1rem; }
+.archive-record-deletion input, .archive-record-deletion textarea { width: 100%; min-width: 0; }
+.archive-record-deletion ul { padding-left: 1.25rem; }
+@media (max-width: 480px) {
+  .archive-record-fields { grid-template-columns: minmax(0, 1fr); }
+  .archive-record-fields dd { margin-bottom: 0.5rem; }
+}

@@ -34,7 +34,9 @@ const setup = async (t, options = {}) => {
       }]];
       if (sql.includes('FROM hotel_bookings b')) {
         assert.match(sql, /WHERE ho\.user_id = \?/);
-        return [params[0] === 5 ? [{ ...booking, archived: sql.includes('b.archived = 1') ? 1 : 0 }] : []];
+        assert.match(sql, /dashboard_record_archives/);
+        assert.match(sql, /da\.user_id = (5|999)/);
+        return [params[0] === 5 ? [{ ...booking, archived: sql.includes('b.archived, 0) = 1') ? 1 : 0 }] : []];
       }
       if (sql.includes('SUM(CASE WHEN status')) return [[{ booking_id: 155, paid: '600.00' }]];
       if (sql.startsWith('SHOW COLUMNS')) return [options.legacySchema ? [] : [{ Field: 'customer_reference_number' }]];

@@ -10,6 +10,8 @@ import { policyChip } from '../utils/bookingPolicy';
 import BookingIssuedCell from '../components/BookingIssuedCell';
 import { getBookingGuestName } from '../utils/bookingGuestName';
 import ReferenceDetails from '../components/ReferenceDetails';
+import ArchiveRecordModal from '../components/ArchiveRecordModal';
+import PaymentSummaryCards from '../components/PaymentSummaryCards';
 import { getPaymentMethodLabel, getBookingPaymentMethod, getPaymentReferences } from '../utils/paymentDisplay';
 import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
 import { useAuth } from '../context/AuthContext';
@@ -60,9 +62,13 @@ const OwnerDashboard = () => {
   const [reviews, setReviews] = useState([]);
   const [payments, setPayments] = useState([]);
   const [paymentStats, setPaymentStats] = useState(null);
+  const [paymentLoadError, setPaymentLoadError] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
-  const [showArchivedPayments, setShowArchivedPayments] = useState(true);
+  const [showArchivedPayments, setShowArchivedPayments] = useState(false);
+  const [archiveSelection, setArchiveSelection] = useState(null);
+  const paymentListRequest = useRef(0);
+  const paymentStatsRequest = useRef(0);
   const [paymentDateFrom, setPaymentDateFrom] = useState('');
   const [paymentDateTo, setPaymentDateTo] = useState('');
   const [paymentSearch, setPaymentSearch] = useState('');
@@ -84,34 +90,8 @@ const OwnerDashboard = () => {
   const [showCoordinatePicker, setShowCoordinatePicker] = useState(false);
   const [mapInstance, setMapInstance] = useState(null);
 
-  const dedupePaymentsByBooking = (paymentRows) => {
-    const latestByBooking = new Map();
-
-    (Array.isArray(paymentRows) ? paymentRows : []).forEach((payment) => {
-      const bookingKey = payment.booking_id ?? payment.transaction_reference ?? payment.payment_id;
-      const existing = latestByBooking.get(bookingKey);
-
-      if (!existing) {
-        latestByBooking.set(bookingKey, payment);
-        return;
-      }
-
-      const existingId = Number(existing.payment_id) || 0;
-      const nextId = Number(payment.payment_id) || 0;
-      const existingTime = new Date(existing.updated_at || existing.created_at || 0).getTime();
-      const nextTime = new Date(payment.updated_at || payment.created_at || 0).getTime();
-
-      if (nextId > existingId || nextTime >= existingTime) {
-        latestByBooking.set(bookingKey, payment);
-      }
-    });
-
-    return Array.from(latestByBooking.values()).sort((a, b) => {
-      const bTime = new Date(b.updated_at || b.created_at || 0).getTime();
-      const aTime = new Date(a.updated_at || a.created_at || 0).getTime();
-      return bTime - aTime || (Number(b.payment_id) || 0) - (Number(a.payment_id) || 0);
-    });
-  };
+  // A booking can have several real payment attempts. Keep each payment_id so
+  // failed attempts remain reviewable/archivable and agree with the summary.
   
     // Booking Management State
     const [bookingFilter, setBookingFilter] = useState('all');
@@ -214,11 +194,13 @@ const OwnerDashboard = () => {
 
   // Reset pagination when filters change
   useEffect(() => { setOwnerBookingsPage(1); }, [bookingSearch, bookingFilter]);
-  useEffect(() => { setPaymentsPage(1);      }, [paymentFilter, paymentMethodFilter, paymentDateFrom, paymentDateTo, paymentSearch]);
+  useEffect(() => { setPaymentsPage(1);      }, [paymentFilter, paymentMethodFilter, paymentDateFrom, paymentDateTo, paymentSearch, showArchivedPayments]);
+  useEffect(() => { if (bookingFilter === 'archived') loadArchivedBookings(); }, [bookingFilter]);
 
   useEffect(() => {
     if (activeTab === 'payments') {
       fetchPayments();
+      fetchPaymentStats();
     }
   }, [activeTab, paymentFilter, paymentMethodFilter, paymentDateFrom, paymentDateTo, paymentSearch, showArchivedPayments]);
 
@@ -384,31 +366,41 @@ const OwnerDashboard = () => {
     }
   };
 
-  const fetchPayments = async () => {
-    try {
-      const params = {
-        limit: 250
-      };
-      if (paymentFilter !== 'all') params.status = paymentFilter;
-      if (paymentMethodFilter !== 'all') params.method = paymentMethodFilter;
-      if (paymentDateFrom) params.startDate = paymentDateFrom;
-      if (paymentDateTo) params.endDate = paymentDateTo;
-      if (paymentSearch.trim()) params.search = paymentSearch.trim();
-      if (!showArchivedPayments) params.archived = '0';
+  const paymentQueryParams = () => ({
+    limit: 500, archived: showArchivedPayments ? 'all' : '0',
+    ...(paymentFilter !== 'all' ? { status: paymentFilter } : {}),
+    ...(paymentMethodFilter !== 'all' ? { method: paymentMethodFilter } : {}),
+    ...(paymentDateFrom ? { startDate: paymentDateFrom } : {}),
+    ...(paymentDateTo ? { endDate: paymentDateTo } : {}),
+    ...(paymentSearch.trim() ? { search: paymentSearch.trim() } : {})
+  });
 
-      const res = await api.get('/owner/payments', { params });
-      setPayments(dedupePaymentsByBooking(res.data));
+  const fetchPayments = async () => {
+    const requestId = ++paymentListRequest.current;
+    setPaymentLoadError('');
+    try {
+      const res = await api.get('/owner/payments', { params: paymentQueryParams() });
+      if (requestId === paymentListRequest.current) setPayments(Array.isArray(res.data) ? res.data : []);
     } catch (error) {
       console.error('Error fetching payments:', error);
+      if (requestId === paymentListRequest.current) {
+        setPayments([]);
+        setPaymentLoadError(error.response?.data?.error || 'Could not load payments.');
+      }
     }
   };
 
   const fetchPaymentStats = async () => {
+    const requestId = ++paymentStatsRequest.current;
     try {
-      const res = await api.get('/owner/payments/stats');
-      setPaymentStats(res.data);
+      const res = await api.get('/owner/payments/stats', { params: paymentQueryParams() });
+      if (requestId === paymentStatsRequest.current) setPaymentStats(res.data);
     } catch (error) {
       console.error('Error fetching payment stats:', error);
+      if (requestId === paymentStatsRequest.current) {
+        setPaymentStats(null);
+        setPaymentLoadError(error.response?.data?.error || 'Could not load payment totals.');
+      }
     }
   };
 
@@ -1010,7 +1002,7 @@ const OwnerDashboard = () => {
   
     const ownerHotelIds = new Set(hotels.map((hotel) => hotel.hotel_id));
     const filteredPayments = payments;
-    const filteredBookings = bookings.filter(booking => {
+    const filteredBookings = (bookingFilter === 'archived' ? archivedBookings : bookings).filter(booking => {
       if (ownerHotelIds.size > 0 && !ownerHotelIds.has(booking.hotel_id)) return false;
       
       // Handle archived filter
@@ -1063,13 +1055,15 @@ const OwnerDashboard = () => {
     };
 
     const handleArchiveBooking = async (bookingId) => {
+      if (!window.confirm('Archive this booking in your dashboard only? Booking status, payments, and room inventory will not change.')) return;
       try {
         await api.put(`/owner/bookings/${bookingId}/archive`);
         await fetchDashboardData();
-        alert('Booking archived successfully');
+        await loadArchivedBookings();
+        alert('Booking archived in your dashboard only');
       } catch (error) {
         console.error('Error archiving booking:', error);
-        alert('Failed to archive booking');
+        alert(error.response?.data?.error || 'Failed to archive booking');
       }
     };
   
@@ -1302,7 +1296,6 @@ const OwnerDashboard = () => {
                     setNavOpen(false);
                     setActiveTab(module.id);
                     if (module.id === 'reviews') fetchReviews();
-                    if (module.id === 'payments') { fetchPayments(); fetchPaymentStats(); }
                     if (module.id === 'analytics') loadAnalytics();
                     if (module.id === 'messages') loadNotifications();
                     if (module.id === 'archive') { loadArchivedBookings(); loadArchivedPayments(); }
@@ -2351,41 +2344,9 @@ const OwnerDashboard = () => {
               </div>
             </div>
 
-            {paymentStats && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                gap: '1.5rem',
-                marginBottom: '2.5rem'
-              }}>
-                {[
-                  { title: 'Total Revenue', value: `₱${parseFloat(paymentStats.total_revenue || 0).toLocaleString()}`, icon: <Icons.Money size={24} />, color: '#2E7D32' },
-                  { title: 'Successful', value: paymentStats.successful_transactions || 0, icon: <Icons.Check size={24} />, color: '#388E3C' },
-                  { title: 'Pending', value: `₱${parseFloat(paymentStats.pending_amount || 0).toLocaleString()}`, icon: <Icons.Calendar size={24} />, color: '#FFB74D' },
-                  { title: 'Failed', value: `₱${parseFloat(paymentStats.failed_amount || 0).toLocaleString()}`, icon: <Icons.X size={24} />, color: '#E53935' }
-                ].map((stat, idx) => (
-                  <div key={idx} style={{
-                    background: `linear-gradient(135deg, ${stat.color}15 0%, ${stat.color}05 100%)`,
-                    border: `2px solid ${stat.color}`,
-                    padding: '2rem',
-                    borderRadius: '12px',
-                    transition: 'all 0.3s'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div>
-                        <div style={{ fontSize: '0.8rem', color: '#718096', marginBottom: '0.8rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          {stat.title}
-                        </div>
-                        <div style={{ fontSize: '1.8rem', fontWeight: 900, color: stat.color }}>
-                          {stat.value}
-                        </div>
-                      </div>
-                      <div style={{ fontSize: '2.5rem' }}>{stat.icon}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {paymentLoadError && <p role="alert">{paymentLoadError}</p>}
+            <PaymentSummaryCards stats={paymentStats} />
+            {Number(paymentStats?.total_transactions) > filteredPayments.length && <p>Showing the latest {filteredPayments.length} matching payment attempts. Summary totals include all matches.</p>}
 
             <div className="gov-glass-panel">
               <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1B5E20', margin: '0 0 1.5rem 0' }}>
@@ -2467,11 +2428,11 @@ const OwnerDashboard = () => {
                                 Refund
                               </button>
                             )}
-                            {(payment.status === 'succeeded' || payment.status === 'failed') && (
+                            {Number(payment.archived) === 0 && ['succeeded', 'failed', 'refunded'].includes(payment.status) && (
                               <button
                                 className="gov-btn-ghost"
                                 onClick={async () => {
-                                  if (window.confirm('Archive this payment record?')) {
+                                  if (window.confirm('Archive this payment in your dashboard only? Financial history and lifetime revenue are retained.')) {
                                     try {
                                       await api.put(`/owner/payments/${payment.payment_id}/archive`);
                                       fetchPayments();
@@ -3811,6 +3772,7 @@ const OwnerDashboard = () => {
               <h1 className="gov-page-title">
                 <Icons.Archive size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Archive
               </h1>
+              <p>Bookings and payments here are archived in your dashboard only. View or restore them at any time; financial records cannot be permanently deleted.</p>
 
               {/* Archive Sub-Navigation */}
               <div style={{
@@ -3880,6 +3842,7 @@ const OwnerDashboard = () => {
                               </span>
                             </td>
                             <td>
+                              <button type="button" className="gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'booking', record: booking })}>View</button>{' '}
                               <button
                                 className="gov-btn-primary"
                                 onClick={async () => {
@@ -3950,6 +3913,7 @@ const OwnerDashboard = () => {
                               {payment.paid_at ? new Date(payment.paid_at).toLocaleDateString() : 'N/A'}
                             </td>
                             <td>
+                              <button type="button" className="gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'payment', record: payment })}>View</button>{' '}
                               <button
                                 className="gov-btn-primary"
                                 onClick={async () => {
@@ -3981,6 +3945,7 @@ const OwnerDashboard = () => {
               )}
             </div>
           )}
+          {archiveSelection && <ArchiveRecordModal {...archiveSelection} onClose={() => setArchiveSelection(null)} />}
         </main>
       </div>
     </div>

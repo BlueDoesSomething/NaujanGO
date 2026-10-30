@@ -21,6 +21,8 @@ import { setReviewModerated } from '../utils/reviewModeration.js';
 import { parseRoomListColumn, serializeRoomListInput } from '../utils/roomFields.js';
 import { logEvent } from '../middleware/logger.js';
 import { parseRoomContentColumn, serializeRoomContentInput } from '../utils/roomContent.js';
+import { archiveSql, setPersonalArchive, respondArchiveError } from '../services/dashboardArchive.js';
+import { dashboardPaymentStats, dashboardPayments } from '../services/dashboardPayments.js';
 
 const router = express.Router();
 
@@ -445,7 +447,8 @@ router.get('/bookings/archived', async (req, res) => {
   try {
     const query = `
       SELECT 
-        b.*,
+        b.*, ${archiveSql('booking', 'b', userId)} AS archived,
+        ${archiveSql('booking', 'b', userId, true)} AS archived_at,
         u.username,
         u.email,
         u.phone,
@@ -457,15 +460,15 @@ router.get('/bookings/archived', async (req, res) => {
       FROM hotel_bookings b
       JOIN users u ON b.user_id = u.user_id
       INNER JOIN hotel_owners ho ON b.hotel_id = ho.hotel_id
-      WHERE ho.user_id = ? AND b.archived = 1
-      ORDER BY b.archived_at DESC
+      WHERE ho.user_id = ? AND ${archiveSql('booking', 'b', userId)} = 1
+      ORDER BY ${archiveSql('booking', 'b', userId, true)} DESC
     `;
     const [bookings] = await db.promise().query(query, [userId]);
     const paymentDetails = await fetchBookingPaymentDetails(db.promise(), bookings.map(booking => booking.booking_id));
     res.json(bookings.map(booking => ({ ...booking, ...getBookingPaymentFields(booking, paymentDetails) })));
   } catch (error) {
     console.error('Get archived bookings error:', error);
-    res.status(500).json({ error: 'Failed to fetch archived bookings' });
+    return respondArchiveError(res, error, 'Failed to fetch archived bookings');
   }
 });
 
@@ -476,7 +479,8 @@ router.get('/bookings', async (req, res) => {
   try {
     const query = `
       SELECT 
-        b.*,
+        b.*, ${archiveSql('booking', 'b', userId)} AS archived,
+        ${archiveSql('booking', 'b', userId, true)} AS archived_at,
         u.username,
         u.email,
         u.phone,
@@ -488,7 +492,7 @@ router.get('/bookings', async (req, res) => {
       FROM hotel_bookings b
       JOIN users u ON b.user_id = u.user_id
       INNER JOIN hotel_owners ho ON b.hotel_id = ho.hotel_id
-      WHERE ho.user_id = ? AND b.archived = 0
+      WHERE ho.user_id = ? AND ${archiveSql('booking', 'b', userId)} = 0
       ORDER BY b.created_at DESC
     `;
     const params = [userId];
@@ -524,7 +528,7 @@ router.get('/bookings', async (req, res) => {
     res.json(enriched);
   } catch (error) {
     console.error('Get owner bookings error:', error);
-    res.status(500).json({ error: 'Failed to fetch bookings' });
+    return respondArchiveError(res, error, 'Failed to fetch bookings');
   }
 });
 
@@ -586,11 +590,11 @@ router.get('/dashboard/stats', async (req, res) => {
       ? `
         SELECT 
           COUNT(*) as total_bookings,
-          SUM(CASE WHEN status = 'confirmed' THEN 1 ELSE 0 END) as confirmed,
-          SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending,
-          SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
-        FROM hotel_bookings
-        WHERE archived = 0
+          SUM(CASE WHEN b.status = 'confirmed' THEN 1 ELSE 0 END) as confirmed,
+          SUM(CASE WHEN b.status = 'pending' THEN 1 ELSE 0 END) as pending,
+          SUM(CASE WHEN b.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
+        FROM hotel_bookings b
+        WHERE ${archiveSql('booking', 'b', userId)} = 0
       `
       : `
         SELECT 
@@ -600,7 +604,7 @@ router.get('/dashboard/stats', async (req, res) => {
           SUM(CASE WHEN b.status = 'cancelled' THEN 1 ELSE 0 END) as cancelled
         FROM hotel_bookings b
         INNER JOIN hotel_owners ho ON b.hotel_id = ho.hotel_id
-        WHERE ho.user_id = ? AND b.archived = 0
+        WHERE ho.user_id = ? AND ${archiveSql('booking', 'b', userId)} = 0
       `;
     const [bookingStats] = await db.promise().query(bookingQuery, isAdmin ? [] : [userId]);
 
@@ -614,6 +618,7 @@ router.get('/dashboard/stats', async (req, res) => {
         b.created_at as booking_date
         FROM hotel_bookings b
         JOIN users u ON b.user_id = u.user_id
+        WHERE ${archiveSql('booking', 'b', userId)} = 0
         ORDER BY b.created_at DESC
         LIMIT 5
       `
@@ -626,7 +631,7 @@ router.get('/dashboard/stats', async (req, res) => {
         FROM hotel_bookings b
         JOIN users u ON b.user_id = u.user_id
         INNER JOIN hotel_owners ho ON b.hotel_id = ho.hotel_id
-        WHERE ho.user_id = ?
+        WHERE ho.user_id = ? AND ${archiveSql('booking', 'b', userId)} = 0
         ORDER BY b.created_at DESC
         LIMIT 5
       `;
@@ -636,20 +641,19 @@ router.get('/dashboard/stats', async (req, res) => {
     // Data-quality guard: a pending booking whose payment window has lapsed
     // (expires_at < NOW, no payment ever succeeded - paymentSync clears the
     // deadline on any payment) is dead weight - typically abandoned test
-    // bookings - so it must not count as money guests still owe. Archived
-    // bookings are excluded to match the Reservations list. Confirmed
-    // reservations always count: the booking stands and the balance is owed.
+    // bookings - so it must not count as money guests still owe. Financial
+    // balances/collected totals ignore dashboard archive visibility: cleanup
+    // must never hide money owed or rewrite revenue.
     const [paymentStatsRows] = await db.promise().query(
       `SELECT
          COALESCE(SUM(COALESCE(paid.paid_amount, 0)), 0) AS collected,
          COALESCE(SUM(CASE
            WHEN b.status IN ('confirmed', 'pending') AND b.payment_status NOT IN ('paid', 'refunded')
-           AND b.archived = 0
            AND NOT (b.status = 'pending' AND b.expires_at IS NOT NULL AND b.expires_at < NOW())
            THEN GREATEST(b.total_amount - COALESCE(paid.paid_amount, 0), 0)
            ELSE 0
          END), 0) AS outstanding,
-         COALESCE(SUM(CASE WHEN b.payment_status = 'partial' AND b.archived = 0 THEN 1 ELSE 0 END), 0) AS partial_bookings
+          COALESCE(SUM(CASE WHEN b.payment_status = 'partial' THEN 1 ELSE 0 END), 0) AS partial_bookings
        FROM hotel_bookings b
        LEFT JOIN (
          SELECT booking_id, SUM(CASE WHEN status = 'succeeded' THEN amount ELSE 0 END) AS paid_amount
@@ -1087,53 +1091,13 @@ router.put('/bookings/:bookingId/status', async (req, res) => {
   }
 });
 
-// Archive/unarchive booking
+// Personal, idempotent dashboard archive. Never changes booking lifecycle.
 router.put('/bookings/:bookingId/archive', async (req, res) => {
-  const { bookingId } = req.params;
-  const userId = req.user.user_id;
-  const isAdmin = req.user.role === 'admin';
-
   try {
-    // Check if owner has permission to update this booking
-    if (!isAdmin) {
-      const [booking] = await db.promise().query(`
-        SELECT b.booking_id
-        FROM hotel_bookings b
-        INNER JOIN hotel_owners ho ON b.hotel_id = ho.hotel_id
-        WHERE b.booking_id = ? AND ho.user_id = ?
-      `, [bookingId, userId]);
-
-      if (booking.length === 0) {
-        return res.status(403).json({ error: 'You do not have permission to archive this booking' });
-      }
-    }
-
-    // Get current archive status
-    const [existing] = await db.promise().query(
-      'SELECT booking_id, archived FROM hotel_bookings WHERE booking_id = ?',
-      [bookingId]
-    );
-
-    if (existing.length === 0) {
-      return res.status(404).json({ error: 'Booking not found' });
-    }
-
-    const currentArchived = existing[0].archived;
-    const newArchived = currentArchived ? 0 : 1;
-
-    // Toggle archive status
-    await db.promise().query(
-      'UPDATE hotel_bookings SET archived = ?, archived_at = ? WHERE booking_id = ?',
-      [newArchived, newArchived ? new Date() : null, bookingId]
-    );
-
-    res.json({ 
-      success: true, 
-      message: newArchived ? 'Booking archived successfully' : 'Booking restored from archive' 
-    });
+    res.json(await setPersonalArchive(req.user, 'booking', req.params.bookingId, true, req.body?.reason));
   } catch (error) {
     console.error('Archive booking error:', error);
-    res.status(500).json({ error: 'Failed to archive booking' });
+    return respondArchiveError(res, error, 'Failed to archive booking');
   }
 });
 
@@ -1696,192 +1660,21 @@ router.post('/profile/upload', uploadPermitDoc, async (req, res) => {
 
 // Get payment statistics
 router.get('/payments/stats', async (req, res) => {
-  const userId = req.user.user_id;
-  const isAdmin = req.user.role === 'admin';
-
   try {
-    let query, params;
-
-    if (isAdmin) {
-      // Admin sees all payments
-      query = `
-        SELECT 
-          COUNT(*) as total_transactions,
-          SUM(CASE WHEN status = 'succeeded' THEN amount ELSE 0 END) as total_revenue,
-          SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) as pending_amount,
-          SUM(CASE WHEN status = 'failed' THEN amount ELSE 0 END) as failed_amount,
-          SUM(CASE WHEN status = 'refunded' THEN amount ELSE 0 END) as refunded_amount,
-          AVG(CASE WHEN status = 'succeeded' THEN amount ELSE NULL END) as avg_transaction,
-          COUNT(CASE WHEN status = 'succeeded' THEN 1 END) as successful_transactions,
-          COUNT(CASE WHEN DATE(paid_at) = CURDATE() THEN 1 END) as today_transactions,
-          SUM(CASE WHEN DATE(paid_at) = CURDATE() AND status = 'succeeded' THEN amount ELSE 0 END) as today_revenue
-        FROM hotel_payments
-      `;
-      params = [];
-    } else {
-      // Owner sees only their hotel payments
-      query = `
-        SELECT 
-          COUNT(*) as total_transactions,
-          SUM(CASE WHEN hp.status = 'succeeded' THEN hp.amount ELSE 0 END) as total_revenue,
-          SUM(CASE WHEN hp.status = 'pending' THEN hp.amount ELSE 0 END) as pending_amount,
-          SUM(CASE WHEN hp.status = 'failed' THEN hp.amount ELSE 0 END) as failed_amount,
-          SUM(CASE WHEN hp.status = 'refunded' THEN hp.amount ELSE 0 END) as refunded_amount,
-          AVG(CASE WHEN hp.status = 'succeeded' THEN hp.amount ELSE NULL END) as avg_transaction,
-          COUNT(CASE WHEN hp.status = 'succeeded' THEN 1 END) as successful_transactions,
-          COUNT(CASE WHEN DATE(hp.paid_at) = CURDATE() THEN 1 END) as today_transactions,
-          SUM(CASE WHEN DATE(hp.paid_at) = CURDATE() AND hp.status = 'succeeded' THEN hp.amount ELSE 0 END) as today_revenue
-        FROM hotel_payments hp
-        INNER JOIN hotel_bookings hb ON hp.booking_id = hb.booking_id
-        INNER JOIN hotel_owners ho ON hb.hotel_id = ho.hotel_id
-        WHERE ho.user_id = ?
-      `;
-      params = [userId];
-    }
-
-    const [stats] = await db.promise().query(query, params);
-
-    // Get payment method breakdown
-    const methodQuery = isAdmin
-      ? `
-        SELECT 
-          method,
-          COUNT(*) as count,
-          SUM(CASE WHEN status = 'succeeded' THEN amount ELSE 0 END) as total
-        FROM hotel_payments
-        GROUP BY method
-      `
-      : `
-        SELECT 
-          hp.method,
-          COUNT(*) as count,
-          SUM(CASE WHEN hp.status = 'succeeded' THEN hp.amount ELSE 0 END) as total
-        FROM hotel_payments hp
-        INNER JOIN hotel_bookings hb ON hp.booking_id = hb.booking_id
-        INNER JOIN hotel_owners ho ON hb.hotel_id = ho.hotel_id
-        WHERE ho.user_id = ?
-        GROUP BY hp.method
-      `;
-    const [methodBreakdown] = await db.promise().query(methodQuery, isAdmin ? [] : [userId]);
-
-    res.json({
-      ...stats[0],
-      methodBreakdown
-    });
+    res.json(await dashboardPaymentStats(req.user, req.query));
   } catch (error) {
     console.error('Get payment stats error:', error);
-    res.status(500).json({ error: 'Failed to fetch payment statistics' });
+    return respondArchiveError(res, error, 'Failed to fetch payment statistics');
   }
 });
 
 // Get payment transactions
 router.get('/payments', async (req, res) => {
-  const userId = req.user.user_id;
-  const isAdmin = req.user.role === 'admin';
-  const { status, method, limit = 100, startDate, endDate, search } = req.query;
-
-  // The stats endpoint counts every payment, archived or not, so this list
-  // includes archived rows by default to keep the two reconcilable. Owners who
-  // want only live records pass archived=0.
-  const { archived = 'all' } = req.query;
-
   try {
-    let query, params;
-
-    const filters = [];
-    const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 500);
-
-    if (archived === '0') {
-      filters.push({ clause: 'hp.archived = 0', value: [] });
-    }
-    if (status) {
-      filters.push({ clause: 'hp.status = ?', value: status });
-    }
-    if (method) {
-      filters.push({ clause: 'hp.method = ?', value: method });
-    }
-    if (startDate) {
-      filters.push({ clause: 'DATE(hp.created_at) >= ?', value: startDate });
-    }
-    if (endDate) {
-      filters.push({ clause: 'DATE(hp.created_at) <= ?', value: endDate });
-    }
-    if (search) {
-      const searchLike = `%${String(search).trim()}%`;
-      if (searchLike !== '%%') {
-        filters.push({
-          clause: '(hp.transaction_reference LIKE ? OR hb.receipt_number LIKE ? OR hb.customer_name LIKE ? OR hb.customer_email LIKE ?)',
-          value: [searchLike, searchLike, searchLike, searchLike]
-        });
-      }
-    }
-
-    const additionalWhere = filters.length ? ` AND ${filters.map((f) => f.clause).join(' AND ')}` : '';
-
-    if (isAdmin) {
-      query = `
-        SELECT 
-          hp.*,
-          hb.hotel_name,
-          hb.customer_name,
-          hb.customer_email,
-          hb.check_in,
-          hb.check_out,
-          hb.receipt_number,
-          hb.room_type_name,
-          hb.rooms,
-          hb.booking_reference
-        FROM hotel_payments hp
-        INNER JOIN hotel_bookings hb ON hp.booking_id = hb.booking_id
-        WHERE hp.archived >= 0${additionalWhere}
-        ORDER BY hp.created_at DESC
-        LIMIT ?
-      `;
-      params = [];
-      filters.forEach((f) => {
-        if (Array.isArray(f.value)) {
-          params.push(...f.value);
-        } else {
-          params.push(f.value);
-        }
-      });
-      params.push(safeLimit);
-    } else {
-      query = `
-        SELECT 
-          hp.*,
-          hb.hotel_name,
-          hb.customer_name,
-          hb.customer_email,
-          hb.check_in,
-          hb.check_out,
-          hb.receipt_number,
-          hb.room_type_name,
-          hb.rooms,
-          hb.booking_reference
-        FROM hotel_payments hp
-        INNER JOIN hotel_bookings hb ON hp.booking_id = hb.booking_id
-        INNER JOIN hotel_owners ho ON hb.hotel_id = ho.hotel_id
-        WHERE ho.user_id = ?${additionalWhere}
-        ORDER BY hp.created_at DESC
-        LIMIT ?
-      `;
-      params = [userId];
-      filters.forEach((f) => {
-        if (Array.isArray(f.value)) {
-          params.push(...f.value);
-        } else {
-          params.push(f.value);
-        }
-      });
-      params.push(safeLimit);
-    }
-
-    const [payments] = await db.promise().query(query, params);
-    res.json(payments);
+    res.json(await dashboardPayments(req.user, req.query));
   } catch (error) {
     console.error('Get payments error:', error);
-    res.status(500).json({ error: 'Failed to fetch payments' });
+    return respondArchiveError(res, error, 'Failed to fetch payments');
   }
 });
 
@@ -2035,162 +1828,44 @@ router.put('/payments/:paymentId/cancel', async (req, res) => {
 
 // Archive payment
 router.put('/payments/:paymentId/archive', async (req, res) => {
-  const userId = req.user.user_id;
-  const isAdmin = req.user.role === 'admin';
-  const { paymentId } = req.params;
-
   try {
-    let query, params;
-    
-    if (isAdmin) {
-      query = `SELECT p.payment_id FROM hotel_payments p WHERE p.payment_id = ?`;
-      params = [paymentId];
-    } else {
-      query = `SELECT p.payment_id
-               FROM hotel_payments p
-               INNER JOIN hotel_bookings hb ON p.booking_id = hb.booking_id
-               INNER JOIN hotel_owners ho ON hb.hotel_id = ho.hotel_id
-               WHERE p.payment_id = ? AND ho.user_id = ?`;
-      params = [paymentId, userId];
-    }
-
-    const [payments] = await db.promise().query(query, params);
-
-    if (payments.length === 0) {
-      return res.status(404).json({ error: 'Payment not found or access denied' });
-    }
-
-    await db.promise().query(
-      `UPDATE hotel_payments SET archived = 1, archived_at = NOW() WHERE payment_id = ?`,
-      [paymentId]
-    );
-
-    res.json({ success: true, message: 'Payment archived successfully' });
+    res.json(await setPersonalArchive(req.user, 'payment', req.params.paymentId, true, req.body?.reason));
   } catch (error) {
     console.error('Archive payment error:', error);
-    res.status(500).json({ error: 'Failed to archive payment' });
+    return respondArchiveError(res, error, 'Failed to archive payment');
   }
 });
 
+router.delete('/payments/:paymentId', (req, res) => res.status(403).json({ error: 'Financial records cannot be permanently deleted. Use Archive/Restore.' }));
+router.delete('/bookings/:bookingId', (req, res) => res.status(403).json({ error: 'Financial records cannot be permanently deleted. Use Archive/Restore.' }));
+
 // Get archived payments
 router.get('/payments/archived', async (req, res) => {
-  const userId = req.user.user_id;
-  const isAdmin = req.user.role === 'admin';
-
   try {
-    let query, params;
-
-    if (isAdmin) {
-      query = `
-        SELECT 
-          hp.*,
-          hb.hotel_name,
-          hb.customer_name,
-          hb.customer_email
-        FROM hotel_payments hp
-        INNER JOIN hotel_bookings hb ON hp.booking_id = hb.booking_id
-        WHERE hp.archived = 1
-        ORDER BY hp.archived_at DESC
-      `;
-      params = [];
-    } else {
-      query = `
-        SELECT 
-          hp.*,
-          hb.hotel_name,
-          hb.customer_name,
-          hb.customer_email
-        FROM hotel_payments hp
-        INNER JOIN hotel_bookings hb ON hp.booking_id = hb.booking_id
-        INNER JOIN hotel_owners ho ON hb.hotel_id = ho.hotel_id
-        WHERE ho.user_id = ? AND hp.archived = 1
-        ORDER BY hp.archived_at DESC
-      `;
-      params = [userId];
-    }
-
-    const [payments] = await db.promise().query(query, params);
-    res.json(payments);
+    res.json(await dashboardPayments(req.user, { archived: '1', allArchived: true }));
   } catch (error) {
     console.error('Get archived payments error:', error);
-    res.status(500).json({ error: 'Failed to fetch archived payments' });
+    return respondArchiveError(res, error, 'Failed to fetch archived payments');
   }
 });
 
 // Restore archived payment
 router.put('/payments/:paymentId/restore', async (req, res) => {
-  const userId = req.user.user_id;
-  const isAdmin = req.user.role === 'admin';
-  const { paymentId } = req.params;
-
   try {
-    let query, params;
-    
-    if (isAdmin) {
-      query = `SELECT p.payment_id FROM hotel_payments p WHERE p.payment_id = ?`;
-      params = [paymentId];
-    } else {
-      query = `SELECT p.payment_id
-               FROM hotel_payments p
-               INNER JOIN hotel_bookings hb ON p.booking_id = hb.booking_id
-               INNER JOIN hotel_owners ho ON hb.hotel_id = ho.hotel_id
-               WHERE p.payment_id = ? AND ho.user_id = ?`;
-      params = [paymentId, userId];
-    }
-
-    const [payments] = await db.promise().query(query, params);
-
-    if (payments.length === 0) {
-      return res.status(404).json({ error: 'Payment not found or access denied' });
-    }
-
-    await db.promise().query(
-      `UPDATE hotel_payments SET archived = 0, archived_at = NULL WHERE payment_id = ?`,
-      [paymentId]
-    );
-
-    res.json({ success: true, message: 'Payment restored successfully' });
+    res.json(await setPersonalArchive(req.user, 'payment', req.params.paymentId, false));
   } catch (error) {
     console.error('Restore payment error:', error);
-    res.status(500).json({ error: 'Failed to restore payment' });
+    return respondArchiveError(res, error, 'Failed to restore payment');
   }
 });
 
 // Restore archived booking
 router.put('/bookings/:bookingId/restore', async (req, res) => {
-  const userId = req.user.user_id;
-  const isAdmin = req.user.role === 'admin';
-  const { bookingId } = req.params;
-
   try {
-    let query, params;
-    
-    if (isAdmin) {
-      query = `SELECT b.booking_id FROM hotel_bookings b WHERE b.booking_id = ?`;
-      params = [bookingId];
-    } else {
-      query = `SELECT b.booking_id
-               FROM hotel_bookings b
-               INNER JOIN hotel_owners ho ON b.hotel_id = ho.hotel_id
-               WHERE b.booking_id = ? AND ho.user_id = ?`;
-      params = [bookingId, userId];
-    }
-
-    const [bookings] = await db.promise().query(query, params);
-
-    if (bookings.length === 0) {
-      return res.status(404).json({ error: 'Booking not found or access denied' });
-    }
-
-    await db.promise().query(
-      `UPDATE hotel_bookings SET archived = 0, archived_at = NULL WHERE booking_id = ?`,
-      [bookingId]
-    );
-
-    res.json({ success: true, message: 'Booking restored successfully' });
+    res.json(await setPersonalArchive(req.user, 'booking', req.params.bookingId, false));
   } catch (error) {
     console.error('Restore booking error:', error);
-    res.status(500).json({ error: 'Failed to restore booking' });
+    return respondArchiveError(res, error, 'Failed to restore booking');
   }
 });
 

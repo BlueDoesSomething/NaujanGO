@@ -32,6 +32,9 @@ import {
   AttractionActionButtons
 } from '../components/AdminDashboardAttractionHelpers.jsx';
 import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
+import ArchiveRecordModal from '../components/ArchiveRecordModal';
+import DashboardPaymentsPanel from '../components/DashboardPaymentsPanel';
+import PaymentSummaryCards from '../components/PaymentSummaryCards';
 
 const CHATBOT_TRAINING_LANGUAGES = [
   { value: 'all', label: 'All languages' },
@@ -268,7 +271,7 @@ const AdminDashboard = () => {
   };
 
   const [loading, setLoading] = useState(true);
-  const [activeModule, setActiveModule] = useState('overview');
+  const [activeModule, setActiveModule] = useState(() => location.pathname.endsWith('/payments') ? 'payments' : 'overview');
   const [navOpen, setNavOpen] = useState(false);
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -913,6 +916,7 @@ const AdminDashboard = () => {
   const [archivedHotels, setArchivedHotels] = useState([]);
   const [archivedAttractions, setArchivedAttractions] = useState([]);
   const [archiveSubSection, setArchiveSubSection] = useState('bookings');
+  const [archiveSelection, setArchiveSelection] = useState(null);
 
   // ── System Logs ────────────────────────────────────────────────────────
   const [systemLogs, setSystemLogs] = useState([]);
@@ -971,6 +975,15 @@ const AdminDashboard = () => {
       console.error('Error loading admin data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const refreshAdminSummary = async () => {
+    try {
+      const response = await api.get('/admin/dashboard/stats');
+      setStats(response.data);
+    } catch (error) {
+      console.error('Error refreshing admin summary:', error);
     }
   };
 
@@ -2440,7 +2453,7 @@ const AdminDashboard = () => {
       await loadUsers();
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert('Failed to delete user.');
+      alert(error.response?.data?.error || 'Failed to delete user.');
     } finally {
       setActionLoading(setUserActionLoading, key, false);
     }
@@ -2461,7 +2474,7 @@ const AdminDashboard = () => {
   };
 
   const handleBookingDelete = async (bookingId) => {
-    const confirmed = window.confirm(t('confirm_delete_booking'));
+    const confirmed = window.confirm('Archive this resolved booking in your dashboard only? Payments, history, and room inventory will not change.');
     if (!confirmed) return;
 
     const key = `${bookingId}:delete`;
@@ -2471,7 +2484,7 @@ const AdminDashboard = () => {
       await loadAdminData();
     } catch (error) {
       console.error('Error deleting booking:', error);
-      alert('Failed to archive booking.');
+      alert(error.response?.data?.error || 'Failed to archive booking.');
     } finally {
       setActionLoading(setBookingActionLoading, key, false);
     }
@@ -2544,6 +2557,7 @@ const AdminDashboard = () => {
     { id: 'users', label: 'Users', icon: <Icons.User size={22} /> },
     { id: 'business-verification', label: 'Business Verification', icon: <Icons.Shield size={22} /> },
     { id: 'bookings', label: 'Bookings', icon: <Icons.Calendar size={22} /> },
+    { id: 'payments', label: 'Payments', icon: <Icons.Money size={22} /> },
     { id: 'hotels', label: 'Hotels', icon: <Icons.Hotel size={22} /> },
     { id: 'itineraries', label: 'Itineraries', icon: <Icons.Route size={22} /> },
     { id: 'attractions', label: 'Attractions', icon: <Icons.Attraction size={22} /> },
@@ -2787,6 +2801,7 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Second Row: Booking Breakdown + Recent Users */}
+                <PaymentSummaryCards stats={stats.paymentStats} />
                 <div className="gov-grid-3" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
 
                   {/* Booking Status */}
@@ -5186,6 +5201,10 @@ const AdminDashboard = () => {
                           {mapSelection && mapSelection.type === 'attraction' && (() => {
                             // Create handlers for this attraction
                             const handleDelete = async (attractionId, hardDelete = false) => {
+                              if (hardDelete) {
+                                setArchiveSelection({ type: 'attraction', record: { ...mapSelection, id: attractionId } });
+                                return;
+                              }
                               if (!window.confirm(hardDelete 
                                 ? 'This will permanently delete the attraction. This action cannot be undone. Continue?' 
                                 : 'Archive this attraction? Users will no longer see it on the map.')) {
@@ -7954,17 +7973,21 @@ const AdminDashboard = () => {
             </ReportsAndAnalyticsDashboard>
           )}
 
+          {activeModule === 'payments' && <DashboardPaymentsPanel onChanged={refreshAdminSummary} />}
+
           {/* Archive */}
           {activeModule === 'archive' && (
             <div>
               <h1 className="gov-page-title">
                 <i className="fi fi-rr-archive" style={{ fontSize: '2rem' }}></i> Archive
               </h1>
+              <p>Transaction archives are personal to your account. Bookings and payments can only be viewed or restored. For archived content, View checks permanent-deletion eligibility and linked records.</p>
 
               {/* Archive Sub-Navigation */}
               <div className="gov-glass-panel" style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem', padding: '1rem' }}>
                 {[
                   { id: 'bookings', label: 'Bookings', icon: 'fi fi-rr-calendar' },
+                  { id: 'payments', label: 'Payments', icon: 'fi fi-rr-money' },
                   { id: 'hotels', label: 'Hotels', icon: 'fi fi-rr-building' },
                   { id: 'itineraries', label: 'Itineraries', icon: 'fi fi-rr-route' },
                   { id: 'attractions', label: 'Attractions', icon: 'fi fi-rr-marker' }
@@ -7979,6 +8002,8 @@ const AdminDashboard = () => {
                   </button>
                 ))}
               </div>
+
+              {archiveSubSection === 'payments' && <DashboardPaymentsPanel archivedOnly onChanged={refreshAdminSummary} />}
 
               {/* Archived Bookings */}
               {archiveSubSection === 'bookings' && (
@@ -8019,6 +8044,7 @@ const AdminDashboard = () => {
                               </span>
                             </td>
                             <td>
+                              <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'booking', record: booking })}>View</button>{' '}
                               <button
                                 onClick={async () => {
                                   try {
@@ -8073,6 +8099,7 @@ const AdminDashboard = () => {
                             <td>{hotel.owner_names || '—'}</td>
                             <td>{hotel.archived_at ? new Date(hotel.archived_at).toLocaleDateString() : '—'}</td>
                             <td>
+                              <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'hotel', record: hotel })}>View</button>{' '}
                               <button
                                 onClick={async () => {
                                   try {
@@ -8119,6 +8146,7 @@ const AdminDashboard = () => {
                           <div style={{fontSize: '0.85rem', color: '#999', marginBottom: '0.5rem'}}>
                             Archived: {new Date(itinerary.archived_at).toLocaleDateString()}
                           </div>
+                          <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'itinerary', record: itinerary })}>View</button>{' '}
                           <button 
                             onClick={async () => {
                               try {
@@ -8174,6 +8202,7 @@ const AdminDashboard = () => {
                             <td>{attraction.location}</td>
                             <td>{attraction.archived_at ? new Date(attraction.archived_at).toLocaleDateString() : '—'}</td>
                             <td>
+                              <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'attraction', record: attraction })}>View</button>{' '}
                               <button
                                 onClick={async () => {
                                   try {
@@ -8353,6 +8382,9 @@ const AdminDashboard = () => {
               </div>
             </div>
           )}
+          {archiveSelection && <ArchiveRecordModal key={`${archiveSelection.type}-${archiveSelection.record.id || archiveSelection.record.hotel_id || archiveSelection.record.itinerary_id || archiveSelection.record.booking_id}`}
+            {...archiveSelection} allowDeletion onClose={() => setArchiveSelection(null)}
+            onDeleted={async () => { setMapSelection(null); await Promise.all([loadArchivedHotels(), loadArchivedItineraries(), loadArchivedAttractions(), refreshAdminSummary()]); }} />}
         </main>
       </div>
     </div>

@@ -439,6 +439,7 @@ process.on('uncaughtException', (err) => {
 startRetentionSweep();
 
 import { initSocket } from './socket.js';
+import { ensureDashboardArchiveSchema } from './services/dashboardArchive.js';
 import { ensureFlexiblePaymentSchema, ensureHotelPolicySchema, ensureBusinessLegitimacySchema, ensureRoomFieldsSchema, ensureRoomGuestContentSchema, ensureReviewRoomIdBackfill, ensureHotelGallerySchema } from './utils/dbSchema.js';
 
 // Flexible payment options: make sure reservation_fee / payment_option /
@@ -454,6 +455,11 @@ await ensureBusinessLegitimacySchema();
 await ensureRoomFieldsSchema();
 // Optional guest-facing room content (migration 048), without placeholder data.
 await ensureRoomGuestContentSchema();
+// Personal transaction visibility and durable archive/deletion audit (049).
+// Archive APIs fail closed if setup is denied; keep the rest of the site online.
+await ensureDashboardArchiveSchema().catch(error => {
+  console.error('Schema ensure (dashboard archives) failed:', error.message);
+});
 // Historic reviews: link them to the room that was reviewed (migration 044).
 await ensureReviewRoomIdBackfill();
 
