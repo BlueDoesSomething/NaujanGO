@@ -27,6 +27,8 @@ import restaurantsRouter from './routes/restaurants.js';
 import paymentsRouter from './routes/payments.js';
 import adminRouter from './routes/admin.js';
 import ownerRouter from './routes/owner.js';
+import businessDocumentRouter, { protectPrivateUploadPaths } from './routes/businessDocuments.js';
+import { ensureBusinessDocumentSchema } from './services/businessDocuments.js';
 import messagesRouter from './routes/messages.js';
 import wildlifeRouter from './routes/wildlife.js';
 import aboutRouter from './routes/about.js';
@@ -117,8 +119,10 @@ app.use((req, res, next) => {
 });
 app.use(csrfProtection);
 
-// Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Verification documents are private and database-backed; do not expose them
+// through the public static upload handler.
+app.use('/uploads/permits', businessDocumentRouter);
+app.use('/uploads', protectPrivateUploadPaths, express.static(path.join(__dirname, 'uploads')));
 
 // ===== CACHING MIDDLEWARE ===== 
 // Cache headers for public API endpoints (1 hour for about content)
@@ -451,6 +455,9 @@ await ensureHotelGallerySchema();
 await ensureHotelPolicySchema();
 // Business permit / DOT / PhilGEPS columns on business_profiles (migration 042).
 await ensureBusinessLegitimacySchema();
+await ensureBusinessDocumentSchema().catch(error => {
+  console.error('Verification document storage setup failed. Run migrations/051_durable_business_documents.sql:', error.code || 'DOCUMENT_SCHEMA_ERROR');
+});
 // Room policy / detail fields on rooms (migration 043).
 await ensureRoomFieldsSchema();
 // Optional guest-facing room content (migration 048), without placeholder data.

@@ -17,6 +17,7 @@ import TouristArrivalsReport from '../components/TouristArrivalsReport';
 import api from '../api';
 import Pagination from '../components/Pagination';
 import BookingIssuedCell from '../components/BookingIssuedCell';
+import BusinessDocumentLink from '../components/BusinessDocumentLink';
 import { formatBookingBoundary } from '../utils/stayBooking';
 import { getBookingGuestName } from '../utils/bookingGuestName';
 import { useAuth } from '../context/AuthContext';
@@ -2994,7 +2995,7 @@ const AdminDashboard = () => {
                             <div style={{ fontWeight: 600 }}>{bp[noKey] || '—'}</div>
                             {bp[expKey] && <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{t('field_doc_expiry')}: {String(bp[expKey]).slice(0, 10)}</div>}
                             {bp[fileKey] && (
-                              <a href={bp[fileKey]} target="_blank" rel="noreferrer" style={{ fontSize: '0.75rem', fontWeight: 700 }}>{t('document_uploaded')}</a>
+                              <BusinessDocumentLink url={bp[fileKey]} style={{ fontSize: '0.75rem', fontWeight: 700 }}>{t('document_uploaded')}</BusinessDocumentLink>
                             )}
                           </td>
                         ))}

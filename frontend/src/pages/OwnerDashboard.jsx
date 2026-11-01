@@ -8,6 +8,7 @@ import RoomManagement from '../components/RoomManagement';
 import RoomRevenueReport from '../components/RoomRevenueReport';
 import PaymentPlanSettings from '../components/PaymentPlanSettings';
 import StayExtensionControls from '../components/StayExtensionControls';
+import BusinessDocumentLink from '../components/BusinessDocumentLink';
 import { formatBookingBoundary } from '../utils/stayBooking';
 import { policyChip } from '../utils/bookingPolicy';
 import BookingIssuedCell from '../components/BookingIssuedCell';
@@ -550,14 +551,12 @@ const OwnerDashboard = () => {
             </label>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
               {businessProfile[fileKey] ? (
-                <a
-                  href={businessProfile[fileKey]}
-                  target="_blank"
-                  rel="noreferrer"
+                <BusinessDocumentLink
+                  url={businessProfile[fileKey]}
                   style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1B5E20', wordBreak: 'break-all' }}
                 >
                   {t('document_uploaded')}
-                </a>
+                </BusinessDocumentLink>
               ) : (
                 <span style={{ fontSize: '0.85rem', color: '#9ca3af' }}>—</span>
               )}

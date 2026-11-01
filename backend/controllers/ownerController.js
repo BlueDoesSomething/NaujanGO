@@ -26,6 +26,7 @@ import { logEvent } from '../middleware/logger.js';
 import { parseRoomContentColumn, serializeRoomContentInput } from '../utils/roomContent.js';
 import { archiveSql, setPersonalArchive, respondArchiveError } from '../services/dashboardArchive.js';
 import { dashboardPaymentStats, dashboardPayments } from '../services/dashboardPayments.js';
+import { DOCUMENT_MAX_BYTES, saveBusinessDocument, validateDocumentReferences, respondDocumentError } from '../services/businessDocuments.js';
 
 const router = express.Router();
 
@@ -91,22 +92,9 @@ const upload = multer({
 });
 
 // Permit / accreditation document uploads (business permit, DOT, PhilGEPS).
-const permitUploadDir = path.join(__dirname, '..', 'uploads', 'permits');
-
-if (!fs.existsSync(permitUploadDir)) {
-  fs.mkdirSync(permitUploadDir, { recursive: true });
-}
-
 const permitUpload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, permitUploadDir),
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
-      const name = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}${ext}`;
-      cb(null, name);
-    }
-  }),
-  limits: { fileSize: 6 * 1024 * 1024 },
+  storage: multer.memoryStorage(),
+  limits: { fileSize: DOCUMENT_MAX_BYTES, files: 1, fields: 1 },
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
     if (!allowed.includes(file.mimetype)) {
@@ -129,8 +117,6 @@ const uploadPermitDoc = (req, res, next) => {
     return next();
   });
 };
-
-const DOC_FILE_FIELDS = ['business_permit_file', 'dot_file', 'philgeps_file'];
 
 const parseAmenitiesInput = (amenities) => {
   if (amenities === null || amenities === undefined) return null;
@@ -1599,6 +1585,7 @@ router.put('/profile', async (req, res) => {
       'SELECT * FROM business_profiles WHERE owner_id = ?',
       [userId]
     );
+    await validateDocumentReferences(userId, req.body, existingProfiles[0] || {});
 
     // Legitimacy fields are sent as-is (snake_case); empty strings become NULL.
     const legitimacyUpdates = {};
@@ -1647,6 +1634,7 @@ router.put('/profile', async (req, res) => {
     res.json({ success: true, message: 'Profile updated successfully' });
   } catch (error) {
     console.error('Update profile error:', error);
+    if (error.status || ['ER_NO_SUCH_TABLE', 'ER_BAD_FIELD_ERROR'].includes(error.code)) return respondDocumentError(res, error);
     res.status(500).json({ error: 'Failed to update profile' });
   }
 });
@@ -1656,44 +1644,11 @@ router.put('/profile', async (req, res) => {
 // change, same rule as PUT /profile) so a focus-triggered refetch or page
 // reload cannot drop the uploaded document before the owner clicks Save.
 router.post('/profile/upload', uploadPermitDoc, async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: 'No document uploaded' });
-  }
-
-  const field = req.body.field;
-  if (!DOC_FILE_FIELDS.includes(field)) {
-    return res.status(400).json({ error: 'Invalid document field' });
-  }
-
-  const userId = req.user.user_id;
-  const url = `/uploads/permits/${req.file.filename}`;
-
   try {
-    const [rows] = await db.promise().query(
-      'SELECT * FROM business_profiles WHERE owner_id = ?',
-      [userId]
-    );
-
-    if (rows.length > 0) {
-      const changed = (rows[0][field] || null) !== url;
-      const reset = changed
-        ? ", verification_status = 'pending', verified_at = NULL, rejection_reason = NULL"
-        : '';
-      await db.promise().query(
-        `UPDATE business_profiles SET \`${field}\` = ?${reset}, updated_at = NOW() WHERE owner_id = ?`,
-        [url, userId]
-      );
-    } else {
-      await db.promise().query(
-        `INSERT INTO business_profiles (owner_id, \`${field}\`) VALUES (?, ?)`,
-        [userId, url]
-      );
-    }
-
-    res.json({ url, name: req.file.originalname });
+    res.json(await saveBusinessDocument(req.user, req.body.field, req.file));
   } catch (error) {
-    console.error('Persist document upload error:', error);
-    res.status(500).json({ error: 'Failed to save document' });
+    console.error('Persist document upload error:', error.code || 'DOCUMENT_STORAGE_ERROR');
+    return respondDocumentError(res, error);
   }
 });
 
