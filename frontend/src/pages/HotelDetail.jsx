@@ -762,6 +762,7 @@ export default function HotelDetail() {
 
   const handleSubmitBooking = async () => {
     if (!hotel) return;
+    if (pendingBookingId) { navigate(`/hotels/payment/${pendingBookingId}`); return; }
 
     if (!isLoggedIn) {
       setBookingError('Authentication required. Please log in again.');
@@ -887,6 +888,7 @@ export default function HotelDetail() {
 
       // Save booking ID so the user can navigate to My Bookings if checkout fails
       setPendingBookingId(bookingId);
+      try { sessionStorage.setItem('pendingReceiptBookingId', String(bookingId)); } catch { /* Booking History remains available. */ }
 
       if (isExternalCheckout) {
         const fullTotal = Number(bookingResponse.data?.booking?.total_amount ?? bookingTotal);
@@ -925,6 +927,10 @@ export default function HotelDetail() {
           }
 
           const checkoutUrl = checkoutResponse.data?.checkout_url;
+          if (checkoutResponse.data?.status === 'succeeded') {
+            navigate(`/payment-success?booking_id=${bookingId}`);
+            return;
+          }
           if (!checkoutUrl) {
             setBookingError(
               t('booking_saved_checkout_url_unavailable').replace('{id}', String(bookingId))

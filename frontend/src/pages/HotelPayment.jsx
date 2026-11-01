@@ -25,7 +25,7 @@ const sectionHeading = {
 
 
 import { useNavigate, useParams } from 'react-router-dom';
-import { fetchHotelBookings, startPaymentCheckout, getPaymentHistory, getApiBaseUrl, getCsrfToken } from '../api';
+import { fetchHotelBookings, startPaymentCheckout, checkBookingPaymentStatus, getPaymentHistory, getApiBaseUrl, getCsrfToken } from '../api';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import Icons from '../components/Icons';
@@ -115,6 +115,7 @@ const HotelPayment = () => {
   const [checkoutState, setCheckoutState] = useState(null);
   const [slowConnection, setSlowConnection] = useState(false);
   const [policyAgreed, setPolicyAgreed] = useState(false);
+  const [verification, setVerification] = useState(null);
 
   const safeBookingId = useMemo(() => Number(bookingId), [bookingId]);
 
@@ -143,6 +144,8 @@ const HotelPayment = () => {
     const loadBooking = async () => {
       try {
         setLoading(true);
+        const statusResponse = await checkBookingPaymentStatus(safeBookingId);
+        setVerification(statusResponse.data);
         const response = await fetchHotelBookings();
         const bookingRows = response.data || [];
         const found = bookingRows.find((row) => Number(row.booking_id) === safeBookingId);
@@ -182,26 +185,13 @@ const HotelPayment = () => {
     }
   }, [bookingId, isLoggedIn, navigate, safeBookingId]);
 
-  // Restore a checkout URL saved in sessionStorage if the browser redirect stalled before
-  useEffect(() => {
-    if (!booking || booking.payment_status === 'paid') return;
-    const saved = sessionStorage.getItem(`pendingCheckout_${safeBookingId}`);
-    if (saved) {
-      const savedMethod = sessionStorage.getItem(`pendingCheckoutMethod_${safeBookingId}`) || 'paypal';
-      setPaymentMethod(savedMethod);
-      setCheckoutState({
-        status: 'ready',
-        message: t('previous_payment_session_found'),
-        url: saved,
-        resumed: true
-      });
-    }
-  }, [booking, safeBookingId]);
+  // Never reopen a cached browser URL blindly. The checkout API verifies and
+  // resumes an active session, or safely creates/retries the recorded attempt.
 
   const handleCheckout = async () => {
     if (policyLines.length > 0 && !policyAgreed) return;
 
-    if (!booking) return;
+    if (!booking || !verification?.can_retry) return;
 
     if (['bank_transfer', 'pay_at_property'].includes(paymentMethod)) {
       setCheckoutState({
@@ -217,12 +207,13 @@ const HotelPayment = () => {
     }
 
     setSlowConnection(false);
+    let slowTimer;
 
     try {
       setCheckoutState({ status: 'loading', message: t('starting_checkout') });
 
       // Show slow-network warning after 7 s
-      const slowTimer = setTimeout(() => setSlowConnection(true), 7000);
+      slowTimer = setTimeout(() => setSlowConnection(true), 7000);
 
       const checkoutResponse = await Promise.race([
         startPaymentCheckout({
@@ -250,15 +241,21 @@ const HotelPayment = () => {
       }
 
       const checkoutUrl = checkoutResponse.data?.checkout_url;
+      if (checkoutResponse.data?.status === 'succeeded') {
+        navigate(`/payment-success?booking_id=${booking.booking_id}`);
+        return;
+      }
       if (!checkoutUrl) {
         setCheckoutState({ status: 'error', message: t('checkout_url_error') || 'Checkout URL not available. Please try again.' });
         return;
       }
 
       // Persist URL so the user can resume if the redirect stalls
-      sessionStorage.setItem('pendingReceiptBookingId', String(booking.booking_id));
-      sessionStorage.setItem(`pendingCheckout_${booking.booking_id}`, checkoutUrl);
-      sessionStorage.setItem(`pendingCheckoutMethod_${booking.booking_id}`, paymentMethod);
+      try {
+        sessionStorage.setItem('pendingReceiptBookingId', String(booking.booking_id));
+        sessionStorage.setItem(`pendingCheckout_${booking.booking_id}`, checkoutUrl);
+        sessionStorage.setItem(`pendingCheckoutMethod_${booking.booking_id}`, paymentMethod);
+      } catch { /* The server retains the checkout for recovery. */ }
 
       setCheckoutState({
         status: 'ready',
@@ -275,9 +272,9 @@ const HotelPayment = () => {
           message: t('connection_timed_out_checkout')
         });
       } else {
-        setCheckoutState({ status: 'error', message: t('failed_to_start_checkout') });
+        setCheckoutState({ status: 'error', message: err.response?.data?.error || 'Unable to verify checkout. Resume from Booking History when your connection returns; do not pay again if money was deducted.' });
       }
-    }
+    } finally { clearTimeout(slowTimer); setSlowConnection(false); }
   };
 
   return (
@@ -352,7 +349,7 @@ const HotelPayment = () => {
                 )}
                 <div>
                   <div style={labelStyle}>{t('payment_status_label') || 'Payment Status'}</div>
-                  <div style={valueStyle}>{t(booking.payment_status) || booking.payment_status}</div>
+                  <div style={valueStyle}>{verification?.needs_staff_review ? 'Needs reconciliation' : t(booking.payment_status) || booking.payment_status}</div>
                 </div>
                 {payment && (
                   <>
@@ -368,11 +365,17 @@ const HotelPayment = () => {
                 )}
               </div>
               <StayExtensionHistory booking={booking} />
+              {verification && !verification.can_retry && (verification.needs_staff_review || booking.payment_status !== 'paid') && <p role="alert" style={{ color: '#92400e', marginTop: 16 }}>
+                {verification.needs_staff_review ? 'This payment needs hotel review. Do not pay again.'
+                  : verification.verification_unavailable ? 'The earlier payment could not be verified. Check again before paying.'
+                    : 'This reservation is not currently eligible for another online payment.'}
+                {' '}<button type="button" className="gov-btn-ghost" onClick={() => navigate(`/payment-success?booking_id=${booking.booking_id}`)}>Check payment status</button>
+              </p>}
             </div>
 
             <div style={cardStyle}>
               <div style={sectionHeading}>{t('payment_method_section')}</div>
-              {booking.payment_status === 'paid' ? (
+              {booking.payment_status === 'paid' && !verification?.needs_staff_review ? (
                 <div style={paidBannerStyle}>{t('payment_already_completed')}</div>
               ) : (
                 <>
@@ -420,7 +423,7 @@ const HotelPayment = () => {
                       <div style={paymongoSecurityBannerStyle}>
                         <span style={paymongoSecurityIconStyle}>🔐</span>
                         <span>
-                          <strong>Secured by Xendit</strong> — Bank-level security for all GCash payments
+                          <strong>Secured by PayMongo</strong> — Verify the payment result before retrying
                         </span>
                       </div>
                     ) : null}
@@ -457,11 +460,11 @@ const HotelPayment = () => {
                     <button
                       style={{ ...primaryButtonStyle, ...(checkoutState?.status === 'loading' || (policyLines.length > 0 && !policyAgreed) ? { opacity: 0.7, cursor: 'not-allowed' } : {}) }}
                       onClick={handleCheckout}
-                      disabled={checkoutState?.status === 'loading' || (policyLines.length > 0 && !policyAgreed)}
+                      disabled={!verification?.can_retry || checkoutState?.status === 'loading' || (policyLines.length > 0 && !policyAgreed)}
                     >
                       {checkoutState?.status === 'loading'
                         ? (slowConnection ? (t('button_connecting_slow') || '\u23f3 Connecting (slow network)\u2026') : (t('processing') || '\u23f3 Processing...'))
-                          : t('continue_to_payment')}
+                          : booking.payment_status === 'pending' ? 'Resume payment' : t('continue_to_payment')}
                     </button>
 
                     {slowConnection && checkoutState?.status === 'loading' && (

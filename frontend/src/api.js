@@ -231,6 +231,8 @@ export const startPaymentCheckout = (paymentData) => {
   return apiClient.post('/payments/checkout', paymentData);
 };
 
+export const checkBookingPaymentStatus = (bookingId) => apiClient.get(`/payments/booking/${bookingId}/status`);
+
 export const getPaymentDetails = (paymentId) => {
   return apiClient.get(`/payments/${paymentId}`);
 };

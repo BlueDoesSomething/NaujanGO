@@ -29,6 +29,7 @@ import adminRouter from './routes/admin.js';
 import ownerRouter from './routes/owner.js';
 import businessDocumentRouter, { protectPrivateUploadPaths } from './routes/businessDocuments.js';
 import { ensureBusinessDocumentSchema } from './services/businessDocuments.js';
+import { capturePaymentWebhookBody } from './services/paymongoCheckout.js';
 import messagesRouter from './routes/messages.js';
 import wildlifeRouter from './routes/wildlife.js';
 import aboutRouter from './routes/about.js';
@@ -103,7 +104,7 @@ app.use(cors({
   maxAge: 600  // preflight cache 10 minutes
 }));
 app.use(cookieParser());
-app.use(express.json());
+app.use(express.json({ verify: capturePaymentWebhookBody }));
 app.use((req, res, next) => {
   res.set({
     'X-Content-Type-Options': 'nosniff',

@@ -9,6 +9,7 @@ import { getApiBaseUrl } from '../api';
 import { buildPolicyLines } from '../utils/bookingPolicy';
 import { bookingInstant, bookingLocalTime, formatBookingBoundary, getStayExtensions, hourlyCheckout, philippineToday } from '../utils/stayBooking';
 import StayExtensionHistory from '../components/StayExtensionHistory';
+import { canResumeBookingPayment } from '../utils/paymentRecovery';
 
 export default function BookingHistory() {
   const navigate = useNavigate();
@@ -713,8 +714,7 @@ END:VCALENDAR`;
                   )}
                 </div>
                 <div style={styles.actions}>
-                  {Number(booking.balance_due) > 0 && ['pending', 'confirmed'].includes(booking.status)
-                    && (isUpcoming(booking) || (booking.status === 'confirmed' && getStayExtensions(booking).length > 0)) && (
+                  {canResumeBookingPayment(booking) && (
                     <button
                       style={{ ...styles.actionBtn, backgroundColor: '#2563eb', color: '#fff', border: 'none' }}
                       onClick={() => navigate(`/hotels/payment/${booking.booking_id}`)}
@@ -723,9 +723,11 @@ END:VCALENDAR`;
                         <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
                         <line x1="1" y1="10" x2="23" y2="10"></line>
                       </svg>
-                      {Number(booking.amount_paid) > 0 ? 'Pay balance' : 'Complete payment'}
+                      {Number(booking.amount_paid) > 0 ? 'Pay balance' : booking.payment_status === 'pending' ? 'Resume payment' : 'Complete payment'}
                     </button>
                   )}
+                  {(booking.payment_method === 'qrph' || booking.payment_status === 'pending') && <button style={styles.actionBtn}
+                    onClick={() => navigate(`/payment-success?booking_id=${booking.booking_id}`)}>Check payment status</button>}
                   {['pending', 'confirmed'].includes(booking.status) && isUpcoming(booking) && (
                     <button style={styles.actionBtn} onClick={() => openModifyModal(booking)}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

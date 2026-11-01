@@ -13,6 +13,7 @@ import { FRONTEND_URL, WEBHOOK_BASE_URL } from '../config/publicUrls.js';
 import { balanceOf, dueNow, MIN_GATEWAY_AMOUNT } from '../utils/paymentAmounts.js';
 import { syncBookingPaymentStatus, fetchAmountPaid } from '../utils/paymentSync.js';
 import { readJson } from '../utils/stayOptions.js';
+import { assertNoUnverifiedQrCheckout, getBookingPaymentStatus, handlePaymongoWebhook, startOrResumeQrCheckout } from '../services/paymongoCheckout.js';
 
 // Rate limiters for payment endpoints
 const checkoutLimiter = createRateLimiter({
@@ -558,9 +559,33 @@ const processRealPayment = async (paymentData) => {
 };
 
 // Process payment for a booking
-router.post('/checkout', checkoutLimiter, async (req, res) => {
+const paymentRecoveryError = (res, error) => res.status(error.status || 503).json({
+  error: error.status ? error.message : 'Payment verification is temporarily unavailable. Check your booking before paying again.',
+  code: error.code || 'PAYMENT_VERIFICATION_UNAVAILABLE'
+});
+
+const statusCheckLimiter = createRateLimiter({
+  name: 'payment-status-check', windowMs: 60000, maxRequests: 20,
+  message: 'Please wait a moment before checking payment status again.', errorCode: 'PAYMENT_STATUS_RATE_LIMITED',
+  keyGenerator: req => `${req.user.user_id}:${req.params.bookingId}`
+});
+
+router.get('/booking/:bookingId/status', authenticateToken, statusCheckLimiter, async (req, res) => {
+  res.set('Cache-Control', 'private, no-store');
+  try { return res.json(await getBookingPaymentStatus(req.user.user_id, req.params.bookingId)); }
+  catch (error) { return paymentRecoveryError(res, error); }
+});
+
+router.post('/checkout', authenticateToken, checkoutLimiter, async (req, res) => {
   const userId = getUserIdFromToken(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+  if (req.body.payment_method === 'qrph') {
+    try { return res.json(await startOrResumeQrCheckout(userId, req.body)); }
+    catch (error) { return paymentRecoveryError(res, error); }
+  }
+  try { await assertNoUnverifiedQrCheckout(userId, req.body.booking_id); }
+  catch (error) { return paymentRecoveryError(res, error); }
 
   const {
     booking_id,
@@ -854,9 +879,16 @@ router.get('/xendit/sandbox', async (req, res) => {
   res.send(html);
 });
 
-router.post('/process', async (req, res) => {
+router.post('/process', authenticateToken, async (req, res) => {
   const userId = getUserIdFromToken(req);
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+  if (req.body.payment_method === 'qrph') {
+    try { return res.json(await startOrResumeQrCheckout(userId, req.body)); }
+    catch (error) { return paymentRecoveryError(res, error); }
+  }
+  try { await assertNoUnverifiedQrCheckout(userId, req.body.booking_id); }
+  catch (error) { return paymentRecoveryError(res, error); }
 
   const {
     booking_id,
@@ -1173,39 +1205,7 @@ router.get('/gcash/success', async (req, res) => {
   }, frontendOrigin);  // 🟢 Use smart detected origin instead of query param
   res.redirect(redirectUrl);
   
-  // 🟢 OPTIMIZATION: Run DB updates asynchronously in background (fire-and-forget)
-  // This doesn't block the response - user redirects immediately (~50ms instead of ~400ms)
-  if (payment) {
-    setImmediate(async () => {
-      try {
-        // Run all updates in parallel instead of sequentially
-        await Promise.all([
-          // Keep payment pending until customer submits a reference and merchant verifies it.
-          db.promise().query(
-            `UPDATE hotel_payments
-             SET status = 'pending',
-                 reference_status = CASE
-                   WHEN method = 'gcash' AND (reference_status = 'not_required' OR reference_status IS NULL) THEN 'pending'
-                   ELSE reference_status
-                 END,
-                 updated_at = NOW()
-             WHERE payment_id = ?`,
-            [payment.payment_id]
-          ),
-          // Booking remains pending until reference verification.
-          db.promise().query(
-            `UPDATE hotel_bookings SET payment_status = 'pending', status = 'pending', updated_at = NOW() WHERE booking_id = ? AND payment_status NOT IN ('partial', 'paid')`,
-            [payment.booking_id]
-          )
-        ]);
-
-        console.log(`✅ GCash redirect success: Booking ${payment.booking_id} awaiting reference verification`);
-      } catch (error) {
-        console.error('🔴 GCash background update error:', error);
-        // Log error but don't fail - user already redirected successfully
-      }
-    });
-  }
+  // Navigation only: callbacks cannot alter payment or reservation status.
 });
 
 router.get('/gcash/failed', async (req, res) => {
@@ -1249,28 +1249,7 @@ router.get('/gcash/failed', async (req, res) => {
   }, frontendOrigin);  // 🟢 Use smart detected origin instead of query param
   res.redirect(redirectUrl);
   
-  // 🟢 OPTIMIZATION: Run DB updates asynchronously in background (fire-and-forget)
-  if (payment) {
-    setImmediate(async () => {
-      try {
-        // Update payment status to failed
-        await db.promise().query(
-          `UPDATE hotel_payments SET status = 'failed', updated_at = NOW() WHERE payment_id = ?`,
-          [payment.payment_id]
-        );
-        
-        // Update booking: keep as pending to allow retry, mark payment as failed
-        await db.promise().query(
-          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ? AND payment_status NOT IN ('partial', 'paid')`,
-          [payment.booking_id]
-        );
-        
-        console.log(`❌ GCash Payment Failed: Booking ${payment.booking_id} failed, rooms remain available for retry`);
-      } catch (error) {
-        console.error('🔴 GCash failed background update error:', error);
-      }
-    });
-  }
+  // Leaving checkout does not prove failure or allow a cancelled booking to reopen.
 });
 
 // 🟢 NEW: GrabPay payment success handler
@@ -1317,25 +1296,8 @@ router.get('/grabpay/success', async (req, res) => {
 
   res.redirect(redirectUrl);
 
-  // Run DB updates asynchronously in background
-  if (payment) {
-    setImmediate(async () => {
-      try {
-        // Mark payment as successful
-        await db.promise().query(
-          `UPDATE hotel_payments SET status = 'succeeded', updated_at = NOW() WHERE payment_id = ?`,
-          [payment.payment_id]
-        );
-
-        // Update booking: mark payment as paid
-        await syncBookingPaymentStatus(payment.booking_id, { confirm: true });
-
-        console.log(`✅ GrabPay Payment Successful: Booking ${payment.booking_id} confirmed`);
-      } catch (error) {
-        console.error('🔴 GrabPay success background update error:', error);
-      }
-    });
-  }
+  // A source redirect is not a captured payment. Keep it unconfirmed until
+  // provider verification or an authorized merchant reconciliation.
 });
 
 // 🟢 NEW: GrabPay payment failed handler
@@ -1381,28 +1343,7 @@ router.get('/grabpay/failed', async (req, res) => {
 
   res.redirect(redirectUrl);
 
-  // Run DB updates asynchronously in background
-  if (payment) {
-    setImmediate(async () => {
-      try {
-        // Mark payment as failed
-        await db.promise().query(
-          `UPDATE hotel_payments SET status = 'failed', updated_at = NOW() WHERE payment_id = ?`,
-          [payment.payment_id]
-        );
-
-        // Update booking: keep as pending to allow retry
-        await db.promise().query(
-          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ? AND payment_status NOT IN ('partial', 'paid')`,
-          [payment.booking_id]
-        );
-
-        console.log(`❌ GrabPay Payment Failed: Booking ${payment.booking_id} failed, rooms remain available for retry`);
-      } catch (error) {
-        console.error('🔴 GrabPay failed background update error:', error);
-      }
-    });
-  }
+  // Navigation only; a provider return cannot undo a paid attempt.
 });
 
 // 🟢 NEW: GrabPay payment failed handler
@@ -1448,28 +1389,7 @@ router.get('/grabpay/failed', async (req, res) => {
 
   res.redirect(redirectUrl);
 
-  // Run DB updates asynchronously in background
-  if (payment) {
-    setImmediate(async () => {
-      try {
-        // Mark payment as failed
-        await db.promise().query(
-          `UPDATE hotel_payments SET status = 'failed', updated_at = NOW() WHERE payment_id = ?`,
-          [payment.payment_id]
-        );
-
-        // Update booking: keep as pending to allow retry
-        await db.promise().query(
-          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ? AND payment_status NOT IN ('partial', 'paid')`,
-          [payment.booking_id]
-        );
-
-        console.log(`❌ GrabPay Payment Failed: Booking ${payment.booking_id} failed, rooms remain available for retry`);
-      } catch (error) {
-        console.error('🔴 GrabPay failed background update error:', error);
-      }
-    });
-  }
+  // Navigation only; a provider return cannot undo a paid attempt.
 });
 
 // 🟢 NEW: QRPH payment success handler
@@ -1517,30 +1437,8 @@ router.get('/qrph/success', async (req, res) => {
   }, frontendOrigin);  // 🟢 Use smart detected origin instead of query param
   res.redirect(redirectUrl);
   
-  // 🟢 OPTIMIZATION: Run DB updates asynchronously in background (fire-and-forget)
-  // This doesn't block the response - user redirects immediately
-  if (payment) {
-    setImmediate(async () => {
-      try {
-        // Mark payment as successful
-        await db.promise().query(
-          `UPDATE hotel_payments
-           SET status = 'succeeded',
-               updated_at = NOW()
-           WHERE payment_id = ?`,
-          [payment.payment_id]
-        );
-
-        // Update booking: mark payment as paid
-        await syncBookingPaymentStatus(payment.booking_id, { confirm: true });
-
-        console.log(`✅ QRPH Payment Successful: Booking ${payment.booking_id} confirmed`);
-      } catch (error) {
-        console.error('🔴 QRPH success background update error:', error);
-        // Log error but don't fail - user already redirected successfully
-      }
-    });
-  }
+  // Browser returns are navigation only. The signed webhook / authenticated
+  // status check verifies the actual session before recording received money.
 });
 
 // 🟢 NEW: QRPH payment failed handler
@@ -1587,28 +1485,7 @@ router.get('/qrph/failed', async (req, res) => {
   }, frontendOrigin);  // 🟢 Use smart detected origin
   res.redirect(redirectUrl);
   
-  // 🟢 OPTIMIZATION: Run DB updates asynchronously in background (fire-and-forget)
-  if (payment) {
-    setImmediate(async () => {
-      try {
-        // Update payment status to failed
-        await db.promise().query(
-          `UPDATE hotel_payments SET status = 'failed', updated_at = NOW() WHERE payment_id = ?`,
-          [payment.payment_id]
-        );
-        
-        // Update booking: keep as pending to allow retry, mark payment as failed
-        await db.promise().query(
-          `UPDATE hotel_bookings SET payment_status = 'failed', status = 'pending', updated_at = NOW() WHERE booking_id = ? AND payment_status NOT IN ('partial', 'paid')`,
-          [payment.booking_id]
-        );
-        
-        console.log(`❌ QRPH Payment Failed: Booking ${payment.booking_id} failed, rooms remain available for retry`);
-      } catch (error) {
-        console.error('🔴 QRPH failed background update error:', error);
-      }
-    });
-  }
+  // Leaving checkout does not prove failure and must not undo a late payment.
 });
 
 // 🟢 NEW: Xendit payment success redirect handler
@@ -1654,26 +1531,8 @@ router.get('/xendit/success', async (req, res) => {
   }, frontendOrigin);  // 🟢 Use smart detected origin
   res.redirect(redirectUrl);
   
-  // 🟢 OPTIMIZATION: Run DB updates asynchronously in background (fire-and-forget)
-  if (payment) {
-    setImmediate(async () => {
-      try {
-        // Mark payment as succeeded (will be confirmed by webhook)
-        await db.promise().query(
-          `UPDATE hotel_payments SET status = 'succeeded', updated_at = NOW() WHERE payment_id = ?`,
-          [payment.payment_id]
-        );
-
-        // Update booking: mark payment as paid
-        await syncBookingPaymentStatus(payment.booking_id, { confirm: true });
-
-        console.log(`✅ Xendit Payment Successful: Booking ${payment.booking_id} confirmed`);
-      } catch (error) {
-        console.error('🔴 Xendit success background update error:', error);
-        // Log error but don't fail - user already redirected successfully
-      }
-    });
-  }
+  // Receipt of a browser return is not receipt of funds. The provider webhook
+  // must confirm Xendit payments independently.
 });
 
 // 🟢 NEW: Xendit payment failed redirect handler
@@ -1785,8 +1644,8 @@ router.get('/xendit/cancel', async (req, res) => {
 });
 
 // Get latest payment for a booking (used by payment-success reference confirmation flow)
-router.get('/booking/:bookingId/latest', async (req, res) => {
-  const userId = getUserIdFromToken(req);
+router.get('/booking/:bookingId/latest', authenticateToken, async (req, res) => {
+  const userId = req.user.user_id;
 
   const bookingId = Number(req.params.bookingId);
   if (!Number.isFinite(bookingId) || bookingId <= 0) {
@@ -1794,61 +1653,11 @@ router.get('/booking/:bookingId/latest', async (req, res) => {
   }
 
   try {
-    let query;
-    let params;
-
-    // If the frontend included a short-lived lookup_token, validate it and allow guest lookup
-    const lookupToken = req.query?.lookup_token || req.headers['x-lookup-token'];
-    if (!userId && lookupToken) {
-      try {
-        const decoded = jwt.verify(String(lookupToken), JWT_SECRET);
-        if (decoded && decoded.booking_id && Number(decoded.booking_id) === bookingId) {
-          // allow guest lookup via token
-          userId = null; // explicit
-        } else {
-          return res.status(401).json({ error: 'Invalid lookup token' });
-        }
-      } catch (err) {
-        console.warn('Lookup token verification failed:', err.message);
-        return res.status(401).json({ error: 'Invalid or expired lookup token' });
-      }
-    }
-
-    if (userId) {
-      // Normal authenticated path: ensure booking belongs to the user
-      query = `SELECT p.*, b.user_id
-               FROM hotel_payments p
-               JOIN hotel_bookings b ON p.booking_id = b.booking_id
-               WHERE p.booking_id = ? AND b.user_id = ?
-               ORDER BY p.payment_id DESC
-               LIMIT 1`;
-      params = [bookingId, userId];
-    } else {
-      // Quick-fix: allow unauthenticated frontend redirect requests to fetch latest payment
-      // if the request Origin or Referer matches FRONTEND_URL, or when in development.
-      const origin = (req.get('Origin') || '').replace(/\/$/, '');
-      const referer = (req.get('Referer') || req.get('Referrer') || '').replace(/\/$/, '');
-      const frontend = FRONTEND_URL;
-
-      const devAllowed = process.env.NODE_ENV === 'development' || process.env.ALLOW_GUEST_LOOKUP === 'true';
-
-      if (origin !== frontend && referer !== frontend && !devAllowed) {
-        console.warn(`Guest lookup denied for booking ${bookingId}. origin='${origin}' referer='${referer}' expected='${frontend}' devAllowed=${devAllowed}`);
-        return res.status(401).json({ error: 'Unauthorized' });
-      }
-
-      console.warn(`Guest lookup allowed for booking ${bookingId} from origin='${origin}' referer='${referer}'`);
-
-      query = `SELECT p.*, b.user_id
-               FROM hotel_payments p
-               JOIN hotel_bookings b ON p.booking_id = b.booking_id
-               WHERE p.booking_id = ?
-               ORDER BY p.payment_id DESC
-               LIMIT 1`;
-      params = [bookingId];
-    }
-
-    const [rows] = await db.promise().query(query, params);
+    const [rows] = await db.promise().query(
+      `SELECT p.*, b.user_id FROM hotel_payments p
+       JOIN hotel_bookings b ON p.booking_id = b.booking_id
+       WHERE p.booking_id = ? AND b.user_id = ? ORDER BY p.payment_id DESC LIMIT 1`,
+      [bookingId, userId]);
 
     if (!rows.length) {
       return res.status(404).json({ error: 'Payment not found for booking' });
@@ -2397,44 +2206,8 @@ router.post('/webhook/xendit', express.json(), xenditWebhookLimiter, async (req,
   }
 });
 
-// Webhook endpoint for payment providers (simulated)
-router.post('/webhook/:provider', async (req, res) => {
-  const { provider } = req.params;
-  const payload = req.body;
-
-  console.log(`Received webhook from ${provider}:`, payload);
-
-  // In a real implementation, you would:
-  // 1. Verify webhook signature
-  // 2. Process the payment status update
-  // 3. Update database accordingly
-
-  try {
-    // Simulate webhook processing
-    const { transaction_reference, status, booking_id } = payload;
-
-    if (transaction_reference && status && booking_id) {
-      // Update payment status
-      await db.promise().query(
-        `UPDATE hotel_payments 
-         SET status = ?,
-             updated_at = NOW()
-         WHERE transaction_reference = ?`,
-        [status, transaction_reference]
-      );
-
-      // Update booking if payment succeeded
-      if (status === 'succeeded') {
-        await syncBookingPaymentStatus(booking_id);
-      }
-    }
-
-    res.json({ received: true });
-  } catch (err) {
-    console.error('Webhook processing error:', err);
-    res.status(500).json({ error: 'Webhook processing failed' });
-  }
-});
+// No catch-all simulated webhook: it bypassed provider verification and
+// shadowed the real /webhook/paymongo handler below.
 
 // Stripe webhook handler
 router.post('/webhook/stripe', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -2510,103 +2283,22 @@ router.post('/webhook/paypal', async (req, res) => {
 // Helper to process a PayMongo webhook event for a specific account.
 // `webhookSecret` is the HMAC secret for the account that sent the webhook.
 // `accountLabel` is used only for log messages.
-const processPayMongoWebhookEvent = async (rawBody, signature, webhookSecret, accountLabel) => {
-  // Verify signature if configured
-  if (webhookSecret) {
-    const verification = paymentProviders.verifyPaymongoWebhook(rawBody, signature, webhookSecret);
-    if (!verification.valid) {
-      console.error(`Invalid ${accountLabel} webhook signature:`, verification.reason);
-      return { ok: false, status: 400, body: { error: 'Invalid signature' } };
-    }
+const processPayMongoWebhookEvent = async (rawBody, signature, account = 1) => {
+  try {
+    const body = await handlePaymongoWebhook(rawBody, signature, account);
+    return { ok: true, status: 200, body };
+  } catch (error) {
+    return { ok: false, status: error.status || 503, body: { error: error.status ? error.message : 'Payment verification could not be completed. Retry this event.' } };
   }
-
-  const payload = JSON.parse(rawBody || '{}');
-  const event = payload.data;
-
-  if (!event) {
-    return { ok: false, status: 400, body: { error: 'Invalid payload' } };
-  }
-
-  if (event.attributes && event.attributes.type === 'source.chargeable') {
-    const sourceData = event.attributes.data || event.attributes;
-    const sourceId = sourceData.id;
-    // Update provider response and mark payment chargeable
-    await updatePaymentStatusByProvider(sourceId, 'chargeable', sourceData);
-
-    // Try to auto-match submitted customer_reference_number with provider metadata (if any)
-    const possibleRef = sourceData.data?.reference || sourceData.reference || null;
-    if (possibleRef) {
-      try {
-        const [rows] = await db.promise().query(
-          `SELECT p.payment_id, p.booking_id, p.amount, p.currency, p.customer_reference_number
-           FROM hotel_payments p
-           WHERE p.transaction_reference = ? OR p.customer_reference_number = ?
-           LIMIT 1`,
-          [sourceId, possibleRef]
-        );
-
-        if (rows.length) {
-          const p = rows[0];
-          // If amounts match, auto-verify (best-effort)
-          const providerAmount = (sourceData.amount || sourceData.amount_in_cents || 0) / 100;
-          if (Math.abs(Number(p.amount) - providerAmount) < 0.01) {
-            await db.promise().query(
-              `UPDATE hotel_payments SET customer_reference_number = ?, reference_submitted_at = NOW(), reference_status = 'verified', status = 'succeeded', provider_response = ?, verified_at = NOW(), verified_by = NULL, paid_at = NOW(), updated_at = NOW() WHERE payment_id = ?`,
-              [possibleRef, JSON.stringify(sourceData), p.payment_id]
-            );
-            await syncBookingPaymentStatus(p.booking_id, { confirm: true });
-            console.log(`Auto-verified payment ${p.payment_id} via ${accountLabel} webhook (reference match)`);
-          }
-        }
-      } catch (err) {
-        console.error('Error attempting auto-verify from PayMongo webhook:', err);
-      }
-    }
-  }
-
-  // 🟢 QRPH uses Checkout Session API - handle payment confirmation events
-  if (event.attributes && event.attributes.type === 'checkout_session.payment.paid') {
-    const sessionData = event.attributes.data;
-    const sessionId = sessionData?.id;
-    const sessionAttrs = sessionData?.attributes || {};
-    const referenceNumber = sessionAttrs.reference_number || null;
-    const paymentObj = (sessionAttrs.payments || [])[0] || null;
-
-    console.log(`✅ ${accountLabel} checkout_session.payment.paid received:`, {
-      session_id: sessionId,
-      reference_number: referenceNumber
-    });
-
-    if (sessionId) {
-      // updatePaymentStatus also flips the booking to paid when status is 'succeeded'
-      await updatePaymentStatus(sessionId, 'succeeded', sessionData);
-      await updatePaymentStatusByProvider(sessionId, 'succeeded', sessionData);
-    }
-    if (paymentObj?.id) {
-      await updatePaymentStatusByProvider(paymentObj.id, 'succeeded', paymentObj);
-    }
-  } else if (event.attributes && event.attributes.type === 'checkout_session.payment.failed') {
-    const sessionData = event.attributes.data;
-    const sessionId = sessionData?.id;
-
-    console.log(`❌ ${accountLabel} checkout_session.payment.failed received:`, { session_id: sessionId });
-
-    if (sessionId) {
-      await updatePaymentStatus(sessionId, 'failed', sessionData);
-      await updatePaymentStatusByProvider(sessionId, 'failed', sessionData);
-    }
-  }
-
-  return { ok: true, status: 200, body: { received: true } };
 };
 
 // PayMongo webhook handler (Account 1 - for GCash, GrabPay, QRPH)
 router.post('/webhook/paymongo', express.raw({ type: 'application/json' }), paymongoWebhookLimiter, async (req, res) => {
-  const rawBody = req.body && req.body.toString ? req.body.toString('utf8') : '';
+  const rawBody = req.rawBody || (Buffer.isBuffer(req.body) ? req.body : null);
   const signature = req.headers['paymongo-signature'] || req.headers['x-paymongo-signature'] || '';
 
   try {
-    const result = await processPayMongoWebhookEvent(rawBody, signature, process.env.PAYMONGO_WEBHOOK_SECRET, 'PayMongo');
+    const result = await processPayMongoWebhookEvent(rawBody, signature, 1);
     return res.status(result.status).json(result.body);
   } catch (err) {
     console.error('PayMongo webhook error:', err);
@@ -2616,11 +2308,11 @@ router.post('/webhook/paymongo', express.raw({ type: 'application/json' }), paym
 
 // PayMongo webhook handler (Account 2 - for QRPH / QR code payments from a second PayMongo account)
 router.post('/webhook/paymongo-2', express.raw({ type: 'application/json' }), paymongoWebhook2Limiter, async (req, res) => {
-  const rawBody = req.body && req.body.toString ? req.body.toString('utf8') : '';
+  const rawBody = req.rawBody || (Buffer.isBuffer(req.body) ? req.body : null);
   const signature = req.headers['paymongo-signature'] || req.headers['x-paymongo-signature'] || '';
 
   try {
-    const result = await processPayMongoWebhookEvent(rawBody, signature, process.env.PAYMONGO_WEBHOOK_SECRET_2, 'PayMongo (Account 2)');
+    const result = await processPayMongoWebhookEvent(rawBody, signature, 2);
     return res.status(result.status).json(result.body);
   } catch (err) {
     console.error('PayMongo Account 2 webhook error:', err);
@@ -2661,7 +2353,7 @@ const updatePaymentStatusByProvider = async (providerRef, status, providerData) 
        SET status = ?,
            provider_response = ?,
            updated_at = NOW()
-       WHERE JSON_EXTRACT(provider_response, '$.id') = ? OR JSON_EXTRACT(provider_response, '$.order_id') = ?`,
+        WHERE provider = 'paypal' AND (JSON_EXTRACT(provider_response, '$.id') = ? OR JSON_EXTRACT(provider_response, '$.order_id') = ?)`,
       [status, JSON.stringify(providerData), providerRef, providerRef]
     );
   } catch (err) {
