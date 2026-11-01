@@ -7,7 +7,7 @@ import path from 'path';
 import fs from 'fs';
 import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'url';
-import db from '../db.js';
+import { execute } from '../db.js';
 import passport from '../config/passport.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rateLimit.js';
@@ -268,7 +268,7 @@ router.post('/oauth-login', async (req, res) => {
     const { lang } = await getUserColumns();
     const selectLang = lang ? `${lang} AS preferred_language` : `'en' AS preferred_language`;
 
-    const [rows] = await db.promise().query(
+    const [rows] = await execute(
       `SELECT user_id, username, email, password_hash, ${selectLang} FROM users WHERE user_id = ?`,
       [decoded.user_id]
     );
@@ -322,13 +322,13 @@ router.post('/register-send-code', registerLimiter, async (req, res) => {
 
   try {
     // Check if user already exists by email
-    const [existingEmail] = await db.promise().query('SELECT user_id FROM users WHERE email = ?', [normalizedEmail]);
+    const [existingEmail] = await execute('SELECT user_id FROM users WHERE email = ?', [normalizedEmail]);
     if (existingEmail.length > 0) {
       return res.status(409).json({ error: 'Email already registered' });
     }
 
     // Check if username already exists
-    const [existingUsername] = await db.promise().query('SELECT user_id FROM users WHERE username = ?', [normalizedUsername]);
+    const [existingUsername] = await execute('SELECT user_id FROM users WHERE username = ?', [normalizedUsername]);
     if (existingUsername.length > 0) {
       return res.status(409).json({ error: 'Username already taken' });
     }
@@ -450,7 +450,7 @@ router.post('/register-verify-code', verificationLimiter, async (req, res) => {
 
     const placeholders = columns.map(() => '?').join(', ');
     const insertSql = `INSERT INTO users (${columns.join(', ')}) VALUES (${placeholders})`;
-    const [result] = await db.promise().query(insertSql, values);
+    const [result] = await execute(insertSql, values);
 
     // Clean up temp data
     delete global.tempRegistrations[normalizedEmail];
@@ -565,13 +565,13 @@ router.post('/register', registerLimiter, async (req, res) => {
 
   try {
     // Check if user already exists by email
-    const [existingEmail] = await db.promise().query('SELECT user_id FROM users WHERE email = ?', [normalizedEmail]);
+    const [existingEmail] = await execute('SELECT user_id FROM users WHERE email = ?', [normalizedEmail]);
     if (existingEmail.length > 0) {
       return res.status(409).json({ error: 'Email already registered' });
     }
 
     // Check if username already exists
-    const [existingUsername] = await db.promise().query('SELECT user_id FROM users WHERE username = ?', [normalizedUsername]);
+    const [existingUsername] = await execute('SELECT user_id FROM users WHERE username = ?', [normalizedUsername]);
     if (existingUsername.length > 0) {
       return res.status(409).json({ error: 'Username already taken' });
     }
@@ -607,7 +607,7 @@ router.post('/register', registerLimiter, async (req, res) => {
 
     const placeholders = columns.map(() => '?').join(', ');
     const insertSql = `INSERT INTO users (${columns.join(', ')}) VALUES (${placeholders})`;
-    const [result] = await db.promise().query(insertSql, values);
+    const [result] = await execute(insertSql, values);
 
     const user_id = result.insertId;
 
@@ -668,7 +668,7 @@ router.post('/verify-email', verificationLimiter, async (req, res) => {
     }
 
     if (updates.length > 0) {
-      await db.promise().query(
+      await execute(
         `UPDATE users SET ${updates.join(', ')} WHERE user_id = ?`,
         [tokenRecord.user_id]
       );
@@ -696,7 +696,7 @@ router.post('/resend-verification', resendVerificationLimiter, async (req, res) 
   try {
     const columns = await getUserColumns();
     const selectVerified = columns.emailVerified ? 'email_verified' : '1 AS email_verified';
-    const [rows] = await db.promise().query(
+    const [rows] = await execute(
       `SELECT user_id, username, email, ${selectVerified}
        FROM users
        WHERE LOWER(email) = ? OR LOWER(username) = ?
@@ -735,7 +735,7 @@ router.post('/forgot-password', forgotPasswordLimiter, async (req, res) => {
   }
 
   try {
-    const [rows] = await db.promise().query(
+    const [rows] = await execute(
       `SELECT user_id, username, email
        FROM users
        WHERE LOWER(email) = ? OR LOWER(username) = ?
@@ -804,7 +804,7 @@ router.post('/reset-password', resetPasswordLimiter, async (req, res) => {
 
     values.push(tokenRecord.user_id);
 
-    await db.promise().query(
+    await execute(
       `UPDATE users SET ${updates.join(', ')} WHERE user_id = ?`,
       values
     );
@@ -824,7 +824,7 @@ router.post('/login', loginLimiter, async (req, res) => {
   const { emailOrUsername, password } = req.body;
   const identifier = normalizeIdentifier(emailOrUsername);
 
-  if (!identifier || !password) {
+  if (!identifier || typeof password !== 'string' || !password) {
     return res.status(400).json({ error: 'Email/username and password are required' });
   }
 
@@ -836,7 +836,7 @@ router.post('/login', loginLimiter, async (req, res) => {
     const selectArchived = archived ? 'archived' : '0 AS archived';
 
     // Find user by email or username
-    const [rows] = await db.promise().query(
+    const [rows] = await execute(
       `SELECT 
         user_id, 
         username, 
@@ -928,7 +928,7 @@ router.get('/profile', authenticateToken, async (req, res) => {
     const selectPhone = phoneCol ? `${phoneCol} AS phone` : 'NULL AS phone';
     const selectEmailVerified = emailVerified ? 'email_verified' : '1 AS email_verified';
 
-    const [rows] = await db.promise().query(
+    const [rows] = await execute(
       `SELECT 
         user_id, 
         username, 
@@ -996,9 +996,9 @@ router.put('/profile', authenticateToken, async (req, res) => {
     const updateSql = `UPDATE users SET ${setClauses.join(', ')} WHERE user_id = ?`;
     params.push(user_id);
 
-    await db.promise().query(updateSql, params);
+    await execute(updateSql, params);
 
-    const [rows] = await db.promise().query(
+    const [rows] = await execute(
       `SELECT 
         user_id, 
         username, 

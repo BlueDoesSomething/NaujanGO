@@ -2439,15 +2439,15 @@ router.get('/logs', async (req, res) => {
     }
     const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
-    const [countRows] = await db.promise().query(`SELECT COUNT(*) AS total FROM system_logs ${whereSql}`, params);
+    const [countRows] = await db.promise().execute(`SELECT COUNT(*) AS total FROM system_logs ${whereSql}`, params);
     const total = Number(countRows[0]?.total || 0);
 
-    const [rows] = await db.promise().query(
+    const [rows] = await db.promise().execute(
       `SELECT id, level, source, message, meta, user_id, ip, created_at
        FROM system_logs ${whereSql}
        ORDER BY id DESC
-       LIMIT ${limit} OFFSET ${offset}`,
-      params
+       LIMIT ? OFFSET ?`,
+      [...params, limit, offset]
     );
 
     res.json({ rows, total, page, limit });
@@ -2463,10 +2463,11 @@ router.get('/logs/stats', async (req, res) => {
     const rawHours = Number.parseInt(req.query.hours, 10);
     const hours = Math.min(24 * 90, Math.max(1, Number.isFinite(rawHours) ? rawHours : 24));
 
-    const [rows] = await db.promise().query(
+    const [rows] = await db.promise().execute(
       `SELECT level, COUNT(*) AS count FROM system_logs
-       WHERE created_at >= NOW() - INTERVAL ${hours} HOUR
-       GROUP BY level`
+       WHERE created_at >= NOW() - INTERVAL ? HOUR
+       GROUP BY level`,
+      [hours]
     );
 
     const stats = { info: 0, warn: 0, error: 0 };
@@ -2474,11 +2475,12 @@ router.get('/logs/stats', async (req, res) => {
       if (stats[row.level] !== undefined) stats[row.level] = Number(row.count);
     });
 
-    const [latestRows] = await db.promise().query(
+    const [latestRows] = await db.promise().execute(
       `SELECT message, created_at FROM system_logs
-       WHERE level = 'error' AND created_at >= NOW() - INTERVAL ${hours} HOUR
+       WHERE level = 'error' AND created_at >= NOW() - INTERVAL ? HOUR
        ORDER BY id DESC
-       LIMIT 1`
+       LIMIT 1`,
+      [hours]
     );
 
     res.json({

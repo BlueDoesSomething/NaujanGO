@@ -103,7 +103,7 @@ export const startRetentionSweep = () => {
 
   const run = async () => {
     try {
-      await db.promise().query(`DELETE FROM system_logs WHERE created_at < NOW() - INTERVAL ${days} DAY`);
+      await db.promise().execute('DELETE FROM system_logs WHERE created_at < NOW() - INTERVAL ? DAY', [days]);
     } catch {
       // Table may not exist yet (migration not run).
     }

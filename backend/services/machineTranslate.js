@@ -4,6 +4,15 @@ import { getTranslation, upsertTranslation } from './translations.js';
 const ENABLE_MT_FALLBACK = process.env.ENABLE_MT_FALLBACK === 'true';
 const MT_PROVIDER = process.env.MT_PROVIDER || 'google';
 
+// SQL identifiers cannot be bound as values. Only these internal tables,
+// primary keys and translatable columns may be used to fetch source text.
+const translationSources = {
+  attractions: { key: 'id', fields: ['name', 'description'] },
+  hotels: { key: 'hotel_id', fields: ['name', 'description'] },
+  restaurants: { key: 'restaurant_id', fields: ['name', 'description', 'cuisine_type'] },
+  rooms: { key: 'room_id', fields: ['room_type_name', 'description'] }
+};
+
 /**
  * Get language_id from language code
  */
@@ -46,6 +55,9 @@ const translateWithProvider = async (text, targetLang, provider) => {
  */
 export const getTranslationWithFallback = async (entityType, entityId, fieldName, locale) => {
   if (locale === 'en') return null; // English is base, don't need fallback
+  if (!Object.hasOwn(translationSources, entityType)) return null;
+  const source = translationSources[entityType];
+  if (!source.fields.includes(fieldName)) return null;
 
   try {
     // Try DB first
@@ -57,7 +69,7 @@ export const getTranslationWithFallback = async (entityType, entityId, fieldName
 
     // Get original text from the entity table
     const [rows] = await execute(
-      `SELECT ${fieldName} FROM ${entityType} WHERE id = ? LIMIT 1`,
+      `SELECT ${fieldName} FROM ${entityType} WHERE ${source.key} = ? LIMIT 1`,
       [entityId]
     );
     const enText = rows && rows.length > 0 ? rows[0][fieldName] : null;

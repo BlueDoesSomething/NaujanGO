@@ -1,4 +1,5 @@
 import db from '../db.js';
+import { sqlPlaceholders } from '../utils/sqlParams.js';
 import { archiveFailure, archiveId, archiveTransaction, auditArchive } from './dashboardArchive.js';
 
 const content = {
@@ -28,8 +29,8 @@ const deletionReview = async (connection, type, id, row, lock = false) => {
      WHERE REFERENCED_TABLE_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME = ? AND REFERENCED_COLUMN_NAME = ?`, [config.table, config.key]
   );
   const tables = [...new Set([config.table, ...config.references.map(([table]) => table)])];
-  const [columns] = await connection.query(
-    'SELECT TABLE_NAME AS table_name, COLUMN_NAME AS column_name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN (?)', [tables]
+  const [columns] = await connection.execute(
+    `SELECT TABLE_NAME AS table_name, COLUMN_NAME AS column_name FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN (${sqlPlaceholders(tables)})`, tables
   );
   if (!columns.some(column => column.table_name === config.table && column.column_name === config.key)) {
     throw archiveFailure('Cannot verify database dependencies. Permanent deletion is disabled.', 503);

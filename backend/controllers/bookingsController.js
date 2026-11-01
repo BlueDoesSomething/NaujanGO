@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import db from '../db.js';
+import { sqlPlaceholders } from '../utils/sqlParams.js';
 
 import { JWT_SECRET } from '../config/security.js';
 import { fetchHotelAvailabilityDays, toDateOnlyKey, subtractOneDay } from '../utils/hotelAvailability.js';
@@ -578,12 +579,12 @@ export const getHotelBookings = async (req, res) => {
     // progress and offer "Pay balance" without extra round-trips.
     if (rows.length > 0) {
       const ids = rows.map((row) => row.booking_id);
-      const [paidRows] = await db.promise().query(
+      const [paidRows] = await db.promise().execute(
         `SELECT booking_id, COALESCE(SUM(CASE WHEN status = 'succeeded' THEN amount END), 0) AS amount_paid
          FROM hotel_payments
-         WHERE booking_id IN (?)
+         WHERE booking_id IN (${sqlPlaceholders(ids)})
          GROUP BY booking_id`,
-        [ids]
+        ids
       );
       const paidByBooking = {};
       paidRows.forEach((row) => { paidByBooking[row.booking_id] = Number(row.amount_paid) || 0; });
@@ -595,9 +596,9 @@ export const getHotelBookings = async (req, res) => {
       let balanceDaysByHotel = {};
       if (hotelIds.length > 0) {
         try {
-          const [feeRows] = await db.promise().query(
-            'SELECT hotel_id, reservation_fee, balance_due_days FROM hotels WHERE hotel_id IN (?)',
-            [hotelIds]
+          const [feeRows] = await db.promise().execute(
+            `SELECT hotel_id, reservation_fee, balance_due_days FROM hotels WHERE hotel_id IN (${sqlPlaceholders(hotelIds)})`,
+            hotelIds
           );
           feeRows.forEach((row) => {
             feeByHotel[row.hotel_id] = row.reservation_fee;

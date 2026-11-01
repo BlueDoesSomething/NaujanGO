@@ -1,3 +1,5 @@
+import { sqlPlaceholders } from './sqlParams.js';
+
 // Display metadata only: do not change booking/payment rows or paid totals.
 // IDs must come from the owner's already-authorized booking query.
 export const fetchBookingPaymentDetails = async (dbLike, bookingIds) => {
@@ -13,13 +15,13 @@ export const fetchBookingPaymentDetails = async (dbLike, bookingIds) => {
   const customerReference = columns.some(column => column.Field === 'customer_reference_number')
     ? 'customer_reference_number'
     : 'NULL AS customer_reference_number';
-  const [rows] = await dbLike.query(
+  const [rows] = await dbLike.execute(
     `SELECT payment_id, booking_id, method, provider, status,
             transaction_reference, ${customerReference}
      FROM hotel_payments
-     WHERE booking_id IN (?)
+     WHERE booking_id IN (${sqlPlaceholders(ids)})
      ORDER BY payment_id DESC`,
-    [ids]
+    ids
   );
   const allowedIds = new Set(ids);
   for (const row of rows) {

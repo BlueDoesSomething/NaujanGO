@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import multer from 'multer';
 import db from '../db.js';
+import { sqlPlaceholders } from '../utils/sqlParams.js';
 import { authenticateToken, requireOwnerOrAdmin, requireFullAuthorization } from '../middleware/auth.js';
 import { syncBookingPaymentStatus } from '../utils/paymentSync.js';
 import { balanceOf } from '../utils/paymentAmounts.js';
@@ -502,12 +503,12 @@ router.get('/bookings', async (req, res) => {
     const bookingIds = bookings.map(b => b.booking_id);
     let paidMap = {};
     if (bookingIds.length) {
-      const [paidRows] = await db.promise().query(
+      const [paidRows] = await db.promise().execute(
         `SELECT booking_id, SUM(CASE WHEN status = 'succeeded' THEN amount ELSE 0 END) AS paid
          FROM hotel_payments
-         WHERE booking_id IN (?)
+         WHERE booking_id IN (${sqlPlaceholders(bookingIds)})
          GROUP BY booking_id`,
-        [bookingIds]
+        bookingIds
       );
       paidMap = Object.fromEntries(paidRows.map(r => [r.booking_id, Number(r.paid) || 0]));
     }

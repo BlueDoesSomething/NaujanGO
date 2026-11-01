@@ -20,39 +20,38 @@ const setup = async (t, options = {}) => {
     payment_method: 'paypal', payment_reference: 'old-attempt', total_amount: '600.00',
     payment_status: 'paid', status: 'confirmed', check_in: '2026-10-22', check_out: '2026-10-23'
   });
-  t.mock.method(db, 'promise', () => ({
-    async query(sql, params = []) {
-      calls.push({ sql, params });
-      if (sql.includes('information_schema.columns')) return [[]];
-      if (sql.includes('FROM users')) return [[{
-        user_id: params[0], username: 'Fixture Owner', role: options.role || 'owner',
-        email_verified: 1, archived: 0
-      }]];
-      if (sql.includes('FROM business_profiles')) return [[{
-        business_permit_no: 'BP-TEST', dot_no: 'DOT-TEST', philgeps_no: null,
-        verification_status: 'verified'
-      }]];
-      if (sql.includes('FROM hotel_bookings b')) {
-        assert.match(sql, /WHERE ho\.user_id = \?/);
-        assert.match(sql, /dashboard_record_archives/);
-        assert.match(sql, /da\.user_id = (5|999)/);
-        return [params[0] === 5 ? [{ ...booking, archived: sql.includes('b.archived, 0) = 1') ? 1 : 0 }] : []];
-      }
-      if (sql.includes('SUM(CASE WHEN status')) return [[{ booking_id: 155, paid: '600.00' }]];
-      if (sql.startsWith('SHOW COLUMNS')) return [options.legacySchema ? [] : [{ Field: 'customer_reference_number' }]];
-      if (sql.includes('FROM hotel_payments')) {
-        assert.deepEqual(params, [[155]]);
-        if (options.legacySchema) assert.match(sql, /NULL AS customer_reference_number/);
-        assert.doesNotMatch(sql, /provider_response|SELECT \*/);
-        return [[
-          { payment_id: 13, booking_id: 155, method: 'card', provider: 'stripe', status: 'failed', transaction_reference: 'newer-failure' },
-          { payment_id: 10, booking_id: 155, method: 'qrph', provider: 'paymongo', status: 'succeeded',
-            transaction_reference: 'cs_paid', customer_reference_number: options.legacySchema ? null : 'CUSTOMER-155' }
-        ]];
-      }
-      throw new Error(`Unexpected test query: ${sql}`);
+  const query = async (sql, params = []) => {
+    calls.push({ sql, params });
+    if (sql.includes('information_schema.columns')) return [[]];
+    if (sql.includes('FROM users')) return [[{
+      user_id: params[0], username: 'Fixture Owner', role: options.role || 'owner',
+      email_verified: 1, archived: 0
+    }]];
+    if (sql.includes('FROM business_profiles')) return [[{
+      business_permit_no: 'BP-TEST', dot_no: 'DOT-TEST', philgeps_no: null,
+      verification_status: 'verified'
+    }]];
+    if (sql.includes('FROM hotel_bookings b')) {
+      assert.match(sql, /WHERE ho\.user_id = \?/);
+      assert.match(sql, /dashboard_record_archives/);
+      assert.match(sql, /da\.user_id = (5|999)/);
+      return [params[0] === 5 ? [{ ...booking, archived: sql.includes('b.archived, 0) = 1') ? 1 : 0 }] : []];
     }
-  }));
+    if (sql.includes('SUM(CASE WHEN status')) return [[{ booking_id: 155, paid: '600.00' }]];
+    if (sql.startsWith('SHOW COLUMNS')) return [options.legacySchema ? [] : [{ Field: 'customer_reference_number' }]];
+    if (sql.includes('FROM hotel_payments')) {
+      assert.deepEqual(params, [155]);
+      if (options.legacySchema) assert.match(sql, /NULL AS customer_reference_number/);
+      assert.doesNotMatch(sql, /provider_response|SELECT \*/);
+      return [[
+        { payment_id: 13, booking_id: 155, method: 'card', provider: 'stripe', status: 'failed', transaction_reference: 'newer-failure' },
+        { payment_id: 10, booking_id: 155, method: 'qrph', provider: 'paymongo', status: 'succeeded',
+          transaction_reference: 'cs_paid', customer_reference_number: options.legacySchema ? null : 'CUSTOMER-155' }
+      ]];
+    }
+    throw new Error(`Unexpected test query: ${sql}`);
+  };
+  t.mock.method(db, 'promise', () => ({ query, execute: query }));
   const app = express();
   app.use('/api/owner', router);
   const server = await new Promise(resolve => {

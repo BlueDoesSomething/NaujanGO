@@ -5,6 +5,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import db from '../db.js';
+import { sqlPlaceholders } from '../utils/sqlParams.js';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rateLimit.js';
 import { redactPII, detectFlags } from '../utils/moderation.js';
@@ -904,9 +905,9 @@ router.delete('/history/:userId', async (req, res) => {
         const conversationIds = conversations.map(c => c.conversation_id);
         
         // Delete all messages for these conversations
-        db.query(
-          'DELETE FROM chatbot_messages WHERE conversation_id IN (?)',
-          [conversationIds],
+        db.execute(
+          `DELETE FROM chatbot_messages WHERE conversation_id IN (${sqlPlaceholders(conversationIds)})`,
+          conversationIds,
           (err) => {
             if (err) {
               console.error('Error deleting messages:', err);

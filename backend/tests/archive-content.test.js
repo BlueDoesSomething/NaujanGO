@@ -32,13 +32,13 @@ const setup = (t, options = {}) => {
     if (sql.startsWith('DELETE FROM')) { deleted = true; row = null; return [{ affectedRows: 1 }]; }
     throw new Error(`Unexpected content query: ${sql}`);
   };
-  const connection = { query,
+  const connection = { query, execute: query,
     beginTransaction: async () => { connection.snapshot = { row, deleted, auditCount: audit.length }; },
     commit: async () => {},
     rollback: async () => { row = connection.snapshot.row; deleted = connection.snapshot.deleted; audit.length = connection.snapshot.auditCount; },
     release: () => {}
   };
-  t.mock.method(db, 'promise', () => ({ query, getConnection: async () => connection }));
+  t.mock.method(db, 'promise', () => ({ query, execute: query, getConnection: async () => connection }));
   return { calls, audit, get deleted() { return deleted; }, setLinked: value => { linked = value; } };
 };
 
@@ -112,11 +112,16 @@ test('archive schema setup is idempotent and contains no financial row updates, 
   t.mock.method(db, 'promise', () => ({ query: async sql => { statements.push(sql); return [[]]; } }));
   await ensureDashboardArchiveSchema();
   await ensureDashboardArchiveSchema();
-  assert.equal(statements[0], statements[1]);
+  assert.equal(statements.length, 4);
+  assert.equal(statements[0], statements[2]);
+  assert.equal(statements[1], statements[3]);
   assert.match(statements[0], /CREATE TABLE IF NOT EXISTS dashboard_record_archives/);
-  assert.match(statements[0], /CREATE TABLE IF NOT EXISTS dashboard_archive_audit/);
-  assert.doesNotMatch(statements[0], /\b(?:UPDATE|DELETE|INSERT INTO)\s+(?:hotel_bookings|hotel_payments|users)\b/i);
-  assert.doesNotMatch(statements[0], /ON DELETE CASCADE/i);
+  assert.match(statements[1], /CREATE TABLE IF NOT EXISTS dashboard_archive_audit/);
+  for (const statement of statements) {
+    assert.equal((statement.match(/CREATE TABLE/g) || []).length, 1);
+    assert.doesNotMatch(statement, /\b(?:UPDATE|DELETE|INSERT INTO)\s+(?:hotel_bookings|hotel_payments|users)\b/i);
+    assert.doesNotMatch(statement, /ON DELETE CASCADE/i);
+  }
   const manualSql = await readFile(new URL('../../migrations/049_dashboard_archives.sql', import.meta.url), 'utf8');
   const normalize = value => value.replace(/^--.*$/gm, '').replace(/\s+/g, ' ').trim();
   assert.equal(normalize(dashboardArchiveSchema), normalize(manualSql));

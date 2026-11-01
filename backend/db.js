@@ -1,5 +1,6 @@
 import mysql from 'mysql2';
 import dotenv from 'dotenv';
+import { normalizeSqlParams } from './utils/sqlParams.js';
 
 dotenv.config();
 
@@ -14,9 +15,14 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  multipleStatements: true
+  // Never allow a web request to execute stacked SQL statements. The remaining
+  // parameterized query() calls must not expand objects into `column = value`.
+  multipleStatements: false,
+  stringifyObjects: true
 });
 
-export const execute = (sql, params = []) => pool.promise().query(sql, params);
+// Use real server-side binding. Missing optional values retain query()'s NULL
+// behavior, while objects/lists must be serialized/expanded explicitly.
+export const execute = async (sql, params = []) => pool.promise().execute(sql, normalizeSqlParams(params));
 
 export default pool;

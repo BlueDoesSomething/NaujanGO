@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import db from '../db.js';
+import { execute } from '../db.js';
 
 export const createOpaqueToken = () => crypto.randomBytes(32).toString('hex');
 
@@ -8,7 +8,7 @@ export const hashOpaqueToken = (token) => {
 };
 
 export const invalidateSecurityTokens = async (userId, tokenType) => {
-  await db.promise().query(
+  await execute(
     `UPDATE auth_tokens
      SET used_at = COALESCE(used_at, NOW())
      WHERE user_id = ?
@@ -25,7 +25,7 @@ export const issueSecurityToken = async ({ userId, tokenType, expiresInMinutes }
   const tokenHash = hashOpaqueToken(token);
   const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
 
-  await db.promise().query(
+  await execute(
     `INSERT INTO auth_tokens (user_id, token_hash, token_type, expires_at)
      VALUES (?, ?, ?, ?)`,
     [userId, tokenHash, tokenType, expiresAt]
@@ -36,7 +36,7 @@ export const issueSecurityToken = async ({ userId, tokenType, expiresInMinutes }
 
 export const findSecurityToken = async ({ token, tokenType }) => {
   const tokenHash = hashOpaqueToken(token);
-  const [rows] = await db.promise().query(
+  const [rows] = await execute(
     `SELECT id, user_id, expires_at, used_at
      FROM auth_tokens
      WHERE token_hash = ?
@@ -49,7 +49,7 @@ export const findSecurityToken = async ({ token, tokenType }) => {
 };
 
 export const markSecurityTokenUsed = async (tokenId) => {
-  await db.promise().query(
+  await execute(
     'UPDATE auth_tokens SET used_at = NOW() WHERE id = ? AND used_at IS NULL',
     [tokenId]
   );

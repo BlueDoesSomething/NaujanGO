@@ -3,7 +3,7 @@ import LocalStrategy from 'passport-local';
 import GoogleStrategy from 'passport-google-oauth20';
 import JWTStrategy from 'passport-jwt';
 import bcrypt from 'bcryptjs';
-import db from '../db.js';
+import { execute } from '../db.js';
 import { JWT_SECRET } from './security.js';
 import { GOOGLE_CALLBACK_URL } from './publicUrls.js';
 const extractJwt = JWTStrategy.ExtractJwt;
@@ -13,7 +13,7 @@ let userColumnCache = null;
 const getUserColumns = async () => {
   if (userColumnCache) return userColumnCache;
   const targetColumns = ['preferred_language', 'language_preference', 'phone', 'phone_number'];
-  const [rows] = await db.promise().query(
+  const [rows] = await execute(
     `SELECT column_name FROM information_schema.columns
      WHERE table_schema = DATABASE()
        AND table_name = 'users'
@@ -36,7 +36,7 @@ const findOrCreateOAuthUser = async (provider, profile) => {
     const selectLang = lang ? `${lang} AS preferred_language` : `'en' AS preferred_language`;
     
     // Check if user already exists
-    const [existingUser] = await db.promise().query(
+    const [existingUser] = await execute(
       `SELECT user_id, email, username, role, ${selectLang}, first_name, last_name, profile_picture FROM users WHERE email = ?`,
       [profile.emails?.[0]?.value]
     );
@@ -70,7 +70,7 @@ const findOrCreateOAuthUser = async (provider, profile) => {
 
     const placeholders = columns.map(() => '?').join(', ');
     const insertSql = `INSERT INTO users (${columns.join(', ')}) VALUES (${placeholders})`;
-    const [result] = await db.promise().query(insertSql, values);
+    const [result] = await execute(insertSql, values);
 
     return {
       user_id: result.insertId,
@@ -101,7 +101,7 @@ passport.use(
         const { lang } = await getUserColumns();
         const selectLang = lang ? `${lang} AS preferred_language` : `'en' AS preferred_language`;
 
-        const [rows] = await db.promise().query(
+        const [rows] = await execute(
           `SELECT user_id, username, email, password_hash, ${selectLang} FROM users WHERE email = ? OR username = ?`,
           [emailOrUsername, emailOrUsername]
         );
@@ -159,7 +159,7 @@ passport.use(
     },
     async (payload, done) => {
       try {
-        const [rows] = await db.promise().query(
+        const [rows] = await execute(
           'SELECT user_id, username, email FROM users WHERE user_id = ?',
           [payload.user_id]
         );
@@ -184,7 +184,7 @@ passport.deserializeUser((user_id, done) => {
   getUserColumns()
     .then(({ lang }) => {
       const selectLang = lang ? `${lang} AS preferred_language` : `'en' AS preferred_language`;
-      return db.promise().query(
+      return execute(
         `SELECT user_id, username, email, profile_picture, ${selectLang} FROM users WHERE user_id = ?`,
         [user_id]
       );

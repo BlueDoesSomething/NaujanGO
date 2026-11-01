@@ -1,4 +1,5 @@
 import db from '../db.js';
+import { sqlPlaceholders } from './sqlParams.js';
 
 // Legitimacy & authorization rules (feature: Legitimacy & Accreditation Badges).
 //
@@ -44,11 +45,11 @@ export const computeAuthorization = (businessProfile) => {
 // broken join never takes down reservations.
 export const getHotelLegitimacy = async (hotelIds) => {
   const map = new Map();
-  const ids = (hotelIds || []).map(Number).filter(Number.isFinite);
+  const ids = [...new Set((hotelIds || []).map(Number).filter(id => Number.isSafeInteger(id) && id > 0))];
   if (ids.length === 0) return { ok: true, map };
 
   try {
-    const [rows] = await db.promise().query(
+    const [rows] = await db.promise().execute(
       `SELECT ho.hotel_id,
               MAX(CASE WHEN bp.verification_status = 'verified'
                          AND bp.business_permit_no IS NOT NULL AND bp.business_permit_no <> '' THEN 1 ELSE 0 END) AS permit,
@@ -58,9 +59,9 @@ export const getHotelLegitimacy = async (hotelIds) => {
                          AND bp.philgeps_no IS NOT NULL AND bp.philgeps_no <> '' THEN 1 ELSE 0 END) AS philgeps
        FROM hotel_owners ho
        INNER JOIN business_profiles bp ON bp.owner_id = ho.user_id
-       WHERE ho.hotel_id IN (?)
+       WHERE ho.hotel_id IN (${sqlPlaceholders(ids)})
        GROUP BY ho.hotel_id`,
-      [ids]
+      ids
     );
 
     for (const row of rows) {

@@ -24,7 +24,7 @@ export const archiveSql = (type, alias, userId, date = false) => {
 
 // Keep in sync with migrations/049_dashboard_archives.sql. Inline DDL also
 // works when the hosting service deploys backend/ without the repository root.
-export const dashboardArchiveSchema = `
+export const dashboardArchiveStatements = [`
 CREATE TABLE IF NOT EXISTS dashboard_record_archives (
   user_id INT NOT NULL,
   record_type ENUM('booking', 'payment') NOT NULL,
@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS dashboard_record_archives (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id, record_type, record_id),
   KEY idx_archive_record (record_type, record_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;`, `
 CREATE TABLE IF NOT EXISTS dashboard_archive_audit (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   actor_id INT NOT NULL,
@@ -46,8 +46,13 @@ CREATE TABLE IF NOT EXISTS dashboard_archive_audit (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   KEY idx_archive_audit_record (record_type, record_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-`;
-export const ensureDashboardArchiveSchema = () => db.promise().query(dashboardArchiveSchema);
+`];
+export const dashboardArchiveSchema = dashboardArchiveStatements.join('\n');
+export const ensureDashboardArchiveSchema = async () => {
+  // These are fixed internal DDL statements, not request-provided SQL. Execute
+  // each separately so the runtime pool can keep multipleStatements disabled.
+  for (const statement of dashboardArchiveStatements) await db.promise().query(statement);
+};
 
 export const archiveTransaction = async work => {
   const connection = await db.promise().getConnection();

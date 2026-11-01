@@ -7,9 +7,13 @@ const fakeDb = (rows, customerReferenceAvailable = true) => {
   return {
     calls,
     async query(sql, params) {
+      assert.ok(sql.startsWith('SHOW COLUMNS'));
       calls.push({ sql, params });
-      if (sql.startsWith('SHOW COLUMNS')) return [customerReferenceAvailable ? [{ Field: 'customer_reference_number' }] : []];
-      assert.match(sql, /WHERE booking_id IN \(\?\)/);
+      return [customerReferenceAvailable ? [{ Field: 'customer_reference_number' }] : []];
+    },
+    async execute(sql, params) {
+      calls.push({ sql, params });
+      assert.match(sql, /WHERE booking_id IN \(\?(?:, \?)*\)/);
       assert.doesNotMatch(sql, /provider_response|SELECT \*/);
       return [rows];
     }
@@ -50,7 +54,8 @@ test('uses a bounded batch lookup of authorized IDs, not per-booking queries', a
     { payment_id: 3, booking_id: 99, status: 'succeeded', transaction_reference: 'other-owner' }
   ]);
   const details = await fetchBookingPaymentDetails(db, [1, '1', 2, null, -1, '2) OR 1=1']);
-  assert.deepEqual(db.calls[1].params, [[1, 2]]);
+  assert.deepEqual(db.calls[1].params, [1, 2]);
+  assert.match(db.calls[1].sql, /IN \(\?, \?\)/);
   assert.equal(db.calls.length, 2);
   assert.equal(details.size, 2);
   assert.equal(details.has(99), false);
