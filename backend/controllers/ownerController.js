@@ -5,6 +5,8 @@ import { fileURLToPath } from 'url';
 import multer from 'multer';
 import db from '../db.js';
 import { sqlPlaceholders } from '../utils/sqlParams.js';
+import { DAY_MS, localTimeMs, parseHourlyRates, parsePaymentPlans, peakBookedRooms, serializeStay } from '../utils/stayOptions.js';
+import { extendHourlyStay, getStayExtensionOptions } from '../services/stayExtensions.js';
 import { authenticateToken, requireOwnerOrAdmin, requireFullAuthorization } from '../middleware/auth.js';
 import { syncBookingPaymentStatus } from '../utils/paymentSync.js';
 import { balanceOf } from '../utils/paymentAmounts.js';
@@ -240,7 +242,8 @@ router.get('/hotels', async (req, res) => {
 
       // `id` alias lets attachHotelLegitimacyList resolve each hotel; the
       // dashboard keeps using hotel_id, so the extra field is harmless.
-      return { ...hotel, id: hotel.hotel_id, amenities, image_urls, allowed_payment_methods };
+      return { ...hotel, id: hotel.hotel_id, amenities, image_urls, allowed_payment_methods,
+        allowed_payment_options: parsePaymentPlans(hotel.allowed_payment_options) };
     });
 
     // Attach legitimacy badges + booking_enabled (derived from verification
@@ -466,7 +469,7 @@ router.get('/bookings/archived', async (req, res) => {
     `;
     const [bookings] = await db.promise().query(query, [userId]);
     const paymentDetails = await fetchBookingPaymentDetails(db.promise(), bookings.map(booking => booking.booking_id));
-    res.json(bookings.map(booking => ({ ...booking, ...getBookingPaymentFields(booking, paymentDetails) })));
+    res.json(bookings.map(booking => ({ ...serializeStay(booking), ...getBookingPaymentFields(booking, paymentDetails) })));
   } catch (error) {
     console.error('Get archived bookings error:', error);
     return respondArchiveError(res, error, 'Failed to fetch archived bookings');
@@ -523,7 +526,7 @@ router.get('/bookings', async (req, res) => {
         d.setDate(d.getDate() - 1);
         balance_due_at = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
       }
-      return { ...b, ...getBookingPaymentFields(b, paymentDetails), amount_paid, balance_due, balance_due_at };
+      return { ...serializeStay(b), ...getBookingPaymentFields(b, paymentDetails), amount_paid, balance_due, balance_due_at };
     });
 
     res.json(enriched);
@@ -783,6 +786,29 @@ router.put('/hotels/:hotelId', async (req, res) => {
       }
     }
 
+    if (req.body.allowed_payment_options !== undefined || reservation_fee !== undefined) {
+      const [current] = await db.promise().execute('SELECT reservation_fee, allowed_payment_options FROM hotels WHERE hotel_id = ?', [hotelId]);
+      if (!current.length) return res.status(404).json({ error: 'Hotel not found' });
+      let plans;
+      try { plans = req.body.allowed_payment_options === undefined
+        ? parsePaymentPlans(current[0].allowed_payment_options)
+        : parsePaymentPlans(req.body.allowed_payment_options, true); }
+      catch (error) { return res.status(400).json({ error: error.message }); }
+      const fee = reservation_fee === undefined ? current[0].reservation_fee : reservation_fee;
+      // A legacy NULL setting retains the old optional-fee behavior. Once an
+      // owner explicitly chooses plans, reservation-only must be usable.
+      if (req.body.allowed_payment_options !== undefined && plans.includes('reservation') && !(Number(fee) > 0)) {
+        return res.status(400).json({ error: 'Set a positive reservation fee before enabling that payment plan.' });
+      }
+      if (req.body.allowed_payment_options === undefined && current[0].allowed_payment_options != null
+          && plans.includes('reservation') && !(Number(fee) > 0)) {
+        return res.status(400).json({ error: 'Disable the reservation-fee plan before clearing its fee.' });
+      }
+      if (req.body.allowed_payment_options !== undefined) {
+        fields.push('allowed_payment_options = ?'); values.push(JSON.stringify(plans));
+      }
+    }
+
     const policyResult = parsePolicyFields(req.body);
     if (policyResult.error) {
       return res.status(400).json({ error: policyResult.error });
@@ -840,7 +866,8 @@ router.put('/hotels/:hotelId', async (req, res) => {
     });
   } catch (error) {
     console.error('Update hotel error:', error);
-    res.status(500).json({ error: 'Failed to update hotel' });
+    res.status(error.code === 'ER_BAD_FIELD_ERROR' ? 503 : 500).json({ error: error.code === 'ER_BAD_FIELD_ERROR'
+      ? 'Hotel storage needs migrations/050_hourly_stays_and_payment_plans.sql.' : 'Failed to update hotel' });
   }
 });
 
@@ -853,16 +880,9 @@ const getBookedRoomsByDate = (bookings, startDate, endDate) => {
     bookedByDate[key] = 0;
   });
 
-  bookings.forEach((booking) => {
-    const checkIn = toDateKey(new Date(booking.check_in));
-    const checkOut = toDateKey(new Date(booking.check_out));
-    const bookingDates = listDateKeys(checkIn, checkOut)
-      .slice(0, -1);
-    bookingDates.forEach((dateKey) => {
-      if (bookedByDate[dateKey] !== undefined) {
-        bookedByDate[dateKey] += Number(booking.rooms || 0);
-      }
-    });
+  keys.forEach(key => {
+    const start = localTimeMs(`${key} 00:00:00`);
+    bookedByDate[key] = peakBookedRooms(bookings, start, start + DAY_MS);
   });
 
   return bookedByDate;
@@ -908,12 +928,13 @@ router.get('/hotels/:hotelId/availability', async (req, res) => {
     const endPlusOne = parseDateKey(end);
     endPlusOne.setDate(endPlusOne.getDate() + 1);
     const [bookingRows] = await db.promise().query(
-      `SELECT booking_id, check_in, check_out, rooms, status
+      `SELECT booking_id, check_in, check_out, check_in_at, check_out_at, policy_snapshot, rooms, status
        FROM hotel_bookings
        WHERE hotel_id = ?
-         AND status != 'cancelled'
+         AND status IN ('pending', 'confirmed')
+         AND COALESCE(archived, 0) = 0 AND (expires_at IS NULL OR expires_at > NOW())
          AND check_in < ?
-         AND check_out > ?`,
+         AND check_out >= ?`,
       [hotelId, toDateKey(endPlusOne), start]
     );
 
@@ -964,12 +985,13 @@ router.post('/hotels/:hotelId/availability', async (req, res) => {
     const endPlusOne = parseDateKey(endDate);
     endPlusOne.setDate(endPlusOne.getDate() + 1);
     const [bookingRows] = await db.promise().query(
-      `SELECT booking_id, check_in, check_out, rooms, status
+      `SELECT booking_id, check_in, check_out, check_in_at, check_out_at, policy_snapshot, rooms, status
        FROM hotel_bookings
        WHERE hotel_id = ?
-         AND status != 'cancelled'
+         AND status IN ('pending', 'confirmed')
+         AND COALESCE(archived, 0) = 0 AND (expires_at IS NULL OR expires_at > NOW())
          AND check_in < ?
-         AND check_out > ?`,
+         AND check_out >= ?`,
       [hotelId, toDateKey(endPlusOne), start_date]
     );
 
@@ -1015,6 +1037,22 @@ router.post('/hotels/:hotelId/availability', async (req, res) => {
     console.error('Update availability error:', error);
     return res.status(500).json({ error: 'Failed to update availability' });
   }
+});
+
+const extensionError = (res, error) => {
+  if (['ER_LOCK_DEADLOCK', 'ER_LOCK_WAIT_TIMEOUT'].includes(error.code)) return res.status(409).json({ error: 'This booking is being updated. Reload and try again.' });
+  if (error.code === 'ER_BAD_FIELD_ERROR') return res.status(503).json({ error: 'Booking storage needs migrations/050_hourly_stays_and_payment_plans.sql.' });
+  return res.status(error.status || 500).json({ error: error.status ? error.message : 'Unable to process this stay extension.' });
+};
+
+router.get('/bookings/:bookingId/extension-options', async (req, res) => {
+  try { res.json(await getStayExtensionOptions(req.user, req.params.bookingId)); }
+  catch (error) { return extensionError(res, error); }
+});
+
+router.post('/bookings/:bookingId/extend', async (req, res) => {
+  try { res.json(await extendHourlyStay(req.user, req.params.bookingId, req.body || {})); }
+  catch (error) { return extensionError(res, error); }
 });
 
 // Update booking status
@@ -1888,7 +1926,7 @@ const roomSaveError = (req, res, error, fallback) => {
   } else if (error.code === 'ER_BAD_FIELD_ERROR') {
     status = 503;
     body = {
-      error: 'Room storage needs a database update. Run migrations/046_repair_room_fields.sql and migrations/048_room_guest_content.sql on the backend database, then try again.',
+      error: 'Room storage needs a database update. Run migrations/046_repair_room_fields.sql, migrations/048_room_guest_content.sql, and migrations/050_hourly_stays_and_payment_plans.sql on the backend database, then try again.',
       code: 'ROOM_SCHEMA_MISSING'
     };
   } else if (['ER_DATA_TOO_LONG', 'ER_TRUNCATED_WRONG_VALUE', 'ER_TRUNCATED_WRONG_VALUE_FOR_FIELD'].includes(error.code)) {
@@ -1939,7 +1977,7 @@ router.get('/hotels/:hotelId/rooms', async (req, res) => {
         `SELECT room_id, hotel_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
                 price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
                 primary_image_url, check_in_time, check_out_time,
-                smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions,
+                smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, hourly_rates,
                 is_active, created_at, updated_at
          FROM rooms
          WHERE hotel_id = ?
@@ -1953,7 +1991,8 @@ router.get('/hotels/:hotelId/rooms', async (req, res) => {
         room_features: parseRoomListColumn(room.room_features),
         image_urls: parseRoomListColumn(room.image_urls),
         perfect_for: parseRoomContentColumn(room.perfect_for, 'perfect_for'),
-        common_questions: parseRoomContentColumn(room.common_questions, 'common_questions')
+        common_questions: parseRoomContentColumn(room.common_questions, 'common_questions'),
+        hourly_rates: parseHourlyRates(room.hourly_rates)
       }));
 
     res.json(formatted);
@@ -1992,6 +2031,7 @@ router.post('/hotels/:hotelId/rooms', uploadRoomImages, async (req, res) => {
     const roomFeaturesJson = serializeRoomListInput(room_features, 'room_features');
     const perfectForJson = serializeRoomContentInput(perfect_for, 'perfect_for');
     const commonQuestionsJson = serializeRoomContentInput(common_questions, 'common_questions');
+    const hourlyRatesJson = req.body.hourly_rates === undefined ? null : JSON.stringify(parseHourlyRates(req.body.hourly_rates, true));
     let imageUrlsJson = serializeRoomListInput(image_urls, 'image_urls');
 
     // Add uploaded images to image_urls if provided
@@ -2010,13 +2050,13 @@ router.post('/hotels/:hotelId/rooms', uploadRoomImages, async (req, res) => {
       `INSERT INTO rooms (hotel_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
                          price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
                          primary_image_url, check_in_time, check_out_time,
-                         smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+                         smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, hourly_rates, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [hotelId, room_type_name, bed_type || null, description || null, capacity, room_size_sqm || null, 
        price_per_night, currency || 'PHP', quantity_available, amenitiesJson, roomFeaturesJson,
        imageUrlsJson, primaryImage, check_in_time || '14:00', check_out_time || '11:00',
         Number(smoking_allowed) ? 1 : 0, Number(pets_allowed) ? 1 : 0, Number(events_allowed) ? 1 : 0,
-        perfectForJson, commonQuestionsJson]
+        perfectForJson, commonQuestionsJson, hourlyRatesJson]
     );
 
     res.status(201).json({
@@ -2078,6 +2118,11 @@ router.put('/hotels/:hotelId/rooms/:roomId', uploadRoomImages, async (req, res) 
 
     const updates = [];
     const params = [];
+
+    if (req.body.hourly_rates !== undefined) {
+      updates.push('hourly_rates = ?');
+      params.push(JSON.stringify(parseHourlyRates(req.body.hourly_rates, true)));
+    }
 
     if (room_type_name !== undefined) {
       updates.push('room_type_name = ?');
@@ -2291,7 +2336,7 @@ router.get('/public/hotels/:hotelId/rooms', async (req, res) => {
       `SELECT room_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
               price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
               primary_image_url, check_in_time, check_out_time,
-              smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions
+              smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, hourly_rates
        FROM rooms
        WHERE hotel_id = ? AND is_active = 1
        ORDER BY price_per_night`,
@@ -2304,7 +2349,8 @@ router.get('/public/hotels/:hotelId/rooms', async (req, res) => {
       room_features: parseRoomListColumn(room.room_features),
       image_urls: parseRoomListColumn(room.image_urls),
       perfect_for: parseRoomContentColumn(room.perfect_for, 'perfect_for'),
-      common_questions: parseRoomContentColumn(room.common_questions, 'common_questions')
+      common_questions: parseRoomContentColumn(room.common_questions, 'common_questions'),
+      hourly_rates: parseHourlyRates(room.hourly_rates)
     }));
 
     res.json(formatted);

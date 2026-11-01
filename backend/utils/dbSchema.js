@@ -127,6 +127,19 @@ export const ensureRoomGuestContentSchema = async () => {
   }
 };
 
+export const ensureHourlyStaySchema = async () => {
+  try {
+    await ensureColumn('hotels', 'allowed_payment_options', 'TEXT NULL');
+    await ensureColumn('rooms', 'hourly_rates', 'TEXT NULL');
+    await ensureColumn('hotel_bookings', 'check_in_at', 'DATETIME NULL');
+    await ensureColumn('hotel_bookings', 'check_out_at', 'DATETIME NULL');
+    await ensureColumn('hotel_bookings', 'stay_duration_hours', 'SMALLINT UNSIGNED NULL');
+    await ensureColumn('hotel_bookings', 'stay_rate', 'DECIMAL(10,2) NULL');
+  } catch (error) {
+    console.error('Schema ensure (hourly stays) failed. Run migrations/050_hourly_stays_and_payment_plans.sql:', error.message);
+  }
+};
+
 // reviews.room_id (migration 024) is what the public Room Details modal uses
 // to show room-specific guest quotes. createHotelReview writes it for new
 // reviews; this backfills historic ones from their booking. Idempotent and

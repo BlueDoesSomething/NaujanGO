@@ -30,6 +30,8 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import Icons from '../components/Icons';
 import { policyLinesFromSnapshot, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
+import { formatBookingBoundary } from '../utils/stayBooking';
+import StayExtensionHistory from '../components/StayExtensionHistory';
 
 const getPaymentMethods = (t) => [
   { 
@@ -315,7 +317,8 @@ const HotelPayment = () => {
                 </div>
                 <div>
                   <div style={labelStyle}>{t('stay_label') || 'Stay'}</div>
-                  <div style={valueStyle}>{booking.check_in} - {booking.check_out}</div>
+                  <div style={valueStyle}>{formatBookingBoundary(booking)} — {formatBookingBoundary(booking, 'out')}</div>
+                  {booking.stay_duration_hours ? <div style={metaTextStyle}>{booking.stay_duration_hours}-hour stay</div> : null}
                 </div>
                 <div>
                   <div style={labelStyle}>{t('guests_label') || 'Guests'}</div>
@@ -364,6 +367,7 @@ const HotelPayment = () => {
                   </>
                 )}
               </div>
+              <StayExtensionHistory booking={booking} />
             </div>
 
             <div style={cardStyle}>

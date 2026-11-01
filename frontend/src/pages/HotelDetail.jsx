@@ -11,6 +11,7 @@ import Icons from '../components/Icons';
 import RoomManagement from '../components/RoomManagement';
 import { RoomPerfectFor, RoomCommonQuestions } from '../components/RoomGuestContent';
 import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
+import { getHourlyRates, getPaymentPlans, hourlyCheckout, philippineToday, STAY_HOURS } from '../utils/stayBooking';
 import './HotelDetail.css';
 
 const API_BASE_URL = getApiBaseUrl() + '/api';
@@ -268,6 +269,8 @@ export default function HotelDetail() {
   const [bookingForm, setBookingForm] = useState({
     checkIn: '',
     checkOut: '',
+    stayHours: '',
+    checkInTime: '14:00',
     guests: 2,
     rooms: 1,
     paymentMethod: 'card',
@@ -307,6 +310,12 @@ export default function HotelDetail() {
       return { ...prev, paymentMethod: allowed[0] || 'pay_at_property' };
     });
   }, [hotel]);
+
+  useEffect(() => {
+    if (!bookingForm.stayHours) return;
+    const checkout = hourlyCheckout(bookingForm.checkIn, bookingForm.checkInTime, bookingForm.stayHours);
+    setBookingForm(previous => previous.checkOut === (checkout?.date || '') ? previous : { ...previous, checkOut: checkout?.date || '' });
+  }, [bookingForm.checkIn, bookingForm.checkInTime, bookingForm.stayHours]);
 
   // Sync user phone number when user profile updates
   useEffect(() => {
@@ -571,15 +580,24 @@ export default function HotelDetail() {
     ? Math.max(0, Math.ceil((new Date(bookingForm.checkOut) - new Date(bookingForm.checkIn)) / (1000 * 60 * 60 * 24)))
     : 0;
   const modalSelectedRoom = rooms.find((r) => r.room_id === bookingForm.selectedRoomId);
-  const modalPricePerNight = modalSelectedRoom ? modalSelectedRoom.price_per_night : hotel?.pricePerNight;
-  const bookingTotal = Number((modalPricePerNight || 0)) * modalNights * (bookingForm.rooms || 1);
+  const hourlyRates = getHourlyRates(modalSelectedRoom?.hourly_rates);
+  const isHourlyStay = Boolean(bookingForm.stayHours);
+  const hourlyEnd = hourlyCheckout(bookingForm.checkIn, bookingForm.checkInTime, bookingForm.stayHours);
+  const modalPricePerNight = isHourlyStay ? hourlyRates[bookingForm.stayHours] : modalSelectedRoom ? modalSelectedRoom.price_per_night : hotel?.pricePerNight;
+  const bookingTotal = Number((modalPricePerNight || 0)) * (isHourlyStay ? (hourlyEnd ? 1 : 0) : modalNights) * (bookingForm.rooms || 1);
   const reservationFee = hotel?.reservation_fee;
   const reservationFeeUsable = reservationFee != null && Number(reservationFee) > 0;
   const reservationFeeValid = reservationFeeUsable && (bookingTotal <= 0 || Number(reservationFee) < bookingTotal);
-  const selectedPaymentOption =
-    bookingForm.paymentOption === 'reservation' && !reservationFeeValid ? 'full' : (bookingForm.paymentOption || 'full');
+  const allowedPlans = getPaymentPlans(hotel?.allowed_payment_options);
+  const paymentOptionChoices = [
+    { value: 'reservation', title: 'Reservation fee', subtitle: 'Secure the booking now, pay the rest later', available: reservationFeeValid },
+    { value: 'half', title: 'Half payment', subtitle: 'Pay 50% now, balance before check-in', available: true },
+    { value: 'full', title: 'Full payment', subtitle: 'Pay the total amount now', available: true }
+  ].filter(choice => choice.available && allowedPlans.includes(choice.value));
+  const selectedPaymentOption = paymentOptionChoices.some(choice => choice.value === bookingForm.paymentOption)
+    ? bookingForm.paymentOption : paymentOptionChoices[0]?.value || '';
   const computeDueNow = (option) => {
-    if (!bookingTotal || bookingTotal <= 0) return null;
+    if (!option || !bookingTotal || bookingTotal <= 0) return null;
     if (option === 'half') return Math.ceil(bookingTotal / 2);
     if (option === 'reservation') return reservationFeeValid ? Number(reservationFee) : null;
     return bookingTotal;
@@ -593,17 +611,12 @@ export default function HotelDetail() {
     d.setDate(d.getDate() - balanceDays);
     selectedBalanceDueAt = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
-  const policyLines = buildPolicyLines(hotel, {
+  const policyLines = buildPolicyLines(isHourlyStay ? { ...hotel, check_in_time: bookingForm.checkInTime, check_out_time: hourlyEnd?.time } : hotel, {
     checkIn: bookingForm.checkIn,
     balanceDueAt: selectedBalanceDueAt,
     showBalance: selectedBalanceDue > 0,
     t
   });
-  const paymentOptionChoices = [
-    { value: 'reservation', title: 'Reservation fee', subtitle: 'Secure the booking now, pay the rest later', available: reservationFeeUsable },
-    { value: 'half', title: 'Half payment', subtitle: 'Pay 50% now, balance before check-in', available: true },
-    { value: 'full', title: 'Full payment', subtitle: 'Pay the total amount now', available: true }
-  ].filter((choice) => choice.available);
   const suitableRoomTypesForGuests = rooms.filter((room) => {
     const capacity = Number(room.capacity || 0);
     const quantityAvailable = Number(room.quantity_available || 0);
@@ -676,6 +689,8 @@ export default function HotelDetail() {
       ...prev,
       selectedRoomId: value ? Number(value) : null,
       selectedRoomType: selectedRoom ? selectedRoom.room_type_name : null,
+      stayHours: '',
+      checkOut: '',
       rooms: Math.min(prev.rooms || 1, Math.max(1, maxAllowed))
     }));
     setCalendarRange({ start: null, end: null });
@@ -685,14 +700,20 @@ export default function HotelDetail() {
 
   const isCalendarDayBookable = (dateKey) => {
     const day = calendarDays[dateKey];
-    if (!day || day.closed === 1 || Number(day.available) <= 0) return false;
-    return dateKey >= toCalendarDateKey(new Date());
+    if (!day || day.closed === 1 || (!isHourlyStay && Number(day.available) <= 0)) return false;
+    return dateKey >= philippineToday();
   };
 
   const handleCalendarDayClick = (dateKey) => {
     if (!isCalendarDayBookable(dateKey)) return;
 
     setCalendarError('');
+    if (isHourlyStay) {
+      setCalendarRange({ start: dateKey, end: dateKey });
+      setBookingForm(previous => ({ ...previous, checkIn: dateKey }));
+      setBookingError('');
+      return;
+    }
     const { start, end } = calendarRange;
 
     // Clicking a selected date (check-in or check-out) unselects everything.
@@ -757,8 +778,12 @@ export default function HotelDetail() {
       (new Date(bookingForm.checkOut) - new Date(bookingForm.checkIn)) / (1000 * 60 * 60 * 24)
     );
 
-    if (nights <= 0) {
+    if (isHourlyStay ? (!hourlyEnd || !hourlyRates[bookingForm.stayHours]) : nights <= 0) {
       setBookingError('Check-out must be after check-in.');
+      return;
+    }
+    if (!selectedPaymentOption) {
+      setBookingError('No enabled payment plan is available for this amount. Please contact the hotel.');
       return;
     }
 
@@ -826,6 +851,7 @@ export default function HotelDetail() {
         currency: hotel.currency,
         check_in: bookingForm.checkIn,
         check_out: bookingForm.checkOut,
+        ...(isHourlyStay ? { stay_duration_hours: Number(bookingForm.stayHours), check_in_time: bookingForm.checkInTime } : {}),
         guests: bookingForm.guests,
         rooms: bookingForm.rooms,
         special_requests: bookingForm.specialRequests,
@@ -863,10 +889,10 @@ export default function HotelDetail() {
       setPendingBookingId(bookingId);
 
       if (isExternalCheckout) {
-        const fullTotal = Number((pricePerNight * nights * bookingForm.rooms).toFixed(2));
-        const dueNowAmount = selectedDueNow !== null
+        const fullTotal = Number(bookingResponse.data?.booking?.total_amount ?? bookingTotal);
+        const dueNowAmount = bookingResponse.data?.receipt?.amount_due_now ?? (selectedDueNow !== null
           ? selectedDueNow
-          : fullTotal;
+          : fullTotal);
 
         // Show a slow-network warning after 7 s if the checkout API hasn't responded yet
         const slowTimer = setTimeout(() => setSlowConnection(true), 7000);
@@ -1135,7 +1161,9 @@ export default function HotelDetail() {
     setBookingForm(prev => ({
       ...prev,
       selectedRoomId: selectedRoom.room_id,
-      selectedRoomType: selectedRoom.room_type_name
+      selectedRoomType: selectedRoom.room_type_name,
+      stayHours: '',
+      checkOut: ''
     }));
     setSelectedRoom(null);
     setRoomImageIndex(0);
@@ -1663,22 +1691,29 @@ export default function HotelDetail() {
                       setBookingError('');
                     }}
                     className="hd-input"
-                    min={new Date().toISOString().split('T')[0]}
+                    min={philippineToday()}
                   />
                 </div>
                 <div>
                   <label className="hd-bm-label"><Icons.Calendar size={16} /> {t('form_check_out')}</label>
                   <input
                     type="date"
-                    value={bookingForm.checkOut}
+                    value={isHourlyStay ? hourlyEnd?.date || '' : bookingForm.checkOut}
+                    readOnly={isHourlyStay}
                     onChange={(e) => {
                       setBookingForm({ ...bookingForm, checkOut: e.target.value });
                       setBookingError('');
                     }}
                     className="hd-input"
-                    min={bookingForm.checkIn || new Date().toISOString().split('T')[0]}
+                    min={bookingForm.checkIn || philippineToday()}
                   />
                 </div>
+                {isHourlyStay && <div>
+                  <label className="hd-bm-label">Check-in time (Philippine time)</label>
+                  <input className="hd-input" type="time" value={bookingForm.checkInTime}
+                    onChange={event => setBookingForm(previous => ({ ...previous, checkInTime: event.target.value }))} />
+                  <p className="hd-bm-note">Checkout: {hourlyEnd ? `${hourlyEnd.date} at ${fmtTime(hourlyEnd.time)}` : 'Choose a check-in date and time'} (PHT). Availability is checked for these exact hours when confirming.</p>
+                </div>}
                 <div>
                   <label className="hd-bm-label"><Icons.User size={16} /> {t('form_guests')}</label>
                   <input
@@ -1692,6 +1727,7 @@ export default function HotelDetail() {
                       setBookingForm({ 
                         ...bookingForm, 
                         guests: value,
+                        stayHours: '',
                         selectedRoomId: matchingRoom ? Number(matchingRoom.room_id) : null,
                         selectedRoomType: matchingRoom ? matchingRoom.room_type_name : null,
                         rooms: matchingRoom ? Math.min(bookingForm.rooms || 1, Number(matchingRoom.quantity_available || 1)) : 1
@@ -1770,6 +1806,21 @@ export default function HotelDetail() {
                         </select>
                       </div>
                     )}
+                    {modalSelectedRoom && (
+                      <div className="hd-bm-cal-room">
+                        <label className="hd-bm-cal-room-label" htmlFor="booking-stay-package">Stay package</label>
+                        <select id="booking-stay-package" className="hd-bm-cal-room-select" value={bookingForm.stayHours}
+                          onChange={event => {
+                            setBookingForm(previous => ({ ...previous, stayHours: event.target.value, checkOut: '' }));
+                            setCalendarRange({ start: null, end: null }); setBookingError('');
+                          }}>
+                          <option value="">Nightly stay</option>
+                          {STAY_HOURS.filter(hours => hourlyRates[hours]).map(hours => <option key={hours} value={hours}>
+                            {hours} hours — {formatCurrency(hourlyRates[hours], modalSelectedRoom.currency || hotel.currency)} per room
+                          </option>)}
+                        </select>
+                      </div>
+                    )}
                     <div className="hd-bm-cal-nav">
                       <button className="hd-bm-cal-nav-btn" onClick={() => changeCalendarMonth(-1)} aria-label={t('prev')}>
                         &#8249;
@@ -1797,11 +1848,11 @@ export default function HotelDetail() {
 
                             const dateKey = toCalendarDateKey(date);
                             const day = calendarDays[dateKey];
-                            const todayKey = toCalendarDateKey(new Date());
+                            const todayKey = philippineToday();
                             const isPast = dateKey < todayKey;
                             const isToday = dateKey === todayKey;
                             const isClosed = day?.closed === 1;
-                            const isFull = !!day && Number(day.available) <= 0;
+                            const isFull = !isHourlyStay && !!day && Number(day.available) <= 0;
                             const isSelectable = isCalendarDayBookable(dateKey);
                             const isSelected = calendarRange.start === dateKey || calendarRange.end === dateKey;
                             const inRange = !!calendarRange.start && !!calendarRange.end
@@ -1831,7 +1882,7 @@ export default function HotelDetail() {
                                   <div className="hd-cal-day-tag is-full">{t('availability_sold_out')}</div>
                                 ) : day ? (
                                   <div className="hd-cal-day-tag">
-                                    {Number(day.available)} {t('form_rooms').toLowerCase()}
+                                    {isHourlyStay ? 'Select date' : `${Number(day.available)} ${t('form_rooms').toLowerCase()}`}
                                   </div>
                                 ) : null}
                               </div>
@@ -1954,6 +2005,7 @@ export default function HotelDetail() {
                     );
                   })}
                 </div>
+                {!paymentOptionChoices.length && <p role="alert">No enabled payment plan is usable for this total. Please contact the hotel.</p>}
                 {selectedDueNow !== null && selectedBalanceDue > 0 && (
                   <div className="hd-bm-balance">
                     <Icons.Money size={13} /> Balance of ₱{selectedBalanceDue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -2090,15 +2142,15 @@ export default function HotelDetail() {
                     </div>
                     <div className="hd-bm-sumrow">
                       <span>{t('check_in')}</span>
-                      <strong>{bookingForm.checkIn || '—'}</strong>
+                      <strong>{bookingForm.checkIn || '—'}{isHourlyStay ? ` ${fmtTime(bookingForm.checkInTime)} PHT` : ''}</strong>
                     </div>
                     <div className="hd-bm-sumrow">
                       <span>{t('check_out')}</span>
-                      <strong>{bookingForm.checkOut || '—'}</strong>
+                      <strong>{bookingForm.checkOut || '—'}{isHourlyStay && hourlyEnd ? ` ${fmtTime(hourlyEnd.time)} PHT` : ''}</strong>
                     </div>
                     <div className="hd-bm-sumrow">
-                      <span>{t('nights')}</span>
-                      <strong>{modalNights > 0 ? modalNights : '—'}</strong>
+                      <span>{isHourlyStay ? 'Duration' : t('nights')}</span>
+                      <strong>{isHourlyStay ? `${bookingForm.stayHours} hours` : modalNights > 0 ? modalNights : '—'}</strong>
                     </div>
                     <div className="hd-bm-sumrow">
                       <span>{t('form_guests')}</span>
@@ -2109,7 +2161,7 @@ export default function HotelDetail() {
                       <strong>{bookingForm.rooms}</strong>
                     </div>
                     <div className="hd-bm-sumrow">
-                      <span>{t('per_night')}</span>
+                      <span>{isHourlyStay ? 'Package rate' : t('per_night')}</span>
                       <strong>{modalPricePerNight != null && modalPricePerNight !== '' ? `₱${Number(modalPricePerNight).toLocaleString()}` : '—'}</strong>
                     </div>
                     <div className="hd-bm-sumtotal">
@@ -2166,7 +2218,7 @@ export default function HotelDetail() {
               <button
                 className={`hd-bm-confirm${isSubmitting || !policyAgreed ? ' is-disabled' : ''}`}
                 onClick={handleSubmitBooking}
-                disabled={isSubmitting || !!checkoutState || !policyAgreed}
+                disabled={isSubmitting || !!checkoutState || !policyAgreed || !selectedPaymentOption}
               >
                 {slowConnection ? (
                   <span className="hd-bm-foot-ic"><Icons.Clock size={15} /> {t('button_connecting_slow')}</span>
@@ -2516,6 +2568,9 @@ export default function HotelDetail() {
                       <div>
                         <p className="hd-rm-sec-title">Price per night</p>
                         <p className="hd-rm-price">₱{parseFloat(selectedRoom.price_per_night).toLocaleString()}</p>
+                        {STAY_HOURS.filter(hours => getHourlyRates(selectedRoom.hourly_rates)[hours]).map(hours => (
+                          <p key={hours} className="hd-bm-note">{hours} hours: {formatCurrency(getHourlyRates(selectedRoom.hourly_rates)[hours], selectedRoom.currency || hotel.currency)} per room</p>
+                        ))}
                       </div>
                       <div>
                         <p className="hd-rm-sec-title">Availability</p>

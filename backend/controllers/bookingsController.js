@@ -7,6 +7,9 @@ import { JWT_SECRET } from '../config/security.js';
 import { fetchHotelAvailabilityDays, toDateOnlyKey, subtractOneDay } from '../utils/hotelAvailability.js';
 import { PAYMENT_OPTIONS, dueNow, balanceOf, statusAfterPayment, MIN_GATEWAY_AMOUNT } from '../utils/paymentAmounts.js';
 import { getHotelLegitimacy } from '../utils/legitimacy.js';
+import { bookingInterval, makeStay, MANILA_OFFSET_MS, parsePaymentPlans, serializeStay } from '../utils/stayOptions.js';
+import { validateStayInventory } from '../services/stayInventory.js';
+import { createHourlyReservation, modifyHourlyReservation } from '../services/hourlyReservations.js';
 
 const EXTERNAL_CHECKOUT_METHODS = ['card', 'gcash', 'grabpay', 'qrph', 'paypal'];
 
@@ -110,7 +113,7 @@ const fetchBooking = async (bookingId) => {
      WHERE b.booking_id = ?`,
     [bookingId]
   );
-  return rows[0] || null;
+  return rows[0] ? serializeStay(rows[0]) : null;
 };
 
 const mapReceipt = (booking, payment, amountPaid = 0) => {
@@ -132,6 +135,10 @@ const mapReceipt = (booking, payment, amountPaid = 0) => {
     check_in: booking.check_in,
     check_out: booking.check_out,
     nights: booking.nights,
+    check_in_at: booking.check_in_at,
+    check_out_at: booking.check_out_at,
+    stay_duration_hours: booking.stay_duration_hours,
+    stay_rate: booking.stay_rate,
     rooms: booking.rooms,
     guests: booking.guests,
     price_per_night: booking.price_per_night,
@@ -141,6 +148,8 @@ const mapReceipt = (booking, payment, amountPaid = 0) => {
     payment_method: booking.payment_method,
     payment_option: paymentOption,
     amount_paid: paid,
+    amount_due_now: balanceOf(total, paid, booking.payment_status) === 0 ? 0
+      : paid > 0 ? balanceOf(total, paid, booking.payment_status) : dueNow(paymentOption, total, snapshot?.reservation_fee),
     balance_due: balanceOf(total, paid, booking.payment_status),
     balance_due_at: snapshot?.balance_due_at || balanceDueAt(toDateOnlyKey(booking.check_in), snapshot?.balance_due_days),
     payment_reference: payment?.transaction_reference || null,
@@ -209,6 +218,20 @@ export const createHotelBooking = async (req, res) => {
     }
   }
 
+  if (req.body.stay_duration_hours != null && req.body.stay_duration_hours !== '') {
+    try {
+      const id = await createHourlyReservation(userId, req.body);
+      const booking = await fetchBooking(id);
+      return res.status(201).json({ booking, receipt: mapReceipt(booking, null, 0) });
+    } catch (error) {
+      console.error('Hourly reservation error:', error.code || error.message);
+      const missing = error.code === 'ER_BAD_FIELD_ERROR';
+      return res.status(missing ? 503 : error.status || 500).json({ error: missing
+        ? 'Booking storage needs migrations/050_hourly_stays_and_payment_plans.sql.'
+        : error.status ? error.message : 'Failed to create hourly booking' });
+    }
+  }
+
   const checkInKey = toDateOnlyKey(check_in);
   const checkOutKey = toDateOnlyKey(check_out);
   if (!checkInKey || !checkOutKey) {
@@ -270,7 +293,7 @@ export const createHotelBooking = async (req, res) => {
         `SELECT booking_id FROM hotel_bookings
          WHERE user_id = ? AND hotel_id = ?
            AND status IN ('confirmed', 'pending')
-           AND check_in < ? AND check_out > ?
+           AND stay_duration_hours IS NULL AND check_in < ? AND check_out > ?
            AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))`,
         [userId, hotel_id, check_out, check_in]
       );
@@ -282,7 +305,7 @@ export const createHotelBooking = async (req, res) => {
       }
 
       const [hotel] = await connection.query(
-        `SELECT rooms_total, allowed_payment_methods, reservation_fee,
+        `SELECT hotel_id, rooms_total, allowed_payment_methods, allowed_payment_options, reservation_fee,
                 cancellation_type, free_cancellation_days, custom_policy_text,
                 house_rules, check_in_time, check_out_time, balance_due_days
          FROM hotels WHERE hotel_id = ? FOR UPDATE`,
@@ -296,6 +319,16 @@ export const createHotelBooking = async (req, res) => {
       }
 
       hotelRow = hotel[0];
+      if (!parsePaymentPlans(hotelRow.allowed_payment_options).includes(payment_option)) {
+        await connection.rollback();
+        connection.release();
+        return res.status(400).json({ error: 'That payment plan is disabled for this hotel.' });
+      }
+      const stay = makeStay(req.body, hotelRow);
+      const [inventoryRoomRows] = room_id ? await connection.execute(
+        'SELECT room_id, room_type_name, capacity, quantity_available FROM rooms WHERE room_id = ? AND hotel_id = ? FOR UPDATE', [room_id, hotel_id]) : [[]];
+      if (room_id && !inventoryRoomRows.length) throw Object.assign(new Error('Selected room type not found'), { status: 404 });
+      await validateStayInventory(connection, hotelRow, inventoryRoomRows[0] || null, stay, numRooms, userId);
       amountDueNow = dueNow(payment_option, totalAmount, hotelRow.reservation_fee);
       if (amountDueNow === null) {
         await connection.rollback();
@@ -326,7 +359,7 @@ export const createHotelBooking = async (req, res) => {
           checkInKey,
           subtractOneDay(checkOutKey),
           totalRooms,
-          room_id ? { roomId: room_id } : {}
+          { ...(room_id ? { roomId: room_id } : {}), checkInTime: hotelRow.check_in_time, checkOutTime: hotelRow.check_out_time }
         );
 
         const closedDay = availabilityDays.find((day) => day.closed === 1);
@@ -393,6 +426,7 @@ export const createHotelBooking = async (req, res) => {
            WHERE hotel_id = ?
              AND room_id = ?
              AND status IN ('confirmed', 'pending')
+             AND stay_duration_hours IS NULL
              AND check_in < ?
              AND check_out > ?
              AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))
@@ -417,6 +451,7 @@ export const createHotelBooking = async (req, res) => {
            FROM hotel_bookings
            WHERE hotel_id = ?
              AND status IN ('confirmed', 'pending')
+             AND stay_duration_hours IS NULL
              AND check_in < ?
              AND check_out > ?
              AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))
@@ -561,7 +596,7 @@ export const createHotelBooking = async (req, res) => {
     await connection.rollback();
     connection.release();
     console.error('Hotel booking error:', err);
-    res.status(500).json({ error: 'Failed to create booking' });
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Failed to create booking' });
   }
 };
 
@@ -611,6 +646,7 @@ export const getHotelBookings = async (req, res) => {
       }
 
       rows.forEach((row) => {
+        Object.assign(row, serializeStay(row));
         const paid = paidByBooking[row.booking_id] || 0;
         row.amount_paid = paid;
         row.balance_due = balanceOf(row.total_amount, paid, row.payment_status);
@@ -624,7 +660,7 @@ export const getHotelBookings = async (req, res) => {
         if (paid > 0 || row.balance_due <= 0) {
           row.amount_due_now = row.balance_due;
         } else {
-          const firstDue = dueNow(row.payment_option, row.total_amount, feeByHotel[row.hotel_id] ?? null);
+          const firstDue = dueNow(row.payment_option, row.total_amount, snapshot?.reservation_fee ?? feeByHotel[row.hotel_id] ?? null);
           row.amount_due_now = firstDue !== null ? firstDue : row.balance_due;
         }
       });
@@ -655,7 +691,7 @@ export const cancelHotelBooking = async (req, res) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    if (checkInDate <= today) {
+    if (booking.stay_duration_hours ? bookingInterval(booking).start <= Date.now() + MANILA_OFFSET_MS : checkInDate <= today) {
       return res.status(400).json({ error: 'Cannot cancel bookings on or after check-in date' });
     }
 
@@ -696,6 +732,11 @@ export const modifyHotelBooking = async (req, res) => {
 
     if (!booking.hotel_id) {
       return res.status(409).json({ error: 'This booking cannot be modified online' });
+    }
+
+    if (booking.stay_duration_hours) {
+      await modifyHourlyReservation(userId, booking, req.body);
+      return res.json({ booking: await fetchBooking(booking.booking_id), message: 'Booking modified successfully' });
     }
 
     const checkInKey = toDateOnlyKey(check_in);
@@ -756,7 +797,7 @@ export const modifyHotelBooking = async (req, res) => {
       const hotelId = locked.hotel_id;
 
       const [hotelRows] = await connection.query(
-        'SELECT rooms_total, balance_due_days FROM hotels WHERE hotel_id = ? FOR UPDATE',
+        'SELECT hotel_id, rooms_total, balance_due_days, check_in_time, check_out_time FROM hotels WHERE hotel_id = ? FOR UPDATE',
         [hotelId]
       );
       if (hotelRows.length === 0) {
@@ -782,6 +823,8 @@ export const modifyHotelBooking = async (req, res) => {
 
       // Per-date enforcement via the same helper as the calendar and create
       // flow, excluding this booking's own rooms so it never blocks itself.
+      const stay = makeStay(req.body, parsePolicySnapshot(locked.policy_snapshot) || hotelRow);
+      await validateStayInventory(connection, hotelRow, selectedRoom, stay, numRooms, userId, locked.booking_id);
       try {
         const availabilityDays = await fetchHotelAvailabilityDays(
           connection,
@@ -789,7 +832,8 @@ export const modifyHotelBooking = async (req, res) => {
           checkInKey,
           subtractOneDay(checkOutKey),
           totalRooms,
-          { excludeBookingId: locked.booking_id, ...(locked.room_id ? { roomId: locked.room_id } : {}) }
+          { excludeBookingId: locked.booking_id, ...(locked.room_id ? { roomId: locked.room_id } : {}),
+            checkInTime: stay.checkInAt.slice(11, 16), checkOutTime: stay.checkOutAt.slice(11, 16) }
         );
 
         const closedDay = availabilityDays.find((day) => day.closed === 1);
@@ -816,6 +860,7 @@ export const modifyHotelBooking = async (req, res) => {
              AND room_id = ?
              AND booking_id <> ?
              AND status IN ('confirmed', 'pending')
+             AND stay_duration_hours IS NULL
              AND check_in < ?
              AND check_out > ?
              AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))
@@ -834,6 +879,7 @@ export const modifyHotelBooking = async (req, res) => {
            WHERE hotel_id = ?
              AND booking_id <> ?
              AND status IN ('confirmed', 'pending')
+             AND stay_duration_hours IS NULL
              AND check_in < ?
              AND check_out > ?
              AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))
@@ -852,7 +898,7 @@ export const modifyHotelBooking = async (req, res) => {
         `SELECT booking_id FROM hotel_bookings
          WHERE user_id = ? AND hotel_id = ? AND booking_id <> ?
            AND status IN ('confirmed', 'pending')
-           AND check_in < ? AND check_out > ?
+           AND stay_duration_hours IS NULL AND check_in < ? AND check_out > ?
            AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))`,
         [userId, hotelId, locked.booking_id, checkOutKey, checkInKey]
       );
@@ -915,7 +961,7 @@ export const modifyHotelBooking = async (req, res) => {
     res.json({ booking: updatedBooking, message: 'Booking modified successfully' });
   } catch (err) {
     console.error('Modify booking error:', err);
-    res.status(500).json({ error: 'Failed to modify booking' });
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Failed to modify booking' });
   }
 };
 

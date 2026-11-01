@@ -12,6 +12,7 @@ import { JWT_SECRET } from '../config/security.js';
 import { FRONTEND_URL, WEBHOOK_BASE_URL } from '../config/publicUrls.js';
 import { balanceOf, dueNow, MIN_GATEWAY_AMOUNT } from '../utils/paymentAmounts.js';
 import { syncBookingPaymentStatus, fetchAmountPaid } from '../utils/paymentSync.js';
+import { readJson } from '../utils/stayOptions.js';
 
 // Rate limiters for payment endpoints
 const checkoutLimiter = createRateLimiter({
@@ -63,7 +64,7 @@ const expectedDueAmount = async (booking, amountPaid) => {
   const firstDue = dueNow(
     booking.payment_option || 'full',
     booking.total_amount,
-    hotelRows[0]?.reservation_fee ?? null
+    readJson(booking.policy_snapshot)?.reservation_fee ?? hotelRows[0]?.reservation_fee ?? null
   );
   if (firstDue !== null) return firstDue;
   return balanceOf(booking.total_amount, 0, booking.payment_status);

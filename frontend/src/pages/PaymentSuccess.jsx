@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
+import { formatBookingBoundary } from '../utils/stayBooking';
 import { getApiBaseUrl, getLatestPaymentByBooking, getPaymentHistory, submitPaymentReference } from '../api';
 import axios from 'axios';
 
@@ -354,14 +355,14 @@ export default function PaymentSuccess() {
                 {bookingDetails.check_in && (
                   <div style={detailRowStyle}>
                     <span style={labelStyle}>Check-in:</span>
-                    <span style={valueStyle}>{formatDate(bookingDetails.check_in)}</span>
+                    <span style={valueStyle}>{formatBookingBoundary(bookingDetails)}</span>
                   </div>
                 )}
 
                 {bookingDetails.check_out && (
                   <div style={detailRowStyle}>
                     <span style={labelStyle}>Check-out:</span>
-                    <span style={valueStyle}>{formatDate(bookingDetails.check_out)}</span>
+                    <span style={valueStyle}>{formatBookingBoundary(bookingDetails, 'out')}</span>
                   </div>
                 )}
 

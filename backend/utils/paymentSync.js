@@ -6,10 +6,26 @@ import { statusAfterPayment } from './paymentAmounts.js';
 // flipped to 'succeeded'. Also clears expires_at so a booking that has paid
 // anything can never be auto-cancelled by the expiry cleanup.
 export const syncBookingPaymentStatus = async (bookingId, options = {}) => {
-  const { confirm = false, paymentMethod = null, dbLike = db.promise() } = options;
+  // Default calls own a transaction. A supplied dbLike must be the caller's
+  // transaction connection, so its booking lock remains held until commit.
+  if (options.dbLike) return syncLockedBooking(bookingId, options);
+  const connection = await db.promise().getConnection();
+  try {
+    await connection.beginTransaction();
+    const result = await syncLockedBooking(bookingId, { ...options, dbLike: connection });
+    await connection.commit();
+    return result;
+  } catch (error) { await connection.rollback(); throw error; }
+  finally { connection.release(); }
+};
 
+const syncLockedBooking = async (bookingId, options) => {
+  const { confirm = false, paymentMethod = null, dbLike } = options;
+
+  // Serialize with staff extensions: a callback must compare against the latest
+  // total, not mark the old package paid after an extension adds a balance.
   const [bookings] = await dbLike.query(
-    'SELECT total_amount, payment_status FROM hotel_bookings WHERE booking_id = ?',
+    'SELECT total_amount, payment_status FROM hotel_bookings WHERE booking_id = ? FOR UPDATE',
     [bookingId]
   );
   if (bookings.length === 0) return null;

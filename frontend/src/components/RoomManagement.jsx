@@ -3,6 +3,7 @@ import Icons from '../components/Icons';
 import api from '../api';
 import RoomContentEditor from './RoomContentEditor';
 import { getRoomContentItems, prepareRoomGuestContent } from '../utils/roomContent';
+import { getHourlyRates, STAY_HOURS } from '../utils/stayBooking';
 import './RoomManagement.css';
 import '../pages/HotelDetail.css';
 
@@ -45,6 +46,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
     capacity: 1,
     room_size_sqm: '',
     price_per_night: '',
+    hourly_rates: {},
     currency: 'PHP',
     quantity_available: 1,
     amenities: [],
@@ -147,6 +149,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
       formData.append('capacity', roomForm.capacity);
       formData.append('room_size_sqm', roomForm.room_size_sqm || '');
       formData.append('price_per_night', roomForm.price_per_night);
+      formData.append('hourly_rates', JSON.stringify(roomForm.hourly_rates));
       formData.append('currency', roomForm.currency);
       formData.append('quantity_available', roomForm.quantity_available);
       formData.append('amenities', JSON.stringify(amenities));
@@ -220,6 +223,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
       description: room.description || '',
       room_size_sqm: room.room_size_sqm || '',
       bed_type: room.bed_type || '',
+      hourly_rates: getHourlyRates(room.hourly_rates),
       // TIME comes back as 'HH:MM:SS'; time inputs need 'HH:MM'.
       check_in_time: String(room.check_in_time || emptyRoom.check_in_time).slice(0, 5),
       check_out_time: String(room.check_out_time || emptyRoom.check_out_time).slice(0, 5),
@@ -599,6 +603,20 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
                             <option value="0">○ Inactive</option>
                           </select>
                         </label>
+                      </div>
+                    </div>
+
+                    <div className="rm-form-sec">
+                      <p className="hd-rm-sec-title">Hourly stay packages (optional)</p>
+                      <p className="rm-hint">Set a price per room for each package. Leave a rate empty to disable it. Nightly pricing remains available.</p>
+                      <div className="rm-grid2">
+                        {STAY_HOURS.map(hours => <label className="rm-field" key={hours}>
+                          <span className="rm-label">{hours} hours ({roomForm.currency || 'PHP'})</span>
+                          <input className="rm-input" type="number" min="0.01" max="99999999.99" step="0.01"
+                            value={roomForm.hourly_rates[hours] ?? ''} disabled={roomSaving}
+                            onChange={event => setRoomForm(current => ({ ...current, hourly_rates: { ...current.hourly_rates, [hours]: event.target.value } }))}
+                            placeholder="Not offered" />
+                        </label>)}
                       </div>
                     </div>
 

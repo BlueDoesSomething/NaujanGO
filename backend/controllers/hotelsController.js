@@ -6,6 +6,7 @@ import { fetchHotelAvailabilityDays } from '../utils/hotelAvailability.js';
 import { attachHotelLegitimacy, attachHotelLegitimacyList } from '../utils/legitimacy.js';
 import { parseJsonArrayColumn } from '../utils/hotelColumns.js';
 import { parseRoomContentColumn } from '../utils/roomContent.js';
+import { parseHourlyRates, parsePaymentPlans } from '../utils/stayOptions.js';
 
 let hotelsHasImageUrls;
 let hotelsHasAllowedPaymentMethods;
@@ -130,6 +131,7 @@ const mapHotelRows = (rows) => rows.map(hotel => {
     amenities,
     images,
     allowed_payment_methods: parseAllowedPaymentMethods(hotel.allowed_payment_methods),
+    allowed_payment_options: parsePaymentPlans(hotel.allowed_payment_options),
     image: primaryImage,
     reviewCount: Number(hotel.reviewCount) || 0,
     pricePerNight: (() => {
@@ -183,7 +185,7 @@ export const getHotels = async (req, res) => {
     const includeAllowedPaymentMethods = await hasAllowedPaymentMethodsColumn();
     const includeReservationFee = await hasReservationFeeColumn();
     const imageUrlsSelect = includeImageUrls ? 'h.image_urls' : 'NULL as image_urls';
-    const paymentMethodsSelect = includeAllowedPaymentMethods ? 'h.allowed_payment_methods' : 'NULL as allowed_payment_methods';
+    const paymentMethodsSelect = includeAllowedPaymentMethods ? 'h.allowed_payment_methods, h.allowed_payment_options' : 'NULL as allowed_payment_methods';
     const reservationFeeSelect = includeReservationFee ? 'h.reservation_fee' : 'NULL as reservation_fee';
     [rows] = await db.promise().query(
       `SELECT h.hotel_id as id, h.name, h.location, h.description, h.price_per_night as pricePerNight,
@@ -276,7 +278,7 @@ export const getHotelById = async (req, res) => {
     const includeAllowedPaymentMethods = await hasAllowedPaymentMethodsColumn();
     const includeReservationFee = await hasReservationFeeColumn();
     const imageUrlsSelect = includeImageUrls ? 'image_urls' : 'NULL as image_urls';
-    const paymentMethodsSelect = includeAllowedPaymentMethods ? 'allowed_payment_methods' : 'NULL as allowed_payment_methods';
+    const paymentMethodsSelect = includeAllowedPaymentMethods ? 'allowed_payment_methods, allowed_payment_options' : 'NULL as allowed_payment_methods';
     const reservationFeeSelect = includeReservationFee ? 'reservation_fee' : 'NULL as reservation_fee';
     const [rows] = await db.promise().query(
       `SELECT hotel_id as id, name, location, description, price_per_night as pricePerNight,
@@ -424,7 +426,7 @@ export const getHotelCalendar = async (req, res) => {
 
   try {
     const [hotel] = await db.promise().query(
-      'SELECT rooms_total FROM hotels WHERE hotel_id = ? AND (is_active = 1 OR is_active IS NULL)',
+      'SELECT rooms_total, check_in_time, check_out_time FROM hotels WHERE hotel_id = ? AND (is_active = 1 OR is_active IS NULL)',
       [id]
     );
 
@@ -453,7 +455,7 @@ export const getHotelCalendar = async (req, res) => {
       start,
       end,
       hotel[0].rooms_total || 0,
-      room ? { roomId: room.room_id } : {}
+      { ...(room ? { roomId: room.room_id } : {}), checkInTime: hotel[0].check_in_time, checkOutTime: hotel[0].check_out_time }
     );
 
     return res.json({ success: true, start, end, room, days });
@@ -513,7 +515,7 @@ export const getCanReviewHotel = async (req, res) => {
        WHERE booking_id = ?
        AND user_id = ?
        AND hotel_id = ?
-       AND check_out < CURDATE()
+       AND COALESCE(check_out_at, TIMESTAMP(check_out, '12:00:00')) < DATE_ADD(UTC_TIMESTAMP(), INTERVAL 8 HOUR)
        AND status IN ('confirmed', 'completed')
        LIMIT 1`,
       [bookingId, userId, hotelId]
@@ -564,7 +566,7 @@ export const createHotelReview = async (req, res) => {
        WHERE booking_id = ?
        AND user_id = ?
        AND hotel_id = ?
-       AND check_out < CURDATE()
+       AND COALESCE(check_out_at, TIMESTAMP(check_out, '12:00:00')) < DATE_ADD(UTC_TIMESTAMP(), INTERVAL 8 HOUR)
        AND status IN ('confirmed', 'completed')
        LIMIT 1`,
       [booking_id, user_id, hotelId]
@@ -651,7 +653,7 @@ export const getHotelRooms = async (req, res) => {
       `SELECT room_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
               price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
               primary_image_url, check_in_time, check_out_time,
-              smoking_allowed, pets_allowed, events_allowed, is_active, perfect_for, common_questions
+              smoking_allowed, pets_allowed, events_allowed, is_active, perfect_for, common_questions, hourly_rates
        FROM rooms
        WHERE hotel_id = ? AND is_active = 1
        ORDER BY price_per_night`,
@@ -662,6 +664,7 @@ export const getHotelRooms = async (req, res) => {
       ...room,
       perfect_for: parseRoomContentColumn(room.perfect_for, 'perfect_for'),
       common_questions: parseRoomContentColumn(room.common_questions, 'common_questions'),
+      hourly_rates: parseHourlyRates(room.hourly_rates),
       amenities: parseAmenitiesServer(room.amenities),
       room_features: (() => {
         try {

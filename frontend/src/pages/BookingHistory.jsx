@@ -7,6 +7,8 @@ import * as api from '../api';
 import HeroSlideshow from '../components/HeroSlideshow';
 import { getApiBaseUrl } from '../api';
 import { buildPolicyLines } from '../utils/bookingPolicy';
+import { bookingInstant, bookingLocalTime, formatBookingBoundary, getStayExtensions, hourlyCheckout, philippineToday } from '../utils/stayBooking';
+import StayExtensionHistory from '../components/StayExtensionHistory';
 
 export default function BookingHistory() {
   const navigate = useNavigate();
@@ -67,17 +69,17 @@ export default function BookingHistory() {
     return labels[status] || status;
   };
 
-  const isUpcoming = (checkIn) => {
-    return new Date(checkIn) > new Date();
+  const isUpcoming = (booking) => {
+    return bookingInstant(booking) > new Date();
   };
 
-  const isPast = (checkOut) => {
-    return new Date(checkOut) < new Date();
+  const isPast = (booking) => {
+    return bookingInstant(booking, 'out') < new Date();
   };
 
   const filteredBookings = bookings.filter(booking => {
-    if (filter === 'upcoming') return isUpcoming(booking.check_in) && booking.status !== 'cancelled';
-    if (filter === 'past') return isPast(booking.check_out);
+    if (filter === 'upcoming') return isUpcoming(booking) && booking.status !== 'cancelled';
+    if (filter === 'past') return isPast(booking);
     if (filter === 'cancelled') return booking.status === 'cancelled';
     return true;
   }).filter((booking) => {
@@ -286,15 +288,15 @@ export default function BookingHistory() {
         <div class="grid">
           <div>
             <div class="label">Check-in</div>
-            <div class="value">${receipt.check_in}</div>
+            <div class="value">${escapeHtml(formatBookingBoundary(receipt))}</div>
           </div>
           <div>
             <div class="label">Check-out</div>
-            <div class="value">${receipt.check_out}</div>
+            <div class="value">${escapeHtml(formatBookingBoundary(receipt, 'out'))}</div>
           </div>
           <div>
-            <div class="label">Nights</div>
-            <div class="value">${receipt.nights}</div>
+            <div class="label">${receipt.stay_duration_hours ? 'Duration' : 'Nights'}</div>
+            <div class="value">${receipt.stay_duration_hours ? `${receipt.stay_duration_hours} hours` : receipt.nights}</div>
           </div>
           <div>
             <div class="label">Guests</div>
@@ -341,6 +343,8 @@ export default function BookingHistory() {
         </div>
       </div>
 
+      ${getStayExtensions(receipt).length ? `<div class="section"><h3>Approved extensions</h3><ul>${getStayExtensions(receipt).map(item =>
+        `<li>+${escapeHtml(item.hours)} hours · ${escapeHtml(item.currency || receipt.currency)} ${Number(item.amount).toFixed(2)} added to total · checkout ${escapeHtml(item.to.slice(0, 16))} PHT</li>`).join('')}</ul></div>` : ''}
       ${policySection}
 
       <div class="notes">
@@ -421,6 +425,7 @@ export default function BookingHistory() {
     setModifyForm({
       check_in: booking.check_in,
       check_out: booking.check_out,
+      check_in_time: bookingLocalTime(booking).slice(11, 16) || '14:00',
       guests: booking.guests,
       rooms: booking.rooms
     });
@@ -446,8 +451,8 @@ VERSION:2.0
 PRODID:-//NaujanGO//Booking//EN
 BEGIN:VEVENT
 UID:${booking.booking_id}@naujango.com
-DTSTART:${booking.check_in.replace(/-/g, '')}T140000Z
-DTEND:${booking.check_out.replace(/-/g, '')}T120000Z
+DTSTART:${bookingInstant(booking).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}
+DTEND:${bookingInstant(booking, 'out').toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')}
 SUMMARY:Hotel Booking - ${booking.hotel_name}
 DESCRIPTION:Booking #${booking.booking_id}\nGuests: ${booking.guests}\nRooms: ${booking.rooms}
 LOCATION:${booking.hotel_location || booking.hotel_name}
@@ -540,7 +545,7 @@ END:VCALENDAR`;
             }}
             onClick={() => setFilter('upcoming')}
           >
-            Upcoming ({bookings.filter(b => isUpcoming(b.check_in) && b.status !== 'cancelled').length})
+            Upcoming ({bookings.filter(b => isUpcoming(b) && b.status !== 'cancelled').length})
           </button>
           <button
             style={{
@@ -549,7 +554,7 @@ END:VCALENDAR`;
             }}
             onClick={() => setFilter('past')}
           >
-            Past ({bookings.filter(b => isPast(b.check_out)).length})
+            Past ({bookings.filter(b => isPast(b)).length})
           </button>
           <button
             style={{
@@ -639,15 +644,15 @@ END:VCALENDAR`;
                 <div style={styles.detailRow}>
                   <div style={styles.detailItem}>
                     <span style={styles.detailLabel}>Check-in</span>
-                    <span style={styles.detailValue}>{formatDate(booking.check_in)}</span>
+                    <span style={styles.detailValue}>{formatBookingBoundary(booking)}</span>
                   </div>
                   <div style={styles.detailItem}>
                     <span style={styles.detailLabel}>Check-out</span>
-                    <span style={styles.detailValue}>{formatDate(booking.check_out)}</span>
+                    <span style={styles.detailValue}>{formatBookingBoundary(booking, 'out')}</span>
                   </div>
                   <div style={styles.detailItem}>
-                    <span style={styles.detailLabel}>Nights</span>
-                    <span style={styles.detailValue}>{calculateNights(booking.check_in, booking.check_out)}</span>
+                    <span style={styles.detailLabel}>{booking.stay_duration_hours ? 'Duration' : 'Nights'}</span>
+                    <span style={styles.detailValue}>{booking.stay_duration_hours ? `${booking.stay_duration_hours} hours` : calculateNights(booking.check_in, booking.check_out)}</span>
                   </div>
                 </div>
 
@@ -679,6 +684,7 @@ END:VCALENDAR`;
                   </div>
                 )}
 
+                <StayExtensionHistory booking={booking} />
                 {booking.special_requests && (
                   <div style={styles.specialRequests}>
                     <span style={styles.detailLabel}>Special Requests:</span>
@@ -707,7 +713,8 @@ END:VCALENDAR`;
                   )}
                 </div>
                 <div style={styles.actions}>
-                  {Number(booking.balance_due) > 0 && ['pending', 'confirmed'].includes(booking.status) && isUpcoming(booking.check_in) && (
+                  {Number(booking.balance_due) > 0 && ['pending', 'confirmed'].includes(booking.status)
+                    && (isUpcoming(booking) || (booking.status === 'confirmed' && getStayExtensions(booking).length > 0)) && (
                     <button
                       style={{ ...styles.actionBtn, backgroundColor: '#2563eb', color: '#fff', border: 'none' }}
                       onClick={() => navigate(`/hotels/payment/${booking.booking_id}`)}
@@ -719,7 +726,7 @@ END:VCALENDAR`;
                       {Number(booking.amount_paid) > 0 ? 'Pay balance' : 'Complete payment'}
                     </button>
                   )}
-                  {['pending', 'confirmed'].includes(booking.status) && isUpcoming(booking.check_in) && (
+                  {['pending', 'confirmed'].includes(booking.status) && isUpcoming(booking) && (
                     <button style={styles.actionBtn} onClick={() => openModifyModal(booking)}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -740,7 +747,7 @@ END:VCALENDAR`;
                       Receipt
                     </button>
                   )}
-                  {isPast(booking.check_out) && booking.status === 'confirmed' && (
+                  {isPast(booking) && booking.status === 'confirmed' && (
                     <button style={{...styles.actionBtn, ...styles.reviewBtn}} onClick={() => openReviewModal(booking)}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -780,6 +787,33 @@ END:VCALENDAR`;
               style={styles.receiptContent}
               dangerouslySetInnerHTML={{ __html: receiptHtml }}
             />
+          </div>
+        </div>
+      )}
+
+      {modifyModal && (
+        <div style={styles.receiptOverlay}>
+          <div role="dialog" aria-modal="true" aria-label="Modify booking" style={{ ...styles.receiptModal, maxWidth: 560, padding: 24 }}>
+            <h2>Modify booking</h2>
+            <p>{modifyModal.hotel_name}{modifyModal.stay_duration_hours ? ` · ${modifyModal.stay_duration_hours}-hour package (original rate retained)` : ''}</p>
+            <div style={{ display: 'grid', gap: 14 }}>
+              <label>Check-in date<input className="hd-input" type="date" min={philippineToday()} value={modifyForm.check_in || ''}
+                onChange={event => setModifyForm(current => ({ ...current, check_in: event.target.value }))} /></label>
+              {modifyModal.stay_duration_hours ? <>
+                <label>Check-in time (PHT)<input className="hd-input" type="time" value={modifyForm.check_in_time || ''}
+                  onChange={event => setModifyForm(current => ({ ...current, check_in_time: event.target.value }))} /></label>
+                <p>Automatic checkout: {hourlyCheckout(modifyForm.check_in, modifyForm.check_in_time, modifyModal.stay_duration_hours)?.value || 'Choose a valid date and time'} PHT</p>
+              </> : <label>Check-out date<input className="hd-input" type="date" min={modifyForm.check_in || philippineToday()} value={modifyForm.check_out || ''}
+                onChange={event => setModifyForm(current => ({ ...current, check_out: event.target.value }))} /></label>}
+              <label>Rooms<input className="hd-input" type="number" min="1" max="100" value={modifyForm.rooms || 1}
+                onChange={event => setModifyForm(current => ({ ...current, rooms: Number(event.target.value) }))} /></label>
+              <label>Guests<input className="hd-input" type="number" min="1" max="100" value={modifyForm.guests || 1}
+                onChange={event => setModifyForm(current => ({ ...current, guests: Number(event.target.value) }))} /></label>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button type="button" className="gov-btn-ghost" disabled={submittingModify} onClick={() => setModifyModal(null)}>Cancel</button>
+                <button type="button" className="gov-btn-primary" disabled={submittingModify} onClick={submitModify}>{submittingModify ? 'Saving...' : 'Save Changes'}</button>
+              </div>
+            </div>
           </div>
         </div>
       )}

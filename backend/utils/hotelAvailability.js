@@ -1,3 +1,5 @@
+import { DAY_MS, localTimeMs, peakBookedRooms } from './stayOptions.js';
+
 let availabilityTableCache = null;
 
 const hasAvailabilityTable = async (dbLike) => {
@@ -54,7 +56,8 @@ export const subtractOneDay = (dateKey) => {
 
 // Per-date availability for a hotel over an inclusive [startKey, endKey] range.
 // capacity(d) = hotel_availability.rooms_available override (when set) else hotels.rooms_total;
-// booked(d)  = SUM(rooms) of non-cancelled, non-archived, non-expired bookings covering night d;
+// booked(d) = peak simultaneous usage during the property's nightly interval.
+// Hourly bookings therefore count only when they overlap that interval.
 // closed(d)  = hotel_availability.is_closed; price(d) = price_override when set.
 // options.roomId (optional): also compute the room-type layer —
 //   typeCapacity(d) = room_inventory.available_count override (when set) else rooms.quantity_available;
@@ -107,12 +110,12 @@ export const fetchHotelAvailabilityDays = async (dbLike, hotelId, startKey, endK
   let bookingRows = [];
   try {
     [bookingRows] = await dbLike.query(
-      `SELECT check_in, check_out, rooms
+      `SELECT check_in, check_out, check_in_at, check_out_at, policy_snapshot, rooms
        FROM hotel_bookings
        WHERE hotel_id = ?
          AND status IN ('confirmed', 'pending')
-         AND check_in < ?
-         AND check_out > ?
+         AND check_in <= ?
+         AND check_out >= ?
          AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))${excludeClause}
          FOR UPDATE`,
       [hotelId, endPlusOne, start, ...excludeParams]
@@ -120,31 +123,26 @@ export const fetchHotelAvailabilityDays = async (dbLike, hotelId, startKey, endK
   } catch (error) {
     // Older databases may lack archived/expires_at columns.
     [bookingRows] = await dbLike.query(
-      `SELECT check_in, check_out, rooms
+      `SELECT check_in, check_out, check_in_at, check_out_at, policy_snapshot, rooms
        FROM hotel_bookings
        WHERE hotel_id = ?
          AND status IN ('confirmed', 'pending')
-         AND check_in < ?
-         AND check_out > ?${excludeClause}`,
+         AND check_in <= ?
+         AND check_out >= ?${excludeClause}`,
       [hotelId, endPlusOne, start, ...excludeParams]
     );
   }
 
   const bookedByDate = {};
-  dates.forEach((key) => {
-    bookedByDate[key] = 0;
-  });
-
-  bookingRows.forEach((booking) => {
-    const checkInKey = toDateOnlyKey(booking.check_in);
-    const checkOutKey = toDateOnlyKey(booking.check_out);
-    if (!checkInKey || !checkOutKey) return;
-    // Checkout night is not occupied by the guest.
-    listDateKeys(checkInKey, checkOutKey).slice(0, -1).forEach((dateKey) => {
-      if (bookedByDate[dateKey] !== undefined) {
-        bookedByDate[dateKey] += Number(booking.rooms || 0);
-      }
-    });
+  const calendarInterval = key => {
+    const start = localTimeMs(`${key} ${String(options.checkInTime || '14:00').slice(0, 5)}:00`);
+    const next = new Date(localTimeMs(`${key} 00:00:00`) + DAY_MS).toISOString().slice(0, 10);
+    const end = localTimeMs(`${next} ${String(options.checkOutTime || '12:00').slice(0, 5)}:00`);
+    return { start, end };
+  };
+  dates.forEach(key => {
+    const { start, end } = calendarInterval(key);
+    bookedByDate[key] = peakBookedRooms(bookingRows, start, end);
   });
 
   // Optional room-type layer. Unknown room ids degrade to hotel-level only
@@ -184,13 +182,13 @@ export const fetchHotelAvailabilityDays = async (dbLike, hotelId, startKey, endK
       let typeBookingRows = [];
       try {
         [typeBookingRows] = await dbLike.query(
-          `SELECT check_in, check_out, rooms
+          `SELECT check_in, check_out, check_in_at, check_out_at, policy_snapshot, rooms
            FROM hotel_bookings
            WHERE hotel_id = ?
              AND room_id = ?
              AND status IN ('confirmed', 'pending')
-             AND check_in < ?
-             AND check_out > ?
+             AND check_in <= ?
+             AND check_out >= ?
              AND (archived = 0 AND (expires_at IS NULL OR expires_at > NOW()))${excludeClause}
              FOR UPDATE`,
           [hotelId, roomId, endPlusOne, start, ...excludeParams]
@@ -198,13 +196,13 @@ export const fetchHotelAvailabilityDays = async (dbLike, hotelId, startKey, endK
       } catch (error) {
         // Older databases may lack archived/expires_at columns.
         [typeBookingRows] = await dbLike.query(
-          `SELECT check_in, check_out, rooms
+          `SELECT check_in, check_out, check_in_at, check_out_at, policy_snapshot, rooms
            FROM hotel_bookings
            WHERE hotel_id = ?
              AND room_id = ?
              AND status IN ('confirmed', 'pending')
-             AND check_in < ?
-             AND check_out > ?${excludeClause}`,
+             AND check_in <= ?
+             AND check_out >= ?${excludeClause}`,
           [hotelId, roomId, endPlusOne, start, ...excludeParams]
         );
       }
@@ -213,15 +211,9 @@ export const fetchHotelAvailabilityDays = async (dbLike, hotelId, startKey, endK
       dates.forEach((key) => {
         typeBookedByDate[key] = 0;
       });
-      typeBookingRows.forEach((booking) => {
-        const checkInKey = toDateOnlyKey(booking.check_in);
-        const checkOutKey = toDateOnlyKey(booking.check_out);
-        if (!checkInKey || !checkOutKey) return;
-        listDateKeys(checkInKey, checkOutKey).slice(0, -1).forEach((dateKey) => {
-          if (typeBookedByDate[dateKey] !== undefined) {
-            typeBookedByDate[dateKey] += Number(booking.rooms || 0);
-          }
-        });
+      dates.forEach(key => {
+        const { start, end } = calendarInterval(key);
+        typeBookedByDate[key] = peakBookedRooms(typeBookingRows, start, end);
       });
     }
   }

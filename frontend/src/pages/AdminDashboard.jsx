@@ -17,6 +17,7 @@ import TouristArrivalsReport from '../components/TouristArrivalsReport';
 import api from '../api';
 import Pagination from '../components/Pagination';
 import BookingIssuedCell from '../components/BookingIssuedCell';
+import { formatBookingBoundary } from '../utils/stayBooking';
 import { getBookingGuestName } from '../utils/bookingGuestName';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -2934,7 +2935,7 @@ const AdminDashboard = () => {
                             <td><span style={{ fontWeight: 700, color: '#374151' }}>#{booking.booking_id}</span></td>
                             <td style={{ color: '#374151' }}>{booking.hotel_name || '—'}</td>
                             <td style={{ color: '#374151' }}>{getBookingGuestName(booking)}</td>
-                            <td style={{ color: '#6b7280' }}>{new Date(booking.check_in).toLocaleDateString()}</td>
+                            <td style={{ color: '#6b7280' }}>{formatBookingBoundary(booking)}</td>
                             <td>
                               <span className={`gov-badge-status gov-badge-status--${booking.status}`}>{t(booking.status) || booking.status}</span>
                             </td>
@@ -3389,7 +3390,8 @@ const AdminDashboard = () => {
                           </td>
                           <td>{getBookingGuestName(booking)}</td>
                           <td>
-                            {new Date(booking.check_in).toLocaleDateString()} → {new Date(booking.check_out).toLocaleDateString()}
+                            {formatBookingBoundary(booking)} → {formatBookingBoundary(booking, 'out')}
+                            {booking.stay_duration_hours ? ` · ${booking.stay_duration_hours} hours` : ''}
                           </td>
                           <td><BookingIssuedCell booking={booking} /></td>
                           <td>
@@ -8030,7 +8032,7 @@ const AdminDashboard = () => {
                             <td>{booking.hotel_name}</td>
                             <td>{getBookingGuestName(booking)}</td>
                             <td>
-                              {new Date(booking.check_in_date).toLocaleDateString()} → {new Date(booking.check_out_date).toLocaleDateString()}
+                              {formatBookingBoundary(booking)} → {formatBookingBoundary(booking, 'out')}
                             </td>
                             <td><BookingIssuedCell booking={booking} /></td>
                             <td>

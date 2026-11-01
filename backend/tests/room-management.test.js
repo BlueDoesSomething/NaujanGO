@@ -82,6 +82,27 @@ const setup = async (t, options = {}) => {
   return { request, writes, logs, publicRooms, row: () => row };
 };
 
+test('hourly room rates persist through multipart edits and both owner and public reads', async t => {
+  const { request, row, publicRooms } = await setup(t);
+  const response = await request('/7', { hourly_rates: '{"3":"300.00","12":900,"24":""}' });
+  assert.equal(response.status, 200);
+  assert.deepEqual(JSON.parse(row().hourly_rates), { 3: 300, 12: 900 });
+  const ownerRead = await request('', undefined, 'GET');
+  assert.deepEqual((await ownerRead.json())[0].hourly_rates, { 3: 300, 12: 900 });
+  const publicRead = await publicRooms();
+  assert.deepEqual((await publicRead.json())[0].hourly_rates, { 3: 300, 12: 900 });
+  await request('/7', { hourly_rates: '{}' });
+  assert.deepEqual(JSON.parse(row().hourly_rates), {});
+});
+
+test('malformed hourly rates and unauthorized changes are rejected before any write', async t => {
+  const { request, writes } = await setup(t);
+  assert.equal((await request('/7', { hourly_rates: '{"3":-100}' })).status, 400);
+  assert.equal((await request('/7', { hourly_rates: '{"6":100}' })).status, 400);
+  assert.equal((await request('/7', { hourly_rates: '{"3":100}' }, 'PUT', false)).status, 401);
+  assert.equal(writes.length, 0);
+});
+
 test('multipart updates preserve JSON lists and the cover remains a real URL', async (t) => {
   const { request, row, logs } = await setup(t);
   for (let i = 0; i < 3; i++) {

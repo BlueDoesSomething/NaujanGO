@@ -98,7 +98,7 @@ export const setPersonalArchive = async (user, type, value, archived, reason = n
   return archiveTransaction(async connection => {
     const payment = type === 'payment';
     const [rows] = await connection.query(
-      `SELECT b.*, (b.check_out < CURDATE()) AS stay_ended${payment ? ', p.payment_id, p.status AS target_payment_status' : ''}
+      `SELECT b.*, (b.check_out < CURDATE() OR (b.check_out_at IS NOT NULL AND b.check_out_at < DATE_ADD(UTC_TIMESTAMP(), INTERVAL 8 HOUR))) AS stay_ended${payment ? ', p.payment_id, p.status AS target_payment_status' : ''}
        FROM hotel_bookings b ${payment ? 'INNER JOIN hotel_payments p ON p.booking_id = b.booking_id' : ''}
        WHERE ${payment ? 'p.payment_id' : 'b.booking_id'} = ?
        ${user.role === 'admin' ? '' : 'AND EXISTS (SELECT 1 FROM hotel_owners ho WHERE ho.hotel_id = b.hotel_id AND ho.user_id = ?)'}
