@@ -10,6 +10,8 @@ import { buildPolicyLines } from '../utils/bookingPolicy';
 import { bookingInstant, bookingLocalTime, formatBookingBoundary, getStayExtensions, hourlyCheckout, philippineToday } from '../utils/stayBooking';
 import StayExtensionHistory from '../components/StayExtensionHistory';
 import { canResumeBookingPayment } from '../utils/paymentRecovery';
+import { downloadReportCsv, printReportWithFeedback } from '../utils/exportFiles';
+import { receiptExportReport } from '../utils/itineraryExports';
 
 export default function BookingHistory() {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ export default function BookingHistory() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchFilter, setSearchFilter] = useState('all'); // all, hotel, location, date
   const [receiptHtml, setReceiptHtml] = useState('');
+  const [receiptData, setReceiptData] = useState(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [reviewModal, setReviewModal] = useState(null);
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
@@ -408,6 +411,7 @@ export default function BookingHistory() {
   };
 
   const openReceiptModal = (receipt) => {
+    setReceiptData(receipt);
     setReceiptHtml(renderReceiptHtml(receipt));
     setShowReceipt(true);
   };
@@ -785,6 +789,10 @@ END:VCALENDAR`;
               </svg>
               Close
             </button>
+            {receiptData && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '12px 24px' }}>
+              <button type="button" className="gov-btn-primary" onClick={() => printReportWithFeedback(receiptExportReport(receiptData, t))}>Print / Save PDF</button>
+              <button type="button" className="gov-btn-ghost" onClick={() => downloadReportCsv(receiptExportReport(receiptData, t))}>Export receipt CSV</button>
+            </div>}
             <div
               style={styles.receiptContent}
               dangerouslySetInnerHTML={{ __html: receiptHtml }}

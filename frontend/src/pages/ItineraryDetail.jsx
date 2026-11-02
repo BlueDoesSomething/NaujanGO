@@ -7,6 +7,8 @@ import WeatherWidget from '../components/WeatherWidget';
 import HeroSlideshow from '../components/HeroSlideshow';
 import CustomDropdown from '../components/CustomDropdown';
 import { getApiBaseUrl, getCsrfToken } from '../api';
+import { downloadReportCsv, printReportWithFeedback, shareSavedTrip } from '../utils/exportFiles';
+import { itineraryStopReport, itineraryBudgetReport, itineraryPrintReport } from '../utils/itineraryExports';
 import './ItineraryDetail.css';
 
 const API_BASE_URL = getApiBaseUrl();
@@ -197,25 +199,9 @@ const ItineraryDetail = () => {
   
   const shareItinerary = async () => {
     try {
-      const shareUrl = `${window.location.origin}/itinerary/${id}`;
-
-      // Try to use Web Share API if available
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: itinerary.name || t('my_itinerary'),
-            text: `${t('check_out_my_travel_itinerary')}: ${itinerary.name}`,
-            url: shareUrl
-          });
-          return;
-        } catch (shareError) {
-          // User cancelled share or share failed, fall through to clipboard
-        }
-      }
-
-      // Fallback to clipboard
-      await navigator.clipboard.writeText(shareUrl);
-      alert(`${t('share_link_copied')}\n${shareUrl}`);
+      const result = await shareSavedTrip({ id, name: itinerary.name });
+      if (result === 'copied') alert('Saved itinerary link copied. Existing access permissions still apply.');
+      if (result === 'unavailable') alert('Sharing is unavailable in this browser. Copy this page’s address instead.');
     } catch (error) {
       console.error('Error sharing itinerary:', error);
       alert(t('error_sharing_itinerary'));
@@ -264,7 +250,7 @@ const ItineraryDetail = () => {
   };
   
   const exportToPDF = () => {
-    window.print();
+    printReportWithFeedback(itineraryPrintReport({ itinerary, items: normalizedItems, budget: displayedBreakdown }));
   };
   
   const deleteItinerary = async () => {
@@ -783,7 +769,10 @@ const ItineraryDetail = () => {
                   <Icons.UploadIcon size={14} /> {t('share_with_friends')}
                 </button>
                 <button style={styles.quickActionBtn} onClick={exportToPDF}>
-                  <Icons.PhotoIcon size={14} /> {t('export_to_pdf')}
+                  <Icons.PhotoIcon size={14} /> Print / Save PDF
+                </button>
+                <button style={styles.quickActionBtn} onClick={() => downloadReportCsv(itineraryStopReport({ itinerary, items: normalizedItems }))}>
+                  <Icons.ArchiveIcon size={14} /> Export stops CSV
                 </button>
                 <button style={styles.quickActionBtnDelete} onClick={deleteItinerary}>
                   <Icons.ArchiveIcon size={14} /> {t('delete_itinerary')}
@@ -976,35 +965,11 @@ const ItineraryDetail = () => {
                   <Icons.CheckIcon size={14} /> Save assumptions
                 </button>
                 <button
-                  onClick={() => {
-                    try {
-                      const rows = displayedBreakdown.map(d => ({
-                        day: d.day,
-                        dayBudget: (d.dayBudget || 0).toFixed(2),
-                        fareCost: (d.fareCost || 0).toFixed(2),
-                        foodCost: (d.foodCost || 0).toFixed(2),
-                        otherCost: (d.otherCost || 0).toFixed(2),
-                        estimatedNeed: (d.estimatedNeed || 0).toFixed(2),
-                        balance: (d.balance || 0).toFixed(2),
-                        fits: d.fits ? 'yes' : 'no'
-                      }));
-                      const header = Object.keys(rows[0] || {});
-                      const csv = [header.join(',')].concat(rows.map(r => header.map(h => `"${(r[h]||'')}"`).join(','))).join('\n');
-                      const blob = new Blob([csv], { type: 'text/csv' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `${itinerary.name || 'itinerary'}-budget-breakdown.csv`;
-                      a.click();
-                      URL.revokeObjectURL(url);
-                    } catch (err) {
-                      console.error('Export failed', err);
-                      alert(t('export_failed') || 'Export failed');
-                    }
-                  }}
+                  onClick={() => downloadReportCsv(itineraryBudgetReport(displayedBreakdown, itinerary.name))}
                   style={styles.budgetActionBtn}>
                   <Icons.ArchiveIcon size={14} /> Export CSV
                 </button>
+                <button style={styles.budgetActionBtn} onClick={() => printReportWithFeedback({ ...itineraryBudgetReport(displayedBreakdown, itinerary.name), subtitle: itinerary.name })}>Print / Save PDF</button>
               </div>
               </div>
 

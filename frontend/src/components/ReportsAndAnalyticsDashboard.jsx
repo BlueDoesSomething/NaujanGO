@@ -15,6 +15,8 @@ import { Bar, Line, Pie, Doughnut } from 'react-chartjs-2';
 import { ChartLoader } from './AdminCharts';
 import { useLanguage } from '../context/LanguageContext';
 import './ReportsAndAnalyticsDashboard.css';
+import { analyticsReport } from '../utils/reportExports';
+import { downloadReportCsv, printReportWithFeedback } from '../utils/exportFiles';
 
 ChartJS.register(
   CategoryScale,
@@ -32,7 +34,6 @@ const ReportsAndAnalyticsDashboard = ({
   data,
   loading = false,
   userRole = 'admin', // 'admin' or 'owner'
-  onExport = () => {},
   stats = null,
   children = null,      // extra category (e.g. Tourism Arrivals) rendered as its own section
   initialCategory = null // scroll to this category on mount (deep links)
@@ -41,8 +42,8 @@ const ReportsAndAnalyticsDashboard = ({
   const [selectedDateRange, setSelectedDateRange] = useState('monthly');
   const [visitorAnalytics, setVisitorAnalytics] = useState(null);
   const [activeCategory, setActiveCategory] = useState('overview');
-  const trendSeries = selectedDateRange === '7d' && data?.dailyTrends?.length
-    ? data.dailyTrends
+  const trendSeries = selectedDateRange === '7d'
+    ? data?.dailyTrends || []
     : data?.monthlyTrends || [];
   const trendLabel = selectedDateRange === '7d' ? 'day' : 'month';
   const trendTitle = selectedDateRange === '7d' ? 'Daily Booking Trends' : 'Booking Trends';
@@ -253,7 +254,7 @@ const ReportsAndAnalyticsDashboard = ({
   };
 
   const exportHandler = (type) => {
-    onExport(type, trendSeries);
+    downloadReportCsv(analyticsReport(type, { data, stats, visitor: visitorAnalytics, period: selectedDateRange, userRole }));
   };
 
   const KPICard = ({ label, value, change, changeSuffix = 'vs previous month' }) => (
@@ -273,6 +274,7 @@ const ReportsAndAnalyticsDashboard = ({
 
   return (
     <div className="reports-analytics-dashboard">
+      {children && <p className="reports-subtitle">CSV and print controls export the analytics tables below. The separate Tourism Arrivals section is not included.</p>}
       {/* Header */}
       <div className="reports-header">
         <div className="reports-title-section">
@@ -293,9 +295,14 @@ const ReportsAndAnalyticsDashboard = ({
           <button 
             onClick={() => exportHandler('all')}
             className="export-btn"
-            title={t('analytics_export_all')}
+            title="Export report tables as CSV"
+            disabled={loading}
           >
-            {t('analytics_export')}
+            Export all CSV
+          </button>
+          <button type="button" className="export-btn" disabled={loading}
+            onClick={() => printReportWithFeedback(analyticsReport('all', { data, stats, visitor: visitorAnalytics, period: selectedDateRange, userRole }))}>
+            Print / Save PDF
           </button>
         </div>
       </div>

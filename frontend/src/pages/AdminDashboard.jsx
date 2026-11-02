@@ -2525,20 +2525,6 @@ const AdminDashboard = () => {
     return Array.from(totals.values()).sort((a, b) => a.day.localeCompare(b.day));
   };
 
-  const downloadCSV = (data, filename) => {
-    if (!data || data.length === 0) return;
-    const headers = Object.keys(data[0]);
-    const rows = data.map((row) => headers.map((key) => JSON.stringify(row[key] ?? '')).join(','));
-    const csv = [headers.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    link.click();
-    window.URL.revokeObjectURL(url);
-  };
-
   const handleLogout = async () => {
     try {
       console.log('🔓 Logout initiated from AdminDashboard...');
@@ -7962,11 +7948,6 @@ const AdminDashboard = () => {
               loading={reportsLoading}
               userRole="admin"
               initialCategory={reportsInitialCategory}
-              onExport={(type, series) => {
-                // export the currently visible series (daily or monthly)
-                const rows = series || analyticsData.monthlyTrends || [];
-                downloadCSV(rows, `${type}-report.csv`);
-              }}
             >
               <TouristArrivalsReport />
             </ReportsAndAnalyticsDashboard>

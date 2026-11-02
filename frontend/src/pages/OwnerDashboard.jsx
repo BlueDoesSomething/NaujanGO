@@ -17,6 +17,8 @@ import ReferenceDetails from '../components/ReferenceDetails';
 import ArchiveRecordModal from '../components/ArchiveRecordModal';
 import PaymentSummaryCards from '../components/PaymentSummaryCards';
 import { getPaymentMethodLabel, getBookingPaymentMethod, getPaymentReferences } from '../utils/paymentDisplay';
+import { ownerRecordReport } from '../utils/reportExports';
+import { downloadReportCsv, printReportWithFeedback } from '../utils/exportFiles';
 import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -67,6 +69,8 @@ const OwnerDashboard = () => {
   const [payments, setPayments] = useState([]);
   const [paymentStats, setPaymentStats] = useState(null);
   const [paymentLoadError, setPaymentLoadError] = useState('');
+  const [paymentLoadedQuery, setPaymentLoadedQuery] = useState('');
+  const [paymentStatsLoadedQuery, setPaymentStatsLoadedQuery] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [paymentMethodFilter, setPaymentMethodFilter] = useState('all');
   const [showArchivedPayments, setShowArchivedPayments] = useState(false);
@@ -381,10 +385,15 @@ const OwnerDashboard = () => {
 
   const fetchPayments = async () => {
     const requestId = ++paymentListRequest.current;
+    const params = paymentQueryParams();
+    setPaymentLoadedQuery('');
     setPaymentLoadError('');
     try {
-      const res = await api.get('/owner/payments', { params: paymentQueryParams() });
-      if (requestId === paymentListRequest.current) setPayments(Array.isArray(res.data) ? res.data : []);
+      const res = await api.get('/owner/payments', { params });
+      if (requestId === paymentListRequest.current) {
+        setPayments(Array.isArray(res.data) ? res.data : []);
+        setPaymentLoadedQuery(JSON.stringify(params));
+      }
     } catch (error) {
       console.error('Error fetching payments:', error);
       if (requestId === paymentListRequest.current) {
@@ -396,9 +405,14 @@ const OwnerDashboard = () => {
 
   const fetchPaymentStats = async () => {
     const requestId = ++paymentStatsRequest.current;
+    const params = paymentQueryParams();
+    setPaymentStatsLoadedQuery('');
     try {
-      const res = await api.get('/owner/payments/stats', { params: paymentQueryParams() });
-      if (requestId === paymentStatsRequest.current) setPaymentStats(res.data);
+      const res = await api.get('/owner/payments/stats', { params });
+      if (requestId === paymentStatsRequest.current) {
+        setPaymentStats(res.data);
+        setPaymentStatsLoadedQuery(JSON.stringify(params));
+      }
     } catch (error) {
       console.error('Error fetching payment stats:', error);
       if (requestId === paymentStatsRequest.current) {
@@ -1190,27 +1204,16 @@ const OwnerDashboard = () => {
       }
     };
   
-    const exportReport = (type) => {
-      const data = type === 'bookings' ? bookings : type === 'payments' ? payments : reviews;
-      const csv = generateCSV(data);
-      downloadCSV(csv, `${type}-report-${new Date().toISOString().split('T')[0]}.csv`);
-    };
-  
-    const generateCSV = (data) => {
-      if (!data || data.length === 0) return '';
-      const headers = Object.keys(data[0]);
-      const rows = data.map(row => headers.map(h => JSON.stringify(row[h] || '')).join(','));
-      return [headers.join(','), ...rows].join('\n');
-    };
-  
-    const downloadCSV = (content, filename) => {
-      const blob = new Blob([content], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-    };
+    const paymentExportUnavailable = Boolean(paymentLoadError)
+      || paymentLoadedQuery !== JSON.stringify(paymentQueryParams())
+      || paymentStatsLoadedQuery !== JSON.stringify(paymentQueryParams());
+    const recordReport = type => ownerRecordReport(type,
+      type === 'bookings' ? filteredBookings : type === 'payments' ? filteredPayments : reviews,
+      type === 'payments'
+        ? `Status: ${paymentFilter}; method: ${paymentMethodFilter}; dates: ${paymentDateFrom || 'any'} to ${paymentDateTo || 'any'}; search: ${paymentSearch || 'none'}; archived: ${showArchivedPayments ? 'included' : 'excluded'}. Loaded matching payment attempts: ${filteredPayments.length}. Matching summary count: ${paymentStats?.total_transactions ?? 'unavailable'}. Not a complete ledger when more matches exist on the server; attempts are not necessarily successful payments.`
+        : type === 'bookings' ? `Current booking filter: ${bookingFilter}. Search: ${bookingSearch || 'none'}. All loaded matches, not just the current display page.`
+          : 'All loaded reviews for the hotels available to this owner.');
+    const exportReport = type => downloadReportCsv(recordReport(type));
 
   if (loading) {
     return (
@@ -2022,6 +2025,7 @@ const OwnerDashboard = () => {
                 >
                   {t('payments_export_csv')}
                 </button>
+                <button type="button" className="gov-btn-ghost" onClick={() => printReportWithFeedback(recordReport('bookings'))}>Print / Save PDF</button>
               </div>
               <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#718096', fontWeight: 600 }}>
                 Showing {filteredBookings.length} of {bookings.length} bookings
@@ -2344,9 +2348,11 @@ const OwnerDashboard = () => {
                 <button
                   className="gov-btn-primary"
                   onClick={() => exportReport('payments')}
+                  disabled={paymentExportUnavailable}
                 >
                   {t('payments_export_csv')}
                 </button>
+                <button type="button" className="gov-btn-ghost" disabled={paymentExportUnavailable} onClick={() => printReportWithFeedback(recordReport('payments'))}>Print / Save PDF</button>
               </div>
             </div>
 
@@ -2723,7 +2729,7 @@ const OwnerDashboard = () => {
             </h1>
               {reviews.length > 0 && (
                 <div className="gov-glass-panel">
-                  <div style={{ display: 'flex', gap: '1rem', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                       <div style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1B5E20' }}>
                         Review Summary
@@ -2738,6 +2744,7 @@ const OwnerDashboard = () => {
                     >
                       {t('payments_export_csv')}
                     </button>
+                    <button type="button" className="gov-btn-ghost" onClick={() => printReportWithFeedback(recordReport('reviews'))}>Print / Save PDF</button>
                   </div>
                 </div>
               )}
@@ -3292,7 +3299,6 @@ const OwnerDashboard = () => {
                 }}
                 loading={analyticsLoading}
                 userRole="owner"
-                onExport={(type) => exportReport(type)}
               />
               {hotels.map((hotel) => (
                 <RoomRevenueReport

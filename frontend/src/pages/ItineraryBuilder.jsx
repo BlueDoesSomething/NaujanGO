@@ -10,6 +10,8 @@ import SearchInput from '../components/SearchInput';
 import FilterChips from '../components/FilterChips';
 import useDebouncedValue from '../hooks/useDebouncedValue';
 import useMediaQuery from '../hooks/useMediaQuery';
+import { downloadReportCsv, printReportWithFeedback, shareSavedTrip } from '../utils/exportFiles';
+import { itineraryStopReport, itineraryPrintReport } from '../utils/itineraryExports';
 import './ItineraryBuilder.css';
 
 const API_BASE_URL = getApiBaseUrl();
@@ -591,6 +593,24 @@ const ItineraryBuilder = () => {
     foodCost: foodPerDay[currentDay] !== undefined ? foodPerDay[currentDay] : DEFAULT_FOOD,
     otherCost: otherPerDay[currentDay] !== undefined ? otherPerDay[currentDay] : DEFAULT_OTHER,
     estimatedNeed: 0, modeKey: transportPerDay[currentDay] || 'jeepney'
+  };
+
+  // Unlike map waypoints, exports include stops without coordinates too.
+  const exportItems = Object.entries(itemsByDay).flatMap(([day, items]) =>
+    items.map((item, index) => ({ ...item, day_number: Number(day), order_in_day: index })));
+  const printItinerary = () => {
+    const budget = Object.entries(dayBudgetBreakdown).map(([day, row]) => ({ day: Number(day), ...row }));
+    const report = itineraryPrintReport({ itinerary, items: exportItems, budget, totals, draft: true });
+    report.sections[1].notes += ' Builder daily estimated need covers fare, food and other costs only; attraction estimates are listed separately and are included in the trip summary.';
+    printReportWithFeedback(report);
+  };
+  const shareItinerary = async () => {
+    try {
+      const result = await shareSavedTrip({ id: editingItineraryId, name: itinerary.name });
+      if (result === 'unsaved') alert('Save this itinerary first to share its saved link. No changes have been saved.');
+      if (result === 'copied') alert('Saved itinerary link copied. Unsaved changes are not included; existing access permissions still apply.');
+      if (result === 'unavailable') alert('Sharing is unavailable in this browser. Open the saved itinerary and copy its address.');
+    } catch { alert('Unable to share this link. Open the saved itinerary and copy its address.'); }
   };
 
   const allPlannedItems = useMemo(() => {
@@ -1813,14 +1833,15 @@ const ItineraryBuilder = () => {
               <Icons.BookingIcon size={16} color="white" />
               Save
             </button>
-            <button style={styles.shareBtn} onClick={() => window.print()}>
+            <button style={styles.shareBtn} onClick={shareItinerary} title="Share the saved version; existing access permissions still apply">
               <Icons.GlobeIcon size={16} color="white" />
               Share
             </button>
-            <button style={styles.exportBtn} onClick={() => window.print()}>
+            <button style={styles.exportBtn} onClick={() => downloadReportCsv(itineraryStopReport({ itinerary, items: exportItems, draft: true }))}>
               <Icons.BookingIcon size={16} color="white" />
-              Export
+              Export CSV
             </button>
+            <button type="button" style={styles.exportBtn} onClick={printItinerary}>Print / Save PDF</button>
           </div>
 
           <div className="ib-card" style={savedListStyle}>
@@ -3034,7 +3055,7 @@ const styles = {
   },
   actionButtons: {
     display: 'grid',
-    gridTemplateColumns: '1fr 1fr 1fr',
+    gridTemplateColumns: '1fr 1fr',
     gap: '10px'
   },
   saveBtn: {

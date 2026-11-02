@@ -6,6 +6,8 @@ import { createHotelBooking, fetchHotels, processPayment, startPaymentCheckout }
 import Icons from '../components/Icons'
 import HeroSlideshow from '../components/HeroSlideshow'
 import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy'
+import { downloadExportFile, downloadReportCsv, exportFilename, printReportWithFeedback } from '../utils/exportFiles'
+import { receiptExportReport } from '../utils/itineraryExports'
 import './Hotels.css'
 
 export default function Hotels() {
@@ -280,34 +282,9 @@ export default function Hotels() {
 
   const handleDownloadReceipt = () => {
     if (!receiptData) return
-    const lines = [
-      `Receipt: ${receiptData.receipt_number}`,
-      `Status: ${receiptData.status}`,
-      `Payment Status: ${receiptData.payment_status}`,
-      `Hotel: ${receiptData.hotel_name}`,
-      `Location: ${receiptData.hotel_location || ''}`,
-      `Guest: ${receiptData.customer_name}`,
-      `Email: ${receiptData.customer_email}`,
-      `Phone: ${receiptData.customer_phone || ''}`,
-      `Check-in: ${receiptData.check_in}`,
-      `Check-out: ${receiptData.check_out}`,
-      `Nights: ${receiptData.nights}`,
-      `Rooms: ${receiptData.rooms}`,
-      `Guests: ${receiptData.guests}`,
-      `Total: ${formatCurrency(receiptData.total_amount, receiptData.currency)}`,
-      `Payment Method: ${receiptData.payment_method}`,
-      `Payment Ref: ${receiptData.payment_reference || ''}`,
-      `Issued: ${new Date(receiptData.issued_at).toLocaleString()}`
-    ]
-    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const linkEl = document.createElement('a')
-    linkEl.href = url
-    linkEl.download = `receipt-${receiptData.receipt_number}.txt`
-    document.body.appendChild(linkEl)
-    linkEl.click()
-    document.body.removeChild(linkEl)
-    URL.revokeObjectURL(url)
+    const report = receiptExportReport(receiptData, t)
+    downloadExportFile(report.rows.map(row => `${row.field}: ${row.value}`).join('\r\n'),
+      exportFilename(report.filename, 'txt'), 'text/plain;charset=utf-8')
   }
 
   if (authLoading) {
@@ -963,7 +940,9 @@ export default function Hotels() {
               </div>
             </div>
             <div style={modalFooter}>
-              <button style={ghostButton} onClick={handleDownloadReceipt}>{t('download_receipt')}</button>
+              <button style={ghostButton} onClick={handleDownloadReceipt}>Download TXT</button>
+              <button style={ghostButton} onClick={() => downloadReportCsv(receiptExportReport(receiptData, t))}>Export CSV</button>
+              <button style={ghostButton} onClick={() => printReportWithFeedback(receiptExportReport(receiptData, t))}>Print / Save PDF</button>
               <button style={primaryButton} onClick={() => setShowReceiptModal(false)}>{t('done')}</button>
             </div>
           </div>
@@ -1485,6 +1464,7 @@ const modalBody = {
 const modalFooter = {
   padding: '1.25rem 2rem',
   display: 'flex',
+  flexWrap: 'wrap',
   justifyContent: 'flex-end',
   gap: '1rem',
   borderTop: '1px solid #eee'
