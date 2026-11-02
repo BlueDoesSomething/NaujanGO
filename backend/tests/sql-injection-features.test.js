@@ -168,7 +168,7 @@ test('admin log search, pagination, and time windows are bound rather than inter
   const response = await request(`/admin/logs?page=2&limit=10&q=${encodeURIComponent(q)}`, { headers });
   assert.equal(response.status, 200);
   assert.deepEqual(calls[0].params, [`%${q}%`, `%${q}%`]);
-  assert.deepEqual(calls[1].params, [`%${q}%`, `%${q}%`, 10, 10]);
+  assert.deepEqual(calls[1].params, [`%${q}%`, `%${q}%`, '10', '10']);
   assert.match(calls[1].sql, /LIMIT \? OFFSET \?/);
   assert.ok(calls.every(call => !call.sql.includes(q)));
   assert.equal((await request('/admin/logs/stats?hours=48', { headers })).status, 200);

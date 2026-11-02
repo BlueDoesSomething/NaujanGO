@@ -2420,10 +2420,14 @@ router.put('/payments/:paymentId/restore', async (req, res) => {
 
 // Get paginated system logs, newest first
 router.get('/logs', async (req, res) => {
+  res.set('Cache-Control', 'private, no-store');
   try {
     const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
     const limit = Math.min(200, Math.max(1, Number.parseInt(req.query.limit, 10) || 50));
     const offset = (page - 1) * limit;
+    if (!Number.isSafeInteger(page) || !Number.isSafeInteger(offset)) {
+      return res.status(400).json({ error: 'Invalid log page.', code: 'INVALID_LOG_PAGE' });
+    }
     const level = ['info', 'warn', 'error'].includes(req.query.level) ? req.query.level : null;
     const q = String(req.query.q || '').trim().slice(0, 200);
 
@@ -2447,18 +2451,22 @@ router.get('/logs', async (req, res) => {
        FROM system_logs ${whereSql}
        ORDER BY id DESC
        LIMIT ? OFFSET ?`,
-      [...params, limit, offset]
+      // mysql2 encodes JS numbers as DOUBLE. Some MySQL versions reject those
+      // types for LIMIT/OFFSET (ER_WRONG_ARGUMENTS). Validated integer strings
+      // keep the values bound while allowing the server's integer conversion.
+      [...params, String(limit), String(offset)]
     );
 
     res.json({ rows, total, page, limit });
   } catch (error) {
     console.error('Get system logs error:', error);
-    res.status(500).json({ error: 'Failed to fetch system logs' });
+    res.status(500).json({ error: 'Failed to fetch system logs', code: 'SYSTEM_LOGS_UNAVAILABLE' });
   }
 });
 
 // Counts by level for a time window (Overview health card + nav badge)
 router.get('/logs/stats', async (req, res) => {
+  res.set('Cache-Control', 'private, no-store');
   try {
     const rawHours = Number.parseInt(req.query.hours, 10);
     const hours = Math.min(24 * 90, Math.max(1, Number.isFinite(rawHours) ? rawHours : 24));

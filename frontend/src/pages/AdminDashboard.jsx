@@ -36,6 +36,7 @@ import {
 import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
 import ArchiveRecordModal from '../components/ArchiveRecordModal';
 import DashboardPaymentsPanel from '../components/DashboardPaymentsPanel';
+import { createSystemLogsLoader, initialSystemLogsState } from '../utils/systemLogs';
 
 const CHATBOT_TRAINING_LANGUAGES = [
   { value: 'all', label: 'All languages' },
@@ -920,9 +921,21 @@ const AdminDashboard = () => {
   const [archiveSelection, setArchiveSelection] = useState(null);
 
   // ── System Logs ────────────────────────────────────────────────────────
-  const [systemLogs, setSystemLogs] = useState([]);
-  const [systemLogsTotal, setSystemLogsTotal] = useState(0);
-  const [systemLogsLoading, setSystemLogsLoading] = useState(false);
+  const [systemLogsState, setSystemLogsState] = useState(initialSystemLogsState);
+  const { rows: systemLogs, total: systemLogsTotal, loading: systemLogsLoading, error: systemLogsError } = systemLogsState;
+  const systemLogsLoader = useRef(null);
+  if (!systemLogsLoader.current) {
+    systemLogsLoader.current = createSystemLogsLoader({
+      fetchPage: async ({ page, level, search }) => {
+        const params = new URLSearchParams({ page: String(page), limit: '50' });
+        if (level !== 'all') params.set('level', level);
+        if (search) params.set('q', search);
+        const response = await api.get(`/admin/logs?${params.toString()}`);
+        return response.data;
+      },
+      onChange: setSystemLogsState
+    });
+  }
   const [logLevel, setLogLevel] = useState('all');
   const [logSearchInput, setLogSearchInput] = useState('');
   const [logSearch, setLogSearch] = useState('');
@@ -2220,23 +2233,7 @@ const AdminDashboard = () => {
     return () => clearInterval(poller);
   }, [chatbotTrainingJob?.jobId, chatbotTrainingJob?.status]);
 
-  const loadSystemLogs = async () => {
-    try {
-      setSystemLogsLoading(true);
-      const params = new URLSearchParams({ page: String(logPage), limit: '50' });
-      if (logLevel !== 'all') params.set('level', logLevel);
-      if (logSearch) params.set('q', logSearch);
-      const response = await api.get(`/admin/logs?${params.toString()}`);
-      setSystemLogs(response.data.rows || []);
-      setSystemLogsTotal(response.data.total || 0);
-    } catch (error) {
-      console.error('Error loading system logs:', error);
-      setSystemLogs([]);
-      setSystemLogsTotal(0);
-    } finally {
-      setSystemLogsLoading(false);
-    }
-  };
+  const loadSystemLogs = () => systemLogsLoader.current.load({ page: logPage, level: logLevel, search: logSearch });
 
   const loadLogStats = async () => {
     try {
@@ -2346,6 +2343,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (activeModule !== 'system-logs') return;
     loadSystemLogs();
+    return () => systemLogsLoader.current.cancel();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeModule, logPage, logLevel, logSearch]);
 
@@ -8248,7 +8246,7 @@ const AdminDashboard = () => {
                   { label: 'Errors (24h)', value: Number(logStats?.error) || 0, color: '#dc2626', bg: '#fef2f2' },
                   { label: 'Warnings (24h)', value: Number(logStats?.warn) || 0, color: '#d97706', bg: '#fffbeb' },
                   { label: 'Info (24h)', value: Number(logStats?.info) || 0, color: '#6b7280', bg: '#f3f4f6' },
-                  { label: 'Matching entries', value: systemLogsTotal, color: '#16a34a', bg: '#f0fdf4' }
+                  { label: 'Matching entries', value: systemLogsTotal ?? '—', color: '#16a34a', bg: '#f0fdf4' }
                 ].map((card) => (
                   <div key={card.label} style={{ background: card.bg, border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1rem 1.25rem' }}>
                     <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#6b7280' }}>
@@ -8295,6 +8293,9 @@ const AdminDashboard = () => {
 
               {/* Log table */}
               <div className="gov-glass-panel">
+                {systemLogsError && <div role="alert" style={{ padding: '1rem', color: '#b91c1c', background: '#fef2f2', borderRadius: '8px', marginBottom: '1rem' }}>
+                  {systemLogsError}
+                </div>}
                 <div className="gov-table-wrap">
                   <table className="gov-table" style={{ fontSize: '0.85rem' }}>
                     <thead>
@@ -8360,12 +8361,12 @@ const AdminDashboard = () => {
                 {systemLogsLoading && systemLogs.length === 0 && (
                   <div className="gov-empty"><p>Loading…</p></div>
                 )}
-                {!systemLogsLoading && systemLogs.length === 0 && (
+                {!systemLogsLoading && !systemLogsError && systemLogsTotal !== null && systemLogs.length === 0 && (
                   <div className="gov-empty">
                     <p>
-                      No log entries found
-                      {logLevel !== 'all' || logSearch ? ' for the current filters' : ''}
+                      {systemLogsTotal > 0 ? 'No log entries on this page.' : `No log entries found${logLevel !== 'all' || logSearch ? ' for the current filters' : ''}`}
                     </p>
+                    {systemLogsTotal > 0 && <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setLogPage(1)}>Return to first page</button>}
                   </div>
                 )}
                 {systemLogsTotal > 50 && (
