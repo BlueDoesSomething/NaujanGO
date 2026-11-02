@@ -42,3 +42,21 @@ node --test tests/itinerary-attractions-responsive.test.mjs
 Requires Node 22+ and installed Chrome/Chromium/Edge (or `CHROME_PATH`). Tests skip
 if a browser is unavailable. These are emulated Chromium checks, not a substitute
 for final testing on physical Android and iOS/Safari devices.
+
+## Templates mobile follow-up
+
+A global auth stylesheet used `div[style*="height"][style*="6px"]` for the mobile
+password-strength bar. It also matched the Templates panel's inline `max-height`
+and `padding: 16px`, forcing the whole panel down to its padding height (32px).
+The rule now targets only `.register-page .register-strength-bar`.
+
+Template panel/grid sizing now uses dedicated classes. On mobile the panel grows
+with its contents and uses page scrolling, with one column on phones. Desktop
+keeps its capped scrollable panel and responsive multi-column grid. Template
+selection, draft replacement confirmation, attraction mapping and saving behavior
+are unchanged.
+
+Browser fixtures now return real-shaped template records and verify visible cards
+at 320, 360, 393, 640 and 768px, dark-mode template application without an automatic
+save, and the existing registration password-bar appearance. Previously the
+template-toggle test used an empty response and did not check panel height.

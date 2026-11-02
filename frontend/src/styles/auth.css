@@ -398,7 +398,7 @@
   }
 
   /* Password Strength Bar */
-  div[style*="height"][style*="6px"] {
+  .register-page .register-strength-bar {
     height: 5px !important;
   }
 }

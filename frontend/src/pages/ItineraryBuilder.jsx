@@ -1282,7 +1282,7 @@ const ItineraryBuilder = () => {
               )}
             </div>
           ) : (
-            <div style={styles.templatesList}>
+            <div className="ib-templates-panel">
               <div style={styles.templatesIntro}>
                 <h3 style={styles.templatesIntroTitle}>{t('templates')}</h3>
                 <p style={styles.templatesIntroText}>Start with a ready-made trip layout. Choose one and the planner will add the matching places for you.</p>
@@ -1295,7 +1295,7 @@ const ItineraryBuilder = () => {
                   </div>
                   <span style={styles.templatesRecommendationsPill}>{recommendedTemplates.length} ready-made plans</span>
                 </div>
-                <div style={styles.templatesRecommendationRow}>
+                <div className="ib-template-grid">
                   {recommendedTemplates.map((template) => {
                     const templateId = template.id || template.template_id || template.title || template.name;
                     const templateAttractions = (template.attractions || [])
@@ -1306,6 +1306,7 @@ const ItineraryBuilder = () => {
                       <button
                         key={templateId}
                         type="button"
+                        className="ib-template-card"
                         onClick={() => applyTemplate(template)}
                         style={{
                           ...styles.recommendedTemplateCard,
@@ -2267,11 +2268,6 @@ const styles = {
     color: THEME.textSecondary,
     fontWeight: 600
   },
-  templatesList: {
-    padding: '16px',
-    maxHeight: '70vh',
-    overflowY: 'auto'
-  },
   templatesIntro: {
     marginBottom: '16px',
     padding: '16px',
@@ -2322,11 +2318,6 @@ const styles = {
     fontSize: '11px',
     fontWeight: 700,
     whiteSpace: 'nowrap'
-  },
-  templatesRecommendationRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-    gap: '12px'
   },
   recommendedTemplateCard: {
     width: '100%',

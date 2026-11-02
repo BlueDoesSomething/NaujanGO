@@ -514,7 +514,7 @@ const Register = () => {
             </div>
             {formData.password && (
               <div style={passwordStrengthStyle}>
-                <div style={strengthBarStyle}>
+                <div className="register-strength-bar" style={strengthBarStyle}>
                   <div 
                     style={{
                       ...strengthFillStyle,

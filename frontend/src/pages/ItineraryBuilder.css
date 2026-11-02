@@ -424,6 +424,45 @@
   }
 }
 
+/* --- Templates: grow with the page on mobile -------------------- */
+.ib-templates-panel {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  max-height: 70vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 16px;
+}
+
+.ib-template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: 12px;
+  min-width: 0;
+}
+
+.ib-template-card {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  .ib-templates-panel {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@media (max-width: 640px) {
+  .ib-template-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* --- Attraction cards (glass morphism overlay) ------------------ */
 .itinerary-attraction-card {
   position: relative;

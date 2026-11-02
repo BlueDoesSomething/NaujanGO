@@ -223,11 +223,13 @@ test('mobile dark mode keeps the heading, fields, and links readable', options, 
 
 test('mobile form supports keyboard terms, password reveal, and the verification layout', options, async () => {
   await openRegister(393, 852);
+  await client.send('Page.bringToFront');
   await evaluate(`(() => {
     const checkbox = document.querySelector('.register-terms-checkbox'); checkbox.focus();
   })()`);
   await client.send('Input.dispatchKeyEvent', { type: 'keyDown', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
   await client.send('Input.dispatchKeyEvent', { type: 'keyUp', key: ' ', code: 'Space', windowsVirtualKeyCode: 32 });
+  await evaluate('new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))');
   assert.equal(await evaluate(`document.querySelector('.register-terms-checkbox').checked`), true);
   await evaluate(`document.querySelector('.register-reveal').click()`);
   assert.equal(await evaluate(`document.querySelector('#register-password').type`), 'text');
@@ -239,6 +241,8 @@ test('mobile form supports keyboard terms, password reveal, and the verification
       setter.call(input, value); input.dispatchEvent(new Event('input', { bubbles: true }));
     }
   })()`);
+  assert.equal(await evaluate(`getComputedStyle(document.querySelector('.register-strength-bar')).height`), '5px',
+    'the scoped strength-bar rule must keep its mobile appearance without affecting other pages');
   await evaluate(`document.querySelector('#register-form').requestSubmit()`);
   await waitFor('#register-verification-form');
   const verification = await evaluate(`(() => {

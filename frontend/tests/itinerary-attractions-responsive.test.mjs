@@ -26,6 +26,11 @@ const attractions = Array.from({ length: 13 }, (_, index) => ({
   avg_rating: 4.5, review_count: 100 - index, entrance_fee: 0,
   image_url: 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Cpath fill="%23166534" d="M0 0h400v300H0z"/%3E%3C/svg%3E'
 }));
+const templates = Array.from({ length: 3 }, (_, index) => ({
+  id: index + 1, name: `Fixture Trip Plan ${index + 1}`, category: 'nature', duration: '2 days',
+  description: 'A ready-made trip with enough description text to wrap naturally on narrow mobile screens.',
+  attractions: [1, index + 2]
+}));
 let vite, browser, profile, client, origin, initScript;
 const writes = [];
 
@@ -105,7 +110,7 @@ before(async () => {
         if (url.pathname.endsWith('/auth/profile')) body = { user: { user_id: 101, username: 'layout_fixture', role: 'user', email_verified: true } };
         if (url.pathname.endsWith('/attractions')) body = { data: attractions };
         if (url.pathname.endsWith('/itinerary')) body = { data: [] };
-        if (url.pathname.endsWith('/itinerary/templates/list')) body = [];
+        if (url.pathname.endsWith('/itinerary/templates/list')) body = templates;
         if (url.pathname.endsWith('/hotels')) body = [];
         await client.send('Fetch.fulfillRequest', { requestId, responseCode: 200,
           responseHeaders: [{ name: 'Content-Type', value: 'application/json' },
@@ -270,4 +275,56 @@ test('native touch gestures scroll the attraction rail without trapping vertical
   await swipe(0, -160);
   await frame();
   assert.ok(await evaluate('scrollY') > before, 'a vertical finger swipe over the rail must still scroll the page');
+});
+
+const openTemplates = async (width, height = 900, theme = 'light') => {
+  await openBuilder(width, height, theme);
+  await evaluate(`[...document.querySelectorAll('button')].find(button => button.textContent.trim() === 'Templates').click()`);
+  await waitFor(`[...document.querySelectorAll('button')].some(button => button.textContent.includes('Fixture Trip Plan 1'))`);
+  await frame();
+};
+
+const templateLayout = () => evaluate(`(() => {
+  const heading = [...document.querySelectorAll('h3')].find(node => node.textContent === 'Templates');
+  const panel = heading.parentElement.parentElement;
+  const cards = [...panel.querySelectorAll('button')].filter(button => button.textContent.includes('Fixture Trip Plan'));
+  const rect = node => { const r = node.getBoundingClientRect(); return { left: r.left, right: r.right, top: r.top, bottom: r.bottom, height: r.height, width: r.width }; };
+  return { panel: rect(panel), parent: rect(panel.parentElement), cards: cards.map(rect),
+    computedHeight: getComputedStyle(panel).height, overflowY: getComputedStyle(panel).overflowY,
+    scrollHeight: panel.scrollHeight, clientHeight: panel.clientHeight,
+    viewport: innerWidth, pageWidth: document.documentElement.scrollWidth };
+})()`);
+
+for (const [width, height] of [[320, 568], [360, 800], [393, 852], [640, 900], [768, 1024]]) {
+  test(`templates remain visible and expand normally at ${width}×${height}`, options, async () => {
+    await openTemplates(width, height);
+    const view = await templateLayout();
+    assert.equal(view.cards.length, 3);
+    assert.ok(view.panel.height > 250, `Templates collapsed to ${view.computedHeight}`);
+    assert.ok(view.scrollHeight <= view.clientHeight + 2, 'mobile templates must use page scrolling, not a clipped inner scroller');
+    assert.ok(view.parent.height >= view.panel.height, 'the outer panel must not clip its content');
+    assert.ok(view.pageWidth <= view.viewport + 1, 'templates must not create horizontal page overflow');
+    for (const card of view.cards) {
+      assert.ok(card.height > 100 && card.top >= view.panel.top && card.bottom <= view.panel.bottom + 1);
+      assert.ok(card.left >= view.panel.left && card.right <= view.panel.right + 1);
+    }
+    if (width <= 640) assert.ok(view.cards[1].top >= view.cards[0].bottom, 'phone templates should stack vertically');
+    if (width === 393) {
+      await evaluate(`[...document.querySelectorAll('h3')].find(node => node.textContent === 'Templates').scrollIntoView({ block: 'start', behavior: 'instant' })`);
+      const screenshot = await client.send('Page.captureScreenshot', { format: 'png' });
+      await writeFile(path.join(tempRoot, 'itinerary-templates-mobile-light.png'), Buffer.from(screenshot.data, 'base64'));
+    }
+  });
+}
+
+test('dark-mode templates can be applied locally without changing the save behavior', options, async () => {
+  await openTemplates(393, 852, 'dark');
+  const view = await templateLayout();
+  assert.ok(view.panel.height > 250);
+  await evaluate(`[...document.querySelectorAll('button')].find(button => button.textContent.includes('Fixture Trip Plan 1')).click()`);
+  await waitFor(`document.querySelector('.ib-name-input')?.value === 'Fixture Trip Plan 1'`);
+  assert.equal(await evaluate(`document.querySelectorAll('.ib-day-tabs > button').length`), 2);
+  assert.equal(await evaluate(`document.querySelector('.ib-day-content').textContent.includes('Naujan Lake')`), true);
+  assert.equal(await evaluate(`[...document.querySelectorAll('button')].find(button => button.textContent.includes('Fixture Trip Plan 1')).textContent.includes('Applied')`), true);
+  assert.deepEqual(writes.filter(url => !url.startsWith('/api/languages/preference/')), [], 'applying a template must not automatically save an itinerary');
 });
