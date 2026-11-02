@@ -16,7 +16,8 @@ import { ChartLoader } from './AdminCharts';
 import { useLanguage } from '../context/LanguageContext';
 import './ReportsAndAnalyticsDashboard.css';
 import { analyticsReport } from '../utils/reportExports';
-import { downloadReportCsv, printReportWithFeedback } from '../utils/exportFiles';
+import { downloadReportCsv } from '../utils/exportFiles';
+import ExportPdfButton from './ExportPdfButton';
 
 ChartJS.register(
   CategoryScale,
@@ -274,7 +275,7 @@ const ReportsAndAnalyticsDashboard = ({
 
   return (
     <div className="reports-analytics-dashboard">
-      {children && <p className="reports-subtitle">CSV and print controls export the analytics tables below. The separate Tourism Arrivals section is not included.</p>}
+      {children && <p className="reports-subtitle">CSV and PDF controls export the analytics tables below. The separate Tourism Arrivals section is not included.</p>}
       {/* Header */}
       <div className="reports-header">
         <div className="reports-title-section">
@@ -300,10 +301,8 @@ const ReportsAndAnalyticsDashboard = ({
           >
             Export all CSV
           </button>
-          <button type="button" className="export-btn" disabled={loading}
-            onClick={() => printReportWithFeedback(analyticsReport('all', { data, stats, visitor: visitorAnalytics, period: selectedDateRange, userRole }))}>
-            Print / Save PDF
-          </button>
+          <ExportPdfButton className="export-btn" disabled={loading}
+            getReport={() => analyticsReport('all', { data, stats, visitor: visitorAnalytics, period: selectedDateRange, userRole })} />
         </div>
       </div>
 

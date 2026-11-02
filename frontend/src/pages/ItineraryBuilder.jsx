@@ -10,7 +10,8 @@ import SearchInput from '../components/SearchInput';
 import FilterChips from '../components/FilterChips';
 import useDebouncedValue from '../hooks/useDebouncedValue';
 import useMediaQuery from '../hooks/useMediaQuery';
-import { downloadReportCsv, printReportWithFeedback, shareSavedTrip } from '../utils/exportFiles';
+import { downloadReportCsv, shareSavedTrip } from '../utils/exportFiles';
+import ExportPdfButton from '../components/ExportPdfButton';
 import { itineraryStopReport, itineraryPrintReport } from '../utils/itineraryExports';
 import './ItineraryBuilder.css';
 
@@ -598,11 +599,11 @@ const ItineraryBuilder = () => {
   // Unlike map waypoints, exports include stops without coordinates too.
   const exportItems = Object.entries(itemsByDay).flatMap(([day, items]) =>
     items.map((item, index) => ({ ...item, day_number: Number(day), order_in_day: index })));
-  const printItinerary = () => {
+  const itineraryPdfReport = () => {
     const budget = Object.entries(dayBudgetBreakdown).map(([day, row]) => ({ day: Number(day), ...row }));
     const report = itineraryPrintReport({ itinerary, items: exportItems, budget, totals, draft: true });
     report.sections[1].notes += ' Builder daily estimated need covers fare, food and other costs only; attraction estimates are listed separately and are included in the trip summary.';
-    printReportWithFeedback(report);
+    return report;
   };
   const shareItinerary = async () => {
     try {
@@ -1841,7 +1842,7 @@ const ItineraryBuilder = () => {
               <Icons.BookingIcon size={16} color="white" />
               Export CSV
             </button>
-            <button type="button" style={styles.exportBtn} onClick={printItinerary}>Print / Save PDF</button>
+            <ExportPdfButton style={styles.exportBtn} getReport={itineraryPdfReport}>Export PDF</ExportPdfButton>
           </div>
 
           <div className="ib-card" style={savedListStyle}>

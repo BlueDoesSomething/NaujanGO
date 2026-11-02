@@ -18,7 +18,8 @@ import ArchiveRecordModal from '../components/ArchiveRecordModal';
 import PaymentSummaryCards from '../components/PaymentSummaryCards';
 import { getPaymentMethodLabel, getBookingPaymentMethod, getPaymentReferences } from '../utils/paymentDisplay';
 import { ownerRecordReport } from '../utils/reportExports';
-import { downloadReportCsv, printReportWithFeedback } from '../utils/exportFiles';
+import { downloadReportCsv } from '../utils/exportFiles';
+import ExportPdfButton from '../components/ExportPdfButton';
 import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -2025,7 +2026,7 @@ const OwnerDashboard = () => {
                 >
                   {t('payments_export_csv')}
                 </button>
-                <button type="button" className="gov-btn-ghost" onClick={() => printReportWithFeedback(recordReport('bookings'))}>Print / Save PDF</button>
+                <ExportPdfButton className="gov-btn-ghost" getReport={() => recordReport('bookings')} />
               </div>
               <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#718096', fontWeight: 600 }}>
                 Showing {filteredBookings.length} of {bookings.length} bookings
@@ -2352,7 +2353,7 @@ const OwnerDashboard = () => {
                 >
                   {t('payments_export_csv')}
                 </button>
-                <button type="button" className="gov-btn-ghost" disabled={paymentExportUnavailable} onClick={() => printReportWithFeedback(recordReport('payments'))}>Print / Save PDF</button>
+                <ExportPdfButton className="gov-btn-ghost" disabled={paymentExportUnavailable} getReport={() => recordReport('payments')} />
               </div>
             </div>
 
@@ -2744,7 +2745,7 @@ const OwnerDashboard = () => {
                     >
                       {t('payments_export_csv')}
                     </button>
-                    <button type="button" className="gov-btn-ghost" onClick={() => printReportWithFeedback(recordReport('reviews'))}>Print / Save PDF</button>
+                    <ExportPdfButton className="gov-btn-ghost" getReport={() => recordReport('reviews')} />
                   </div>
                 </div>
               )}

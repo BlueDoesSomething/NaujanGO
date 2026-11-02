@@ -7,7 +7,8 @@ import WeatherWidget from '../components/WeatherWidget';
 import HeroSlideshow from '../components/HeroSlideshow';
 import CustomDropdown from '../components/CustomDropdown';
 import { getApiBaseUrl, getCsrfToken } from '../api';
-import { downloadReportCsv, printReportWithFeedback, shareSavedTrip } from '../utils/exportFiles';
+import { downloadReportCsv, shareSavedTrip } from '../utils/exportFiles';
+import ExportPdfButton from '../components/ExportPdfButton';
 import { itineraryStopReport, itineraryBudgetReport, itineraryPrintReport } from '../utils/itineraryExports';
 import './ItineraryDetail.css';
 
@@ -249,9 +250,6 @@ const ItineraryDetail = () => {
     }
   };
   
-  const exportToPDF = () => {
-    printReportWithFeedback(itineraryPrintReport({ itinerary, items: normalizedItems, budget: displayedBreakdown }));
-  };
   
   const deleteItinerary = async () => {
     // Users cannot restore an archived itinerary (ItineraryBuilder filters
@@ -768,9 +766,7 @@ const ItineraryDetail = () => {
                 <button style={styles.quickActionBtn} onClick={shareItinerary}>
                   <Icons.UploadIcon size={14} /> {t('share_with_friends')}
                 </button>
-                <button style={styles.quickActionBtn} onClick={exportToPDF}>
-                  <Icons.PhotoIcon size={14} /> Print / Save PDF
-                </button>
+                <ExportPdfButton style={styles.quickActionBtn} getReport={() => itineraryPrintReport({ itinerary, items: normalizedItems, budget: displayedBreakdown })} />
                 <button style={styles.quickActionBtn} onClick={() => downloadReportCsv(itineraryStopReport({ itinerary, items: normalizedItems }))}>
                   <Icons.ArchiveIcon size={14} /> Export stops CSV
                 </button>
@@ -969,7 +965,7 @@ const ItineraryDetail = () => {
                   style={styles.budgetActionBtn}>
                   <Icons.ArchiveIcon size={14} /> Export CSV
                 </button>
-                <button style={styles.budgetActionBtn} onClick={() => printReportWithFeedback({ ...itineraryBudgetReport(displayedBreakdown, itinerary.name), subtitle: itinerary.name })}>Print / Save PDF</button>
+                <ExportPdfButton style={styles.budgetActionBtn} getReport={() => ({ ...itineraryBudgetReport(displayedBreakdown, itinerary.name), subtitle: itinerary.name })} />
               </div>
               </div>
 

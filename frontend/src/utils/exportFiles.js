@@ -39,6 +39,15 @@ export const downloadExportFile = (content, filename, mime, doc = document) => {
 export const downloadReportCsv = report => downloadExportFile(reportCsv(report),
   exportFilename(report.filename || report.title, 'csv'), 'text/csv;charset=utf-8');
 
+export const downloadReportPdf = async report => {
+  // Keep the PDF engine out of the initial application bundle. It draws a
+  // purpose-built document from report data, never the website DOM or a canvas
+  // screenshot. All fonts are served locally; no report data leaves the browser.
+  const { generateReportPdf } = await import('./pdfReports.js');
+  const bytes = await generateReportPdf(report);
+  downloadExportFile(bytes, exportFilename(report.filename || report.title, 'pdf'), 'application/pdf');
+};
+
 const tableHtml = report => {
   const columns = report.printColumns || report.columns;
   return `<section><h2>${escapeExportHtml(report.title)}</h2>

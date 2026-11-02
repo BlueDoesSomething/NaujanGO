@@ -4,6 +4,8 @@ import { getBookingPaymentMethod, getPaymentMethodLabel, getPaymentReferences } 
 
 const columns = entries => entries.map(([key, label]) => ({ key, label }));
 const number = value => value == null || value === '' || !Number.isFinite(Number(value)) ? '' : Number(value);
+const money = (value, currency = 'PHP') => number(value) === '' ? 'Not available' : `${currency} ${Number(value).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const pdfColumns = entries => entries.map(([key, label, width]) => ({ key, label, width }));
 const report = (title, fields, rows, notes = '') => ({
   title, filename: title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
   columns: columns(notes ? [...fields, ['scope', 'Export scope']] : fields), printColumns: columns(fields),
@@ -23,6 +25,12 @@ export const ownerRecordReport = (type, rows, notes = '') => {
         status: row.status, archived: Number(row.archived) === 1 ? 'Yes' : 'No'
       })), notes);
     result.printColumns = result.columns.filter(column => ['id', 'hotel', 'guest', 'checkIn', 'checkOut', 'total', 'balance', 'currency', 'status', 'paymentStatus'].includes(column.key));
+    result.documentType = 'RESERVATION REPORT'; result.pdfLandscape = true;
+    result.summary = [['Loaded matching reservations', rows.length], ['Confirmed', rows.filter(row => row.status === 'confirmed').length], ['Pending', rows.filter(row => row.status === 'pending').length]];
+    result.pdfSections = [{ title: 'Reservation details', notes, columns: pdfColumns([['id', 'ID', 5], ['hotelRoom', 'Hotel / room', 16], ['guest', 'Guest', 14], ['stay', 'Stay (PHT)', 22], ['financial', 'Recorded amounts', 23], ['state', 'Status', 20]]),
+      rows: result.rows.map(row => ({ ...row, hotelRoom: [row.hotel, row.room].filter(Boolean).join('\n'), stay: `In: ${row.checkIn}\nOut: ${row.checkOut}\n${row.rooms ?? '—'} rooms · ${row.guests ?? '—'} guests`,
+        financial: `Total: ${money(row.total, row.currency)}\nPaid: ${money(row.paid, row.currency)}\nBalance: ${money(row.balance, row.currency)}`,
+        state: `Booking: ${row.status || 'Not available'}\nPayment: ${row.paymentStatus || 'Not available'}${row.archived === 'Yes' ? '\nArchived' : ''}` })) }];
     return result;
   }
   if (type === 'payments') {
@@ -35,13 +43,28 @@ export const ownerRecordReport = (type, rows, notes = '') => {
       created: row.created_at, paid: row.paid_at, archived: Number(row.archived) === 1 ? 'Yes' : 'No'
     })), notes);
     result.printColumns = result.printColumns.filter(column => ['id', 'booking', 'guest', 'amount', 'currency', 'method', 'status', 'references', 'created'].includes(column.key));
+    result.documentType = 'PAYMENT ATTEMPTS'; result.pdfLandscape = true;
+    result.summary = [['Loaded matching attempts', rows.length], ['Succeeded (loaded)', rows.filter(row => row.status === 'succeeded').length], ['Pending (loaded)', rows.filter(row => row.status === 'pending').length]];
+    result.pdfSections = [{ title: 'Loaded payment attempts', notes,
+      columns: pdfColumns([['id', 'ID', 5], ['bookingInfo', 'Booking', 12], ['guest', 'Guest', 14], ['amountText', 'Amount', 14], ['method', 'Method', 11], ['state', 'Status', 12], ['references', 'References', 18], ['created', 'Created at', 14]]),
+      rows: result.rows.map(row => ({ ...row, bookingInfo: [row.booking, row.reference].filter(value => value != null && value !== '').join('\n'),
+        amountText: money(row.amount, row.currency), state: `${row.status || 'Not available'}${row.archived === 'Yes' ? '\nArchived' : ''}` })) }];
     return result;
   }
-  if (type === 'reviews') return report('Reviews report', [['id', 'Review ID'], ['hotel', 'Hotel'], ['reviewer', 'Reviewer'], ['rating', 'Rating'],
+  if (type === 'reviews') {
+    const result = report('Reviews report', [['id', 'Review ID'], ['hotel', 'Hotel'], ['reviewer', 'Reviewer'], ['rating', 'Rating'],
     ['comment', 'Comment'], ['reply', 'Owner reply'], ['visibility', 'Visibility'], ['date', 'Created at']], rows.map(row => ({
       id: row.review_id, hotel: row.hotel_name, reviewer: row.username || 'Anonymous', rating: number(row.rating), comment: row.comment,
       reply: row.owner_reply, visibility: Number(row.moderated) === 0 ? 'Hidden' : 'Visible', date: row.created_at
     })), notes);
+    result.documentType = 'CUSTOMER REVIEWS';
+    const ratings = result.rows.map(row => row.rating).filter(value => value !== '');
+    result.summary = [['Loaded reviews', rows.length], ['Average rating (loaded)', ratings.length ? `${(ratings.reduce((sum, value) => sum + value, 0) / ratings.length).toFixed(1)} / 5` : 'Not available']];
+    result.pdfSections = [{ title: 'Customer feedback', notes,
+      columns: pdfColumns([['review', 'Review', 26], ['rating', 'Rating', 10], ['comment', 'Comment', 36], ['reply', 'Owner reply', 28]]),
+      rows: result.rows.map(row => ({ ...row, review: `#${row.id ?? ''}\n${row.reviewer}\n${row.hotel || ''}\n${row.date || ''}\n${row.visibility}` })) }];
+    return result;
+  }
   throw new Error('Unsupported record report');
 };
 
@@ -76,10 +99,11 @@ export const analyticsReport = (type, { data = {}, stats = {}, visitor = null, p
   }
   if (type !== 'all') {
     if (!reports[type]) throw new Error('Unsupported analytics report');
-    return { ...reports[type], filename: `${reports[type].filename}-${period}` };
+    return { ...reports[type], documentType: 'ANALYTICS REPORT', filename: `${reports[type].filename}-${period}` };
   }
   const sections = Object.values(reports);
-  return { title: 'Reports and analytics', filename: `analytics-${period}`, subtitle: `${range}. Demographic and performance tables use their own current totals.`,
+  return { title: 'Reports and analytics', filename: `analytics-${period}`, documentType: 'ANALYTICS SUMMARY', subtitle: `${range}. Demographic and performance tables use their own current totals.`,
+    summary: [['Trend selection', range], ['Trend periods loaded', trends.length], ['Access scope', userRole === 'owner' ? 'Owner: accessible hotel data only' : 'Admin analytics']],
     columns: columns([['section', 'Report'], ['period', 'Period'], ['category', 'Category'], ['bookings', 'Bookings'], ['revenue', 'Revenue (PHP)'],
       ['occupancy', 'Occupancy (%)'], ['rating', 'Average rating'], ['count', 'Count'], ['gender', 'Gender'], ['userType', 'Visitor type'], ['percentage', 'Percentage (%)'], ['scope', 'Export scope']]),
     rows: sections.flatMap(section => section.rows.length

@@ -6,7 +6,8 @@ import { createHotelBooking, fetchHotels, processPayment, startPaymentCheckout }
 import Icons from '../components/Icons'
 import HeroSlideshow from '../components/HeroSlideshow'
 import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy'
-import { downloadExportFile, downloadReportCsv, exportFilename, printReportWithFeedback } from '../utils/exportFiles'
+import { downloadExportFile, downloadReportCsv, exportFilename } from '../utils/exportFiles'
+import ExportPdfButton from '../components/ExportPdfButton'
 import { receiptExportReport } from '../utils/itineraryExports'
 import './Hotels.css'
 
@@ -942,7 +943,7 @@ export default function Hotels() {
             <div style={modalFooter}>
               <button style={ghostButton} onClick={handleDownloadReceipt}>Download TXT</button>
               <button style={ghostButton} onClick={() => downloadReportCsv(receiptExportReport(receiptData, t))}>Export CSV</button>
-              <button style={ghostButton} onClick={() => printReportWithFeedback(receiptExportReport(receiptData, t))}>Print / Save PDF</button>
+              <ExportPdfButton style={ghostButton} getReport={() => receiptExportReport(receiptData, t)} />
               <button style={primaryButton} onClick={() => setShowReceiptModal(false)}>{t('done')}</button>
             </div>
           </div>

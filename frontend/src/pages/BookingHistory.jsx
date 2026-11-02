@@ -10,7 +10,8 @@ import { buildPolicyLines } from '../utils/bookingPolicy';
 import { bookingInstant, bookingLocalTime, formatBookingBoundary, getStayExtensions, hourlyCheckout, philippineToday } from '../utils/stayBooking';
 import StayExtensionHistory from '../components/StayExtensionHistory';
 import { canResumeBookingPayment } from '../utils/paymentRecovery';
-import { downloadReportCsv, printReportWithFeedback } from '../utils/exportFiles';
+import { downloadReportCsv } from '../utils/exportFiles';
+import ExportPdfButton from '../components/ExportPdfButton';
 import { receiptExportReport } from '../utils/itineraryExports';
 
 export default function BookingHistory() {
@@ -790,7 +791,7 @@ END:VCALENDAR`;
               Close
             </button>
             {receiptData && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '12px 24px' }}>
-              <button type="button" className="gov-btn-primary" onClick={() => printReportWithFeedback(receiptExportReport(receiptData, t))}>Print / Save PDF</button>
+              <ExportPdfButton className="gov-btn-primary" getReport={() => receiptExportReport(receiptData, t)} />
               <button type="button" className="gov-btn-ghost" onClick={() => downloadReportCsv(receiptExportReport(receiptData, t))}>Export receipt CSV</button>
             </div>}
             <div
