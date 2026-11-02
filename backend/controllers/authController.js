@@ -5,13 +5,12 @@ import crypto from 'crypto';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
-import nodemailer from 'nodemailer';
 import { fileURLToPath } from 'url';
 import { execute } from '../db.js';
 import passport from '../config/passport.js';
 import { authenticateToken } from '../middleware/auth.js';
 import { createRateLimiter } from '../middleware/rateLimit.js';
-import { buildFrontendUrl, sendAuthEmail } from '../services/authMailer.js';
+import { buildFrontendUrl, sendAuthEmail, verifyAuthEmailTransport } from '../services/authMailer.js';
 import { findSecurityToken, invalidateSecurityTokens, issueSecurityToken, markSecurityTokenUsed } from '../services/securityTokens.js';
 import { getUserColumns } from '../services/userSchema.js';
 import { JWT_SECRET } from '../config/security.js';
@@ -69,6 +68,15 @@ const normalizeEmail = (value) => cleanString(value).toLowerCase();
 const normalizeIdentifier = (value) => cleanString(value).toLowerCase();
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const usernameRegex = /^[a-zA-Z0-9_.-]{3,30}$/;
+const registrationEmailsInFlight = new Set();
+const emailDeliveryUnavailable = res => res.status(503).json({
+  error: 'Verification email service is temporarily unavailable. Please try again later.',
+  code: 'EMAIL_DELIVERY_UNAVAILABLE'
+});
+const registrationEmailInProgress = res => res.status(409).json({
+  error: 'A verification email request is still being processed. Please wait before trying again.',
+  code: 'REGISTRATION_EMAIL_IN_PROGRESS'
+});
 
 const validatePassword = (password) => {
   return typeof password === 'string'
@@ -126,6 +134,12 @@ const resendVerificationLimiter = createRateLimiter({
   keyGenerator: (req) => buildRateLimitKey(req, normalizeIdentifier(req.body?.emailOrUsername))
 });
 
+const registrationResendLimiter = createRateLimiter({
+  name: 'auth-registration-resend', windowMs: 15 * 60 * 1000, maxRequests: 4,
+  message: 'Too many verification email requests. Please try again later.', errorCode: 'RESEND_RATE_LIMITED',
+  keyGenerator: req => buildRateLimitKey(req, normalizeEmail(req.body?.email))
+});
+
 const resetPasswordLimiter = createRateLimiter({
   name: 'auth-reset-password',
   windowMs: 15 * 60 * 1000,
@@ -151,11 +165,9 @@ const sendVerificationEmail = async ({ email, username, token }) => {
   const delivery = await sendAuthEmail({ to: email, subject, text, html });
 
   if (!delivery.delivered) {
-    console.error(
-      `[EMAIL_VERIFY] Not delivered to ${email}. reason=${delivery.reason} code=${delivery.code || 'n/a'} err=${delivery.error || 'n/a'}\n[EMAIL_VERIFY] Fallback link: ${verificationUrl}`
-    );
+    console.error('[EMAIL_VERIFY] Delivery unavailable:', { reason: delivery.reason, code: delivery.code });
   } else {
-    console.log(`[EMAIL_VERIFY] Delivered to ${email}. messageId=${delivery.messageId}`);
+    console.log('[EMAIL_VERIFY] Message accepted by SMTP.');
   }
 
   return { delivery, verificationUrl };
@@ -172,11 +184,9 @@ const sendPasswordResetEmail = async ({ email, username, token }) => {
     // Logged at error level, not info: the forgot-password handler deliberately
     // returns a generic success so it cannot be used to enumerate accounts, so
     // this line is the ONLY signal that a delivery failed.
-    console.error(
-      `[PASSWORD_RESET] Not delivered to ${email}. reason=${delivery.reason} code=${delivery.code || 'n/a'} err=${delivery.error || 'n/a'}\n[PASSWORD_RESET] Fallback link: ${resetUrl}`
-    );
+    console.error('[PASSWORD_RESET] Delivery unavailable:', { reason: delivery.reason, code: delivery.code });
   } else {
-    console.log(`[PASSWORD_RESET] Delivered to ${email}. messageId=${delivery.messageId}`);
+    console.log('[PASSWORD_RESET] Message accepted by SMTP.');
   }
 
   return { delivery, resetUrl };
@@ -320,6 +330,8 @@ router.post('/register-send-code', registerLimiter, async (req, res) => {
     return res.status(400).json({ error: PASSWORD_POLICY_MESSAGE, code: 'WEAK_PASSWORD' });
   }
 
+  if (registrationEmailsInFlight.has(normalizedEmail)) return registrationEmailInProgress(res);
+  registrationEmailsInFlight.add(normalizedEmail);
   try {
     // Check if user already exists by email
     const [existingEmail] = await execute('SELECT user_id FROM users WHERE email = ?', [normalizedEmail]);
@@ -337,7 +349,7 @@ router.post('/register-send-code', registerLimiter, async (req, res) => {
     const verificationCode = crypto.randomInt(100000, 1000000).toString();
     const passwordHash = await bcrypt.hash(password, await bcrypt.genSalt(10));
     
-    // Store in cache/temp storage with expiration (10 minutes)
+    // Prepare a candidate; it is published only after SMTP acceptance.
     const tempData = {
       username: normalizedUsername,
       email: normalizedEmail,
@@ -353,12 +365,6 @@ router.post('/register-send-code', registerLimiter, async (req, res) => {
       expiresAt: Date.now() + (10 * 60 * 1000)
     };
 
-    // Store in Redis or memory cache (using process.env.TEMP_REGISTRATIONS)
-    if (!global.tempRegistrations) {
-      global.tempRegistrations = {};
-    }
-    global.tempRegistrations[normalizedEmail] = tempData;
-
     // Send verification code email
     const subject = 'Your NaujangGO Verification Code';
     const text = `Hello ${normalizedUsername},\n\nYour verification code is: ${verificationCode}\n\nThis code expires in 10 minutes.\n\nDo not share this code with anyone.`;
@@ -367,23 +373,24 @@ router.post('/register-send-code', registerLimiter, async (req, res) => {
     const delivery = await sendAuthEmail({ to: normalizedEmail, subject, text, html });
 
     if (!delivery.delivered) {
-      console.error(`[REGISTRATION] Failed to send verification email to ${normalizedEmail}:`, delivery);
-      return res.status(503).json({
-        error: 'Verification email service is temporarily unavailable. Please try again later.',
-        code: 'EMAIL_DELIVERY_UNAVAILABLE'
-      });
+      return emailDeliveryUnavailable(res);
     }
 
-    console.log(`[REGISTRATION] Sent verification code to ${normalizedEmail}. Message ID: ${delivery.messageId}`);
+    // Publish the candidate only after SMTP acceptance. A failed retry must not
+    // erase an earlier registration/code that was actually sent.
+    if (!global.tempRegistrations) global.tempRegistrations = {};
+    global.tempRegistrations[normalizedEmail] = tempData;
 
     res.status(200).json({
       success: true,
-      message: 'Verification code sent to your email. Please enter it to continue with registration.',
+      message: 'Verification email accepted for delivery. Check your inbox and spam folder, then enter the code to continue.',
       ...maybeIncludeDevLink('devVerificationCode', verificationCode)
     });
   } catch (err) {
     console.error('Register send code error:', err);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    registrationEmailsInFlight.delete(normalizedEmail);
   }
 });
 
@@ -475,7 +482,7 @@ router.post('/register-verify-code', verificationLimiter, async (req, res) => {
 });
 
 // Resend verification code
-router.post('/register-resend-code', verificationLimiter, async (req, res) => {
+router.post('/register-resend-code', registrationResendLimiter, async (req, res) => {
   const { email } = req.body;
   const normalizedEmail = normalizeEmail(email);
 
@@ -483,6 +490,8 @@ router.post('/register-resend-code', verificationLimiter, async (req, res) => {
     return res.status(400).json({ error: 'Email is required' });
   }
 
+  if (registrationEmailsInFlight.has(normalizedEmail)) return registrationEmailInProgress(res);
+  registrationEmailsInFlight.add(normalizedEmail);
   try {
     // Check if registration session exists
     if (!global.tempRegistrations || !global.tempRegistrations[normalizedEmail]) {
@@ -500,10 +509,6 @@ router.post('/register-resend-code', verificationLimiter, async (req, res) => {
     // Generate new verification code
     const newVerificationCode = crypto.randomInt(100000, 1000000).toString();
     
-    // Update temp data with new code and new expiration
-    tempData.code = newVerificationCode;
-    tempData.expiresAt = Date.now() + (10 * 60 * 1000); // Reset to 10 minutes from now
-
     // Send new verification code email
     const subject = 'Your NaujangGO Verification Code (Resent)';
     const text = `Hello ${tempData.username},\n\nYour new verification code is: ${newVerificationCode}\n\nThis code expires in 10 minutes.\n\nDo not share this code with anyone.`;
@@ -512,23 +517,26 @@ router.post('/register-resend-code', verificationLimiter, async (req, res) => {
     const delivery = await sendAuthEmail({ to: normalizedEmail, subject, text, html });
 
     if (!delivery.delivered) {
-      console.error(`[REGISTRATION] Failed to send verification email to ${normalizedEmail}:`, delivery);
-      return res.status(503).json({
-        error: 'Verification email service is temporarily unavailable. Please try again later.',
-        code: 'EMAIL_DELIVERY_UNAVAILABLE'
-      });
+      return emailDeliveryUnavailable(res);
     }
 
-    console.log(`[REGISTRATION] Resent verification code to ${normalizedEmail}. Message ID: ${delivery.messageId}`);
+    // The previous code may have completed registration during SMTP I/O.
+    // Never resurrect a consumed session, and never replace it on send failure.
+    if (global.tempRegistrations?.[normalizedEmail] === tempData) {
+      global.tempRegistrations[normalizedEmail] = { ...tempData, code: newVerificationCode,
+        expiresAt: Date.now() + (10 * 60 * 1000) };
+    }
 
     res.status(200).json({
       success: true,
-      message: 'Verification code resent to your email. Please check your inbox and spam folder.',
+      message: 'Replacement verification email accepted for delivery. Please check your inbox and spam folder.',
       ...maybeIncludeDevLink('devVerificationCode', newVerificationCode)
     });
   } catch (err) {
     console.error('Resend verification code error:', err);
     res.status(500).json({ error: 'Internal server error' });
+  } finally {
+    registrationEmailsInFlight.delete(normalizedEmail);
   }
 });
 
@@ -686,7 +694,7 @@ router.post('/resend-verification', resendVerificationLimiter, async (req, res) 
   const identifier = normalizeIdentifier(req.body?.emailOrUsername);
   const genericResponse = {
     success: true,
-    message: 'If the account exists and still needs verification, a new email has been sent.'
+    message: 'If this account needs verification, check your inbox and spam folder for a verification link. If no email arrives, try again later or contact support.'
   };
 
   if (!identifier) {
@@ -710,12 +718,19 @@ router.post('/resend-verification', resendVerificationLimiter, async (req, res) 
 
     const user = rows[0];
     if (user.email_verified) {
-      return res.json({ success: true, message: 'This account is already verified.' });
+      return res.json(genericResponse);
     }
 
+    // Keep earlier links valid if SMTP fails. Multiple unexpired email-only
+    // verification links are safe; none grants a logged-in session.
+    const { token, id } = await issueSecurityToken({
+      userId: user.user_id, tokenType: 'email_verification', expiresInMinutes: 30, invalidateExisting: false
+    });
+    const { delivery, verificationUrl } = await sendVerificationEmail({ email: user.email, username: user.username, token });
+    if (!delivery.delivered) await markSecurityTokenUsed(id);
     return res.json({
-      success: true,
-      message: 'A verification code has been sent to your email.'
+      ...genericResponse,
+      ...(delivery.delivered ? maybeIncludeDevLink('devVerificationUrl', verificationUrl) : {})
     });
   } catch (err) {
     console.error('Resend verification error:', err);
@@ -1032,48 +1047,18 @@ router.get('/test-smtp', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
-    const smtpConfig = {
-      host: process.env.SMTP_HOST || 'not configured',
-      port: process.env.SMTP_PORT || 'not configured',
-      user: process.env.SMTP_USER ? '***' + process.env.SMTP_USER.slice(-10) : 'not configured',
-      mailFrom: process.env.MAIL_FROM || 'not configured'
-    };
-
-    // Try to verify SMTP connection
-    let smtpConnectionStatus = 'unknown';
-    let smtpError = null;
-    
-    try {
-      const testTransporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
-        port: Number(process.env.SMTP_PORT || 587),
-        secure: Number(process.env.SMTP_PORT || 587) === 465,
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS
-        }
-      });
-      
-      await testTransporter.verify();
-      smtpConnectionStatus = 'connected';
-    } catch (err) {
-      smtpConnectionStatus = 'failed';
-      smtpError = err.message;
-      console.error('[SMTP TEST] Connection failed:', err.message);
-    }
-
+    res.set('Cache-Control', 'private, no-store');
+    const diagnostic = await verifyAuthEmailTransport();
     res.json({
-      status: 'ok',
-      smtpConfig,
-      smtpConnectionStatus,
-      smtpError,
+      status: diagnostic.smtpConnectionStatus === 'connected' ? 'ok' : 'unavailable',
+      ...diagnostic,
       nodeEnv: process.env.NODE_ENV || 'development',
       frontendUrl: FRONTEND_URL,
-      tip: smtpConnectionStatus === 'failed' ? 'Check SMTP credentials in .env file. For Gmail, use an App Password, not your regular password.' : null
+      tip: diagnostic.hint || 'This checks SMTP connectivity/authentication only. It does not send an email or prove inbox delivery.'
     });
   } catch (err) {
-    console.error('SMTP test error:', err);
-    res.status(500).json({ error: err.message });
+    console.error('[SMTP TEST] Diagnostic unavailable.');
+    res.status(500).json({ error: 'SMTP diagnostic unavailable.' });
   }
 });
 

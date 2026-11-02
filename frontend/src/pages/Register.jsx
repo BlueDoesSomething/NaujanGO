@@ -222,12 +222,10 @@ const Register = () => {
         preferred_language: 'en'
       });
 
-      console.log('Verification code sent:', response.data);
       setTempUserData(formData);
       setRegistrationStage('verify');
       setSuccessMessage(response.data?.message || 'Verification code sent to your email. Please enter the code to continue.');
     } catch (err) {
-      console.error('Registration error:', err);
       const errMsg = err.response?.data?.code === 'EMAIL_DELIVERY_UNAVAILABLE'
         ? 'Registration email could not be sent. Please ask the administrator to check the SMTP email settings.'
         : err.response?.data?.error || err.message || 'Registration failed';
@@ -257,7 +255,6 @@ const Register = () => {
         code: verificationCode
       });
 
-      console.log('Account verified and created:', response.data);
       setSuccessMessage(response.data?.message || 'Account created successfully! Redirecting to login...');
       setRegistrationStage('form');
       setVerificationCode('');
@@ -280,7 +277,6 @@ const Register = () => {
         navigate('/login');
       }, 2000);
     } catch (err) {
-      console.error('Verification error:', err);
       const errMsg = err.response?.data?.error || err.message || 'Verification failed';
       setError(errMsg);
     } finally {
@@ -297,14 +293,8 @@ const Register = () => {
         email: formData.email
       });
 
-      console.log('Resend code response:', response.data);
       setSuccessMessage(response.data?.message || 'Verification code resent to your email');
       
-      // Show dev code if available
-      if (response.data?.devVerificationCode) {
-        console.log('[DEV] Verification code:', response.data.devVerificationCode);
-      }
-
       // Set cooldown timer (60 seconds)
       setResendCooldown(60);
       const timer = setInterval(() => {
@@ -317,7 +307,6 @@ const Register = () => {
         });
       }, 1000);
     } catch (err) {
-      console.error('Resend code error:', err);
       const errMsg = err.response?.data?.error || err.message || 'Failed to resend code';
       setError(errMsg);
     } finally {
@@ -368,10 +357,10 @@ const Register = () => {
             <p>{successMessage}</p>
           </div>
         )}
-        {successMessage && (
+        {registrationStage === 'verify' && (
           <div style={{marginTop: '1rem', padding: '1rem', backgroundColor: '#fef3c7', borderRadius: '8px', border: '1px solid #fcd34d', color: '#92400e'}}>
             <p style={{margin: '0 0 0.5rem 0', fontWeight: '600'}}>📧 Check your email</p>
-            <p style={{margin: 0, fontSize: '0.9rem'}}>A verification code has been sent to your email. Enter it below to verify your account.</p>
+            <p style={{margin: 0, fontSize: '0.9rem'}}>Check the inbox and spam/junk folder for <strong>{(tempUserData?.email || formData.email).trim().toLowerCase()}</strong>. Delivery may take a few minutes. If the address is incorrect, go back to registration to correct it.</p>
           </div>
         )}
 
@@ -592,7 +581,7 @@ const Register = () => {
         </form>
         )}
 
-        {registrationStage === 'verify' && successMessage && (
+        {registrationStage === 'verify' && (
         <form id="register-verification-form" className="register-form" onSubmit={handleVerifyCode}>
           <div className="register-field">
             <label htmlFor="register-verification-code">Verification Code</label>
@@ -633,6 +622,7 @@ const Register = () => {
 
           <button
             type="button"
+            disabled={isLoading}
             onClick={() => {
               setRegistrationStage('form');
               setSuccessMessage(null);

@@ -18,20 +18,20 @@ export const invalidateSecurityTokens = async (userId, tokenType) => {
   );
 };
 
-export const issueSecurityToken = async ({ userId, tokenType, expiresInMinutes }) => {
-  await invalidateSecurityTokens(userId, tokenType);
+export const issueSecurityToken = async ({ userId, tokenType, expiresInMinutes, invalidateExisting = true }) => {
+  if (invalidateExisting) await invalidateSecurityTokens(userId, tokenType);
 
   const token = createOpaqueToken();
   const tokenHash = hashOpaqueToken(token);
   const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000);
 
-  await execute(
+  const [result] = await execute(
     `INSERT INTO auth_tokens (user_id, token_hash, token_type, expires_at)
      VALUES (?, ?, ?, ?)`,
     [userId, tokenHash, tokenType, expiresAt]
   );
 
-  return { token, expiresAt };
+  return { token, expiresAt, id: result.insertId };
 };
 
 export const findSecurityToken = async ({ token, tokenType }) => {
