@@ -192,6 +192,7 @@ const ItineraryBuilder = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const suggestionCacheRef = useRef(new Map());
   const sidebarRef = useRef(null);
+  const attractionGridRef = useRef(null);
   const dayPlannerRef = useRef(null);
   const budgetPanelRef = useRef(null);
   const preselectedAppliedRef = useRef(false);
@@ -765,7 +766,15 @@ const ItineraryBuilder = () => {
   ]);
 
   const attractionsTotalPages = Math.max(1, Math.ceil(filteredAttractions.length / ATTR_PER_PAGE));
-  const visibleAttractions = filteredAttractions.slice((attractionsPage - 1) * ATTR_PER_PAGE, attractionsPage * ATTR_PER_PAGE);
+  // Mobile is one swipeable rail with no pager: every matching place must be
+  // mounted, not just the current desktop page of eight cards.
+  const visibleAttractions = isMobile
+    ? filteredAttractions
+    : filteredAttractions.slice((attractionsPage - 1) * ATTR_PER_PAGE, attractionsPage * ATTR_PER_PAGE);
+
+  useEffect(() => {
+    if (attractionGridRef.current) attractionGridRef.current.scrollLeft = 0;
+  }, [filteredAttractions, isMobile, attractionsPage, showTemplates]);
 
   useEffect(() => {
     setAttractionsPage(1);
@@ -1170,10 +1179,11 @@ const ItineraryBuilder = () => {
                   <p style={{ margin: 0, color: THEME.textSecondary }}>{t('no_attractions_found')}</p>
                 </div>
               ) : (
-                <div className="itinerary-attraction-grid" style={styles.attractionGrid}>
+                <div ref={attractionGridRef} className="itinerary-attraction-grid" style={styles.attractionGrid}
+                  role="region" aria-label={t('attractions')} tabIndex={0}>
                   {visibleAttractions.map(attraction => (
-                    <div key={attraction.id} className="itinerary-attraction-card" style={styles.attractionCard}>
-                      <img src={attraction.image_url} alt={attraction.name} className="itinerary-attraction-image" />
+                    <div key={attraction.id} className="itinerary-attraction-card">
+                      <img src={attraction.image_url} alt={attraction.name} className="itinerary-attraction-image" loading="lazy" decoding="async" />
                       <button
                         type="button"
                         className="itinerary-attraction-fav-btn"
@@ -1243,7 +1253,7 @@ const ItineraryBuilder = () => {
                 </div>
               )}
 
-              {!attractionsLoading && filteredAttractions.length > ATTR_PER_PAGE && (
+              {!isMobile && !attractionsLoading && filteredAttractions.length > ATTR_PER_PAGE && (
                 <div className="sidebarPaginationWrap" style={styles.sidebarPaginationWrap}>
                   <button
                     style={attractionsPage === 1 ? styles.pageNavBtnDisabled : styles.pageNavBtn}
@@ -2177,9 +2187,6 @@ const styles = {
     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: '24px',
     marginBottom: '20px'
-  },
-  attractionCard: {
-    minHeight: 0
   },
   filterHeaderRow: {
     display: 'flex',

@@ -427,6 +427,7 @@
 /* --- Attraction cards (glass morphism overlay) ------------------ */
 .itinerary-attraction-card {
   position: relative;
+  min-height: 0;
   border-radius: 20px;
   overflow: hidden;
   background: var(--ib-bg-card, #152238);
@@ -707,24 +708,34 @@
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
+    scroll-padding-inline: 4px;
+    overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
     gap: 16px;
     padding: 4px 4px 8px 4px;
     margin-bottom: 0;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    justify-content: center;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ib-primary, #22c55e) transparent;
+    /* Centering an overflowing flex row strands its first cards at negative
+       positions that cannot be reached by scrolling back to zero. */
+    justify-content: flex-start;
   }
-  .itinerary-attraction-grid::-webkit-scrollbar { display: none; }
+  .itinerary-attraction-grid::-webkit-scrollbar { height: 6px; }
+  .itinerary-attraction-grid::-webkit-scrollbar-thumb {
+    background: var(--ib-primary, #22c55e);
+    border-radius: 999px;
+  }
 
   .itinerary-attraction-card {
     flex: 0 0 85%;
     min-width: 0;
+    /* The wide image ratio alone is too short for the title/actions at 320px. */
+    min-height: 220px;
     max-width: 340px;
     aspect-ratio: 16 / 10;
-    scroll-snap-align: center;
+    scroll-snap-align: start;
     scroll-snap-stop: always;
-    margin: 0 auto;
+    margin: 0;
   }
 
   .itinerary-attraction-card::after {
