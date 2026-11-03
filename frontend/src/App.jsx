@@ -395,17 +395,7 @@ const App = () => {
             path="/owner/*"
             element={
               <RoleBasedRoute allowedRoles={['owner', 'admin']}>
-                <Routes>
-                  <Route path="/" element={<OwnerDashboard />} />
-                  <Route path="/hotels" element={<OwnerDashboard />} />
-                  <Route path="/bookings" element={<OwnerDashboard />} />
-                  <Route path="/analytics" element={<OwnerDashboard />} />
-                  <Route path="/profile" element={<OwnerDashboard />} />
-                  <Route path="/reviews" element={<OwnerDashboard />} />
-                  <Route path="/payments" element={<OwnerDashboard />} />
-                  <Route path="/notifications" element={<OwnerDashboard />} />
-                  <Route path="/archive" element={<OwnerDashboard />} />
-                </Routes>
+                <OwnerDashboard />
               </RoleBasedRoute>
             }
           />

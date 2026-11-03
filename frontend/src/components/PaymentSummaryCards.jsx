@@ -1,10 +1,15 @@
 import React from 'react';
+import { formatHotelCurrency } from '../utils/hotelCurrency';
+
+const summaryAmount = (value, scope) => Number(scope?.currency_count) > 1 ? 'Multiple currencies — see records'
+  : scope?.currency ? formatHotelCurrency(value || 0, scope.currency)
+    : `${Number(value || 0).toLocaleString()} (currency not reported)`;
 
 export const paymentSummaryCards = stats => [
-  { title: 'Lifetime revenue', value: `₱${Number(stats.total_revenue || 0).toLocaleString()}`, note: 'All records, including archived payments', color: '#166534' },
+  { title: 'Lifetime revenue', value: summaryAmount(stats.total_revenue, stats.historical || stats), note: 'All records, including archived payments', color: '#166534' },
   { title: 'Successful (filtered)', value: Number(stats.successful_transactions || 0), note: 'Payment attempts matching the current filters', color: '#15803d' },
-  { title: 'Pending amount (filtered)', value: `₱${Number(stats.pending_amount || 0).toLocaleString()}`, note: 'Pending transactions cannot be archived', color: '#b45309' },
-  { title: 'Failed amount (filtered)', value: `₱${Number(stats.failed_amount || 0).toLocaleString()}`, note: `${Number(stats.failed_transactions || 0)} failed payment ${Number(stats.failed_transactions || 0) === 1 ? 'attempt' : 'attempts'} — not lost revenue`, color: '#b91c1c' }
+  { title: 'Pending amount (filtered)', value: summaryAmount(stats.pending_amount, stats), note: 'Pending transactions cannot be archived', color: '#b45309' },
+  { title: 'Failed amount (filtered)', value: summaryAmount(stats.failed_amount, stats), note: `${Number(stats.failed_transactions || 0)} failed payment ${Number(stats.failed_transactions || 0) === 1 ? 'attempt' : 'attempts'} — not lost revenue`, color: '#b91c1c' }
 ];
 
 const PaymentSummaryCards = ({ stats }) => !stats ? null : (

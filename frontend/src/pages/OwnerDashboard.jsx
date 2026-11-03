@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useState, useRef } from 'react';
 import Icons from '../components/Icons';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import ReportsAndAnalyticsDashboard from '../components/ReportsAndAnalyticsDashboard';
 import api from '../api';
 import Pagination from '../components/Pagination';
@@ -15,6 +15,12 @@ import BookingIssuedCell from '../components/BookingIssuedCell';
 import { getBookingGuestName } from '../utils/bookingGuestName';
 import ReferenceDetails from '../components/ReferenceDetails';
 import ArchiveRecordModal from '../components/ArchiveRecordModal';
+import OwnerDialog from '../components/OwnerDialog';
+import OwnerReservationDetails from '../components/OwnerReservationDetails';
+import OwnerSetupChecklist from '../components/OwnerSetupChecklist';
+import { formatHotelCurrency } from '../utils/hotelCurrency';
+import { OWNER_PATHS, ownerTabFromPath, ownerStartingPrice, roomsForHotel, validateOwnerHotel, ownerTodayTasks } from '../utils/ownerDashboard';
+import { registerOwnerHistoryGuard } from '../utils/ownerHistoryGuard';
 import PaymentSummaryCards from '../components/PaymentSummaryCards';
 import { getPaymentMethodLabel, getBookingPaymentMethod, getPaymentReferences } from '../utils/paymentDisplay';
 import { ownerRecordReport } from '../utils/reportExports';
@@ -35,6 +41,7 @@ const OwnerDashboard = () => {
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
+  const location = useLocation();
   const emptyHotelForm = {
     name: '',
     location: '',
@@ -84,23 +91,56 @@ const OwnerDashboard = () => {
   const [paymentDateFrom, setPaymentDateFrom] = useState('');
   const [paymentDateTo, setPaymentDateTo] = useState('');
   const [paymentSearch, setPaymentSearch] = useState('');
-  const [paymentMethodSettings, setPaymentMethodSettings] = useState(['card', 'gcash', 'paypal', 'bank_transfer', 'pay_at_property']);
+   const [paymentMethodSettings, setPaymentMethodSettings] = useState([...DEFAULT_HOTEL_PAYMENT_METHODS]);
   const [paymentMethodSettingsSaving, setPaymentMethodSettingsSaving] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState(null);
   const [refundModal, setRefundModal] = useState(null);
   const [refundReason, setRefundReason] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('overview');
+  const activeTab = ownerTabFromPath(location.pathname);
+  const [dashboardError, setDashboardError] = useState('');
+  const [dashboardLoaded, setDashboardLoaded] = useState(false);
+  const [reviewsError, setReviewsError] = useState('');
+  const [availabilityError, setAvailabilityError] = useState('');
+  const [notice, setNotice] = useState('');
+  const [actionError, setActionError] = useState('');
+  const [pendingAction, setPendingAction] = useState(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const actionBusyRef = useRef(false);
+  const [selectedReservation, setSelectedReservation] = useState(null);
+  const [hotelErrors, setHotelErrors] = useState({});
+  const [hotelSaveError, setHotelSaveError] = useState('');
+  const [hotelSection, setHotelSection] = useState('details');
+  const [hotelBaseline, setHotelBaseline] = useState('');
+  const [roomDirty, setRoomDirty] = useState(false);
+  const [plansDirty, setPlansDirty] = useState(false);
+  const [calendarDirty, setCalendarDirty] = useState(false);
+  const [capacityDirty, setCapacityDirty] = useState(false);
+  const [roomBusy, setRoomBusy] = useState(false);
+  const [plansBusy, setPlansBusy] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [roomHotelId, setRoomHotelId] = useState('');
+  const roomDrafts = useRef(new Map());
+  const reportRoomDirty = useCallback(value => setRoomDirty(value), []);
+  const reportPlansDirty = useCallback(value => setPlansDirty(value), []);
+  const reportRoomBusy = useCallback(value => setRoomBusy(value), []);
+  const reportPlansBusy = useCallback(value => setPlansBusy(value), []);
+  const profileBaseline = useRef(null);
+  const paymentMethodsBaseline = useRef(null);
+  const historyPosition = useRef(typeof window !== 'undefined' ? window.history.state?.idx : null);
+  const restoringHistory = useRef(false);
+  const [historyRestoring, setHistoryRestoring] = useState(false);
+  const allowedHistoryMove = useRef(false);
   const [editingHotel, setEditingHotel] = useState(null);
   const [creatingHotel, setCreatingHotel] = useState(false);
   const [hotelForm, setHotelForm] = useState(emptyHotelForm);
   const [hotelSaving, setHotelSaving] = useState(false);
   const [galleryUrlInput, setGalleryUrlInput] = useState('');
   const [imageUploading, setImageUploading] = useState(false);
-  const [managingRoomsHotel, setManagingRoomsHotel] = useState(null);
   const [showCoordinatePicker, setShowCoordinatePicker] = useState(false);
   const [mapInstance, setMapInstance] = useState(null);
+
 
   // A booking can have several real payment attempts. Keep each payment_id so
   // failed attempts remain reviewable/archivable and agree with the summary.
@@ -108,6 +148,7 @@ const OwnerDashboard = () => {
     // Booking Management State
     const [bookingFilter, setBookingFilter] = useState('all');
     const [bookingSearch, setBookingSearch] = useState('');
+    const [bookingDayFilter, setBookingDayFilter] = useState('all');
   
     // Business Profile State
     const [businessProfile, setBusinessProfile] = useState({
@@ -137,23 +178,97 @@ const OwnerDashboard = () => {
     const [missingRequirements, setMissingRequirements] = useState([]);
     const [profileStatus, setProfileStatus] = useState({ verification_status: 'pending', rejection_reason: '' });
     const [docUploading, setDocUploading] = useState('');
+
+  // Availability drafts remain independent: saving date limits must not clear
+  // an unsaved capacity change, and vice versa.
+  const [selectedHotelForCalendar, setSelectedHotelForCalendar] = useState(null);
+  const [availabilityForm, setAvailabilityForm] = useState({ rooms_total: '', rooms_available: '' });
+  const [availabilitySaving, setAvailabilitySaving] = useState(false);
+  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+  const [availabilityByDate, setAvailabilityByDate] = useState({});
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityReady, setAvailabilityReady] = useState(false);
+  const availabilityRequest = useRef(0);
+  const [selectedAvailabilityRange, setSelectedAvailabilityRange] = useState({ start: null, end: null });
+  const [availabilityEditForm, setAvailabilityEditForm] = useState({ rooms_available: '', is_closed: 0 });
+
+  const hotelDirty = Boolean((editingHotel || creatingHotel) && JSON.stringify(hotelForm) !== hotelBaseline);
+  const profileDirty = Boolean(profileEditing && profileBaseline.current && JSON.stringify(businessProfile) !== JSON.stringify(profileBaseline.current));
+  const methodsDirty = Boolean(paymentMethodsBaseline.current && JSON.stringify([...paymentMethodSettings].sort()) !== paymentMethodsBaseline.current);
+  const hasUnsavedChanges = hotelDirty || profileDirty || roomDirty || plansDirty || calendarDirty || capacityDirty || (activeTab === 'payment-setup' && methodsDirty);
+  const editsBusy = hotelSaving || imageUploading || Boolean(docUploading) || paymentMethodSettingsSaving || availabilitySaving || roomBusy || plansBusy || profileSaving;
+  const discardDrafts = (scope = 'all') => {
+    if (scope === 'all' || scope === 'hotel') {
+      setEditingHotel(null); setCreatingHotel(false); setHotelForm(emptyHotelForm); setGalleryUrlInput('');
+    }
+    if (scope === 'all' || scope === 'profile') {
+      if (profileEditingRef.current && profileBaseline.current) setBusinessProfile(profileBaseline.current);
+      setProfileEditing(false);
+    }
+    if (scope === 'all' || scope === 'room') {
+      roomDrafts.current.forEach(draft => draft.selectedImages.forEach(image => URL.revokeObjectURL(image.preview)));
+      roomDrafts.current.clear(); setRoomDirty(false);
+    }
+    if (scope === 'all') {
+      setPlansDirty(false); setCalendarDirty(false); setCapacityDirty(false);
+      setSelectedAvailabilityRange({ start: null, end: null }); setAvailabilityEditForm({ rooms_available: '', is_closed: 0 });
+      if (selectedHotelForCalendar) setAvailabilityForm({ rooms_total: selectedHotelForCalendar.rooms_total ?? '', rooms_available: selectedHotelForCalendar.rooms_available ?? '' });
+      setPaymentMethodSettings(hotels[0]?.allowed_payment_methods || [...DEFAULT_HOTEL_PAYMENT_METHODS]);
+    }
+  };
+  const requestLeave = (action, scope = 'all') => {
+    if (editsBusy || historyRestoring) { setNotice('Please wait for the current save, upload or navigation to finish.'); return; }
+    const dirty = scope === 'hotel' ? hotelDirty : scope === 'profile' ? profileDirty : scope === 'room' ? roomDirty : hasUnsavedChanges;
+    if (!dirty) { action(); return; }
+    setPendingAction({ kind: 'discard', title: 'Discard unsaved changes?', run: () => { discardDrafts(scope); action(); } });
+  };
+  const setActiveTab = tab => requestLeave(() => { setNavOpen(false); navigate(OWNER_PATHS[tab] || OWNER_PATHS.overview); });
+  useEffect(() => {
+    const warn = event => { if (hasUnsavedChanges || editsBusy) { event.preventDefault(); event.returnValue = ''; } };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasUnsavedChanges, editsBusy]);
+
+  useLayoutEffect(() => { historyPosition.current = window.history.state?.idx; }, [location.pathname]);
+  useLayoutEffect(() => {
+    // BrowserRouter uses history.state.idx. Capture a browser Back/Forward
+    // before the router unmounts the editor. Neither the blocked pop nor its
+    // restoration should reach the router; only an explicitly allowed move does.
+    const protectHistory = event => {
+      if (restoringHistory.current) { restoringHistory.current = false; setHistoryRestoring(false); event.stopImmediatePropagation(); return; }
+      if (allowedHistoryMove.current) { allowedHistoryMove.current = false; return; }
+      if (!hasUnsavedChanges && !editsBusy) return;
+      const next = window.history.state?.idx, previous = historyPosition.current;
+      if (!Number.isInteger(next) || !Number.isInteger(previous) || next === previous) return;
+      const delta = next - previous;
+      event.stopImmediatePropagation(); restoringHistory.current = true; setHistoryRestoring(true); window.history.go(-delta);
+      if (editsBusy) { setNotice('Please wait for the save or upload to finish.'); return; }
+      setPendingAction({ kind: 'discard', title: 'Discard unsaved changes?', run: () => { discardDrafts(); allowedHistoryMove.current = true; window.history.go(delta); } });
+    };
+    return registerOwnerHistoryGuard(protectHistory);
+  }, [hasUnsavedChanges, location.pathname, editsBusy]);
+
+  useEffect(() => () => {
+    roomDrafts.current.forEach(draft => draft.selectedImages.forEach(image => URL.revokeObjectURL(image.preview)));
+    roomDrafts.current.clear();
+  }, []);
+
+  useEffect(() => {
+    if (!dashboardLoaded) return;
+    setNavOpen(false);
+    if (activeTab === 'reviews') fetchReviews();
+    if (activeTab === 'analytics') loadAnalytics();
+    if (activeTab === 'messages') loadNotifications();
+    if (activeTab === 'archive') { loadArchivedBookings(); loadArchivedPayments(); }
+  }, [activeTab, dashboardLoaded]);
+
+  useEffect(() => {
+    if (!navOpen) return;
+    const keyboard = event => { if (event.key === 'Escape') { setNavOpen(false); document.querySelector('.gov-menu-btn')?.focus(); } };
+    window.addEventListener('keydown', keyboard);
+    return () => window.removeEventListener('keydown', keyboard);
+  }, [navOpen]);
   
-    // Availability Calendar State
-    const [selectedHotelForCalendar, setSelectedHotelForCalendar] = useState(null);
-    const [availabilityForm, setAvailabilityForm] = useState({
-      rooms_total: '',
-      rooms_available: '',
-      is_active: 1
-    });
-    const [availabilitySaving, setAvailabilitySaving] = useState(false);
-    const [calendarMonth, setCalendarMonth] = useState(() => new Date());
-    const [availabilityByDate, setAvailabilityByDate] = useState({});
-    const [availabilityLoading, setAvailabilityLoading] = useState(false);
-    const [selectedAvailabilityRange, setSelectedAvailabilityRange] = useState({ start: null, end: null });
-    const [availabilityEditForm, setAvailabilityEditForm] = useState({
-      rooms_available: '',
-      is_closed: 0
-    });
     const [rooms, setRooms] = useState([]);
   
     // Review Management State
@@ -175,7 +290,6 @@ const OwnerDashboard = () => {
   // ── Pagination ─────────────────────────────────────────────────────────
   const OWNER_TABLE_SIZE = 10;
   const OWNER_CARD_SIZE  = 9;
-  const [ownerHotelsPage,   setOwnerHotelsPage]   = useState(1);
   const [ownerBookingsPage, setOwnerBookingsPage] = useState(1);
   const [paymentsPage,      setPaymentsPage]      = useState(1);
   const [reviewsPage,       setReviewsPage]       = useState(1);
@@ -195,7 +309,7 @@ const OwnerDashboard = () => {
     // window focus replaces `user` with a new identity, which used to
     // re-run this effect and clobber unsaved profile edits / uploads.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.user_id, user?.role, navigate]);
+  }, [user?.user_id, user?.role]);
 
   useEffect(() => {
     if (selectedHotelForCalendar) {
@@ -204,7 +318,7 @@ const OwnerDashboard = () => {
   }, [selectedHotelForCalendar, calendarMonth]);
 
   // Reset pagination when filters change
-  useEffect(() => { setOwnerBookingsPage(1); }, [bookingSearch, bookingFilter]);
+  useEffect(() => { setOwnerBookingsPage(1); }, [bookingSearch, bookingFilter, bookingDayFilter]);
   useEffect(() => { setPaymentsPage(1);      }, [paymentFilter, paymentMethodFilter, paymentDateFrom, paymentDateTo, paymentSearch, showArchivedPayments]);
   useEffect(() => { if (bookingFilter === 'archived') loadArchivedBookings(); }, [bookingFilter]);
 
@@ -217,35 +331,19 @@ const OwnerDashboard = () => {
 
   useEffect(() => {
     if (!hotels.length) return;
+    if (methodsDirty) return;
     const firstHotel = hotels[0];
-    if (Array.isArray(firstHotel.allowed_payment_methods) && firstHotel.allowed_payment_methods.length) {
-      setPaymentMethodSettings(firstHotel.allowed_payment_methods);
-    }
+    const methods = Array.isArray(firstHotel.allowed_payment_methods) && firstHotel.allowed_payment_methods.length ? firstHotel.allowed_payment_methods : [...DEFAULT_HOTEL_PAYMENT_METHODS];
+    paymentMethodsBaseline.current = JSON.stringify([...methods].sort());
+    setPaymentMethodSettings(methods);
   }, [hotels]);
 
-  // Lock page scroll while the Room Management modal is open (mirrors HotelDetail).
   useEffect(() => {
-    if (!managingRoomsHotel) return;
-    const body = document.body;
-    const html = document.documentElement;
-    const prevBodyOverflow = body.style.overflow;
-    const prevBodyPaddingRight = body.style.paddingRight;
-    const prevHtmlOverflow = html.style.overflow;
-    const scrollbarWidth = window.innerWidth - html.clientWidth;
-    body.style.overflow = 'hidden';
-    html.style.overflow = 'hidden';
-    if (scrollbarWidth > 0) body.style.paddingRight = `${scrollbarWidth}px`;
-    const onKey = (e) => {
-      if (e.key === 'Escape') setManagingRoomsHotel(null);
-    };
-    window.addEventListener('keydown', onKey);
-    return () => {
-      body.style.overflow = prevBodyOverflow;
-      body.style.paddingRight = prevBodyPaddingRight;
-      html.style.overflow = prevHtmlOverflow;
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [managingRoomsHotel]);
+    if ((!editingHotel && !creatingHotel) || hotelSection !== 'details') {
+      if (mapInstance) { mapInstance.remove(); setMapInstance(null); }
+      setShowCoordinatePicker(false);
+    }
+  }, [editingHotel, creatingHotel, hotelSection, mapInstance]);
 
   // Access state (verification badge, authorization, stats/bookings) comes
   // from /owner/profile. Shared by the initial load and the focus refresh so
@@ -309,12 +407,14 @@ const OwnerDashboard = () => {
   }, [user]);
 
   const fetchDashboardData = async () => {
+    setDashboardError('');
     try {
       const [hotelsRes, roomsRes, profileRes] = await Promise.all([
         api.get('/owner/hotels'),
         api.get('/owner/rooms'),
         api.get('/owner/profile')
       ]);
+      if (!Array.isArray(hotelsRes.data) || !Array.isArray(roomsRes.data)) throw new Error('Invalid listing response');
       setHotels(hotelsRes.data);
       setRooms(roomsRes.data);
 
@@ -344,10 +444,12 @@ const OwnerDashboard = () => {
         });
       }
       await applyAccess(profileData);
+      setDashboardLoaded(true);
 
       setLoading(false);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setDashboardError('Could not load your dashboard. Your saved property and reservations have not been deleted.');
       if (error.response?.status === 403) {
         alert('Access denied');
         navigate('/');
@@ -357,11 +459,14 @@ const OwnerDashboard = () => {
   };
 
   const fetchReviews = async () => {
+    setReviewsError('');
     try {
       const res = await api.get('/owner/reviews');
+      if (!Array.isArray(res.data)) throw new Error('Invalid review response');
       setReviews(res.data);
     } catch (error) {
       console.error('Error fetching reviews:', error);
+      setReviewsError('Could not load reviews. Please retry.');
     }
   };
 
@@ -392,8 +497,9 @@ const OwnerDashboard = () => {
     setPaymentLoadError('');
     try {
       const res = await api.get('/owner/payments', { params });
+      if (!Array.isArray(res.data)) throw new Error('Invalid payment response');
       if (requestId === paymentListRequest.current) {
-        setPayments(Array.isArray(res.data) ? res.data : []);
+        setPayments(res.data);
         setPaymentLoadedQuery(JSON.stringify(params));
       }
     } catch (error) {
@@ -425,6 +531,7 @@ const OwnerDashboard = () => {
   };
 
   const handleLogout = async () => {
+    if (hasUnsavedChanges || editsBusy) { requestLeave(() => logout().then(() => navigate('/login', { replace: true }))); return; }
     try {
       console.log('🔓 Logout initiated from OwnerDashboard...');
       await logout();
@@ -437,6 +544,8 @@ const OwnerDashboard = () => {
   };
 
   const handleSaveBusinessProfile = async () => {
+    if (docUploading || profileSaving) return;
+    setProfileSaving(true);
     try {
       const payload = {
         first_name: user?.first_name,
@@ -464,7 +573,8 @@ const OwnerDashboard = () => {
       const res = await api.put('/owner/profile', payload);
       
       if (res.data.success) {
-        alert('Business profile updated successfully!');
+        setNotice('Business details saved. Guest-facing hotel contacts are edited under My Property.');
+        profileBaseline.current = { ...businessProfile };
         setProfileEditing(false);
         // Reload profile data
         await fetchDashboardData();
@@ -472,7 +582,7 @@ const OwnerDashboard = () => {
     } catch (error) {
       console.error('Error saving business profile:', error);
       alert(error.response?.data?.error || 'Failed to save business profile');
-    }
+    } finally { setProfileSaving(false); }
   };
 
   const handleDocumentUpload = async (field, file) => {
@@ -655,23 +765,27 @@ const OwnerDashboard = () => {
     };
 
     const loadAvailabilityForMonth = async (hotelId, monthDate) => {
+      const requestId = ++availabilityRequest.current;
       const { start, end } = getMonthRange(monthDate);
       const startKey = toDateKey(start);
       const endKey = toDateKey(end);
       try {
-        setAvailabilityLoading(true);
+        setAvailabilityLoading(true); setAvailabilityReady(false); setAvailabilityError('');
         const response = await api.get(`/owner/hotels/${hotelId}/availability`, {
           params: { start: startKey, end: endKey }
         });
+        if (!Array.isArray(response.data)) throw new Error('Invalid availability response');
+        if (requestId !== availabilityRequest.current) return;
         const nextByDate = {};
-        (response.data || []).forEach((entry) => {
+        response.data.forEach((entry) => {
           nextByDate[entry.date] = entry;
         });
-        setAvailabilityByDate(nextByDate);
+        setAvailabilityByDate(nextByDate); setAvailabilityReady(true);
       } catch (error) {
         console.error('Error loading availability calendar:', error);
+        if (requestId === availabilityRequest.current) setAvailabilityError('Could not load date limits. Retry before making changes.');
       } finally {
-        setAvailabilityLoading(false);
+        if (requestId === availabilityRequest.current) setAvailabilityLoading(false);
       }
     };
 
@@ -680,24 +794,22 @@ const OwnerDashboard = () => {
     setAvailabilityForm({
       rooms_total: hotel.rooms_total ?? '',
       rooms_available: hotel.rooms_available ?? '',
-      price_per_night: hotel.price_per_night ?? '',
-      is_active: hotel.is_active ? 1 : 0
+      is_active: Number(hotel.is_active) === 1 ? 1 : 0
     });
     setCalendarMonth(new Date());
     setSelectedAvailabilityRange({ start: null, end: null });
     setAvailabilityEditForm({ rooms_available: '', is_closed: 0 });
+    setCalendarDirty(false); setCapacityDirty(false);
   };
 
   const handleAvailabilitySave = async () => {
     if (!selectedHotelForCalendar) return;
-    const priceChanged = availabilityForm.price_per_night !== '' && availabilityForm.price_per_night != null;
+    if (['rooms_total', 'rooms_available'].some(key => availabilityForm[key] === '' || !Number.isInteger(Number(availabilityForm[key])) || Number(availabilityForm[key]) < 0)) {
+      setAvailabilityError('Enter non-negative whole numbers for the capacity limit and listing counter.'); return;
+    }
     const payload = {
       rooms_total: availabilityForm.rooms_total === '' ? null : Number(availabilityForm.rooms_total),
-      rooms_available: availabilityForm.rooms_available === '' ? null : Number(availabilityForm.rooms_available),
-      // Only sent when filled in: hotels.price_per_night is NOT NULL, so an
-      // empty value must leave the stored price untouched rather than clear it.
-      ...(priceChanged ? { price_per_night: Number(availabilityForm.price_per_night) } : {}),
-      is_active: availabilityForm.is_active ? 1 : 0
+      rooms_available: availabilityForm.rooms_available === '' ? null : Number(availabilityForm.rooms_available)
     };
 
     try {
@@ -710,21 +822,20 @@ const OwnerDashboard = () => {
               ...prev,
               rooms_total: payload.rooms_total ?? prev.rooms_total,
               rooms_available: payload.rooms_available ?? prev.rooms_available,
-              ...(priceChanged ? { price_per_night: payload.price_per_night } : {}),
-              is_active: payload.is_active
             }
           : prev
       );
-      alert('Availability settings saved.');
+      setCapacityDirty(false); setAvailabilityError(''); setNotice('Property capacity limits saved. Room rates and date-specific limits were not changed.');
     } catch (error) {
       console.error('Error saving availability settings:', error);
-      alert('Failed to save availability settings.');
+      setAvailabilityError(error.response?.data?.error || 'Could not save capacity limits. Your edits are retained.');
     } finally {
       setAvailabilitySaving(false);
     }
   };
 
   const handleCalendarDateClick = (dateKey) => {
+    if (calendarDirty) { setAvailabilityError('Save or cancel the current date edits before selecting another range.'); return; }
     if (!selectedAvailabilityRange.start || selectedAvailabilityRange.end) {
       setSelectedAvailabilityRange({ start: dateKey, end: null });
     } else {
@@ -740,12 +851,13 @@ const OwnerDashboard = () => {
     const entry = availabilityByDate[dateKey];
     setAvailabilityEditForm({
       rooms_available: entry?.rooms_available ?? '',
-      is_closed: entry?.is_closed ? 1 : 0
+      is_closed: Number(entry?.is_closed) === 1 ? 1 : 0
     });
   };
 
   const handleAvailabilityRangeSave = async () => {
     if (!selectedHotelForCalendar || !selectedAvailabilityRange.start) return;
+    if (availabilityEditForm.rooms_available !== '' && (!Number.isInteger(Number(availabilityEditForm.rooms_available)) || Number(availabilityEditForm.rooms_available) < 0)) { setAvailabilityError('Date limits must be a non-negative whole number or blank to use the property cap.'); return; }
     const payload = {
       start_date: selectedAvailabilityRange.start,
       end_date: selectedAvailabilityRange.end || selectedAvailabilityRange.start,
@@ -757,19 +869,20 @@ const OwnerDashboard = () => {
       setAvailabilitySaving(true);
       await api.post(`/owner/hotels/${selectedHotelForCalendar.hotel_id}/availability`, payload);
       await loadAvailabilityForMonth(selectedHotelForCalendar.hotel_id, calendarMonth);
-      alert('Availability updated successfully.');
+      setCalendarDirty(false); setNotice('Date limits saved.');
     } catch (error) {
       console.error('Error saving availability calendar:', error);
-      alert(error.response?.data?.error || 'Failed to save availability.');
+      setAvailabilityError(error.response?.data?.error || 'Could not save date limits. Your edits are retained.');
     } finally {
       setAvailabilitySaving(false);
     }
   };
 
-  const startHotelEdit = (hotel) => {
+  const startHotelEdit = (hotel, section = 'details') => {
     setCreatingHotel(false);
     setEditingHotel(hotel);
-    setHotelForm({
+    setHotelSection(section); setHotelErrors({}); setHotelSaveError('');
+    const nextForm = {
       name: hotel.name || '',
       location: hotel.location || '',
       description: hotel.description || '',
@@ -798,12 +911,20 @@ const OwnerDashboard = () => {
       payment_terms_text: hotel.payment_terms_text || '',
       modification_policy_text: hotel.modification_policy_text || '',
       noshow_policy_text: hotel.noshow_policy_text || '',
-      is_active: hotel.is_active ? 1 : 0
-    });
+      is_active: Number(hotel.is_active) === 1 ? 1 : 0
+    };
+    setHotelForm(nextForm); setHotelBaseline(JSON.stringify(nextForm));
   };
 
   const handleHotelSave = async () => {
     if (!editingHotel) return;
+    const hasRooms = roomsForHotel(rooms, editingHotel).length > 0;
+    const errors = validateOwnerHotel(hotelForm, hasRooms);
+    setHotelErrors(errors); setHotelSaveError('');
+    if (Object.keys(errors).length) {
+      setHotelSection(Object.keys(errors).some(key => ['name', 'location', 'contact_email', 'currency', 'latitude', 'longitude', 'price_per_night'].includes(key)) ? 'details' : 'policies');
+      return;
+    }
 
     try {
       setHotelSaving(true);
@@ -813,16 +934,13 @@ const OwnerDashboard = () => {
         name: hotelForm.name,
         location: hotelForm.location,
         description: hotelForm.description,
-        ...(hotelForm.price_per_night !== '' && hotelForm.price_per_night != null
+        ...(!hasRooms && hotelForm.price_per_night !== '' && hotelForm.price_per_night != null
           ? { price_per_night: Number(hotelForm.price_per_night) }
           : {}),
         currency: hotelForm.currency || 'PHP',
-        rating: hotelForm.rating === '' ? null : Number(hotelForm.rating),
         amenities: hotelForm.amenities,
         image_url: primaryImage,
         image_urls: imageUrls,
-        allowed_payment_methods: hotelForm.allowed_payment_methods,
-        reservation_fee: hotelForm.reservation_fee === '' ? null : Number(hotelForm.reservation_fee),
         map_url: hotelForm.map_url,
         contact_phone: hotelForm.contact_phone,
         contact_email: hotelForm.contact_email,
@@ -842,13 +960,13 @@ const OwnerDashboard = () => {
       };
 
       const res = await api.put(`/owner/hotels/${editingHotel.hotel_id}`, payload);
-      if (res.data?.warning) alert(res.data.warning);
+      setNotice(res.data?.warning || 'Property changes saved. Your public listing is updated.');
       setEditingHotel(null);
       setHotelForm(emptyHotelForm);
       await fetchDashboardData();
     } catch (error) {
       console.error('Error saving hotel:', error);
-      alert('Failed to save hotel. Please try again.');
+      setHotelSaveError(error.response?.data?.error || 'Could not save the property. Your edits are still here; please retry.');
     } finally {
       setHotelSaving(false);
     }
@@ -858,14 +976,14 @@ const OwnerDashboard = () => {
     setCreatingHotel(true);
     setEditingHotel(null);
     setHotelForm(emptyHotelForm);
+    setHotelBaseline(JSON.stringify(emptyHotelForm)); setHotelSection('details'); setHotelErrors({}); setHotelSaveError('');
     setGalleryUrlInput('');
   };
 
   const handleHotelCreate = async () => {
-    if (!hotelForm.name || !hotelForm.location || hotelForm.price_per_night === '') {
-      alert('Hotel name, location, and price per night are required.');
-      return;
-    }
+    const errors = validateOwnerHotel(hotelForm);
+    setHotelErrors(errors); setHotelSaveError('');
+    if (Object.keys(errors).length) { setHotelSection('details'); return; }
     try {
       setHotelSaving(true);
       const imageUrls = Array.isArray(hotelForm.image_urls) ? hotelForm.image_urls.filter(Boolean) : [];
@@ -874,16 +992,11 @@ const OwnerDashboard = () => {
         name: hotelForm.name,
         location: hotelForm.location,
         description: hotelForm.description,
-        ...(hotelForm.price_per_night !== '' && hotelForm.price_per_night != null
-          ? { price_per_night: Number(hotelForm.price_per_night) }
-          : {}),
+        price_per_night: hotelForm.price_per_night === '' ? 0 : Number(hotelForm.price_per_night),
         currency: hotelForm.currency || 'PHP',
-        rating: hotelForm.rating === '' ? null : Number(hotelForm.rating),
         amenities: hotelForm.amenities,
         image_url: primaryImage,
         image_urls: imageUrls,
-        allowed_payment_methods: hotelForm.allowed_payment_methods,
-        reservation_fee: hotelForm.reservation_fee === '' ? null : Number(hotelForm.reservation_fee),
         map_url: hotelForm.map_url,
         contact_phone: hotelForm.contact_phone,
         contact_email: hotelForm.contact_email,
@@ -903,15 +1016,16 @@ const OwnerDashboard = () => {
       };
 
       await api.post('/owner/hotels', payload);
+      setNotice('Property created. Next, add your room types and rates.');
       setCreatingHotel(false);
       setHotelForm(emptyHotelForm);
       await fetchDashboardData();
     } catch (error) {
       console.error('Error creating hotel:', error);
       if (error.response?.status === 409) {
-        alert('You already have a hotel. Owners can manage only one hotel.');
+        setHotelSaveError('You already have a property. Refresh the dashboard to manage it.');
       } else {
-        alert('Failed to create hotel. Please try again.');
+        setHotelSaveError(error.response?.data?.error || 'Could not create the property. Your edits are still here; please retry.');
       }
     } finally {
       setHotelSaving(false);
@@ -958,20 +1072,20 @@ const OwnerDashboard = () => {
       
       marker.on('dragend', (e) => {
         const pos = e.target.getLatLng();
-        setHotelForm({
-          ...hotelForm,
+        setHotelForm(prev => ({
+          ...prev,
           latitude: pos.lat.toFixed(5),
           longitude: pos.lng.toFixed(5)
-        });
+        }));
       });
 
       map.on('click', (e) => {
         marker.setLatLng(e.latlng);
-        setHotelForm({
-          ...hotelForm,
+        setHotelForm(prev => ({
+          ...prev,
           latitude: e.latlng.lat.toFixed(5),
           longitude: e.latlng.lng.toFixed(5)
-        });
+        }));
       });
 
       setMapInstance(map);
@@ -980,33 +1094,37 @@ const OwnerDashboard = () => {
 
   const handleImageUpload = async (files) => {
     const picked = Array.from(files || []);
-    if (picked.length === 0 || !editingHotel) return;
+    if (picked.length === 0) return;
+    setHotelSaveError('');
+    const uploaded = [];
     try {
       setImageUploading(true);
-      const formData = new FormData();
-      picked.forEach((file) => formData.append('images', file));
-      const res = await api.post(`/owner/hotels/${editingHotel.hotel_id}/gallery`, formData);
-      const gallery = Array.isArray(res.data?.urls) ? res.data.urls : [];
-      if (gallery.length > 0) {
-        setHotelForm((prev) => ({ ...prev, image_urls: gallery }));
+      for (const file of picked) {
+        const formData = new FormData(); formData.append('image', file);
+        const res = await api.post('/owner/hotels/upload', formData);
+        if (!res.data?.url) throw new Error('No image URL returned');
+        uploaded.push(res.data.url);
       }
     } catch (error) {
       console.error('Image upload failed:', error);
-      alert(error.response?.data?.error || 'Image upload failed. Please try again.');
+      setHotelSaveError(error.response?.data?.error || 'Some photos could not be uploaded. Successful uploads are kept in this draft; retry the remaining files.');
     } finally {
+      if (uploaded.length) setHotelForm(prev => ({ ...prev, image_urls: [...new Set([...prev.image_urls, ...uploaded])] }));
       setImageUploading(false);
     }
   };
 
   const ownerModules = [
     { id: 'overview', label: 'Overview', icon: <Icons.ChartPie size={22} /> },
-    { id: 'hotels', label: 'Hotels', icon: <Icons.Hotel size={22} /> },
+    { id: 'hotels', label: 'My Property', icon: <Icons.Hotel size={22} /> },
+    { id: 'rooms', label: 'Rooms & Rates', icon: <Icons.Bed size={22} /> },
+    { id: 'payment-setup', label: 'Payment Setup', icon: <Icons.Money size={22} /> },
     { id: 'bookings', label: 'Reservations', icon: <Icons.Calendar size={22} /> },
     { id: 'calendar', label: 'Availability', icon: <Icons.Calendar size={22} /> },
     { id: 'payments', label: 'Payments', icon: <Icons.Money size={22} /> },
     { id: 'reviews', label: 'Reviews', icon: <Icons.Star size={22} /> },
     { id: 'analytics', label: 'Analytics', icon: <Icons.ChartLineUp size={22} /> },
-    { id: 'profile', label: 'Business Profile', icon: <Icons.User size={22} /> },
+    { id: 'profile', label: 'Business & Verification', icon: <Icons.User size={22} /> },
     { id: 'messages', label: 'Messages', icon: <Icons.Email size={22} /> },
     { id: 'archive', label: 'Archive', icon: <Icons.Archive size={22} /> }
   ];
@@ -1015,21 +1133,28 @@ const OwnerDashboard = () => {
   // restricts the dashboard to hotel listing management + business profile.
   const isLimitedOwner = authorization !== 'full' && user?.role !== 'admin';
   const visibleOwnerModules = isLimitedOwner
-    ? ownerModules.filter((module) => module.id === 'hotels' || module.id === 'profile')
+    ? ownerModules.filter((module) => ['hotels', 'rooms', 'payment-setup', 'profile'].includes(module.id))
     : ownerModules;
 
   useEffect(() => {
-    if (isLimitedOwner && !['hotels', 'profile'].includes(activeTab)) {
-      setActiveTab('hotels');
+    if (dashboardLoaded && isLimitedOwner && !['hotels', 'rooms', 'payment-setup', 'profile'].includes(activeTab)) {
+      navigate(OWNER_PATHS.hotels, { replace: true });
     }
-  }, [isLimitedOwner, activeTab]);
+  }, [isLimitedOwner, activeTab, dashboardLoaded]);
+
+  useEffect(() => {
+    if (activeTab === 'calendar' && hotels.length === 1 && !selectedHotelForCalendar) selectHotelForCalendar(hotels[0]);
+  }, [activeTab, hotels]);
 
   const isCurrentUser = (userId) => String(userId) === String(user?.user_id);
   
     const ownerHotelIds = new Set(hotels.map((hotel) => hotel.hotel_id));
     const filteredPayments = payments;
+    const todayTasks = ownerTodayTasks(bookings);
+    const taskBookings = bookingDayFilter === 'all' ? null : new Set((todayTasks[bookingDayFilter] || []).map(booking => booking.booking_id));
     const filteredBookings = (bookingFilter === 'archived' ? archivedBookings : bookings).filter(booking => {
       if (ownerHotelIds.size > 0 && !ownerHotelIds.has(booking.hotel_id)) return false;
+      if (taskBookings && !taskBookings.has(booking.booking_id)) return false;
       
       // Handle archived filter
       if (bookingFilter === 'archived') {
@@ -1070,14 +1195,16 @@ const OwnerDashboard = () => {
     const unreadNotificationCount = notifications.filter((notification) => !notification.is_read).length;
     const unreadMessageCount = messages.filter((message) => !message.is_read && isCurrentUser(message.receiver_id)).length;
   
-    const handleBookingStatusChange = async (bookingId, newStatus) => {
-      try {
-        await api.put(`/owner/bookings/${bookingId}/status`, { status: newStatus });
-        await fetchDashboardData();
-      } catch (error) {
-        console.error('Error updating booking:', error);
-        alert('Failed to update booking status');
-      }
+    const handleBookingStatusChange = (bookingId, newStatus) => {
+      const booking = bookings.find(item => Number(item.booking_id) === Number(bookingId));
+      if (!booking) return;
+      setPendingAction({ kind: 'reservation', title: newStatus === 'cancelled' ? 'Cancel this reservation?' : 'Confirm this reservation?', booking, status: newStatus,
+        run: async () => {
+          await api.put(`/owner/bookings/${bookingId}/status`, { status: newStatus });
+          setSelectedReservation(null); await fetchDashboardData();
+          setNotice(`Reservation #${bookingId} ${newStatus}. Payment records have not been deleted or refunded by this action.`);
+        }
+      });
     };
 
     const handleArchiveBooking = async (bookingId) => {
@@ -1221,7 +1348,7 @@ const OwnerDashboard = () => {
       type === 'bookings' ? filteredBookings : type === 'payments' ? filteredPayments : reviews,
       type === 'payments'
         ? `Status: ${paymentFilter}; method: ${paymentMethodFilter}; dates: ${paymentDateFrom || 'any'} to ${paymentDateTo || 'any'}; search: ${paymentSearch || 'none'}; archived: ${showArchivedPayments ? 'included' : 'excluded'}. Loaded matching payment attempts: ${filteredPayments.length}. Matching summary count: ${paymentStats?.total_transactions ?? 'unavailable'}. Not a complete ledger when more matches exist on the server; attempts are not necessarily successful payments.`
-        : type === 'bookings' ? `Current booking filter: ${bookingFilter}. Search: ${bookingSearch || 'none'}. All loaded matches, not just the current display page.`
+        : type === 'bookings' ? `Current booking filter: ${bookingFilter}. Task filter: ${bookingDayFilter}. Search: ${bookingSearch || 'none'}. All loaded matches, not just the current display page.`
           : 'All loaded reviews for the hotels available to this owner.');
     const exportReport = type => downloadReportCsv(recordReport(type));
 
@@ -1261,6 +1388,12 @@ const OwnerDashboard = () => {
     );
   }
 
+  if (!dashboardLoaded && dashboardError) return <div className="gov-dashboard owner-load-failure">
+    <section className="gov-glass-panel"><h1>Dashboard unavailable</h1><p role="alert">{dashboardError}</p>
+      <button type="button" className="gov-btn-primary" onClick={() => { setLoading(true); fetchDashboardData(); }}>Retry dashboard</button>
+    </section>
+  </div>;
+
   return (
     <div className="gov-dashboard gov-dashboard--owner">
       <button
@@ -1277,7 +1410,7 @@ const OwnerDashboard = () => {
         <aside className={`gov-sidebar${navOpen ? ' is-open' : ''}`}>
           {/* Sidebar Brand */}
           <div className="gov-sidebar-brand">
-            <Link to="/owner" className="gov-brand">
+            <Link to="/owner" className="gov-brand" onClick={event => { event.preventDefault(); setActiveTab('overview'); }}>
               <img
                 className="gov-logo-image"
                 src={naujanGoLogo}
@@ -1302,7 +1435,10 @@ const OwnerDashboard = () => {
           <nav className={`gov-nav${visibleOwnerModules.length <= 3 ? ' gov-nav--compact' : ''}`} id="owner-nav">
             {visibleOwnerModules.map((module, index) => {
               const isActive = activeTab === module.id;
-              return (
+              return (<React.Fragment key={module.id}>
+                {module.id === 'hotels' && <div className="owner-nav-group">Property setup</div>}
+                {module.id === 'bookings' && <div className="owner-nav-group">Daily work</div>}
+                {module.id === 'profile' && <div className="owner-nav-group">Business &amp; history</div>}
                 <button
                   key={module.id}
                   className={`gov-nav-btn${isActive ? ' is-active' : ''}`}
@@ -1310,10 +1446,6 @@ const OwnerDashboard = () => {
                   onClick={() => {
                     setNavOpen(false);
                     setActiveTab(module.id);
-                    if (module.id === 'reviews') fetchReviews();
-                    if (module.id === 'analytics') loadAnalytics();
-                    if (module.id === 'messages') loadNotifications();
-                    if (module.id === 'archive') { loadArchivedBookings(); loadArchivedPayments(); }
                   }}
                 >
                   <span className="gov-nav-btn__icon">{module.icon}</span>
@@ -1325,13 +1457,24 @@ const OwnerDashboard = () => {
                       </span>
                     )}
                   </span>
-                </button>
+                </button></React.Fragment>
               );
             })}
           </nav>
         </aside>
 
         <main className="gov-main">
+        {notice && <div className="owner-notice" role="status">{notice}<button type="button" aria-label="Dismiss notification" onClick={() => setNotice('')}>×</button></div>}
+        {dashboardError && <div className="owner-error" role="alert">{dashboardError} Displayed data may be out of date. <button type="button" onClick={fetchDashboardData}>Retry</button></div>}
+        {actionError && <p className="owner-error" role="alert">{actionError}</p>}
+        {activeTab === 'rooms' && <section className="owner-rooms-page">
+          <h1 className="gov-page-title">Rooms &amp; Rates</h1>
+          <p>Set room types, physical inventory and prices here. Use Availability for date-specific limits and closures.</p>
+          {hotels.length > 1 && <label>Property <select value={roomHotelId || hotels[0].hotel_id} onChange={event => { const value = event.target.value; requestLeave(() => setRoomHotelId(value), 'room'); }}>{hotels.map(hotel => <option key={hotel.hotel_id} value={hotel.hotel_id}>{hotel.name}</option>)}</select></label>}
+          {hotels.length ? <RoomManagement key={roomHotelId || hotels[0].hotel_id} embedded hotel={hotels.find(hotel => String(hotel.hotel_id) === String(roomHotelId)) || hotels[0]}
+            t={t} onRoomsChanged={refreshOwnerRooms} draftStore={roomDrafts.current} onDirtyChange={reportRoomDirty} onBusyChange={reportRoomBusy} confirmLeave={action => requestLeave(action, 'room')} />
+            : <div className="gov-glass-panel"><p>Create your property before adding room types.</p><button type="button" className="gov-btn-primary" onClick={() => setActiveTab('hotels')}>Set up property</button></div>}
+        </section>}
         {/* Overview */}
         {activeTab === 'overview' && stats && (() => {
           const total = stats.bookingStats?.total_bookings || 0;
@@ -1342,20 +1485,16 @@ const OwnerDashboard = () => {
           const pendPct = total > 0 ? Math.round((pending / total) * 100) : 0;
           const cancPct = total > 0 ? Math.round((cancelled / total) * 100) : 0;
           const today = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-          const outstanding = Number(stats.paymentStats?.outstanding || 0);
-          const collected = Number(stats.paymentStats?.collected || 0);
-          const partialBookings = Number(stats.paymentStats?.partial_bookings || 0);
           const metricCards = [
             { label: 'Hotels Managed', value: stats.hotelCount ?? 0, accent: '#16a34a', sub: 'Your property' },
             { label: 'Total Bookings', value: total, accent: '#7c3aed', sub: 'All time' },
             { label: 'Confirmed', value: confirmed, accent: '#2563eb', sub: `${confPct}% of total` },
             { label: 'Pending', value: pending, accent: '#d97706', sub: 'Awaiting action' },
             {
-              label: 'Outstanding balance',
-              value: outstanding,
-              prefix: '₱',
+              label: 'Reservations with a balance',
+              value: todayTasks.unpaid.length,
               accent: '#dc2626',
-              sub: `₱${collected.toLocaleString()} collected${partialBookings > 0 ? ` · ${partialBookings} partial` : ''}`
+              sub: 'View each reservation for its recorded currency and balance'
             },
           ];
           return (
@@ -1370,6 +1509,16 @@ const OwnerDashboard = () => {
               </div>
 
               {/* Metric Cards */}
+              <section className="owner-today" aria-label="Today’s work">
+                <h2>Today’s work <small>Philippine time</small></h2>
+                <div className="owner-task-grid">{[
+                  ['arrivals', 'Arrivals today'], ['departures', 'Departures today'], ['pending', 'Pending requests'], ['unpaid', 'Reservations with balances']
+                ].map(([key, label]) => <button type="button" key={key} onClick={() => { setBookingDayFilter(key === 'pending' ? 'all' : key); setBookingFilter(key === 'pending' ? 'pending' : 'all'); setActiveTab('bookings'); }}>
+                  <strong>{todayTasks[key].length}</strong><span>{label}</span>
+                </button>)}</div>
+              </section>
+              <OwnerSetupChecklist hotel={hotels[0]} rooms={rooms} verified={!isLimitedOwner} onNavigate={setActiveTab}
+                onEdit={(hotel, section) => requestLeave(() => { navigate(OWNER_PATHS.hotels); startHotelEdit(hotel, section); })} />
               <div className="gov-grid-cards" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
                 {metricCards.map(({ label, value, accent, sub, prefix }) => (
                   <div key={label} style={{ background: '#fff', border: '1px solid #e5e7eb', borderTop: `3px solid ${accent}`, borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
@@ -1417,7 +1566,7 @@ const OwnerDashboard = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                     {[
                       { label: 'Manage Bookings', sub: 'Review & update booking status', tab: 'bookings', color: '#7c3aed' },
-                      { label: 'My Hotels', sub: 'Edit listing details and gallery', tab: 'hotels', color: '#2563eb' },
+                      { label: 'Rooms & Rates', sub: 'Edit room types, inventory and rates', tab: 'rooms', color: '#2563eb' },
                       { label: 'Guest Reviews', sub: 'See what guests are saying', tab: 'reviews', color: '#16a34a' },
                       { label: 'Analytics', sub: 'Revenue & occupancy trends', tab: 'analytics', color: '#d97706' },
                     ].map(({ label, sub, tab, color }) => (
@@ -1482,7 +1631,7 @@ const OwnerDashboard = () => {
         {activeTab === 'hotels' && (
           <div>
             <h1 className="gov-page-title">
-              <Icons.Hotel size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> My Hotels
+              <Icons.Hotel size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> My Property
             </h1>
 
             {isLimitedOwner && (
@@ -1514,25 +1663,16 @@ const OwnerDashboard = () => {
                 </button>
               </div>
             ) : (
-              <div style={{
-                background: '#f8fdf7',
-                border: '1px solid #c8e6c9',
-                borderRadius: '10px',
-                padding: '1rem 1.25rem',
-                color: '#2E7D32',
-                fontWeight: 700,
-                marginBottom: '1.5rem'
-              }}>
-                Owners can manage one hotel listing only. Contact admin to change ownership.
+              <div className="owner-property-guidance">
+                Property details describe your hotel. Prices and physical room inventory are managed in Rooms &amp; Rates.
               </div>
             )}
 
             {(editingHotel || creatingHotel) && (
               <div
-                style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}
-                onClick={(e) => { if (e.target === e.currentTarget) { setEditingHotel(null); setCreatingHotel(false); setHotelForm(emptyHotelForm); setGalleryUrlInput(''); } }}
+                className="owner-property-editor"
               >
-                <div style={{ background:'#fff', borderRadius:'16px', width:'100%', maxWidth:'680px', maxHeight:'92vh', overflowY:'auto', boxShadow:'0 24px 64px rgba(0,0,0,0.22)', display:'flex', flexDirection:'column' }}>
+                <div className="owner-editor-surface">
                   {/* Header */}
                   <div style={{ background:'linear-gradient(135deg,#2E7D32 0%,#66bb6a 100%)', borderRadius:'16px 16px 0 0', padding:'1.4rem 1.5rem', color:'#fff', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'1rem', flexShrink:0 }}>
                     <div>
@@ -1540,34 +1680,40 @@ const OwnerDashboard = () => {
                       <div style={{ fontSize:'1.25rem', fontWeight:800 }}>{creatingHotel ? 'Add New Hotel' : editingHotel?.name}</div>
                       {editingHotel?.location && <div style={{ fontSize:'0.82rem', opacity:0.8, marginTop:'2px' }}>{editingHotel.location}</div>}
                     </div>
-                    <button onClick={() => { setEditingHotel(null); setCreatingHotel(false); setHotelForm(emptyHotelForm); setGalleryUrlInput(''); }} style={{ background:'rgba(255,255,255,0.2)', border:'none', borderRadius:'50%', width:'34px', height:'34px', cursor:'pointer', color:'#fff', fontSize:'1.1rem', fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
+                    <button type="button" aria-label="Close property editor" onClick={() => requestLeave(() => { setEditingHotel(null); setCreatingHotel(false); }, 'hotel')} className="owner-editor-back">Back to property</button>
                   </div>
+                  <nav className="owner-editor-tabs" aria-label="Property editor sections">
+                    {[['details', 'Details & Contact'], ['photos', 'Photos'], ['policies', 'Policies & House Rules']].map(([value, label]) => <button type="button" key={value} aria-pressed={hotelSection === value} onClick={() => setHotelSection(value)}>{label}</button>)}
+                    {!creatingHotel && <button type="button" onClick={() => setActiveTab('payment-setup')}>Payment setup ↗</button>}
+                  </nav>
+                  {hotelSaveError && <p className="owner-error" role="alert">{hotelSaveError}</p>}
+                  {Object.keys(hotelErrors).length > 0 && <div className="owner-error" role="alert"><strong>Please check these fields:</strong><ul>{Object.entries(hotelErrors).map(([key, error]) => <li key={key}>{error}</li>)}</ul></div>}
                   {/* Image preview */}
                   {hotelForm.image_url && (
                     <div style={{ height:'140px', background:`url(${hotelForm.image_url}) center/cover no-repeat`, borderBottom:'1px solid #e5e7eb', flexShrink:0 }} />
                   )}
                   {/* Body */}
-                  <div style={{ padding:'1.5rem', display:'flex', flexDirection:'column', gap:'1.25rem', overflowY:'auto' }}>
+                  <fieldset className="owner-editor-body" disabled={hotelSaving} style={{ padding:'1.5rem', display:'flex', flexDirection:'column', gap:'1.25rem', overflowY:'auto' }}>
                     {/* Basic Info */}
-                    <div>
-                      <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Basic Info</div>
+                    <div hidden={hotelSection !== 'details'}>
+                      <div className="owner-editor-section-title">Basic Info</div>
                       <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Hotel Name *</span>
                           <input type="text" value={hotelForm.name} onChange={(e) => setHotelForm({ ...hotelForm, name: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} required />
+                          {hotelErrors.name && <small className="owner-field-error">{hotelErrors.name}</small>}
                         </label>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Location *</span>
                           <input type="text" value={hotelForm.location} onChange={(e) => setHotelForm({ ...hotelForm, location: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} required />
+                          {hotelErrors.location && <small className="owner-field-error">{hotelErrors.location}</small>}
                         </label>
-                        <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
-                          <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Price per Night (₱)</span>
-                          <input type="number" min="0" step="0.01" value={hotelForm.price_per_night} onChange={(e) => setHotelForm({ ...hotelForm, price_per_night: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
-                        </label>
-                        <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
-                          <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Rating (0–5)</span>
-                          <input type="number" step="0.1" min="0" max="5" value={hotelForm.rating} onChange={(e) => setHotelForm({ ...hotelForm, rating: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
-                        </label>
+                        {(!editingHotel || !roomsForHotel(rooms, editingHotel).length) && <label className="owner-field">
+                          <span>Fallback starting price ({hotelForm.currency}) — optional</span>
+                          <input type="number" min="0" step="0.01" value={hotelForm.price_per_night} onChange={e => setHotelForm({ ...hotelForm, price_per_night: e.target.value })} className="gov-input" />
+                          <small>Only used before room types exist. Leave blank and set your actual prices in Rooms &amp; Rates.</small>
+                          {hotelErrors.price_per_night && <small className="owner-field-error">{hotelErrors.price_per_night}</small>}
+                        </label>}
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Description</span>
                           <textarea value={hotelForm.description} onChange={(e) => setHotelForm({ ...hotelForm, description: e.target.value })} rows={3} className="gov-input" style={{ borderRadius:'8px', resize:'vertical' }} />
@@ -1579,8 +1725,9 @@ const OwnerDashboard = () => {
                       </div>
                     </div>
                     {/* Contact */}
-                    <div>
-                      <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Contact</div>
+                    <div hidden={hotelSection !== 'details'}>
+                      <p className="owner-help">These contacts appear on the public hotel page. Legal business contacts are separate under Business &amp; Verification.</p>
+                      <div className="owner-editor-section-title">Contact</div>
                       <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Phone</span>
@@ -1589,12 +1736,14 @@ const OwnerDashboard = () => {
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Email</span>
                           <input type="email" value={hotelForm.contact_email} onChange={(e) => setHotelForm({ ...hotelForm, contact_email: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
+                          {hotelErrors.contact_email && <small className="owner-field-error">{hotelErrors.contact_email}</small>}
                         </label>
                       </div>
                     </div>
-                    {/* Location Coordinates */}
-                    <div>
-                      <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Map Coordinates</div>
+                    {/* Technical location fields are optional, not part of basic setup. */}
+                    <details hidden={hotelSection !== 'details'}>
+                      <summary>Map location &amp; coordinates (optional)</summary>
+                      <div className="owner-editor-section-title">Map Coordinates</div>
                       <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem', marginBottom:'0.85rem' }}>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Latitude</span>
@@ -1625,10 +1774,11 @@ const OwnerDashboard = () => {
                           </div>
                         </div>
                       )}
-                    </div>
+                    </details>
                     {/* Media */}
-                    <div>
-                      <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Media &amp; Links</div>
+                    <div hidden={hotelSection !== 'photos'}>
+                      <p className="owner-help">Uploads are staged for this draft. Choose Save Changes to publish them; Cancel does not attach them to the listing.</p>
+                      <div className="owner-editor-section-title">Media &amp; Links</div>
                       <div style={{ display:'flex', flexDirection:'column', gap:'0.85rem' }}>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Cover Image URL</span>
@@ -1656,6 +1806,7 @@ const OwnerDashboard = () => {
                               {hotelForm.image_urls.map((url) => (
                                 <div key={url} style={{ border:'1px solid #c8e6c9', borderRadius:'8px', padding:'0.5rem', background:'#f8fdf7', display:'flex', alignItems:'center', gap:'0.5rem' }}>
                                   <img src={url} alt="Gallery" style={{ width:'56px', height:'42px', objectFit:'cover', borderRadius:'6px' }} />
+                                  <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setHotelForm({ ...hotelForm, image_url: url })}>{hotelForm.image_url === url ? 'Cover photo' : 'Use as cover'}</button>
                                   <button type="button" className="gov-btn gov-btn-danger" style={{ fontSize:'0.78rem', padding:'0.3rem 0.6rem' }} onClick={() => removeGalleryUrl(url)}>Remove</button>
                                 </div>
                               ))}
@@ -1669,8 +1820,8 @@ const OwnerDashboard = () => {
                       </div>
                     </div>
                     {/* Policies */}
-                    <div>
-                      <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>{t('policies_section')}</div>
+                    <div hidden={hotelSection !== 'policies'}>
+                      <div className="owner-editor-section-title">{t('policies_section')}</div>
                       <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('cancellation_type_label')}</span>
@@ -1790,7 +1941,7 @@ const OwnerDashboard = () => {
                           />
                           <span style={{ fontSize:'0.72rem', color:'#6b7280' }}>{t('policy_owner_text_hint')}</span>
                         </label>
-                        <div style={{ gridColumn:'1 / -1', background:'#f8fdf7', border:'1px solid #c8e6c9', borderRadius:'8px', padding:'0.75rem 0.9rem', fontSize:'0.82rem', color:'#2E7D32' }}>
+                        <div className="owner-policy-preview" style={{ gridColumn:'1 / -1' }}>
                           <span style={{ fontWeight:700, display:'block', marginBottom:'0.25rem', fontSize:'0.72rem', textTransform:'uppercase', letterSpacing:'0.06em' }}>{t('policy_preview_label')}</span>
                           <ul style={{ margin:'0.5rem 0 0', paddingLeft:'1.2rem' }}>
                             {buildPolicyLines(hotelForm, { t }).map((line, index) => (
@@ -1801,26 +1952,14 @@ const OwnerDashboard = () => {
                       </div>
                     </div>
                     {/* Settings */}
-                    <div>
-                      <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Settings</div>
+                    <div hidden={hotelSection !== 'details'}>
+                      <div className="owner-editor-section-title">Settings</div>
                       <div className="gov-grid-2" style={{ display:'grid', gap:'0.85rem' }}>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Currency</span>
-                          <input type="text" value={hotelForm.currency} onChange={(e) => setHotelForm({ ...hotelForm, currency: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
-                        </label>
-                        <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
-                          <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Reservation Fee (₱)</span>
-                          <input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={hotelForm.reservation_fee}
-                            onChange={(e) => setHotelForm({ ...hotelForm, reservation_fee: e.target.value })}
-                            className="gov-input"
-                            style={{ borderRadius:'8px' }}
-                            placeholder="Blank to disable"
-                          />
-                          <span style={{ fontSize:'0.72rem', color:'#6b7280' }}>Lets guests book by paying just this fee now. Leave blank to hide the option.</span>
+                          <input type="text" maxLength={3} value={hotelForm.currency} onChange={(e) => setHotelForm({ ...hotelForm, currency: e.target.value.toUpperCase() })} className="gov-input" style={{ borderRadius:'8px' }} />
+                          <small>Currency code, e.g. PHP. Changing this does not convert prices or alter past bookings.</small>
+                          {hotelErrors.currency && <small className="owner-field-error">{hotelErrors.currency}</small>}
                         </label>
                         <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                           <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('listing_status_label')}</span>
@@ -1835,44 +1974,13 @@ const OwnerDashboard = () => {
                           </select>
                           <span style={{ fontSize:'0.72rem', color:'#6b7280' }}>Inactive listings are hidden from guests.</span>
                         </label>
-                        <div style={{ gridColumn:'1 / -1', display:'flex', flexDirection:'column', gap:'0.55rem' }}>
-                          <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Allowed Payment Methods</span>
-                          <div style={{ display:'flex', flexWrap:'wrap', gap:'0.75rem 1rem' }}>
-                            {getHotelPaymentMethodOptions(t).map((option) => {
-                              const checked = Array.isArray(hotelForm.allowed_payment_methods)
-                                ? hotelForm.allowed_payment_methods.includes(option.value)
-                                : false;
-                              return (
-                                <label key={option.value} style={{ display:'inline-flex', alignItems:'center', gap:'0.45rem', fontSize:'0.85rem', color:'#374151' }}>
-                                  <input
-                                    type="checkbox"
-                                    checked={checked}
-                                    onChange={(event) => {
-                                      const current = Array.isArray(hotelForm.allowed_payment_methods)
-                                        ? hotelForm.allowed_payment_methods
-                                        : [];
-                                      const next = event.target.checked
-                                        ? [...new Set([...current, option.value])]
-                                        : current.filter((item) => item !== option.value);
-                                      setHotelForm({ ...hotelForm, allowed_payment_methods: next });
-                                    }}
-                                  />
-                                  {option.label}
-                                </label>
-                              );
-                            })}
-                          </div>
-                          <div style={{ fontSize:'0.75rem', color:'#6b7280' }}>
-                            Users will only see and use the enabled methods for this hotel.
-                          </div>
-                        </div>
                       </div>
                     </div>
-                  </div>
+                  </fieldset>
                   {/* Footer */}
-                  <div style={{ padding:'1rem 1.5rem', borderTop:'1px solid #e5e7eb', display:'flex', gap:'0.75rem', justifyContent:'flex-end', background:'#f9fafb', borderRadius:'0 0 16px 16px', flexShrink:0 }}>
-                    <button className="gov-btn gov-btn-ghost" onClick={() => { setEditingHotel(null); setCreatingHotel(false); setHotelForm(emptyHotelForm); setGalleryUrlInput(''); }}>Cancel</button>
-                    <button onClick={creatingHotel ? handleHotelCreate : handleHotelSave} disabled={hotelSaving} className="gov-btn gov-btn-primary" style={{ minWidth:'140px' }}>
+                  <div className="owner-editor-footer" style={{ padding:'1rem 1.5rem', borderTop:'1px solid #e5e7eb', display:'flex', gap:'0.75rem', justifyContent:'flex-end', borderRadius:'0 0 16px 16px', flexShrink:0 }}>
+                    <button className="gov-btn gov-btn-ghost" onClick={() => requestLeave(() => { setEditingHotel(null); setCreatingHotel(false); }, 'hotel')} disabled={hotelSaving || imageUploading}>Cancel</button>
+                    <button onClick={creatingHotel ? handleHotelCreate : handleHotelSave} disabled={hotelSaving || imageUploading} className="gov-btn gov-btn-primary" style={{ minWidth:'140px' }}>
                       {hotelSaving ? 'Saving...' : creatingHotel ? 'Create Hotel' : 'Save Changes'}
                     </button>
                   </div>
@@ -1880,24 +1988,12 @@ const OwnerDashboard = () => {
               </div>
             )}
 
-            {/* Room Management Modal */}
-            {managingRoomsHotel && (
-              <div className="hd-modal-back hd-rm-back" onClick={(e) => { if (e.target === e.currentTarget) setManagingRoomsHotel(null); }}>
-                <div className="hd-rm-panel">
-                  <button className="hd-rm-close" onClick={() => setManagingRoomsHotel(null)} aria-label="Close">
-                    <Icons.X size={18} />
-                  </button>
-                  <RoomManagement hotel={managingRoomsHotel} onClose={() => setManagingRoomsHotel(null)} t={t} onRoomsChanged={refreshOwnerRooms} />
-                </div>
-              </div>
-            )}
-
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            <div hidden={Boolean(editingHotel || creatingHotel)} style={{
+              display: editingHotel || creatingHotel ? 'none' : 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))',
               gap: '1.5rem'
             }}>
-              {hotels.slice((ownerHotelsPage - 1) * OWNER_CARD_SIZE, ownerHotelsPage * OWNER_CARD_SIZE).map((hotel) => {
+              {hotels.map((hotel) => {
                 const gallery = Array.isArray(hotel.image_urls) ? hotel.image_urls : [];
                 const hotelImage = hotel.image_url || hotel.image || gallery[0];
                 return (
@@ -1942,10 +2038,7 @@ const OwnerDashboard = () => {
                       marginBottom: '1rem',
                       fontSize: '0.9rem'
                     }}>
-                      <span style={{ color: '#2E7D32', fontWeight: 700 }}><Icons.Star size={14} filled={true} /> {hotel.rating || '5.0'}</span>
-                      {hotel.price_per_night && (
-                        <span style={{ color: '#2E7D32', fontWeight: 700 }}>• ₱{hotel.price_per_night}/night</span>
-                      )}
+                       <span className="owner-starting-price">{ownerStartingPrice(hotel, rooms)}</span>
                     </div>
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -1958,15 +2051,15 @@ const OwnerDashboard = () => {
                         );
                       })()}
                       <span style={{
-                        background: hotel.is_active ? '#f0fdf4' : '#f3f4f6',
-                        color: hotel.is_active ? '#16a34a' : '#6b7280',
-                        border: `1px solid ${hotel.is_active ? '#bbf7d0' : '#e5e7eb'}`,
+                        background: Number(hotel.is_active) === 1 ? '#f0fdf4' : '#f3f4f6',
+                        color: Number(hotel.is_active) === 1 ? '#16a34a' : '#6b7280',
+                        border: `1px solid ${Number(hotel.is_active) === 1 ? '#bbf7d0' : '#e5e7eb'}`,
                         borderRadius: '999px',
                         padding: '0.2rem 0.65rem',
                         fontSize: '0.72rem',
                         fontWeight: 800
                       }}>
-                        {hotel.is_active ? t('listing_active') : t('listing_inactive')}
+                        {Number(hotel.is_active) === 1 ? 'Visible to guests' : 'Hidden from guests'}
                       </span>
                       {hotel.booking_enabled === false && (
                         <span
@@ -1981,7 +2074,7 @@ const OwnerDashboard = () => {
                           }}
                           title={t('listing_only_notice')}
                         >
-                          {t('promo_listing')}
+                          Booking access: verification required
                         </span>
                       )}
                       {hotel.booking_enabled === true && (
@@ -1994,34 +2087,36 @@ const OwnerDashboard = () => {
                           fontSize: '0.72rem',
                           fontWeight: 800
                         }}>
-                          {t('bookings_active_badge')}
+                          Booking access: verified
                         </span>
                       )}
                     </div>
 
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <div className="owner-property-actions">
                       <button
                         className="gov-btn-primary"
                         onClick={() => startHotelEdit(hotel)}
                         style={{ flex: 1 }}
                       >
-                        Edit
+                        Edit details
                       </button>
                       <button
                         className="gov-btn gov-btn-secondary"
-                        onClick={() => setManagingRoomsHotel(hotel)}
+                        onClick={() => { setRoomHotelId(String(hotel.hotel_id)); setActiveTab('rooms'); }}
                         style={{ flex: 1, whiteSpace: 'nowrap' }}
                         title="Manage rooms for this hotel"
                       >
-                        <Icons.Hotel size={16} style={{ verticalAlign: 'middle', marginRight: '0.3rem' }} /> Rooms
+                        <Icons.Hotel size={16} style={{ verticalAlign: 'middle', marginRight: '0.3rem' }} /> Rooms &amp; Rates
                       </button>
+                      <button type="button" className="gov-btn gov-btn-ghost" onClick={() => startHotelEdit(hotel, 'photos')}>Edit photos</button>
+                      <button type="button" className="gov-btn gov-btn-ghost" onClick={() => startHotelEdit(hotel, 'policies')}>Edit policies</button>
+                      <Link className="gov-btn gov-btn-ghost" to={`/hotels/${hotel.hotel_id}`} target="_blank" rel="noopener noreferrer">View public listing ↗</Link>
                     </div>
                   </div>
                 </div>
                 );
               })}
             </div>
-            <Pagination page={ownerHotelsPage} totalPages={Math.ceil(hotels.length / OWNER_CARD_SIZE)} onPageChange={setOwnerHotelsPage} totalItems={hotels.length} pageSize={OWNER_CARD_SIZE} label="hotels" />
             {hotels.length === 0 && (
               <div className="gov-empty">
                 <Icons.Hotel size={48} style={{ color: '#c8e6c9', marginBottom: '1rem' }} />
@@ -2038,6 +2133,11 @@ const OwnerDashboard = () => {
             <h1 className="gov-page-title">
               <Icons.Calendar size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Booking & Reservation Management
             </h1>
+            <label className="owner-task-filter">Show reservations
+              <select className="gov-select" value={bookingDayFilter} onChange={event => { setBookingDayFilter(event.target.value); setBookingFilter('all'); }}>
+                <option value="all">All dates</option><option value="arrivals">Arrivals today</option><option value="departures">Departures today</option><option value="unpaid">With outstanding balances</option>
+              </select>
+            </label>
             
             {/* Filters and Search */}
             <div className="gov-glass-panel">
@@ -2120,10 +2220,10 @@ const OwnerDashboard = () => {
                         </td>
                         <td><BookingIssuedCell booking={booking} /></td>
                         <td>
-                          <div style={{ fontWeight: 700 }}>₱{parseFloat(booking.total_amount || 0).toLocaleString()}</div>
+                          <div style={{ fontWeight: 700 }}>{formatHotelCurrency(booking.total_amount, booking.currency)}</div>
                           <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>
-                            Paid ₱{parseFloat(booking.amount_paid || 0).toLocaleString()}
-                            {Number(booking.balance_due) > 0 ? ` · ₱${parseFloat(booking.balance_due).toLocaleString()} due` : ''}
+                            Paid {formatHotelCurrency(booking.amount_paid ?? 0, booking.currency)}
+                            {Number(booking.balance_due) > 0 ? ` · ${formatHotelCurrency(booking.balance_due, booking.currency)} due` : ''}
                           </div>
                           {booking.payment_status && (
                             <span style={{
@@ -2151,7 +2251,8 @@ const OwnerDashboard = () => {
                           </span>
                         </td>
                         <td>
-                          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                            <button type="button" className="gov-btn-ghost" onClick={() => setSelectedReservation(booking)}>View details</button>
                             {booking.status === 'pending' && (
                               <>
                                 <button
@@ -2216,23 +2317,24 @@ const OwnerDashboard = () => {
                 </table>
               </div>
               <Pagination page={ownerBookingsPage} totalPages={Math.ceil(filteredBookings.length / OWNER_TABLE_SIZE)} onPageChange={setOwnerBookingsPage} totalItems={filteredBookings.length} pageSize={OWNER_TABLE_SIZE} label="bookings" />
-              {bookings.length === 0 && (
+              {filteredBookings.length === 0 && !dashboardError && (
                 <div className="gov-empty">
-                  <p>No bookings yet</p>
+                  <p>{bookings.length ? 'No reservations match these filters.' : 'No reservations yet.'}</p>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {/* Payments */}
-        {activeTab === 'payments' && (
+        {/* Payment configuration is separate from the transaction ledger. */}
+        {activeTab === 'payment-setup' && (
           <div>
             <h1 className="gov-page-title">
-              <Icons.Money size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Payment Management
+              <Icons.Money size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Payment Setup
             </h1>
+            <p><strong>Payment plans</strong> control when guests pay. <strong>Payment methods</strong> control how they pay. Neither setting changes existing reservations.</p>
 
-            <PaymentPlanSettings hotels={hotels} onSaved={fetchDashboardData} />
+            <PaymentPlanSettings hotels={hotels} onSaved={fetchDashboardData} onDirtyChange={reportPlansDirty} onBusyChange={reportPlansBusy} confirmLeave={requestLeave} />
 
             {hotels.length > 0 && (
               <div className="gov-glass-panel" style={{ marginBottom: '1rem' }}>
@@ -2240,7 +2342,7 @@ const OwnerDashboard = () => {
                   Payment Method Settings
                 </div>
                 <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.85rem' }}>
-                  Control which payment options are available for {hotels[0].name || 'this hotel'}.
+                       Choose the methods guests may use for {hotels[0].name || 'this hotel'} (for example GCash or pay at property).
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem 1rem', marginBottom: '0.85rem' }}>
                   {getHotelPaymentMethodOptions(t).map((option) => {
@@ -2267,19 +2369,20 @@ const OwnerDashboard = () => {
                   disabled={paymentMethodSettingsSaving}
                   onClick={async () => {
                     if (!paymentMethodSettings.length) {
-                      alert('At least one payment method must stay enabled.');
+                       setActionError('At least one payment method must stay enabled.');
                       return;
                     }
                     try {
                       setPaymentMethodSettingsSaving(true);
-                      await api.put(`/owner/hotels/${hotels[0].hotel_id}`, {
-                        allowed_payment_methods: paymentMethodSettings
-                      });
+                       await api.put(`/owner/hotels/${hotels[0].hotel_id}`, {
+                         allowed_payment_methods: paymentMethodSettings
+                       });
+                       paymentMethodsBaseline.current = JSON.stringify([...paymentMethodSettings].sort());
                       await fetchDashboardData();
-                      alert('Payment method settings updated.');
+                       setActionError(''); setNotice('Payment methods saved.');
                     } catch (error) {
                       console.error('Failed to update payment methods:', error);
-                      alert(error.response?.data?.error || 'Failed to update payment settings.');
+                       setActionError(error.response?.data?.error || 'Failed to update payment settings.');
                     } finally {
                       setPaymentMethodSettingsSaving(false);
                     }
@@ -2290,7 +2393,14 @@ const OwnerDashboard = () => {
               </div>
             )}
 
-            {/* Payment Filters */}
+          </div>
+        )}
+
+        {activeTab === 'payments' && (
+          <div>
+            <h1 className="gov-page-title">Payments</h1>
+            <p>Recorded transactions and payment attempts. To change how guests pay, open <button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('payment-setup')}>Payment Setup</button>.</p>
+             {/* Payment Filters */}
             <div className="gov-glass-panel">
               {/* Search Bar Section - Prominent and Full Width */}
               <div style={{ marginBottom: '1.5rem' }}>
@@ -2405,7 +2515,7 @@ const OwnerDashboard = () => {
               </div>
             </div>
 
-            {paymentLoadError && <p role="alert">{paymentLoadError}</p>}
+             {paymentLoadError && <p role="alert" className="owner-error">{paymentLoadError} <button type="button" onClick={() => { fetchPayments(); fetchPaymentStats(); }}>Retry payments</button></p>}
             <PaymentSummaryCards stats={paymentStats} />
             {Number(paymentStats?.total_transactions) > filteredPayments.length && <p>Showing the latest {filteredPayments.length} matching payment attempts. Summary totals include all matches.</p>}
 
@@ -2457,7 +2567,7 @@ const OwnerDashboard = () => {
                         </td>
                         <td>{payment.customer_name || 'N/A'}</td>
                         <td>
-                          ₱{parseFloat(payment.amount || 0).toLocaleString()}
+                          {formatHotelCurrency(payment.amount, payment.currency)}
                         </td>
                         <td>
                           {getPaymentMethodLabel(payment.method, t)}
@@ -2556,7 +2666,7 @@ const OwnerDashboard = () => {
                 </table>
               </div>
               <Pagination page={paymentsPage} totalPages={Math.ceil(filteredPayments.length / OWNER_TABLE_SIZE)} onPageChange={setPaymentsPage} totalItems={filteredPayments.length} pageSize={OWNER_TABLE_SIZE} label="transactions" />
-              {filteredPayments.length === 0 && (
+              {filteredPayments.length === 0 && !paymentLoadError && paymentLoadedQuery && (
                 <div className="gov-empty">
                   <p>No transactions found</p>
                 </div>
@@ -2608,7 +2718,7 @@ const OwnerDashboard = () => {
                     </div>
                     <div style={{ padding: '1rem', background: '#f8fdf7', borderRadius: '8px' }}>
                       <div style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '0.25rem' }}>Amount</div>
-                      <div style={{ fontWeight: 700, color: '#1B5E20', fontSize: '1.5rem' }}>₱{parseFloat(selectedPayment.amount || 0).toLocaleString()}</div>
+                      <div style={{ fontWeight: 700, color: '#1B5E20', fontSize: '1.5rem' }}>{formatHotelCurrency(selectedPayment.amount, selectedPayment.currency)}</div>
                     </div>
                     <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem' }}>
                       <div style={{ padding: '1rem', background: '#f8fdf7', borderRadius: '8px' }}>
@@ -2640,7 +2750,7 @@ const OwnerDashboard = () => {
                     {selectedPayment.refund_amount && (
                       <div style={{ padding: '1rem', background: '#fce4ec', borderRadius: '8px', border: '1px solid #f48fb1' }}>
                         <div style={{ fontSize: '0.85rem', color: '#880e4f', marginBottom: '0.25rem' }}>Refund Amount</div>
-                        <div style={{ fontWeight: 700, color: '#880e4f' }}>₱{parseFloat(selectedPayment.refund_amount).toLocaleString()}</div>
+                        <div style={{ fontWeight: 700, color: '#880e4f' }}>{formatHotelCurrency(selectedPayment.refund_amount, selectedPayment.currency)}</div>
                         {selectedPayment.refund_reason && (
                           <div style={{ fontSize: '0.85rem', color: '#880e4f', marginTop: '0.5rem' }}>Reason: {selectedPayment.refund_reason}</div>
                         )}
@@ -2677,7 +2787,7 @@ const OwnerDashboard = () => {
                   </h2>
                   <div style={{ marginBottom: '1.5rem' }}>
                     <div style={{ fontSize: '0.9rem', color: '#718096', marginBottom: '0.5rem' }}>Payment ID: #{refundModal.payment_id}</div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1B5E20' }}>Amount: ₱{parseFloat(refundModal.amount || 0).toLocaleString()}</div>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#1B5E20' }}>Amount: {formatHotelCurrency(refundModal.amount, refundModal.currency)}</div>
                   </div>
                   <label style={{ display: 'block', marginBottom: '1.5rem' }}>
                     <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2d3748', marginBottom: '0.5rem' }}>Refund Amount (optional)</div>
@@ -2776,6 +2886,7 @@ const OwnerDashboard = () => {
             <h1 className="gov-page-title">
                 <Icons.Star size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Customer Review Monitoring
             </h1>
+              {reviewsError && <p className="owner-error" role="alert">{reviewsError} <button type="button" onClick={fetchReviews}>Retry reviews</button></p>}
               {reviews.length > 0 && (
                 <div className="gov-glass-panel">
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -2784,7 +2895,7 @@ const OwnerDashboard = () => {
                         Review Summary
                       </div>
                       <div style={{ fontSize: '0.9rem', color: '#718096', marginTop: '0.5rem' }}>
-                        Total Reviews: {reviews.length} | Avg Rating: {(reviews.reduce((acc, r) => acc + (r.rating || 0), 0) / reviews.length).toFixed(1)} 
+                        Total Reviews: {reviews.length} | Avg Rating: {(reviews.reduce((acc, r) => acc + Number(r.rating || 0), 0) / reviews.length).toFixed(1)}
                       </div>
                     </div>
                     <button
@@ -2920,7 +3031,7 @@ const OwnerDashboard = () => {
               ) : (
                 <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', background: 'white', borderRadius: '12px', border: '1px solid #c8e6c9' }}>
                   <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}></div>
-                  <p style={{ color: '#718096' }}>No reviews yet</p>
+                  <p style={{ color: '#718096' }}>{reviewsError || 'No reviews yet'}</p>
                 </div>
               )}
             </div>
@@ -2932,7 +3043,7 @@ const OwnerDashboard = () => {
           {activeTab === 'calendar' && (
             <div>
               <h1 className="gov-page-title">
-                 Availability Calendar & Listing Management
+                 Availability &amp; Date Limits
               </h1>
 
               {/* Hotel Selection */}
@@ -2990,17 +3101,20 @@ const OwnerDashboard = () => {
               ) : (
                 <div>
                   {/* Back Button */}
-                  <button
+                  {hotels.length > 1 && <button
                     className="gov-btn-ghost"
                     style={{ marginBottom: '1.5rem' }}
-                    onClick={() => setSelectedHotelForCalendar(null)}
+                    onClick={() => requestLeave(() => setSelectedHotelForCalendar(null))}
                   >
                     ← Back to Hotel Selection
-                  </button>
+                  </button>}
 
                   <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: '#1B5E20', marginBottom: '1.5rem' }}>
                     Managing: {selectedHotelForCalendar.hotel_name || selectedHotelForCalendar.name}
                   </h2>
+                  {availabilityError && <p role="alert" className="owner-error">{availabilityError} <button type="button" onClick={() => loadAvailabilityForMonth(selectedHotelForCalendar.hotel_id, calendarMonth)}>Retry calendar</button></p>}
+                  <p>Room inventory is configured under Rooms &amp; Rates. This calendar sets property-wide capacity limits and closed dates; these numbers are not live remaining-room counts for a specific stay.</p>
+                  <button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('rooms')}>Manage room inventory</button>
 
                   {/* Room Types Summary */}
                   {rooms && rooms.length > 0 && (
@@ -3026,7 +3140,7 @@ const OwnerDashboard = () => {
                             <div style={{ fontSize: '0.85rem', color: '#2d3748', marginBottom: '0.5rem' }}>
                               <div><strong>Capacity:</strong> {room.capacity} guest{room.capacity > 1 ? 's' : ''}</div>
                               <div><strong>Available:</strong> <span style={{ fontWeight: 700, color: '#2E7D32' }}>{room.quantity_available} unit{room.quantity_available > 1 ? 's' : ''}</span></div>
-                              <div><strong>Price/Night:</strong> <span style={{ fontWeight: 700, color: '#2E7D32' }}>₱{parseFloat(room.price_per_night || 0).toLocaleString()}</span></div>
+                              <div><strong>Price/Night:</strong> <span style={{ fontWeight: 700, color: '#2E7D32' }}>{formatHotelCurrency(room.price_per_night, room.currency || selectedHotelForCalendar.currency)}</span></div>
                             </div>
                             {room.description && (
                               <div style={{ fontSize: '0.8rem', color: '#6b7280', fontStyle: 'italic', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #c8e6c9' }}>
@@ -3037,23 +3151,25 @@ const OwnerDashboard = () => {
                         ))}
                       </div>
                       <div style={{ marginTop: '1rem', padding: '1rem', background: '#f1f8e9', borderRadius: '8px', border: '1px solid #81c784', fontSize: '0.9rem', color: '#2E7D32', fontWeight: 600 }}>
-                        <strong>TIP:</strong> Individual room type prices and availability are managed in the Rooms Manager. Use this section to set total room counts and mark dates as closed.
+                        <strong>Configured inventory:</strong> {roomsForHotel(rooms, selectedHotelForCalendar).reduce((sum, room) => sum + Number(room.quantity_available || 0), 0)} rooms across room types. Paused room types are not offered to guests.
                       </div>
                     </div>
                   )}
 
                   {/* Base Availability Settings */}
-                  <div className="gov-glass-panel">
+                  <details className="gov-glass-panel">
+                    <summary>Property-wide capacity limits (advanced)</summary>
+                    <p>The property capacity cap and each room type’s inventory both limit bookings. Existing values are retained; no automatic inventory rewrite occurs.</p>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1B5E20', marginBottom: '1.5rem', display: 'flex', alignItems: 'center' }}>
-                      <Icons.Calendar size={22} style={{ marginRight: '1rem' }} /> Base Availability Settings
+                      <Icons.Calendar size={22} style={{ marginRight: '1rem' }} /> Capacity settings
                     </h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
                       <label style={{ fontSize: '0.9rem', color: '#2d3748', fontWeight: 700 }}>
-                        Total Rooms
+                        Property-wide capacity cap
                         <input
                           type="number"
                           value={availabilityForm.rooms_total}
-                          onChange={(e) => setAvailabilityForm({ ...availabilityForm, rooms_total: e.target.value })}
+                          onChange={(e) => { setCapacityDirty(true); setAvailabilityForm({ ...availabilityForm, rooms_total: e.target.value }); }}
                           min="0"
                           style={{
                             width: '100%',
@@ -3066,11 +3182,11 @@ const OwnerDashboard = () => {
                         />
                       </label>
                       <label style={{ fontSize: '0.9rem', color: '#2d3748', fontWeight: 700 }}>
-                        Available Rooms
+                        Listing availability counter (legacy)
                         <input
                           type="number"
                           value={availabilityForm.rooms_available}
-                          onChange={(e) => setAvailabilityForm({ ...availabilityForm, rooms_available: e.target.value })}
+                          onChange={(e) => { setCapacityDirty(true); setAvailabilityForm({ ...availabilityForm, rooms_available: e.target.value }); }}
                           min="0"
                           style={{
                             width: '100%',
@@ -3081,15 +3197,6 @@ const OwnerDashboard = () => {
                             fontSize: '0.95rem'
                           }}
                         />
-                      </label>
-                      <label style={{ fontSize: '0.9rem', color: '#2d3748', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <input
-                          type="checkbox"
-                          checked={availabilityForm.is_active === 1}
-                          onChange={(e) => setAvailabilityForm({ ...availabilityForm, is_active: e.target.checked ? 1 : 0 })}
-                          style={{ width: '20px', height: '20px', cursor: 'pointer' }}
-                        />
-                        Active for Booking
                       </label>
                     </div>
                     <button
@@ -3098,9 +3205,13 @@ const OwnerDashboard = () => {
                       onClick={handleAvailabilitySave}
                       disabled={availabilitySaving}
                     >
-                      {availabilitySaving ? 'Saving...' : 'Save Base Settings'}
+                      {availabilitySaving ? 'Saving...' : 'Save Capacity Limits'}
                     </button>
-                  </div>
+                    <button type="button" className="gov-btn-ghost" onClick={() => {
+                      const total = roomsForHotel(rooms, selectedHotelForCalendar).filter(room => Number(room.is_active) === 1).reduce((sum, room) => sum + Number(room.quantity_available || 0), 0);
+                      setAvailabilityForm({ ...availabilityForm, rooms_total: total, rooms_available: total }); setCapacityDirty(true);
+                    }}>Copy active room inventory into this draft</button>
+                  </details>
 
                   {/* Calendar View */}
                   <div className="gov-glass-panel">
@@ -3139,10 +3250,10 @@ const OwnerDashboard = () => {
                       <div className="gov-empty">
                         Loading calendar...
                       </div>
-                    ) : (
+                    ) : !availabilityReady ? <p>Date limits are unavailable. Use Retry calendar above to load them.</p> : (
                       <div>
                         {/* Calendar Grid */}
-                        <div style={{
+                        <div className="owner-availability-grid" style={{
                           display: 'grid',
                           gridTemplateColumns: 'repeat(7, 1fr)',
                           gap: '0.5rem',
@@ -3168,8 +3279,8 @@ const OwnerDashboard = () => {
                             const dateKey = toDateKey(date);
                             const entry = availabilityByDate[dateKey];
                             const isSelected = isDateInRange(dateKey, selectedAvailabilityRange);
-                            const isClosed = entry?.is_closed === 1;
-                            const roomsAvail = entry?.rooms_available ?? availabilityForm.rooms_available;
+                             const isClosed = Number(entry?.is_closed) === 1;
+                            const roomsAvail = entry?.rooms_available ?? availabilityForm.rooms_total;
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
                             const isPast = date < today;
@@ -3177,7 +3288,12 @@ const OwnerDashboard = () => {
                             return (
                               <div
                                 key={dateKey}
+                                role="button"
+                                tabIndex={isPast ? -1 : 0}
+                                aria-disabled={isPast}
+                                aria-label={`${dateKey}: ${isClosed ? 'closed' : `capacity limit ${roomsAvail === '' ? 'not set' : roomsAvail}`}`}
                                 onClick={() => !isPast && handleCalendarDateClick(dateKey)}
+                                onKeyDown={event => { if (!isPast && ['Enter', ' '].includes(event.key)) { event.preventDefault(); handleCalendarDateClick(dateKey); } }}
                                 style={{
                                   padding: '0.75rem',
                                   border: isSelected ? '2px solid #2E7D32' : '1px solid #c8e6c9',
@@ -3206,7 +3322,8 @@ const OwnerDashboard = () => {
                                 ) : (
                                   <div>
                                     <div style={{ fontSize: '0.75rem', color: isPast ? '#9CA3AF' : '#718096' }}>
-                                      {roomsAvail} rooms
+                                      Limit: {roomsAvail === '' ? 'not set' : roomsAvail}
+                                      {entry?.booked_rooms != null && <><br />{entry.booked_rooms} peak booked</>}
                                     </div>
                                   </div>
                                 )}
@@ -3234,11 +3351,11 @@ const OwnerDashboard = () => {
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
                               <label style={{ fontSize: '0.9rem', color: '#2d3748', fontWeight: 700 }}>
-                                Rooms Available
+                                Capacity limit for these dates
                                 <input
                                   type="number"
                                   value={availabilityEditForm.rooms_available}
-                                  onChange={(e) => setAvailabilityEditForm({ ...availabilityEditForm, rooms_available: e.target.value })}
+                                  onChange={(e) => { setCalendarDirty(true); setAvailabilityEditForm({ ...availabilityEditForm, rooms_available: e.target.value }); }}
                                   min="0"
                                   placeholder="Leave empty to use base setting"
                                   style={{
@@ -3255,7 +3372,7 @@ const OwnerDashboard = () => {
                                 <input
                                   type="checkbox"
                                   checked={availabilityEditForm.is_closed === 1}
-                                  onChange={(e) => setAvailabilityEditForm({ ...availabilityEditForm, is_closed: e.target.checked ? 1 : 0 })}
+                                  onChange={(e) => { setCalendarDirty(true); setAvailabilityEditForm({ ...availabilityEditForm, is_closed: e.target.checked ? 1 : 0 }); }}
                                   style={{ width: '20px', height: '20px', cursor: 'pointer' }}
                                 />
                                 Mark as Closed
@@ -3274,6 +3391,7 @@ const OwnerDashboard = () => {
                                 onClick={() => {
                                   setSelectedAvailabilityRange({ start: null, end: null });
                                   setAvailabilityEditForm({ rooms_available: '', is_closed: 0 });
+                                  setCalendarDirty(false); setAvailabilityError('');
                                 }}
                               >
                                 Cancel
@@ -3363,7 +3481,7 @@ const OwnerDashboard = () => {
           {activeTab === 'profile' && (
             <div>
               <h1 className="gov-page-title">
-                <Icons.User size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Business Profile Management
+                <Icons.User size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Business &amp; Verification
               </h1>
             
               <div className="gov-glass-panel">
@@ -3373,7 +3491,10 @@ const OwnerDashboard = () => {
                   </h2>
                   <button
                     className={profileEditing ? 'gov-btn-ghost' : 'gov-btn-primary'}
-                    onClick={() => setProfileEditing(!profileEditing)}
+                    onClick={() => {
+                      if (profileEditing) requestLeave(() => { if (profileBaseline.current) setBusinessProfile(profileBaseline.current); setProfileEditing(false); }, 'profile');
+                      else { profileBaseline.current = { ...businessProfile }; setProfileEditing(true); }
+                    }}
                   >
                     {profileEditing ? 'Cancel' : 'Edit Profile'}
                   </button>
@@ -3547,13 +3668,14 @@ const OwnerDashboard = () => {
                   <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'flex-end' }}>
                     <button
                       className="gov-btn-ghost"
-                      onClick={() => setProfileEditing(false)}
+                      onClick={() => requestLeave(() => { if (profileBaseline.current) setBusinessProfile(profileBaseline.current); setProfileEditing(false); }, 'profile')}
                     >
                       Cancel
                     </button>
                     <button
                       className="gov-btn-primary"
                       onClick={handleSaveBusinessProfile}
+                      disabled={Boolean(docUploading || profileSaving)}
                     >
                       Save Changes
                     </button>
@@ -3858,7 +3980,7 @@ const OwnerDashboard = () => {
                             </td>
                             <td><BookingIssuedCell booking={booking} /></td>
                             <td style={{ padding: '1rem', fontWeight: 700, color: '#2E7D32' }}>
-                              ₱{parseFloat(booking.total_amount || 0).toLocaleString()}
+                              {formatHotelCurrency(booking.total_amount, booking.currency)}
                             </td>
                             <td>{getPaymentMethodLabel(getBookingPaymentMethod(booking), t)}</td>
                             <td>
@@ -3923,7 +4045,7 @@ const OwnerDashboard = () => {
                             <td>#{payment.payment_id}</td>
                             <td>{payment.customer_name || 'N/A'}</td>
                             <td>
-                              ₱{parseFloat(payment.amount || 0).toLocaleString()}
+                              {formatHotelCurrency(payment.amount, payment.currency)}
                             </td>
                             <td>
                               {getPaymentMethodLabel(payment.method, t)}
@@ -3971,6 +4093,27 @@ const OwnerDashboard = () => {
             </div>
           )}
           {archiveSelection && <ArchiveRecordModal {...archiveSelection} onClose={() => setArchiveSelection(null)} />}
+          {selectedReservation && !pendingAction && <OwnerReservationDetails booking={selectedReservation} t={t} onClose={() => setSelectedReservation(null)}
+            onCancel={() => handleBookingStatusChange(selectedReservation.booking_id, 'cancelled')}
+            onPayments={() => { setSelectedReservation(null); setPaymentSearch(selectedReservation.receipt_number || ''); setActiveTab('payments'); }} />}
+          {pendingAction && <OwnerDialog title={pendingAction.title} busy={actionBusy || historyRestoring} onClose={() => { if (!actionBusyRef.current && !historyRestoring) { setPendingAction(null); setActionError(''); } }} actions={<>
+            <button type="button" className="gov-btn-ghost" disabled={actionBusy || historyRestoring} onClick={() => { setPendingAction(null); setActionError(''); }}>{pendingAction.kind === 'discard' ? 'Keep editing' : 'Keep current status'}</button>
+            <button type="button" className={pendingAction.kind === 'discard' || pendingAction.status === 'cancelled' ? 'gov-btn-danger' : 'gov-btn-primary'} disabled={actionBusy || historyRestoring} onClick={async () => {
+              if (actionBusyRef.current) return;
+              actionBusyRef.current = true;
+              setActionBusy(true); setActionError('');
+              try { await pendingAction.run(); setPendingAction(null); }
+              catch (error) { setActionError(error.response?.data?.error || 'The action could not be completed. Please retry.'); }
+              finally { actionBusyRef.current = false; setActionBusy(false); }
+            }}>{actionBusy ? 'Please wait…' : pendingAction.kind === 'discard' ? 'Discard changes' : pendingAction.status === 'cancelled' ? 'Yes, cancel reservation' : 'Yes, confirm reservation'}</button>
+          </>}>
+            {pendingAction.kind === 'discard' ? <p>Your unsaved edits will be lost. Uploaded draft photos will not be attached to the property.</p> : <>
+              <p><strong>{getBookingGuestName(pendingAction.booking)}</strong> · Reservation #{pendingAction.booking.booking_id}</p>
+              <p>{formatBookingBoundary(pendingAction.booking)} → {formatBookingBoundary(pendingAction.booking, 'out')}</p>
+              <p>Recorded paid: {pendingAction.booking.amount_paid == null ? 'Not available' : formatHotelCurrency(pendingAction.booking.amount_paid, pendingAction.booking.currency)}. Cancelling a reservation does not automatically process a refund. Review its payment records separately.</p>
+            </>}
+            {actionError && <p role="alert" className="owner-error">{actionError}</p>}
+          </OwnerDialog>}
         </main>
       </div>
     </div>

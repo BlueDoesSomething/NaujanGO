@@ -156,6 +156,23 @@ test('create room uses the first existing gallery URL as its cover', async (t) =
   assert.equal(writes[0].params[9], '["Wi-Fi"]');
 });
 
+test('room inventory can be zero and a newly created room can start paused', async t => {
+  const { request, row } = await setup(t);
+  assert.equal((await request('/7', { quantity_available: '0' })).status, 200);
+  assert.equal(row().quantity_available, '0');
+  assert.equal((await request('', { room_type_name: 'Paused type', capacity: '2', price_per_night: '500', quantity_available: '0', is_active: '0' }, 'POST')).status, 201);
+  assert.equal(row().quantity_available, '0');
+  assert.equal(row().is_active, 0);
+});
+
+test('invalid room numbers, empty names and malformed times are rejected without writes', async t => {
+  const { request, writes } = await setup(t);
+  for (const fields of [{ quantity_available: '-1' }, { quantity_available: '1.5' }, { capacity: '0' }, { price_per_night: '-1' }, { room_type_name: ' ' }, { check_in_time: '99:99' }]) {
+    assert.equal((await request('/7', fields)).status, 400, JSON.stringify(fields));
+  }
+  assert.equal(writes.length, 0);
+});
+
 test('room writes still require login and ownership', async (t) => {
   const { request, writes } = await setup(t, { denied: true });
   assert.equal((await request('/7', { description: 'No access' }, 'PUT', false)).status, 401);

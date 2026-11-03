@@ -24,6 +24,7 @@ import { setReviewModerated } from '../utils/reviewModeration.js';
 import { parseRoomListColumn, serializeRoomListInput } from '../utils/roomFields.js';
 import { logEvent } from '../middleware/logger.js';
 import { parseRoomContentColumn, serializeRoomContentInput } from '../utils/roomContent.js';
+import { validateOwnerRoomWrite, validateOwnerHotelWrite } from '../utils/ownerListingValidation.js';
 import { archiveSql, setPersonalArchive, respondArchiveError } from '../services/dashboardArchive.js';
 import { dashboardPaymentStats, dashboardPayments } from '../services/dashboardPayments.js';
 import { DOCUMENT_MAX_BYTES, saveBusinessDocument, validateDocumentReferences, respondDocumentError } from '../services/businessDocuments.js';
@@ -345,6 +346,9 @@ router.post('/hotels', async (req, res) => {
   if (!name || !location) {
     return res.status(400).json({ error: 'Hotel name and location are required' });
   }
+
+  const validationError = validateOwnerHotelWrite(req.body);
+  if (validationError) return res.status(400).json({ error: validationError });
 
   const latitudeValue = parseCoordinateInput(latitude);
   const longitudeValue = parseCoordinateInput(longitude);
@@ -711,6 +715,8 @@ router.put('/hotels/:hotelId', async (req, res) => {
       return res.status(403).json({ error: 'You do not have permission to edit this hotel' });
     }
 
+    const validationError = validateOwnerHotelWrite(req.body);
+    if (validationError) return res.status(400).json({ error: validationError });
     const fields = [];
     const values = [];
 
@@ -1967,7 +1973,7 @@ router.post('/hotels/:hotelId/rooms', uploadRoomImages, async (req, res) => {
     const { room_type_name, description, capacity, room_size_sqm, price_per_night, 
             currency, quantity_available, amenities, image_urls,
             bed_type, room_features, check_in_time, check_out_time,
-            smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions } = req.body;
+            smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, is_active } = req.body;
     const userId = req.user.user_id;
 
     // Verify ownership
@@ -1981,9 +1987,8 @@ router.post('/hotels/:hotelId/rooms', uploadRoomImages, async (req, res) => {
     }
 
     // Validate required fields
-    if (!room_type_name || !capacity || !price_per_night || !quantity_available) {
-      return res.status(400).json({ error: 'Missing required fields' });
-    }
+    const validationError = validateOwnerRoomWrite(req.body, true);
+    if (validationError) return res.status(400).json({ error: validationError });
 
     const amenitiesJson = serializeRoomListInput(amenities, 'amenities');
     const roomFeaturesJson = serializeRoomListInput(room_features, 'room_features');
@@ -2009,12 +2014,12 @@ router.post('/hotels/:hotelId/rooms', uploadRoomImages, async (req, res) => {
                          price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
                          primary_image_url, check_in_time, check_out_time,
                          smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, hourly_rates, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [hotelId, room_type_name, bed_type || null, description || null, capacity, room_size_sqm || null, 
        price_per_night, currency || 'PHP', quantity_available, amenitiesJson, roomFeaturesJson,
        imageUrlsJson, primaryImage, check_in_time || '14:00', check_out_time || '11:00',
         Number(smoking_allowed) ? 1 : 0, Number(pets_allowed) ? 1 : 0, Number(events_allowed) ? 1 : 0,
-        perfectForJson, commonQuestionsJson, hourlyRatesJson]
+        perfectForJson, commonQuestionsJson, hourlyRatesJson, is_active === undefined ? 1 : Number(is_active)]
     );
 
     res.status(201).json({
@@ -2050,6 +2055,8 @@ router.put('/hotels/:hotelId/rooms/:roomId', uploadRoomImages, async (req, res) 
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    const validationError = validateOwnerRoomWrite(req.body);
+    if (validationError) return res.status(400).json({ error: validationError });
     const amenitiesJson = serializeRoomListInput(amenities, 'amenities');
     const roomFeaturesJson = serializeRoomListInput(room_features, 'room_features');
     const perfectForJson = serializeRoomContentInput(perfect_for, 'perfect_for');

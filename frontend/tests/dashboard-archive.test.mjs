@@ -43,6 +43,16 @@ test('summary explains archive scope and that booking archives do not alter paym
   assert.match(html, /only your archived payments/);
 });
 
+test('payment summaries never label mixed or unknown currency totals as pesos', () => {
+  const mixed = paymentSummaryCards({ total_revenue: 1500, pending_amount: 50, currency_count: 2, currency: 'PHP', historical: { currency_count: 2, currency: 'EUR' } });
+  assert.match(mixed[0].value, /Multiple currencies/);
+  assert.match(mixed[2].value, /Multiple currencies/);
+  const single = paymentSummaryCards({ total_revenue: 1500, pending_amount: 50, currency_count: 1, currency: 'EUR', historical: { currency_count: 1, currency: 'USD' } });
+  assert.match(single[0].value, /\$1,500/);
+  assert.match(single[2].value, /€50/);
+  assert.match(paymentSummaryCards({ total_revenue: 50 })[0].value, /currency not reported/);
+});
+
 test('financial record details never offer permanent deletion, even for an admin', () => {
   for (const type of ['booking', 'payment']) {
     const html = render(ArchiveRecordModal, { type, allowDeletion: true,

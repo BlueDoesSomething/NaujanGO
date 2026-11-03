@@ -1,9 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import Icons from '../components/Icons';
 import api from '../api';
 import RoomContentEditor from './RoomContentEditor';
 import { getRoomContentItems, prepareRoomGuestContent } from '../utils/roomContent';
 import { getHourlyRates, STAY_HOURS } from '../utils/stayBooking';
+import { formatHotelCurrency } from '../utils/hotelCurrency';
+import { validateOwnerRoom } from '../utils/ownerDashboard';
+import OwnerDialog from './OwnerDialog';
 import './RoomManagement.css';
 import '../pages/HotelDetail.css';
 
@@ -32,12 +35,20 @@ const fmtTime = (value) => {
   return `${hour12}:${m[2]} ${meridiem}`;
 };
 
-const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) => {
+const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged, embedded = false, onDirtyChange, onBusyChange, confirmLeave, draftStore }) => {
+  const savedDraft = useRef(draftStore?.get(String(hotel.hotel_id))).current;
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingRoom, setEditingRoom] = useState(null);
-  const [creatingRoom, setCreatingRoom] = useState(false);
+  const [editingRoom, setEditingRoom] = useState(savedDraft?.editingRoom || null);
+  const [creatingRoom, setCreatingRoom] = useState(savedDraft?.creatingRoom || false);
   const [roomSaving, setRoomSaving] = useState(false);
+  const saveInFlight = useRef(false);
+  const [loadError, setLoadError] = useState('');
+  const [saveError, setSaveError] = useState(savedDraft?.saveError || '');
+  const [errors, setErrors] = useState(savedDraft?.errors || {});
+  const [search, setSearch] = useState('');
+  const [baseline, setBaseline] = useState(savedDraft?.baseline || '');
+  const [pendingDiscard, setPendingDiscard] = useState(null);
   
   const emptyRoom = {
     room_type_name: '',
@@ -47,7 +58,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
     room_size_sqm: '',
     price_per_night: '',
     hourly_rates: {},
-    currency: 'PHP',
+    currency: hotel.currency || 'PHP',
     quantity_available: 1,
     amenities: [],
     image_urls: [],
@@ -55,18 +66,40 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
     room_features: [], // NEW: Why guests love this room
     perfect_for: [],
     common_questions: [],
-    check_in_time: '14:00', // NEW: Check-in policy (24h for <input type="time">)
-    check_out_time: '11:00', // NEW: Check-out policy (24h for <input type="time">)
+    check_in_time: String(hotel.check_in_time || '14:00').slice(0, 5),
+    check_out_time: String(hotel.check_out_time || '12:00').slice(0, 5),
     smoking_allowed: false, // NEW: Smoking policy
     pets_allowed: false, // NEW: Pet policy
     events_allowed: false // NEW: Events policy
   };
 
-  const [roomForm, setRoomForm] = useState(emptyRoom);
-  const [amenitiesInput, setAmenitiesInput] = useState('');
-  const [featuresInput, setFeaturesInput] = useState('');
-  const [selectedImages, setSelectedImages] = useState([]);
+  const [roomForm, setRoomForm] = useState(savedDraft?.roomForm || emptyRoom);
+  const [amenitiesInput, setAmenitiesInput] = useState(savedDraft?.amenitiesInput || '');
+  const [featuresInput, setFeaturesInput] = useState(savedDraft?.featuresInput || '');
+  const [selectedImages, setSelectedImages] = useState(savedDraft?.selectedImages || []);
   const formRef = useRef(null);
+  const formOpen = Boolean(editingRoom || creatingRoom);
+  const draft = JSON.stringify({ roomForm, amenitiesInput, featuresInput });
+  const dirty = formOpen && (draft !== baseline || selectedImages.length > 0);
+  // History restoration may briefly remount this section. Keep the complete
+  // draft (including selected File objects) above it, until save or discard.
+  useLayoutEffect(() => {
+    if (formOpen) draftStore?.set(String(hotel.hotel_id), { editingRoom, creatingRoom, roomForm, amenitiesInput, featuresInput, selectedImages, baseline, errors, saveError });
+    else draftStore?.delete(String(hotel.hotel_id));
+    onDirtyChange?.(dirty); onBusyChange?.(roomSaving);
+  }, [formOpen, editingRoom, creatingRoom, roomForm, amenitiesInput, featuresInput, selectedImages, baseline, errors, saveError, dirty, roomSaving, draftStore, hotel.hotel_id, onDirtyChange, onBusyChange]);
+  useLayoutEffect(() => () => { onDirtyChange?.(false); onBusyChange?.(false); }, [onDirtyChange, onBusyChange]);
+  const clearSelectedImages = () => {
+    selectedImages.forEach(image => URL.revokeObjectURL(image.preview));
+    setSelectedImages([]);
+    draftStore?.delete(String(hotel.hotel_id));
+  };
+  const leaveForm = action => {
+    if (roomSaving) return;
+    if (confirmLeave) confirmLeave(action);
+    else if (dirty) setPendingDiscard(() => action);
+    else action();
+  };
 
   useEffect(() => {
     fetchRooms();
@@ -83,11 +116,13 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
 
   const fetchRooms = async () => {
     try {
-      setLoading(true);
+      setLoading(true); setLoadError('');
       const response = await api.get(`/owner/hotels/${hotel.hotel_id}/rooms`);
+      if (!Array.isArray(response.data)) throw new Error('Invalid room response');
       setRooms(response.data);
     } catch (error) {
       console.error('Failed to fetch rooms:', error);
+      setLoadError('Could not load room types. Saved rooms have not been removed.');
     } finally {
       setLoading(false);
     }
@@ -117,20 +152,21 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
   };
 
   const handleSaveRoom = async () => {
-    if (!roomForm.room_type_name || !roomForm.price_per_night || !roomForm.capacity) {
-      alert('Please fill in all required fields');
-      return;
-    }
+    if (saveInFlight.current) return;
+    const fieldErrors = validateOwnerRoom(roomForm);
+    setErrors(fieldErrors); setSaveError('');
+    if (Object.keys(fieldErrors).length) { formRef.current?.scrollIntoView({ block: 'start' }); return; }
 
     let guestContent;
     try {
       guestContent = prepareRoomGuestContent(roomForm);
     } catch (error) {
-      alert(error.message);
+      setSaveError(error.message);
       return;
     }
 
     try {
+      saveInFlight.current = true;
       setRoomSaving(true);
       const amenities = amenitiesInput
         .split(',')
@@ -189,13 +225,14 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
       setRoomForm(emptyRoom);
       setAmenitiesInput('');
       setFeaturesInput('');
-      setSelectedImages([]);
+      clearSelectedImages();
       await fetchRooms();
       await notifyRoomsChanged();
     } catch (error) {
       console.error('Failed to save room:', error);
-      alert(error.response?.data?.error || 'Failed to save room');
+      setSaveError(error.response?.data?.error || 'Could not save this room type. Your edits are retained; please retry.');
     } finally {
+      saveInFlight.current = false;
       setRoomSaving(false);
     }
   };
@@ -217,12 +254,17 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
     setEditingRoom(room);
     setCreatingRoom(false);
     // Merge with defaults so nullable DB fields never leave inputs uncontrolled.
-    setRoomForm({
+    const nextForm = {
       ...emptyRoom,
       ...room,
       description: room.description || '',
       room_size_sqm: room.room_size_sqm || '',
       bed_type: room.bed_type || '',
+      currency: room.currency || emptyRoom.currency,
+      is_active: Number(room.is_active) === 1 ? 1 : 0,
+      smoking_allowed: Number(room.smoking_allowed) === 1,
+      pets_allowed: Number(room.pets_allowed) === 1,
+      events_allowed: Number(room.events_allowed) === 1,
       hourly_rates: getHourlyRates(room.hourly_rates),
       // TIME comes back as 'HH:MM:SS'; time inputs need 'HH:MM'.
       check_in_time: String(room.check_in_time || emptyRoom.check_in_time).slice(0, 5),
@@ -232,10 +274,13 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
       perfect_for: getRoomContentItems(room.perfect_for, 'perfect_for'),
       common_questions: getRoomContentItems(room.common_questions, 'common_questions'),
       image_urls: Array.isArray(room.image_urls) ? room.image_urls : []
-    });
+    };
+    setRoomForm(nextForm);
     setAmenitiesInput(Array.isArray(room.amenities) ? room.amenities.join(', ') : '');
     setFeaturesInput(Array.isArray(room.room_features) ? room.room_features.join(', ') : '');
-    setSelectedImages([]);
+    clearSelectedImages();
+    setErrors({}); setSaveError('');
+    setBaseline(JSON.stringify({ roomForm: nextForm, amenitiesInput: Array.isArray(room.amenities) ? room.amenities.join(', ') : '', featuresInput: Array.isArray(room.room_features) ? room.room_features.join(', ') : '' }));
   };
 
   const startCreateRoom = () => {
@@ -244,7 +289,9 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
     setRoomForm(emptyRoom);
     setAmenitiesInput('');
     setFeaturesInput('');
-    setSelectedImages([]);
+    clearSelectedImages();
+    setErrors({}); setSaveError('');
+    setBaseline(JSON.stringify({ roomForm: emptyRoom, amenitiesInput: '', featuresInput: '' }));
   };
 
   const cancelForm = () => {
@@ -253,14 +300,14 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
     setRoomForm(emptyRoom);
     setAmenitiesInput('');
     setFeaturesInput('');
-    setSelectedImages([]);
+    clearSelectedImages();
   };
 
   const amenityPreview = amenitiesInput.split(',').map(a => a.trim()).filter(Boolean);
   const featurePreview = featuresInput.split(',').map(f => f.trim()).filter(Boolean);
   const totalUnits = rooms.reduce((sum, r) => sum + (parseInt(r.quantity_available, 10) || 0), 0);
   const activeRooms = rooms.filter(r => Number(r.is_active) === 1).length;
-  const formOpen = Boolean(editingRoom || creatingRoom);
+  const matchingRooms = rooms.filter(room => `${room.room_type_name} ${room.bed_type || ''}`.toLowerCase().includes(search.trim().toLowerCase()));
 
   // Keep the form in view when it opens (cards can sit far down the list).
   useEffect(() => {
@@ -273,12 +320,12 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
 
   return (
     <>
-      <div className="hd-rm-scroll">
+      <div className={`hd-rm-scroll${embedded ? ' owner-embedded-rooms' : ''}`}>
         <div className={`hd-rm-grid${formOpen ? ' hd-rm-grid-editing' : ''}`}>
           {/* Left: rooms + form */}
           <div className="hd-rm-main">
             <div className="hd-rm-head">
-              <h2>Room Types &amp; Inventory</h2>
+              <h2>{hotel.name} · Room inventory</h2>
               <p>
                 <Icons.MapPin size={13} />
                 {hotel.name} · {hotel.location || 'Location not specified'}
@@ -298,6 +345,10 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
               </div>
             </div>
 
+            {loadError && <p className="owner-error" role="alert">{loadError} <button type="button" onClick={fetchRooms}>Retry rooms</button></p>}
+            {embedded && !formOpen && <div className="owner-room-toolbar"><label>Find a room type<input className="rm-input" type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="Room name or bed type" /></label>
+              <button type="button" className="rm-btn rm-btn-primary" onClick={startCreateRoom}>Add Room Type</button>
+            </div>}
             {loading ? (
               <div className="rm-loading">
                 <div className="rm-spinner" />
@@ -305,7 +356,11 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
               </div>
             ) : (
               <>
-                {rooms.length > 0 && (
+                {embedded && !formOpen && rooms.length > 0 && <div className="gov-table-wrap"><table className="gov-table owner-room-table"><thead><tr><th>Room type</th><th>Guests per room</th><th>Configured inventory</th><th>Nightly rate</th><th>Visibility</th><th>Actions</th></tr></thead><tbody>
+                  {matchingRooms.map(room => <tr key={room.room_id}><td>{room.room_type_name}</td><td>{room.capacity}</td><td>{room.quantity_available} rooms</td><td>{formatHotelCurrency(room.price_per_night, room.currency || hotel.currency)}</td><td>{Number(room.is_active) === 1 ? 'Offered to guests' : 'Paused'}</td><td><button type="button" className="rm-btn rm-btn-ghost" onClick={() => startEditRoom(room)}>Edit room</button></td></tr>)}
+                  {!matchingRooms.length && <tr><td colSpan={6}>No room types match your search.</td></tr>}
+                </tbody></table><p className="owner-help">Configured inventory is the number of rooms of each type you offer, not remaining availability for selected dates. Pause a type in its editor instead of deleting its history.</p></div>}
+                {!embedded && rooms.length > 0 && (
                   <div className="rm-list">
                     {rooms.map((room) => {
                       const imgCount = Array.isArray(room.image_urls) ? room.image_urls.length : 0;
@@ -402,7 +457,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
                             <div className="hd-rm-pricebox">
                               <div>
                                 <p className="hd-rm-sec-title">Price per night</p>
-                                <p className="hd-rm-price">₱{parseFloat(room.price_per_night).toLocaleString()}</p>
+                                <p className="hd-rm-price">{formatHotelCurrency(room.price_per_night, room.currency || hotel.currency)}</p>
                               </div>
                               <div>
                                 <p className="hd-rm-sec-title">Availability</p>
@@ -472,7 +527,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
                   </div>
                 )}
 
-                {rooms.length === 0 && !creatingRoom && !editingRoom && (
+                {rooms.length === 0 && !loadError && !creatingRoom && !editingRoom && (
                   <div className="rm-empty">
                     <Icons.Bed size={48} />
                     <h3>No Room Types Yet</h3>
@@ -485,7 +540,10 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
 
                 {/* Edit / Create Form */}
                 {(editingRoom || creatingRoom) && (
-                  <div className="rm-form" ref={formRef}>
+                  <fieldset className="rm-form" ref={formRef} disabled={roomSaving} aria-label="Room type editor">
+                    {embedded && <button type="button" className="rm-btn rm-btn-ghost" onClick={() => leaveForm(cancelForm)} disabled={roomSaving}>Back to room list</button>}
+                    {saveError && <p className="owner-error" role="alert">{saveError}</p>}
+                    {Object.keys(errors).length > 0 && <div className="owner-error" role="alert"><strong>Please check the room details:</strong><ul>{Object.entries(errors).map(([key, error]) => <li key={key}>{error}</li>)}</ul></div>}
                     <div className="rm-form-head">
                       <span className="rm-form-ic">
                         {creatingRoom ? <Icons.Plus size={18} /> : <Icons.Pencil size={18} />}
@@ -520,12 +578,12 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
 
                         <label className="rm-field">
                           <span className="rm-label">
-                            Capacity (People) <span className="req">*</span>
+                            Maximum guests per room <span className="req">*</span>
                           </span>
                           <input
                             type="number"
                             value={roomForm.capacity}
-                            onChange={(e) => setRoomForm({ ...roomForm, capacity: parseInt(e.target.value) || 1 })}
+                            onChange={(e) => setRoomForm({ ...roomForm, capacity: e.target.value })}
                             className="rm-input"
                             min="1"
                             required
@@ -557,7 +615,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
 
                         <label className="rm-field">
                           <span className="rm-label">
-                            Price per Night (₱) <span className="req">*</span>
+                            Nightly rate ({roomForm.currency}) <span className="req">*</span>
                           </span>
                           <input
                             type="number"
@@ -572,20 +630,20 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
 
                         <label className="rm-field">
                           <span className="rm-label">
-                            Available Rooms <span className="req">*</span>
+                            Rooms of this type offered <span className="req">*</span>
                           </span>
                           <input
                             type="number"
                             value={roomForm.quantity_available}
-                            onChange={(e) => setRoomForm({ ...roomForm, quantity_available: parseInt(e.target.value) || 1 })}
+                            onChange={(e) => setRoomForm({ ...roomForm, quantity_available: e.target.value })}
                             className="rm-input"
-                            min="1"
+                            min="0"
                             required
                           />
                         </label>
 
                         <label className="rm-field">
-                          <span className="rm-label">Status</span>
+                          <span className="rm-label">Room visibility</span>
                           <select
                             value={roomForm.is_active ? '1' : '0'}
                             onChange={(e) => setRoomForm({ ...roomForm, is_active: e.target.value === '1' ? 1 : 0 })}
@@ -599,8 +657,8 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
                               background: 'white'
                             }}
                           >
-                            <option value="1">● Active</option>
-                            <option value="0">○ Inactive</option>
+                            <option value="1">Offered to guests</option>
+                            <option value="0">Paused — hidden from guests</option>
                           </select>
                         </label>
                       </div>
@@ -608,6 +666,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
 
                     <div className="rm-form-sec">
                       <p className="hd-rm-sec-title">Hourly stay packages (optional)</p>
+                      <label className="rm-field"><span className="rm-label">Room currency</span><input className="rm-input" maxLength={3} value={roomForm.currency} onChange={event => setRoomForm({ ...roomForm, currency: event.target.value.toUpperCase() })} /><small>Changing the code does not convert existing prices or historical payments.</small></label>
                       <p className="rm-hint">Set a price per room for each package. Leave a rate empty to disable it. Nightly pricing remains available.</p>
                       <div className="rm-grid2">
                         {STAY_HOURS.map(hours => <label className="rm-field" key={hours}>
@@ -753,6 +812,8 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
                     {/* Room policies */}
                     <div className="rm-form-sec">
                       <p className="hd-rm-sec-title">Room policies &amp; rules</p>
+                      <p className="rm-hint">New room types start with the hotel’s current check-in/out times. These fields are room-specific; changing hotel policies does not silently overwrite existing rooms.</p>
+                      <button type="button" className="rm-btn rm-btn-ghost" onClick={() => setRoomForm({ ...roomForm, check_in_time: String(hotel.check_in_time || '14:00').slice(0, 5), check_out_time: String(hotel.check_out_time || '12:00').slice(0, 5) })}>Apply current hotel times</button>
                       <div className="rm-grid2">
                         <label className="rm-field">
                           <span className="rm-label">
@@ -814,7 +875,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
                       <button
                         type="button"
                         className="rm-btn rm-btn-ghost"
-                        onClick={cancelForm}
+                        onClick={() => leaveForm(cancelForm)}
                         disabled={roomSaving}
                       >
                         Cancel
@@ -840,16 +901,16 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
                     </div>
                       </div>
                     </div>
-                  </div>
+                  </fieldset>
                 )}
               </>
             )}
           </div>
 
           {/* Right: side panel (mirrors the room modal booking panel) */}
-          <div className="hd-rm-side">
+          {!embedded && <div className="hd-rm-side">
             <div className="hd-rm-side-inner">
-              <button type="button" className="hd-rm-book" onClick={startCreateRoom}>
+              <button type="button" className="hd-rm-book" onClick={() => leaveForm(startCreateRoom)}>
                 <Icons.Plus size={16} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />
                 Add Room Type
               </button>
@@ -884,26 +945,27 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged }) =>
 
               {onClose && (
                 <div className="hd-rm-cta">
-                  <button type="button" className="rm-btn rm-btn-done" onClick={onClose}>
+                   <button type="button" className="rm-btn rm-btn-done" onClick={() => leaveForm(onClose)}>
                     Done
                   </button>
                 </div>
               )}
             </div>
-          </div>
+          </div>}
         </div>
       </div>
 
       {/* Mobile sticky bar (mirrors the room modal) */}
-      <div className="hd-rm-mbar">
+      {!embedded && <div className="hd-rm-mbar">
         <div className="hd-rm-mbar-price">
           <small>Room types</small>
           <strong>{rooms.length} · {totalUnits} units</strong>
         </div>
-        <button type="button" className="hd-rm-book" onClick={onClose}>
+        <button type="button" className="hd-rm-book" onClick={() => leaveForm(onClose)}>
           Done
         </button>
-      </div>
+      </div>}
+      {pendingDiscard && <OwnerDialog title="Discard room changes?" onClose={() => setPendingDiscard(null)} actions={<><button type="button" className="rm-btn rm-btn-ghost" onClick={() => setPendingDiscard(null)}>Keep editing</button><button type="button" className="rm-btn rm-btn-danger" onClick={() => { pendingDiscard(); setPendingDiscard(null); }}>Discard changes</button></>}><p>Your unsaved room edits will be lost.</p></OwnerDialog>}
     </>
   );
 };

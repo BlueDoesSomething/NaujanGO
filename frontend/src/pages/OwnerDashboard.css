@@ -775,6 +775,112 @@
   .gov-stats-grid, .gov-charts-grid { gap: 1.5rem; }
 }
 
+/* Task-oriented owner portal. Other dashboards keep their existing layout. */
+.gov-dashboard--owner .gov-main { width: 100%; margin-top: 0 !important; }
+.owner-nav-group { padding: 1rem .65rem .35rem; font-size: .67rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: #64748b; }
+.owner-notice, .owner-error { padding: .9rem 1rem; border-radius: 10px; margin: 0 0 1rem; overflow-wrap: anywhere; }
+.owner-notice { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; display: flex; gap: .75rem; justify-content: space-between; align-items: center; }
+.owner-notice button { border: 0; background: transparent; color: inherit; font-size: 1.3rem; min-width: 40px; min-height: 40px; }
+.owner-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+.owner-field-error { color: #b91c1c; font-size: .8rem; }
+.owner-help, .owner-field small { color: #64748b; font-size: .83rem; line-height: 1.6; }
+.owner-field { display: flex; flex-direction: column; gap: .4rem; }
+.owner-load-failure { padding: 2rem; display: grid; place-items: center; }
+.owner-load-failure section { max-width: 650px; }
+.owner-task-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .85rem; margin-bottom: 1.25rem; }
+.owner-task-grid button { padding: 1rem; display: flex; flex-direction: column; gap: .4rem; align-items: flex-start; border: 1px solid #cbd5e1; border-radius: 12px; background: var(--surface, white); color: var(--text, #1f2937); text-align: left; cursor: pointer; }
+.owner-task-grid button strong { color: #166534; font-size: 1.8rem; }
+.owner-today h2 small { font-size: .75rem; color: #64748b; font-weight: 400; }
+.owner-setup h2 { margin-top: 0; }
+.owner-setup-list { display: grid; gap: .5rem; }
+.owner-setup-list button { display: flex; align-items: center; gap: .8rem; padding: .8rem; text-align: left; background: var(--surface, white); color: var(--text, #1f2937); border: 1px solid #e2e8f0; border-radius: 10px; cursor: pointer; }
+.owner-setup-list button > span:nth-child(2) { flex: 1; min-width: 0; }
+.owner-setup-list small { display: block; color: #64748b; margin-top: .2rem; }
+.owner-setup-state { border-radius: 50%; background: #f1f5f9; padding: .4rem .65rem; }
+.owner-setup-state.is-complete { color: #166534; background: #dcfce7; }
+.owner-property-editor { border: 1px solid #cbd5e1; border-radius: 16px; margin-bottom: 1.5rem; min-width: 0; }
+.owner-property-guidance, .owner-policy-preview { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 1rem 1.25rem; color: #166534; }
+.owner-property-guidance { font-weight: 600; margin-bottom: 1.5rem; }
+.owner-policy-preview { font-size: .85rem; }
+.owner-editor-surface { background: var(--surface, white); border-radius: 16px; width: 100%; display: flex; flex-direction: column; }
+.owner-editor-body { border: 0; margin: 0; min-width: 0; }
+.owner-editor-section-title { font-size: .72rem; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-bottom: .75rem; padding-bottom: .4rem; border-bottom: 2px solid #e2e8f0; }
+.owner-property-editor .owner-editor-body label { align-items: stretch !important; }
+.owner-property-editor [hidden] { display: none !important; }
+.owner-editor-tabs { display: flex; flex-wrap: wrap; gap: .4rem; padding: .85rem; border-bottom: 1px solid #e2e8f0; }
+.owner-editor-tabs button { padding: .6rem .85rem; min-height: 44px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; color: #334155; font-weight: 600; cursor: pointer; }
+.owner-editor-tabs button[aria-pressed="true"] { background: #166534; border-color: #166534; color: white; }
+.owner-editor-back { padding: .65rem; color: white; border: 1px solid rgba(255,255,255,.6); border-radius: 8px; background: transparent; cursor: pointer; }
+.owner-editor-footer { position: sticky; bottom: 0; z-index: 20; flex-wrap: wrap; background: var(--surface, white); }
+.owner-property-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.owner-property-actions > * { flex: 1 1 150px; text-align: center; justify-content: center; }
+.owner-starting-price { font-weight: 700; color: #166534; }
+.owner-room-toolbar { display: flex; gap: 1rem; align-items: flex-end; justify-content: space-between; margin: 1rem 0; }
+.owner-room-toolbar label { flex: 1; max-width: 420px; flex-direction: column; align-items: stretch !important; }
+.owner-room-toolbar input { display: block; margin-top: .4rem; }
+.owner-embedded-rooms.hd-rm-scroll { padding: 0; overflow: visible; max-height: none; }
+.owner-embedded-rooms .hd-rm-grid { display: block; padding: 0; min-width: 0; }
+.owner-embedded-rooms .hd-rm-main { width: 100%; min-width: 0; }
+.owner-embedded-rooms .rm-form-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.owner-embedded-rooms .rm-form-actions { position: sticky; bottom: .5rem; background: var(--surface, white); padding: .75rem; border: 1px solid #cbd5e1; border-radius: 10px; z-index: 10; }
+/* Override the global translucent button rules only inside this room editor. */
+.owner-embedded-rooms .rm-btn { padding: .65rem .9rem !important; min-height: 44px; }
+.owner-embedded-rooms .rm-btn-primary { background: #166534 !important; color: white !important; border-color: #166534 !important; }
+.owner-embedded-rooms .rm-btn-ghost { background: white !important; color: #334155 !important; border-color: #94a3b8 !important; }
+.owner-embedded-rooms .rm-btn:disabled { opacity: .6; cursor: not-allowed !important; }
+.owner-task-filter { display: flex; gap: .6rem; align-items: center; flex-wrap: wrap; margin-bottom: 1rem; }
+.owner-dialog-back { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 2500; padding: 1rem; display: grid; place-items: center; }
+.owner-dialog { width: min(100%, 760px); max-height: 90dvh; overflow: auto; border-radius: 14px; background: var(--surface, white); color: var(--text, #1f2937); padding: 1.25rem; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+.owner-dialog header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+.owner-dialog h2 { margin: 0; font-size: 1.3rem; }
+.owner-dialog-content { margin: 1rem 0; line-height: 1.6; overflow-wrap: anywhere; }
+.owner-dialog footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .6rem; }
+.owner-detail-fields { display: grid; grid-template-columns: minmax(120px, .7fr) minmax(0, 1fr); gap: .6rem 1rem; }
+.owner-detail-fields dt { font-weight: 600; }
+.owner-detail-fields dd { margin: 0; overflow-wrap: anywhere; }
+.gov-dashboard--owner .gov-menu-btn { display: none; }
+[data-theme="dark"] .gov-dashboard--owner .owner-help,
+[data-theme="dark"] .gov-dashboard--owner .owner-field small,
+[data-theme="dark"] .gov-dashboard--owner .owner-nav-group,
+[data-theme="dark"] .gov-dashboard--owner .owner-today h2 small,
+[data-theme="dark"] .gov-dashboard--owner .owner-setup-list small,
+[data-theme="dark"] .gov-dashboard--owner .owner-editor-section-title { color: #cbd5e1; }
+[data-theme="dark"] .gov-dashboard--owner .gov-user__name,
+[data-theme="dark"] .gov-dashboard--owner .gov-user__role { color: #e2e8f0; }
+[data-theme="dark"] .gov-dashboard--owner .owner-task-grid button strong,
+[data-theme="dark"] .gov-dashboard--owner .owner-starting-price { color: #86efac; }
+[data-theme="dark"] .owner-property-guidance,
+[data-theme="dark"] .owner-policy-preview { background: #14352c; color: #bbf7d0; border-color: #347259; }
+[data-theme="dark"] .owner-property-editor .owner-editor-body label > span { color: #e2e8f0 !important; }
+[data-theme="dark"] .owner-editor-tabs button { background: #1e293b; color: #e2e8f0; border-color: #64748b; }
+[data-theme="dark"] .owner-editor-tabs button[aria-pressed="true"] { background: #166534; color: white; }
+[data-theme="dark"] .owner-embedded-rooms .rm-btn-ghost { background: #1e293b !important; color: #e2e8f0 !important; border-color: #94a3b8 !important; }
+[data-theme="dark"] .gov-dashboard--owner .rm-hint { color: #cbd5e1; }
+@media (max-width: 1024px) {
+  .gov-dashboard--owner .gov-sidebar { position: fixed; top: 0; left: 0; width: min(300px, 85vw); height: 100dvh; overflow-y: auto; transform: translateX(-105%); z-index: 1400; background: var(--surface, white); transition: transform .15s ease; }
+  .gov-dashboard--owner .gov-sidebar.is-open { transform: translateX(0); }
+  .gov-dashboard--owner .gov-nav { flex-direction: column; flex-wrap: nowrap; overflow-x: visible; align-items: stretch; }
+  .gov-dashboard--owner .gov-nav-btn { border-radius: 8px; white-space: normal; min-height: 44px; }
+  .gov-dashboard--owner .gov-menu-btn { display: flex; position: fixed; top: .75rem; left: .75rem; width: 44px; height: 44px; border-radius: 10px; border: 1px solid #cbd5e1; background: #166534; flex-direction: column; align-items: center; justify-content: center; gap: 5px; z-index: 1450; }
+  .gov-dashboard--owner .gov-menu-btn span { display: block; width: 20px; height: 2px; background: white; }
+  .gov-dashboard--owner .gov-nav-scrim { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1350; }
+  .gov-dashboard--owner .gov-main { padding-top: 4.5rem; }
+}
+@media (max-width: 640px) {
+  .owner-property-editor .gov-grid-2 { grid-template-columns: minmax(0, 1fr); }
+  .gov-dashboard--owner .owner-availability-grid { grid-template-columns: repeat(7, minmax(0, 1fr)) !important; gap: .2rem !important; }
+  .gov-dashboard--owner .owner-availability-grid > div { padding: .3rem !important; font-size: .65rem !important; min-width: 0; }
+  .owner-task-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .owner-room-toolbar { align-items: stretch; flex-direction: column; }
+  .owner-embedded-rooms .rm-form-cols { grid-template-columns: minmax(0, 1fr); }
+  .owner-embedded-rooms .rm-grid2, .owner-embedded-rooms .rm-grid3 { grid-template-columns: minmax(0, 1fr); }
+  .owner-detail-fields { grid-template-columns: minmax(0, 1fr); gap: .2rem; }
+  .owner-detail-fields dd { margin-bottom: .6rem; }
+  .owner-dialog { padding: 1rem; }
+  .owner-property-editor > div > div:first-child { flex-wrap: wrap; }
+  .owner-editor-tabs button { flex: 1 1 130px; }
+}
+
 /* Payment Filter Panel Improvements */
 .gov-payment-filter-section {
   display: flex;
@@ -876,4 +982,3 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
-

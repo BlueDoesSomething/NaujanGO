@@ -574,6 +574,7 @@ export default function HotelDetail() {
     ? Math.max(0, Math.ceil((new Date(bookingForm.checkOut) - new Date(bookingForm.checkIn)) / (1000 * 60 * 60 * 24)))
     : 0;
   const modalSelectedRoom = rooms.find((r) => r.room_id === bookingForm.selectedRoomId);
+  const bookingCurrency = modalSelectedRoom?.currency || hotel?.currency || 'PHP';
   const hourlyRates = getHourlyRates(modalSelectedRoom?.hourly_rates);
   const isHourlyStay = Boolean(bookingForm.stayHours);
   const hourlyEnd = hourlyCheckout(bookingForm.checkIn, bookingForm.checkInTime, bookingForm.stayHours);
@@ -843,7 +844,7 @@ export default function HotelDetail() {
         hotel_name: hotel.name,
         hotel_location: hotel.location,
         price_per_night: pricePerNight,
-        currency: hotel.currency,
+        currency: bookingCurrency,
         check_in: bookingForm.checkIn,
         check_out: bookingForm.checkOut,
         ...(isHourlyStay ? { stay_duration_hours: Number(bookingForm.stayHours), check_in_time: bookingForm.checkInTime } : {}),
@@ -900,7 +901,7 @@ export default function HotelDetail() {
               booking_id: bookingId,
               payment_method: bookingForm.paymentMethod,
               amount: dueNowAmount,
-              currency: hotel.currency,
+              currency: bookingResponse.data?.booking?.currency || bookingCurrency,
               customer_email: bookingForm.customerEmail,
               customer_phone: toPhilippineE164(bookingForm.customerPhone)
             }),
@@ -1131,13 +1132,17 @@ export default function HotelDetail() {
 
   const priceMin = rooms.length > 0 ? Math.min(...rooms.map(r => parseFloat(r.price_per_night) || 0)) : null;
   const priceMax = rooms.length > 0 ? Math.max(...rooms.map(r => parseFloat(r.price_per_night) || 0)) : null;
+  const roomCurrencies = [...new Set(rooms.map(room => room.currency || hotel.currency || 'PHP'))];
+  const mixedRoomCurrencies = roomCurrencies.length > 1;
+  const rateCurrency = roomCurrencies[0] || hotel.currency;
   const heroPrice = priceMin === null
     ? (hotel.pricePerNight || hotel.price_per_night
       ? formatCurrency(hotel.pricePerNight || hotel.price_per_night)
       : null)
-    : priceMin === priceMax
-      ? formatCurrency(priceMin)
-      : `${formatCurrency(priceMin)} – ${formatCurrency(priceMax)}`;
+    : mixedRoomCurrencies ? 'See individual room rates'
+      : priceMin === priceMax
+        ? formatCurrency(priceMin, rateCurrency)
+        : `${formatCurrency(priceMin, rateCurrency)} – ${formatCurrency(priceMax, rateCurrency)}`;
 
   const availabilityText = hasAvailability || hasRoomTypes
     ? primaryAvailability > 0
@@ -1336,14 +1341,14 @@ export default function HotelDetail() {
             <div>
               <div className="hd-price-label">{t('price_per_night')}</div>
               <div className="hd-price-amount">
-                {formatCurrency(rooms.find(r => r.room_id === bookingForm.selectedRoomId)?.price_per_night)}
+                {formatCurrency(modalSelectedRoom?.price_per_night, bookingCurrency)}
               </div>
             </div>
           ) : rooms.length > 0 ? (
             <div>
               <div className="hd-price-label">{t('price_range')}</div>
               <div className="hd-price-amount">
-                {formatCurrency(priceMin)} – {formatCurrency(priceMax)}
+                {mixedRoomCurrencies ? 'See individual room rates' : `${formatCurrency(priceMin, rateCurrency)} – ${formatCurrency(priceMax, rateCurrency)}`}
               </div>
               <small className="hd-price-note">{t('select_room_for_exact_price')}</small>
             </div>
@@ -1504,7 +1509,7 @@ export default function HotelDetail() {
                       <div className="hd-room-foot">
                         <div className="hd-room-price">
                           <small>{t('per_night')}</small>
-                          <strong>{formatCurrency(room.price_per_night)}</strong>
+                          <strong>{formatCurrency(room.price_per_night, room.currency || hotel.currency)}</strong>
                         </div>
                         <button
                           className="hd-room-cta"
@@ -1833,7 +1838,7 @@ export default function HotelDetail() {
                                   disabled={!quantityOk}
                                   style={{ opacity: quantityOk ? 1 : 0.5 }}
                                 >
-                                  {room.room_type_name} ({formatCurrency(room.price_per_night)}/night, exact for {room.capacity} guest{room.capacity > 1 ? 's' : ''}, {room.quantity_available} avail){warningText}
+                                  {room.room_type_name} ({formatCurrency(room.price_per_night, room.currency || hotel.currency)}/night, exact for {room.capacity} guest{room.capacity > 1 ? 's' : ''}, {room.quantity_available} avail){warningText}
                                 </option>
                               );
                             })
@@ -1909,7 +1914,7 @@ export default function HotelDetail() {
                               <div
                                 key={dateKey}
                                 onClick={() => isSelectable && handleCalendarDayClick(dateKey)}
-                                title={day && day.price != null ? formatCurrency(day.price) : undefined}
+                                title={day && day.price != null ? formatCurrency(day.price, bookingCurrency) : undefined}
                                 className={`hd-cal-day${dayState ? ` ${dayState}` : ''}`}
                               >
                                 <div className="hd-cal-day-num">{date.getDate()}</div>
@@ -2035,7 +2040,7 @@ export default function HotelDetail() {
                         <span className="hd-bm-payopt-s">{choice.subtitle}</span>
                         <span className="hd-bm-payopt-p">
                           {due !== null
-                            ? formatCurrency(due, hotel.currency, { minimumFractionDigits: 2 })
+                            ? formatCurrency(due, bookingCurrency, { minimumFractionDigits: 2 })
                             : modalNights > 0 ? 'Select room' : 'Enter dates'}
                         </span>
                       </button>
@@ -2045,7 +2050,7 @@ export default function HotelDetail() {
                 {!paymentOptionChoices.length && <p role="alert">No enabled payment plan is usable for this total. Please contact the hotel.</p>}
                 {selectedDueNow !== null && selectedBalanceDue > 0 && (
                   <div className="hd-bm-balance">
-                    <Icons.Money size={13} /> Balance of {formatCurrency(selectedBalanceDue, hotel.currency, { minimumFractionDigits: 2 })}
+                    <Icons.Money size={13} /> Balance of {formatCurrency(selectedBalanceDue, bookingCurrency, { minimumFractionDigits: 2 })}
                     {selectedBalanceDueAt ? ` due by ${selectedBalanceDueAt}` : ''} (before check-in).
                   </div>
                 )}
@@ -2199,11 +2204,11 @@ export default function HotelDetail() {
                     </div>
                     <div className="hd-bm-sumrow">
                       <span>{isHourlyStay ? 'Package rate' : t('per_night')}</span>
-                      <strong>{modalPricePerNight != null && modalPricePerNight !== '' ? formatCurrency(modalPricePerNight) : '—'}</strong>
+                      <strong>{modalPricePerNight != null && modalPricePerNight !== '' ? formatCurrency(modalPricePerNight, bookingCurrency) : '—'}</strong>
                     </div>
                     <div className="hd-bm-sumtotal">
                       <span>Total</span>
-                      <strong>{formatCurrency(bookingTotal, hotel.currency, { minimumFractionDigits: 2 })}</strong>
+                      <strong>{formatCurrency(bookingTotal, bookingCurrency, { minimumFractionDigits: 2 })}</strong>
                     </div>
                   </div>
 
@@ -2235,12 +2240,12 @@ export default function HotelDetail() {
                     </div>
                     <div className="hd-bm-sumrow is-due">
                       <span>Due now</span>
-                      <strong>{selectedDueNow !== null ? formatCurrency(selectedDueNow, hotel.currency, { minimumFractionDigits: 2 }) : '—'}</strong>
+                      <strong>{selectedDueNow !== null ? formatCurrency(selectedDueNow, bookingCurrency, { minimumFractionDigits: 2 }) : '—'}</strong>
                     </div>
                     {selectedBalanceDue > 0 && (
                       <div className="hd-bm-sumrow">
                         <span>Balance</span>
-                        <strong>{formatCurrency(selectedBalanceDue, hotel.currency, { minimumFractionDigits: 2 })}</strong>
+                        <strong>{formatCurrency(selectedBalanceDue, bookingCurrency, { minimumFractionDigits: 2 })}</strong>
                       </div>
                     )}
                   </div>
@@ -2597,7 +2602,7 @@ export default function HotelDetail() {
                     <div className="hd-rm-pricebox">
                       <div>
                         <p className="hd-rm-sec-title">Price per night</p>
-                        <p className="hd-rm-price">{formatCurrency(selectedRoom.price_per_night)}</p>
+                        <p className="hd-rm-price">{formatCurrency(selectedRoom.price_per_night, selectedRoom.currency || hotel.currency)}</p>
                         {STAY_HOURS.filter(hours => getHourlyRates(selectedRoom.hourly_rates)[hours]).map(hours => (
                           <p key={hours} className="hd-bm-note">{hours} hours: {formatCurrency(getHourlyRates(selectedRoom.hourly_rates)[hours], selectedRoom.currency || hotel.currency)} per room</p>
                         ))}
@@ -2655,7 +2660,7 @@ export default function HotelDetail() {
             <div className="hd-rm-mbar">
               <div className="hd-rm-mbar-price">
                 <small>{t('per_night')}</small>
-                <strong>{formatCurrency(selectedRoom.price_per_night)}</strong>
+                <strong>{formatCurrency(selectedRoom.price_per_night, selectedRoom.currency || hotel.currency)}</strong>
               </div>
               {roomBookable ? (
                 <button className="hd-rm-book" onClick={roomBookNow}>{t('book_now')}</button>

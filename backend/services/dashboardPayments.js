@@ -23,6 +23,8 @@ export const paymentQueryScope = (user, filters = {}, includeArchive = true) => 
 };
 
 const totals = `COUNT(*) AS total_transactions,
+  COUNT(DISTINCT COALESCE(NULLIF(UPPER(TRIM(hp.currency)), ''), 'UNKNOWN')) AS currency_count,
+  MIN(NULLIF(UPPER(TRIM(hp.currency)), '')) AS currency,
   COALESCE(SUM(CASE WHEN hp.status = 'succeeded' THEN hp.amount ELSE 0 END), 0) AS total_revenue,
   COALESCE(SUM(CASE WHEN hp.status = 'pending' THEN hp.amount ELSE 0 END), 0) AS pending_amount,
   COALESCE(SUM(CASE WHEN hp.status = 'failed' THEN hp.amount ELSE 0 END), 0) AS failed_amount,

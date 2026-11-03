@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import api from '../api';
 import { getPaymentPlans } from '../utils/stayBooking';
 
@@ -8,19 +8,27 @@ const choices = [
   { value: 'full', label: 'Full payment', detail: 'Pay the entire booking amount.' }
 ];
 
-export default function PaymentPlanSettings({ hotels, onSaved }) {
+export default function PaymentPlanSettings({ hotels, onSaved, onDirtyChange, onBusyChange, confirmLeave }) {
   const [hotelId, setHotelId] = useState('');
   const [plans, setPlans] = useState([]);
   const [fee, setFee] = useState('');
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const baseline = useRef('');
+  const current = JSON.stringify({ hotelId, plans: [...plans].sort(), fee: String(fee) });
+  const dirty = Boolean(baseline.current && current !== baseline.current);
   const hotel = hotels.find(item => String(item.hotel_id) === String(hotelId)) || hotels[0];
   useEffect(() => {
     if (!hotel) return;
-    setPlans(getPaymentPlans(hotel.allowed_payment_options).filter(plan => plan !== 'reservation' || Number(hotel.reservation_fee) > 0));
-    setFee(hotel.reservation_fee ?? '');
+    if (dirty) return;
+    const nextPlans = getPaymentPlans(hotel.allowed_payment_options).filter(plan => plan !== 'reservation' || Number(hotel.reservation_fee) > 0);
+    const nextFee = hotel.reservation_fee ?? '';
+    setPlans(nextPlans); setFee(nextFee);
+    baseline.current = JSON.stringify({ hotelId, plans: [...nextPlans].sort(), fee: String(nextFee) });
   }, [hotel]);
+  useLayoutEffect(() => { onDirtyChange?.(dirty); onBusyChange?.(saving); }, [dirty, saving, onDirtyChange, onBusyChange]);
+  useLayoutEffect(() => () => { onDirtyChange?.(false); onBusyChange?.(false); }, [onDirtyChange, onBusyChange]);
   if (!hotel) return null;
   const save = async () => {
     setError(''); setMessage('');
@@ -31,6 +39,7 @@ export default function PaymentPlanSettings({ hotels, onSaved }) {
       await api.put(`/owner/hotels/${hotel.hotel_id}`, {
         allowed_payment_options: plans, reservation_fee: fee === '' ? null : Number(fee)
       });
+      baseline.current = current;
       await onSaved?.();
       setMessage('Payment plans saved. Existing bookings keep their agreed payment terms.');
     } catch (error) { setError(error.response?.data?.error || 'Could not save payment plans.'); }
@@ -41,7 +50,9 @@ export default function PaymentPlanSettings({ hotels, onSaved }) {
       <h2 style={{ fontSize: '1rem', color: '#1B5E20' }}>Payment Plan Settings</h2>
       {hotels.length > 1 && <label>Hotel
         <select className="gov-input" value={hotel.hotel_id} disabled={saving} onChange={event => {
-          setHotelId(event.target.value); setMessage(''); setError('');
+          const value = event.target.value;
+          const change = () => { baseline.current = ''; setHotelId(value); setMessage(''); setError(''); };
+          if (confirmLeave) confirmLeave(change); else change();
         }}>{hotels.map(item => <option key={item.hotel_id} value={item.hotel_id}>{item.name}</option>)}</select>
       </label>}
       <p style={{ fontSize: '0.85rem', color: '#6b7280' }}>Choose how guests may pay for {hotel.name}. These are payment plans, not GCash/card settings.</p>

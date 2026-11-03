@@ -243,9 +243,9 @@ test('owner policy edits persist in the save and are shown to guests without inv
   await waitFor(`document.querySelector('#owner-nav')`);
 
   // Hotels tab → open the editor for the fixture hotel.
-  assert.ok(await clickText('#owner-nav .gov-nav-btn', 'Hotels'), 'hotels nav button not found');
-  await waitFor(`[...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Edit')`);
-  assert.ok(await clickText('button', 'Edit'));
+  assert.ok(await clickText('#owner-nav .gov-nav-btn', 'My Property'), 'property nav button not found');
+  await waitFor(`[...document.querySelectorAll('button')].some(b => b.textContent.trim() === 'Edit policies')`);
+  assert.ok(await clickText('button', 'Edit policies'));
   await waitFor(`[...document.querySelectorAll('label')].some(l => l.textContent.trim().startsWith('Payment terms line'))`);
 
   // The stored owner wording is prefilled, not the platform defaults.
