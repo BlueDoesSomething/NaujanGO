@@ -292,7 +292,7 @@ const App = () => {
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/verify-email" element={<VerifyEmail />} />
               <Route path="/oauth-callback" element={<OAuthCallback />} />
-              <Route path="/debug-auth" element={<DebugAuth />} />
+              {import.meta.env.DEV && <Route path="/debug-auth" element={<DebugAuth />} />}
               <Route path="/terms" element={<Terms />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route

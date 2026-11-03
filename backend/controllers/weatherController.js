@@ -53,6 +53,7 @@ const getCachedWeatherRows = async (attractionId) => {
 // Weather API configuration
 const WEATHER_API_KEY = process.env.OPENWEATHER_API_KEY || null;
 const WEATHER_API_BASE = 'https://api.openweathermap.org/data/2.5';
+const weatherUnavailable = () => Object.assign(new Error('Weather data is currently unavailable.'), { status: 503, code: 'WEATHER_UNAVAILABLE' });
 
 /**
  * GET /api/weather/current/:attractionId
@@ -110,7 +111,7 @@ router.get('/current/:attractionId', async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching current weather:', error);
-    res.status(500).json({ error: 'Failed to fetch weather data', details: error.message });
+    res.status(error.status || 500).json({ error: 'Weather data is currently unavailable.' });
   }
 });
 
@@ -173,7 +174,7 @@ router.get('/forecast/:attractionId', async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching weather forecast:', error);
-    res.status(500).json({ error: 'Failed to fetch forecast data', details: error.message });
+    res.status(error.status || 500).json({ error: 'Weather forecast is currently unavailable.' });
   }
 });
 
@@ -505,10 +506,7 @@ router.post('/preferences', async (req, res) => {
 // Helper Functions
 
 async function fetchWeatherFromAPI(lat, lon, locationName) {
-  if (!WEATHER_API_KEY) {
-    // Return mock data when API key is not available
-    return getMockWeatherData(locationName);
-  }
+  if (!WEATHER_API_KEY) throw weatherUnavailable();
 
   try {
     const response = await axios.get(
@@ -535,19 +533,18 @@ async function fetchWeatherFromAPI(lat, lon, locationName) {
     };
 
   } catch (error) {
-    console.warn('Weather API failed, using mock data:', error.message);
-    return getMockWeatherData(locationName);
+    console.warn('Weather provider request failed:', error.code || 'WEATHER_UNAVAILABLE');
+    throw weatherUnavailable();
   }
 }
 
 async function fetchForecastFromAPI(lat, lon) {
-  if (!WEATHER_API_KEY) {
-    return getMockForecastData();
-  }
+  if (!WEATHER_API_KEY) throw weatherUnavailable();
 
   try {
     const response = await axios.get(
-      `${WEATHER_API_BASE}/forecast?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`
+      `${WEATHER_API_BASE}/forecast?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`,
+      { timeout: 5000 }
     );
 
     const data = response.data;
@@ -585,56 +582,9 @@ async function fetchForecastFromAPI(lat, lon) {
     };
 
   } catch (error) {
-    console.warn('Forecast API failed, using mock data:', error.message);
-    return getMockForecastData();
+    console.warn('Forecast provider request failed:', error.code || 'WEATHER_UNAVAILABLE');
+    throw weatherUnavailable();
   }
-}
-
-function getMockWeatherData(locationName) {
-  const conditions = ['Clear', 'Clouds', 'Rain', 'Thunderstorm', 'Mist'];
-  const condition = conditions[Math.floor(Math.random() * conditions.length)];
-  
-  return {
-    temperature: Math.floor(Math.random() * 15) + 20,
-    feelsLike: Math.floor(Math.random() * 15) + 22,
-    humidity: Math.floor(Math.random() * 40) + 40,
-    pressure: Math.floor(Math.random() * 50) + 1000,
-    windSpeed: Math.floor(Math.random() * 20),
-    windDirection: Math.floor(Math.random() * 360),
-    visibility: Math.floor(Math.random() * 10000) + 5000,
-    condition,
-    description: getConditionDescription(condition),
-    iconCode: getIconCode(condition),
-    rainfall1h: condition === 'Rain' ? Math.random() * 10 : 0,
-    cloudiness: Math.floor(Math.random() * 100),
-    timestamp: new Date()
-  };
-}
-
-function getMockForecastData() {
-  const forecast = [];
-  const today = new Date();
-  const conditions = ['Clear', 'Clouds', 'Rain', 'Thunderstorm', 'Mist'];
-  
-  for (let i = 0; i < 7; i++) {
-    // Create date in UTC to avoid timezone issues
-    const forecastDate = new Date(today);
-    forecastDate.setUTCDate(forecastDate.getUTCDate() + i);
-    forecastDate.setUTCHours(12, 0, 0, 0);
-    
-    const condition = conditions[Math.floor(Math.random() * conditions.length)];
-    
-    forecast.push({
-      datetime: forecastDate,
-      temperature: Math.floor(Math.random() * 10) + 22,
-      condition: condition,
-      description: getConditionDescription(condition),
-      rainfall: condition === 'Rain' ? Math.random() * 10 : 0,
-      windSpeed: Math.floor(Math.random() * 15)
-    });
-  }
-  
-  return { location: 'Naujan', forecast };
 }
 
 async function saveWeatherData(attractionId, lat, lon, locationName, weatherData) {
@@ -984,7 +934,7 @@ export async function getNaujanLiveWeather({ forceRefresh = false } = {}) {
       hazardLevel: summary ? summary.hazardLevel : getHazardLevelLocal(hazards),
       safetyScore: summary ? summary.safetyScore : getTravelSafetyScoreLocal(current),
       comfortScore: summary ? summary.comfortScore : computeComfortScoreLocal(current),
-      source: WEATHER_API_KEY ? 'live' : 'mock',
+      source: 'live',
       fetchedAt: new Date()
     };
 

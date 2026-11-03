@@ -63,6 +63,7 @@ const WeatherWidget = ({
   const fetchWeatherData = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setWeather(null); setForecast(null); setAlerts([]); setAlternatives([]);
 
     try {
       let weatherData;
@@ -279,10 +280,8 @@ const WeatherWidget = ({
 
   // Pass safety score up to parent (must be before conditional returns)
   useEffect(() => {
-    if (onSafetyScore && weather) {
-      onSafetyScore(weatherService.getTravelSafetyScore(weather));
-    }
-  }, [weather, onSafetyScore]);
+    onSafetyScore?.(!loading && !error && weather ? weatherService.getTravelSafetyScore(weather) : null);
+  }, [weather, loading, error, onSafetyScore]);
 
   if (loading) {
     return (

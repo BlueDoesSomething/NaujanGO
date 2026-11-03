@@ -39,6 +39,7 @@ const HazardAwareness = ({
   const [weatherData, setWeatherData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [unavailableLocations, setUnavailableLocations] = useState(0);
   const [expanded, setExpanded] = useState(true);
   const [lastUpdate, setLastUpdate] = useState(new Date());
   const [expandedHazardDetail, setExpandedHazardDetail] = useState(null);
@@ -80,7 +81,6 @@ const HazardAwareness = ({
 
   // Fetch hazard data
   useEffect(() => {
-    console.log('HazardAwareness - Attractions received:', attractions);
     fetchHazardData();
     const interval = setInterval(fetchHazardData, 5 * 60 * 1000); // Update every 5 minutes
     return () => clearInterval(interval);
@@ -89,9 +89,11 @@ const HazardAwareness = ({
   const fetchHazardData = async () => {
     setLoading(true);
     setError(null);
+    setUnavailableLocations(0);
 
     try {
       let allHazards = [];
+      if (attractionList.length === 0) throw new Error('No locations are available for weather monitoring.');
       // Only fetch hazards for attractions, not the general location
       if (attractionList.length > 0) {
         const attractionResults = await fetchAttractionsHazards(attractionList);
@@ -136,8 +138,7 @@ const HazardAwareness = ({
 
   const fetchAttractionsHazards = async (attractions) => {
     const allHazards = [];
-
-    console.log('Fetching hazards for attractions:', attractions);
+    let checked = 0, unavailable = 0;
 
     for (const attraction of attractions) {
       try {
@@ -148,25 +149,14 @@ const HazardAwareness = ({
                                (attraction.lat && attraction.lon) ||
                                (attraction.lat && attraction.lng);
 
-        console.log(`Attraction ${attraction.name}:`, {
-          hasCoordinates,
-          latitude: attraction.latitude,
-          longitude: attraction.longitude,
-          lat: attraction.lat,
-          lon: attraction.lon,
-          lng: attraction.lng
-        });
-
         if (!hasCoordinates) {
-          console.warn(`Attraction ${attraction.name} has no coordinates, skipping...`);
+          unavailable += 1;
           continue;
         }
 
         // Get coordinates from various possible field names
         const lat = attraction.latitude || attraction.lat;
         const lon = attraction.longitude || attraction.lon || attraction.lng;
-
-        console.log(`Fetching weather for ${attraction.name} at (${lat}, ${lon})`);
 
         // Fetch weather data using coordinates
         weatherData = await weatherService.getCurrentWeather(
@@ -176,8 +166,8 @@ const HazardAwareness = ({
         );
 
         if (weatherData) {
+          checked += 1;
           const detectedHazards = weatherService.analyzeHazards(weatherData);
-          console.log(`Found ${detectedHazards.length} hazards for ${attraction.name}`);
           detectedHazards.forEach(h => {
             allHazards.push({
               ...h,
@@ -192,11 +182,13 @@ const HazardAwareness = ({
           forecastHazards.forEach(hazard => allHazards.push(hazard));
         }
       } catch (error) {
+        unavailable += 1;
         console.warn(`Failed to fetch hazards for ${attraction.name}:`, error);
       }
     }
 
-    console.log('Total hazards found:', allHazards.length);
+    setUnavailableLocations(unavailable);
+    if (checked === 0) throw new Error('Weather observations are unavailable.');
     return allHazards;
   };
 
@@ -432,6 +424,7 @@ const HazardAwareness = ({
         <p className="pb-haz-sub">{t('critical_locations')}</p>
         <div className="pb-haz-foot">
           <p>{hazardStats.total} total hazards monitored</p>
+          {unavailableLocations > 0 && <p role="status">{unavailableLocations} · {t('weather_data_unavailable')}</p>}
         </div>
 
         <div className="pb-haz-panel">
@@ -505,7 +498,7 @@ const HazardAwareness = ({
                   </div>
                 ))
               ) : (
-                <div className="pb-haz-empty"><span>✅ {t('no_current_hazards')}</span></div>
+                <div className="pb-haz-empty"><span>{unavailableLocations > 0 ? `⚠️ ${t('weather_data_unavailable')}` : `✅ ${t('no_current_hazards')}`}</span></div>
               )}
             </div>
           </div>

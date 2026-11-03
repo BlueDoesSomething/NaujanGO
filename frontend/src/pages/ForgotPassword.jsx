@@ -21,7 +21,7 @@ const ForgotPassword = () => {
     try {
       const response = await api.post('/auth/forgot-password', { emailOrUsername });
       setMessage(response.data?.message || 'If the account exists, a password reset link has been sent.');
-      setDevResetUrl(response.data?.devResetUrl || '');
+      if (import.meta.env.DEV) setDevResetUrl(response.data?.devResetUrl || '');
     } catch (err) {
       setError(err.response?.data?.error || 'Unable to process your request right now.');
     } finally {
@@ -37,7 +37,7 @@ const ForgotPassword = () => {
 
         {error ? <div style={errorStyle}>{error}</div> : null}
         {message ? <div style={successStyle}>{message}</div> : null}
-        {devResetUrl ? (
+        {import.meta.env.DEV && devResetUrl ? (
           <a href={devResetUrl} style={devLinkStyle}>
             Open development reset link
           </a>

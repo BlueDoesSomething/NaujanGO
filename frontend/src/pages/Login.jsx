@@ -421,7 +421,7 @@ const Login = () => {
     try {
       const response = await api.post('/auth/resend-verification', { emailOrUsername });
       const baseMessage = response.data?.message || 'If the account still needs verification, a new email has been sent.';
-      const devLink = response.data?.devVerificationUrl;
+      const devLink = import.meta.env.DEV ? response.data?.devVerificationUrl : null;
       setVerificationMessage(devLink ? `${baseMessage} Development link: ${devLink}` : baseMessage);
     } catch (err) {
       setError(err.response?.data?.error || 'Unable to resend verification email.');

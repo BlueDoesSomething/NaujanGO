@@ -3,7 +3,7 @@
  * Integrates with OpenWeatherMap API for accurate weather information
  */
 
-const WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY || 'demo_key';
+const WEATHER_API_KEY = import.meta.env.VITE_WEATHER_API_KEY || '';
 const WEATHER_API_BASE = 'https://api.openweathermap.org/data/2.5';
 
 class WeatherService {
@@ -24,10 +24,7 @@ class WeatherService {
     }
 
     try {
-      // For demo purposes, return mock data when API key is not available
-      if (WEATHER_API_KEY === 'demo_key') {
-        return this.getMockWeatherData(locationName);
-      }
+      if (!WEATHER_API_KEY) throw new Error('Weather service is not configured.');
 
       const response = await fetch(
         `${WEATHER_API_BASE}/weather?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`
@@ -44,8 +41,8 @@ class WeatherService {
       return weatherData;
       
     } catch (error) {
-      console.warn('Weather API unavailable, using mock data:', error.message);
-      return this.getMockWeatherData(locationName);
+      console.warn('Current weather unavailable:', error.message);
+      throw new Error('Weather data is currently unavailable.');
     }
   }
 
@@ -61,9 +58,7 @@ class WeatherService {
     }
 
     try {
-      if (WEATHER_API_KEY === 'demo_key') {
-        return this.getMockForecastData();
-      }
+      if (!WEATHER_API_KEY) throw new Error('Weather service is not configured.');
 
       const response = await fetch(
         `${WEATHER_API_BASE}/forecast?lat=${lat}&lon=${lon}&appid=${WEATHER_API_KEY}&units=metric`
@@ -80,8 +75,8 @@ class WeatherService {
       return forecastData;
       
     } catch (error) {
-      console.warn('Weather forecast unavailable, using mock data:', error.message);
-      return this.getMockForecastData();
+      console.warn('Weather forecast unavailable:', error.message);
+      throw new Error('Weather forecast is currently unavailable.');
     }
   }
 
@@ -264,43 +259,6 @@ class WeatherService {
   }
 
   /**
-   * Suggest alternative destinations based on weather conditions
-   */
-  suggestAlternatives(currentWeather, allDestinations) {
-    const hazards = this.analyzeHazards(currentWeather);
-    const hasHighRisk = hazards.some(h => h.level === 'high');
-    
-    if (!hasHighRisk) {
-      return [];
-    }
-
-    // For now, return a basic suggestion - in a real app, this would analyze
-    // weather for all destinations and rank them by safety
-    const suggestions = [
-      {
-        name: 'Naujan Town Plaza',
-        reason: 'Indoor attractions available during bad weather',
-        weatherSuitability: 85,
-        safetyRating: 'high'
-      },
-      {
-        name: 'Local Museums',
-        reason: 'Perfect for rainy day exploration',
-        weatherSuitability: 90,
-        safetyRating: 'high'
-      },
-      {
-        name: 'Shopping Centers',
-        reason: 'Climate-controlled environment',
-        weatherSuitability: 95,
-        safetyRating: 'high'
-      }
-    ];
-
-    return suggestions;
-  }
-
-  /**
    * Get travel safety score based on weather
    */
   getTravelSafetyScore(weatherData) {
@@ -445,111 +403,6 @@ class WeatherService {
       hourlyToday,
       forecast
     };
-  }
-
-  /**
-   * Get mock weather data for demo
-   */
-  getMockWeatherData(locationName) {
-    const conditions = ['Clear', 'Clouds', 'Rain', 'Thunderstorm', 'Mist'];
-    const condition = conditions[Math.floor(Math.random() * conditions.length)];
-    
-    return {
-      temperature: Math.floor(Math.random() * 15) + 20, // 20-35°C
-      feelsLike: Math.floor(Math.random() * 15) + 22,
-      humidity: Math.floor(Math.random() * 40) + 40, // 40-80%
-      pressure: Math.floor(Math.random() * 50) + 1000,
-      windSpeed: Math.floor(Math.random() * 20), // 0-20 km/h
-      windDirection: Math.floor(Math.random() * 360),
-      visibility: Math.floor(Math.random() * 10000) + 5000,
-      condition,
-      description: this.getConditionDescription(condition),
-      icon: this.getWeatherIcon(condition),
-      rainfall: condition === 'Rain' ? Math.random() * 10 : 0,
-      cloudiness: Math.floor(Math.random() * 100),
-      timestamp: new Date(),
-      location: {
-        name: locationName || 'Naujan',
-        country: 'PH',
-        sunrise: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6 AM
-        sunset: new Date(Date.now() + 18 * 60 * 60 * 1000) // 6 PM
-      }
-    };
-  }
-
-  /**
-   * Get mock forecast data
-   */
-  getMockForecastData() {
-    const forecast = [];
-    const hourlyToday = [];
-    const today = new Date();
-    const currentHour = today.getHours();
-    const conditions = ['Clear', 'Clouds', 'Rain', 'Thunderstorm', 'Mist'];
-    
-    // Generate today's hourly data for remaining hours (1-hour intervals)
-    for (let hour = currentHour; hour < 24; hour++) {
-      const condition = conditions[Math.floor(Math.random() * conditions.length)];
-      hourlyToday.push({
-        time: `${String(hour).padStart(2, '0')}:00`,
-        temperature: Math.floor(Math.random() * 10) + 22,
-        condition: condition,
-        description: this.getConditionDescription(condition),
-        iconCode: this.getWeatherIcon(condition),
-        windSpeed: Math.floor(Math.random() * 15),
-        humidity: Math.floor(Math.random() * 40) + 40
-      });
-    }
-    
-    for (let i = 0; i < 7; i++) {
-      // Create date in UTC to avoid timezone issues
-      const date = new Date(today);
-      date.setUTCDate(date.getUTCDate() + i);
-      date.setUTCHours(12, 0, 0, 0);
-      
-      const condition = conditions[Math.floor(Math.random() * conditions.length)];
-      
-      forecast.push({
-        datetime: date,
-        temperature: Math.floor(Math.random() * 10) + 22,
-        tempMax: Math.floor(Math.random() * 10) + 24,
-        tempMin: Math.floor(Math.random() * 8) + 18,
-        condition: condition,
-        description: this.getConditionDescription(condition),
-        icon: this.getWeatherIcon(condition),
-        rainfall: condition === 'Rain' ? Math.random() * 10 : 0,
-        windSpeed: Math.floor(Math.random() * 15)
-      });
-    }
-    
-    return {
-      location: 'Naujan',
-      hourlyToday,
-      forecast
-    };
-  }
-
-  getConditionDescription(condition) {
-    const descriptions = {
-      'Clear': 'clear sky',
-      'Clouds': 'scattered clouds',
-      'Rain': 'light rain',
-      'Thunderstorm': 'thunderstorm with rain',
-      'Mist': 'mist'
-    };
-    return descriptions[condition] || 'unknown';
-  }
-
-  getWeatherIcon(condition) {
-    const icons = {
-      'Clear': '☀️',
-      'Clouds': '☁️',
-      'Rain': '🌧️',
-      'Thunderstorm': '⛈️',
-      'Snow': '❄️',
-      'Mist': '🌫️'
-    };
-    return icons[condition] || '🌤️';
   }
 
   // Cache management

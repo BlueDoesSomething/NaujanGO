@@ -15,6 +15,15 @@ import { syncBookingPaymentStatus, fetchAmountPaid } from '../utils/paymentSync.
 import { readJson } from '../utils/stayOptions.js';
 import { assertNoUnverifiedQrCheckout, getBookingPaymentStatus, handlePaymongoWebhook, startOrResumeQrCheckout } from '../services/paymongoCheckout.js';
 
+// Developer payment pages stay clearly labelled in development, never exposed
+// as a guest checkout or diagnostic endpoint on a deployed website.
+const developerPaymentPaths = new Set(['/xendit/test', '/xendit/sandbox', '/debug/test-qrph', '/debug/test-gcash']);
+router.use((req, res, next) => {
+  const path = req.path.replace(/\/$/, '').toLowerCase();
+  if (developerPaymentPaths.has(path) && process.env.NODE_ENV !== 'development') return res.status(404).json({ error: 'Not found' });
+  next();
+});
+
 // Rate limiters for payment endpoints
 const checkoutLimiter = createRateLimiter({
   name: 'payment-checkout',

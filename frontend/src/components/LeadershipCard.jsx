@@ -105,8 +105,8 @@ const LeadershipCard = ({
             </div>
           )}
 
-          {/* Placeholder Badge */}
-          {!photoUrl && (
+          {/* Missing-photo guidance belongs in the editor, not the public card. */}
+          {isAdmin && !photoUrl && (
             <div style={{
               position: 'absolute',
               top: '8px',
@@ -123,7 +123,7 @@ const LeadershipCard = ({
               backdropFilter: 'blur(4px)'
             }}>
               <Icons.Photo size={14} />
-              Placeholder
+              Add photo
             </div>
           )}
           

@@ -116,6 +116,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   // Now/hourly forecast for the bento "Now" card
   const [nowForecast, setNowForecast] = useState(null);
   const [nowLoading, setNowLoading] = useState(true);
+  const [safetyScorePct, setSafetyScorePct] = useState(null);
 
   const featured = useMemo(() => attractions, [attractions]);
 
@@ -357,12 +358,6 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
   const active = featured.length ? featured[stageIdx % featured.length] : null;
   const total = Math.max(1, featured.length);
 
-  const safetyScorePct = useMemo(() => {
-    if (attractions.length === 0) return 80;
-    const avg = attractions.reduce((sum, a) => sum + (toNumericRating(a.avg_rating) || 4.5), 0) / attractions.length;
-    return Math.round(Math.min(100, Math.max(40, avg * 19)));
-  }, [attractions]);
-
   const heroStats = useMemo(() => {
     // Attractions with no reviews come back as avg_rating 0, which would drag
     // the mean down, so only genuinely rated attractions are counted.
@@ -401,17 +396,11 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
 
   const isGuest = variant === 'guest';
 
-  const testimonialData = [
-    { quote: t('testimonial_1_quote'), name: t('testimonial_1_name'), loc: t('testimonial_1_loc'), rating: 5 },
-    { quote: t('testimonial_2_quote'), name: t('testimonial_2_name'), loc: t('testimonial_2_loc'), rating: 5 },
-    { quote: t('testimonial_3_quote'), name: t('testimonial_3_name'), loc: t('testimonial_3_loc'), rating: 5 },
-  ];
-
   // Real traveler stories from moderated attraction + hotel reviews.
-  // Falls back to the static mock cards when no review data is available.
   const [storyReviews, setStoryReviews] = useState([]);
   useEffect(() => {
     let cancelled = false;
+    setStoryReviews([]);
     const loadStories = async () => {
       try {
         const rated = [...attractions]
@@ -434,7 +423,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
           list.forEach(r => {
             const comment = String((r && r.comment) || '').trim();
             const rating = Number(r && r.rating);
-            if (!comment || !Number.isFinite(rating)) return;
+            if (!comment || !Number.isFinite(rating) || rating < 1 || rating > 5) return;
             pool.push({
               quote: comment,
               name: (r && r.username) || null,
@@ -454,23 +443,13 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
         });
         if (!cancelled) setStoryReviews(unique.slice(0, 3));
       } catch {
-        // Keep mock fallback on any failure
+        if (!cancelled) setStoryReviews([]);
       }
     };
     if (attractions.length > 0 || hotels.length > 0) loadStories();
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attractions, hotels]);
-
-  const stories = useMemo(() => {
-    const out = [...storyReviews.slice(0, 3)];
-    for (const m of testimonialData) {
-      if (out.length >= 3) break;
-      out.push(m);
-    }
-    return out;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storyReviews, language]);
 
   const quickActions = [
     {
@@ -830,6 +809,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               size="large"
               theme={isDark ? 'dark' : 'light'}
               horizontal={true}
+              onSafetyScore={setSafetyScorePct}
             />
           </div>
           )}
@@ -857,22 +837,22 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
               <div className="bh-icon"><Icons.ShieldCheck size={20} /></div>
               <div>
                 <h3>{t('safety')}</h3>
-                <p>{t('eco_rating_desc')}</p>
+                <p>{t('weather_safety_score_desc')}</p>
               </div>
             </div>
             <div className="eco-safety-ring-row">
-              <div className="safety-ring" style={{ '--safety-pct': `${safetyScorePct * 3.6}deg` }}>
-                <span className="safety-ring-value">{safetyScorePct}</span>
+              <div className="safety-ring" style={{ '--safety-pct': `${(safetyScorePct ?? 0) * 3.6}deg` }}>
+                <span className="safety-ring-value">{safetyScorePct ?? '—'}</span>
               </div>
               <div className="eco-safety-copy">
                 <div className="safety-metric">
-                  <b>{safetyScorePct >= 70 ? t('safety_good') : t('exercise_caution')}</b>
+                  <b>{safetyScorePct == null ? t('weather_data_unavailable') : safetyScorePct >= 70 ? t('safety_good') : t('exercise_caution')}</b>
                   <span>{t('travel_sustainably')}</span>
                 </div>
                 <div className="safety-bar">
-                  <div className="safety-fill" style={{ width: `${safetyScorePct}%` }} />
+                  <div className="safety-fill" style={{ width: `${safetyScorePct ?? 0}%` }} />
                 </div>
-                <span className="safety-score">{safetyScorePct}/100</span>
+                {safetyScorePct != null && <span className="safety-score">{safetyScorePct}/100</span>}
               </div>
             </div>
           </div>
@@ -1025,7 +1005,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
       )}
 
       {/* ============ TESTIMONIALS ============ */}
-      {pagesections.showTestimonials !== false && (
+      {pagesections.showTestimonials !== false && storyReviews.length > 0 && (
       <section className="eco-testimonials eco-reveal">
         <div className="eco-section-header">
           <div className="esh-left">
@@ -1035,7 +1015,7 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
           </div>
         </div>
         <div className="eco-testimonial-grid eco-stagger">
-          {stories.map((item, i) => {
+          {storyReviews.map((item, i) => {
             const displayName = item.name || t('anonymous_user');
             return (
             <div key={i} className="eco-testimonial-card">
@@ -1075,7 +1055,6 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
             <div className="eco-split">
               <div className="eco-split-img">
                 <img src={hotel.image || '/placeholder-hotel.svg'} alt={hotel.name} loading="lazy" />
-                <span className="split-badge"><Icons.Star size={12} /> {t('top_rated_txt')}</span>
               </div>
               <div className="eco-split-body">
                 <h3>{hotel.name}</h3>
@@ -1083,23 +1062,21 @@ const EcoHomeLayout = ({ variant = 'guest', userId = null }) => {
                   <Icons.MapPin size={14} />
                   {hotel.location || t('current_location')}
                 </div>
-                {toNumericRating(hotel.rating) !== null && (
+                {toNumericRating(hotel.rating) > 0 && (
                   <div className="eco-split-stars">
-                    {'★★★★★'.slice(0, 5)}
+                    {renderStars(hotel.rating)}
                     <span className="val"> {Number(hotel.rating).toFixed(1)}</span>
                     <span> · {hotel.reviews_count || hotel.reviewCount || 0} {t('reviews_txt')}</span>
                   </div>
                 )}
-                <div className="eco-amenities">
-                  <span className="eco-amenity"><Icons.Wifi size={14} /> {t('amenity_wifi')}</span>
-                  <span className="eco-amenity"><Icons.Coffee size={14} /> {t('amenity_breakfast')}</span>
-                  <span className="eco-amenity"><Icons.Seedling size={14} /> {t('amenity_eco')}</span>
-                </div>
-                <div className="eco-split-price">
+                {Array.isArray(hotel.amenities) && hotel.amenities.length > 0 && <div className="eco-amenities">
+                  {hotel.amenities.filter(value => typeof value === 'string' && value.trim()).slice(0, 5).map((amenity, index) => <span className="eco-amenity" key={index}><Icons.Check size={14} /> {amenity}</span>)}
+                </div>}
+                {Number(hotel.pricePerNight || hotel.price) > 0 && <div className="eco-split-price">
                   <span className="from">{t('starting_from')}</span>
                   <b>{formatCurrency(hotel.pricePerNight || hotel.price || 0, hotel.currency)}</b>
                   <span className="eco-reviews-count">/ {t('mobile_stay')}</span>
-                </div>
+                </div>}
                 <div className="eco-book-row">
                   <button className="eco-book-btn" onClick={() => navigate(`/hotels/${hotel.id}`)}>
                     <Icons.Booking size={16} />
