@@ -114,7 +114,6 @@ const OwnerDashboard = () => {
       business_address: '',
       tax_id: '',
       bank_name: '',
-      bank_account: '',
       business_permit_no: '',
       business_permit_expiry: '',
       business_permit_file: '',
@@ -330,7 +329,6 @@ const OwnerDashboard = () => {
           business_address: bp.business_address || '',
           tax_id: bp.tax_id || '',
           bank_name: bp.bank_name || '',
-          bank_account: '',
           business_permit_no: bp.business_permit_no || '',
           business_permit_expiry: bp.business_permit_expiry ? String(bp.business_permit_expiry).slice(0, 10) : '',
           business_permit_file: bp.business_permit_file || '',
@@ -448,7 +446,6 @@ const OwnerDashboard = () => {
         businessAddress: businessProfile.business_address,
         taxId: businessProfile.tax_id,
         bankName: businessProfile.bank_name,
-        bankAccount: businessProfile.bank_account,
         // Legitimacy & accreditation details
         business_permit_no: businessProfile.business_permit_no,
         business_permit_expiry: businessProfile.business_permit_expiry,
@@ -3477,46 +3474,10 @@ const OwnerDashboard = () => {
                       }}
                     />
                   </div>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2d3748', display: 'block', marginBottom: '0.5rem' }}>
-                      Bank Name
-                    </label>
-                    <input
-                      type="text"
-                      value={businessProfile.bank_name}
-                      onChange={(e) => setBusinessProfile({ ...businessProfile, bank_name: e.target.value })}
-                      disabled={!profileEditing}
-                      placeholder="e.g., BDO, BPI, Metrobank"
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '1px solid #c8e6c9',
-                        borderRadius: '8px',
-                        fontSize: '0.95rem',
-                        background: profileEditing ? 'white' : '#f8fdf7'
-                      }}
-                    />
-                  </div>
-                  <div style={{ gridColumn: '1 / -1' }}>
-                    <label style={{ fontSize: '0.9rem', fontWeight: 700, color: '#2d3748', display: 'block', marginBottom: '0.5rem' }}>
-                      Bank Account Number (for payments)
-                    </label>
-                    <input
-                      type="password"
-                      value={businessProfile.bank_account}
-                      onChange={(e) => setBusinessProfile({ ...businessProfile, bank_account: e.target.value })}
-                      disabled={!profileEditing}
-                      placeholder="Account number (hidden for security)"
-                      style={{
-                        width: '100%',
-                        padding: '0.75rem',
-                        border: '1px solid #c8e6c9',
-                        borderRadius: '8px',
-                        fontSize: '0.95rem',
-                        background: profileEditing ? 'white' : '#f8fdf7'
-                      }}
-                    />
-                  </div>
+                  {/* Bank Name / Bank Account Number were removed from this
+                      form. Existing values stay in business_profiles: the save
+                      payload still forwards the loaded bank_name unchanged, and
+                      the API never stored bank_account. */}
 
                   {/* Legitimacy & Accreditation */}
                   <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
