@@ -69,7 +69,11 @@ const fulfill = (requestId, body, responseCode = 200) => client.send('Fetch.fulf
 before(async () => {
   if (!canRun) return;
   await mkdir(tempRoot, { recursive: true }); profile = await mkdtemp(path.join(tempRoot, 'itinerary-detail-layout-'));
-  vite = await createServer({ root, cacheDir: path.join(profile, 'vite-cache'), logLevel: 'error',
+  // No project config: skip @vitejs/plugin-react's Babel pass (esbuild does
+  // the JSX transform) and reuse a warm dependency-prebundle cache across runs.
+  vite = await createServer({ root, configFile: false,
+    cacheDir: path.join(root, 'node_modules/.vite-itinerary-detail-tests'),
+    esbuild: { jsx: 'automatic' }, logLevel: 'error',
     server: { host: '127.0.0.1', port: 0, open: false, https: false } });
   await vite.listen(); origin = `http://127.0.0.1:${vite.httpServer.address().port}`;
   browser = spawn(browserPath, ['--headless=new', '--disable-gpu', '--disable-background-networking', '--no-first-run',

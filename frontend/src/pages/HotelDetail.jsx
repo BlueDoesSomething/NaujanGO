@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
@@ -1067,6 +1067,41 @@ export default function HotelDetail() {
     };
   }, [anyModalOpen]);
 
+  // Below 768px the navbar is fixed while the global spacer under it stays at
+  // 72px, but the navbar's own height changes with the viewport (the meta row
+  // wraps: ~93px on phones, 140px at 768px). The hero image may bleed under the
+  // glass navbar; its back control and title must not. Measure the real
+  // overlap instead of hardcoding another breakpoint value.
+  useLayoutEffect(() => {
+    if (!hotel) return undefined;
+    let frame = 0;
+    const update = () => {
+      const navbar = document.querySelector('.navbar');
+      const hero = document.querySelector('.hd-hero');
+      if (!navbar || !hero) return;
+      // Once scrolled the navbar collapses to its compact height, so only
+      // measure at rest: that is the state the reserved space is for.
+      if (window.scrollY > 0) return;
+      const heroTop = hero.getBoundingClientRect().top + window.scrollY;
+      const overlap = Math.max(0, Math.round(navbar.offsetHeight - heroTop));
+      document.documentElement.style.setProperty('--hd-hero-nav-gap', `${overlap}px`);
+    };
+    update();
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(update);
+    };
+    window.addEventListener('resize', update);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('scroll', onScroll);
+      cancelAnimationFrame(frame);
+    };
+    // `loading` matters: hotel data resolves before the spinner clears, so the
+    // effect must run again once the hero is actually in the DOM.
+  }, [hotel, loading]);
+
   if (loading) {
     return (
       <div className="hd-page">
@@ -1197,7 +1232,10 @@ export default function HotelDetail() {
         <div className="hd-hero-inner">
           <Link to="/hotels" className="hd-back">
             <Icons.ChevronLeft size={16} />
-            {t('back_to_hotels')}
+            {/* Every translation of this label already starts with an arrow
+                glyph; the chevron icon above is that arrow, so drop the text
+                one instead of rendering "← ‹ Back to Hotels". */}
+            {t('back_to_hotels').replace(/^\s*(?:←|‹|<)\s*/, '')}
           </Link>
           <div className="hd-hero-body">
             {hotel.booking_enabled === false && (

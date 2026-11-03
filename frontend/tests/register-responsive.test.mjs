@@ -75,8 +75,14 @@ const waitFor = selector => evaluate(`new Promise(resolve => {
 
 before(async () => {
   if (!canRun) return;
-  vite = await createServer({ root: frontendRoot,
-    server: { host: '127.0.0.1', port: 0, open: false, https: false, strictPort: true },
+  // No project config: skip @vitejs/plugin-react's Babel pass (esbuild does
+  // the JSX transform) and reuse a warm dependency-prebundle cache across runs.
+  vite = await createServer({ root: frontendRoot, configFile: false,
+    cacheDir: path.join(frontendRoot, 'node_modules/.vite-register-tests'),
+    esbuild: { jsx: 'automatic' },
+    // No strictPort: a stray dev server on 5173 must not fail the suite —
+    // the origin below is read back from the port Vite actually bound.
+    server: { host: '127.0.0.1', port: 0, open: false, https: false },
     logLevel: 'error'
   });
   await vite.listen();

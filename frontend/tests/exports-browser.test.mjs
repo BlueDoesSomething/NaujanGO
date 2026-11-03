@@ -118,7 +118,11 @@ before(async () => {
       const page = name === 'Detail' ? h(Routes, null, h(Route, { path: '/itinerary/:id', element: h(component, props) })) : h(component, props);
       root.render(h(AuthProvider, null, h(LanguageProvider, null, h(MemoryRouter, { initialEntries: ['/itinerary/42'] }, h(Gate, null, page)))));
     }; document.documentElement.dataset.fixtureReady = 'true';`;
-  vite = await createServer({ root, cacheDir: path.join(profile, 'vite-cache'), logLevel: 'error', plugins: [{ name: 'offline-export-fixture',
+  // No project config: skip @vitejs/plugin-react's Babel pass (esbuild does
+  // the JSX transform) and reuse a warm dependency-prebundle cache across runs.
+  vite = await createServer({ root, configFile: false,
+    cacheDir: path.join(root, 'node_modules/.vite-exports-browser-tests'),
+    esbuild: { jsx: 'automatic' }, logLevel: 'error', plugins: [{ name: 'offline-export-fixture',
     resolveId: id => id === '/__exports-entry.js' ? id : null, load: id => id === '/__exports-entry.js' ? entry : null,
     configureServer(server) { server.middlewares.use(async (req, res, next) => {
       if (req.url !== '/__exports-fixture') return next();
