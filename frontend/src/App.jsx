@@ -257,7 +257,7 @@ const App = () => {
           <Navbar />
           <DemographicsReminder />
           <FloatingLeaves />
-          <main key={`lang-content-${language}`} style={{ flexGrow: 1, width: '100%' }}>
+          <main key={`lang-content-${language}`} className={/^\/itinerary\/[^/]+\/?$/.test(location.pathname) ? 'website-main--itinerary-detail' : undefined} style={{ flexGrow: 1, width: '100%' }}>
             <Routes>
               <Route path="/" element={<HomeWithRedirect />} />
               <Route path="/attractions" element={<Attractions />} />

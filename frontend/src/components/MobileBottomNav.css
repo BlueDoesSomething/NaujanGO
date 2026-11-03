@@ -18,8 +18,14 @@
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
 }
 @media (max-width: 768px) {
-  .eco-mobile-nav { display: flex; }
-  body { padding-bottom: 76px; }
+  :root {
+    --mobile-nav-height: 72px;
+    --mobile-nav-offset: calc(12px + env(safe-area-inset-bottom, 0px));
+    /* Include the raised center control, not just the bar's rectangular box. */
+    --mobile-nav-clearance: calc(var(--mobile-nav-height) + var(--mobile-nav-offset) + 28px);
+  }
+  .eco-mobile-nav { display: flex; height: var(--mobile-nav-height); bottom: var(--mobile-nav-offset); }
+  body.has-mobile-bottom-nav { padding-bottom: var(--mobile-nav-clearance); }
 }
 body.menu-open .eco-mobile-nav {
   transform: translateY(150%);

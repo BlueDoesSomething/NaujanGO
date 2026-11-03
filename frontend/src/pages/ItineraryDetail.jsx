@@ -9,6 +9,7 @@ import CustomDropdown from '../components/CustomDropdown';
 import { getApiBaseUrl, getCsrfToken } from '../api';
 import { downloadReportCsv, shareSavedTrip } from '../utils/exportFiles';
 import ExportPdfButton from '../components/ExportPdfButton';
+import ItineraryArchiveDialog from '../components/ItineraryArchiveDialog';
 import { itineraryStopReport, itineraryBudgetReport, itineraryPrintReport } from '../utils/itineraryExports';
 import './ItineraryDetail.css';
 
@@ -92,8 +93,14 @@ const ItineraryDetail = () => {
   const [farePerDay, setFarePerDay] = useState(null);
   const [serverBreakdown, setServerBreakdown] = useState(null);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState(null);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  const [archiveError, setArchiveError] = useState('');
+  const archiveRequestRef = useRef(false);
   
   useEffect(() => {
+    setShowArchiveDialog(false);
+    setArchiveError('');
     loadItinerary();
     loadStatistics();
     getUserLocation();
@@ -252,11 +259,10 @@ const ItineraryDetail = () => {
   
   
   const deleteItinerary = async () => {
-    // Users cannot restore an archived itinerary (ItineraryBuilder filters
-    // them out), so this must not promise that it can be restored later.
-    const confirmed = window.confirm(t('confirm_archive_itinerary'));
-    if (!confirmed) return;
-    
+    if (archiveRequestRef.current) return;
+    archiveRequestRef.current = true;
+    setArchiving(true);
+    setArchiveError('');
     try {
       const response = await fetch(`${API_BASE_URL}/api/itinerary/${id}`, {
         method: 'DELETE',
@@ -265,12 +271,13 @@ const ItineraryDetail = () => {
       });
       
       if (response.ok) {
-        alert(t('itinerary_archived_successfully') || 'Itinerary archived successfully');
+        setShowArchiveDialog(false);
         navigate('/itinerary');
-      }
+      } else setArchiveError(L('failed_archive_itinerary', 'Could not archive this itinerary. Please try again.'));
     } catch (error) {
       console.error('Error archiving itinerary:', error);
-    }
+      setArchiveError(L('failed_archive_itinerary', 'Could not archive this itinerary. Please try again.'));
+    } finally { archiveRequestRef.current = false; setArchiving(false); }
   };
   
   const getUserLocation = () => {
@@ -503,7 +510,7 @@ const ItineraryDetail = () => {
   }
 
   return (
-    <div style={styles.page}>
+    <div style={styles.page} className="itinerary-detail-page">
   
   {/* Hero Header */}
   <HeroSlideshow 
@@ -633,11 +640,11 @@ const ItineraryDetail = () => {
       <div style={styles.content} className="itin-content">
         {activeTab === 'overview' && (
           <div style={styles.overviewContent} className="itin-overview">
-            <div style={styles.mainColumn}>
-              <div style={styles.card}>
+            <div style={styles.mainColumn} className="itin-main-column">
+              <div style={styles.card} className="itin-panel">
                 <h2>{t('day_by_day_itinerary')}</h2>
                 {Object.keys(itemsByDay).sort((a, b) => a - b).map(day => (
-                  <div key={day} style={styles.daySection}>
+                  <div key={day} style={styles.daySection} className="itin-day-section">
                     <div style={styles.dayHeader}>
                       <h3>{t('day')} {day}</h3>
                       <span style={styles.dayItemCount}>
@@ -647,9 +654,9 @@ const ItineraryDetail = () => {
                     
                     <div style={styles.dayItems}>
                       {itemsByDay[day].map((item, index) => (
-                        <div key={item.id || `${day}-${index}`} style={styles.itemCard}>
+                        <div key={item.id || `${day}-${index}`} style={styles.itemCard} className="itin-stop">
                           <div style={styles.itemNumber}>{index + 1}</div>
-                          <div style={styles.itemBody}>
+                          <div style={styles.itemBody} className="itin-stop-body">
                             <div style={styles.itemHeader}>
                               <h4>{item.custom_name || item.attraction_name}</h4>
                               {itinerary.status === 'in-progress' && (
@@ -741,9 +748,10 @@ const ItineraryDetail = () => {
 
             </div>
             
-            <div style={styles.sidebar}>
-              <div style={styles.card}>
+            <div style={styles.sidebar} className="itin-sidebar">
+              <div style={styles.card} className="itin-panel itin-actions-panel">
                 <h3>{t('quick_actions')}</h3>
+                <div className="itin-quick-actions">
                 <CustomDropdown
                   value={itinerary.status}
                   fullWidth
@@ -770,13 +778,14 @@ const ItineraryDetail = () => {
                 <button style={styles.quickActionBtn} onClick={() => downloadReportCsv(itineraryStopReport({ itinerary, items: normalizedItems }))}>
                   <Icons.ArchiveIcon size={14} /> Export stops CSV
                 </button>
-                <button style={styles.quickActionBtnDelete} onClick={deleteItinerary}>
+                <button style={styles.quickActionBtnDelete} onClick={() => { setArchiveError(''); setShowArchiveDialog(true); }}>
                   <Icons.ArchiveIcon size={14} /> {t('delete_itinerary')}
                 </button>
+                </div>
               </div>
               
-              <div style={styles.card}>
-                <div style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem'}}>
+              <div style={styles.card} className="itin-panel itin-summary-panel">
+                <div className="itin-summary-heading" style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem'}}>
                   <Icons.ChartPieIcon size={18} color="#2e7d32" />
                   <h3>{t('trip_summary')}</h3>
                 </div>
@@ -785,7 +794,7 @@ const ItineraryDetail = () => {
                     <Icons.CalendarIcon size={16} color="#666" />
                     {t('duration')}
                   </span>
-                  <strong>{itinerary.duration_days || Object.keys(itemsByDay).length} {t('days')}</strong>
+                  <strong>{itinerary.duration_days || Object.keys(itemsByDay).length} {(itinerary.duration_days || Object.keys(itemsByDay).length) === 1 ? t('day') : t('days')}</strong>
                 </div>
                 <div style={styles.summaryItem}>
                   <span style={{display:'flex',alignItems:'center',gap:'8px'}}>
@@ -811,7 +820,7 @@ const ItineraryDetail = () => {
               </div>
               
               {itinerary.collaborators && itinerary.collaborators.length > 0 && (
-                <div style={styles.card}>
+                <div style={styles.card} className="itin-panel">
                   <h3>{t('collaborators')}</h3>
                   {itinerary.collaborators.map(collab => (
                     <div key={collab.collaborator_id} style={styles.collaboratorItem}>
@@ -1334,6 +1343,10 @@ const ItineraryDetail = () => {
           </div>
         )}
       </div>
+      {showArchiveDialog && <ItineraryArchiveDialog name={itinerary.name}
+        message={t('confirm_archive_itinerary')} busy={archiving} error={archiveError}
+        onCancel={() => { if (!archiveRequestRef.current) setShowArchiveDialog(false); }} onConfirm={deleteItinerary}
+        labels={{ title: L('archive_itinerary_title', 'Archive itinerary?'), cancel: t('cancel'), confirm: L('archive_itinerary_action', 'Archive itinerary'), busy: L('archiving_itinerary', 'Archiving…') }} />}
     </div>
   );
 };
@@ -1549,7 +1562,8 @@ const styles = {
   },
   overviewContent: {
     display: 'grid',
-    gridTemplateColumns: '1fr 350px',
+    gridTemplateColumns: 'minmax(0, 1fr) 350px',
+    alignItems: 'start',
     gap: '2rem'
   },
   mainColumn: {

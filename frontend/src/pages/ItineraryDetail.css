@@ -3,6 +3,73 @@
    Inline styles on the page win by default, so these use
    !important inside media queries to collapse fixed grids/tabs.
    ============================================================ */
+.website-main--itinerary-detail {
+  /* Footer is in normal document flow; index.css's 260px spacer is redundant. */
+  padding-bottom: 0;
+}
+
+.itinerary-detail-page .itin-main-column,
+.itinerary-detail-page .itin-sidebar,
+.itinerary-detail-page .itin-panel,
+.itinerary-detail-page .itin-stop-body {
+  min-width: 0;
+}
+
+.itinerary-detail-page .itin-panel > h2,
+.itinerary-detail-page .itin-panel > h3 {
+  margin: 0 0 1rem;
+  line-height: 1.35;
+}
+
+.itinerary-detail-page .itin-quick-actions {
+  display: grid;
+  gap: 0.625rem;
+}
+
+.itinerary-detail-page .itin-quick-actions button {
+  min-height: 44px;
+  margin-bottom: 0 !important;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.itinerary-detail-page .itin-summary-heading h3 { margin: 0; }
+.itinerary-detail-page .itin-summary-panel > div:last-child {
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+  border-bottom: 0 !important;
+}
+.itinerary-detail-page .itin-day-section:last-child { margin-bottom: 0 !important; }
+.itinerary-detail-page .itin-stop-body h4,
+.itinerary-detail-page .itin-stop-body p,
+.itinerary-detail-page .itin-stop-body > div { overflow-wrap: anywhere; }
+
+.itin-archive-dialog {
+  box-sizing: border-box;
+  width: min(420px, calc(100% - 2rem));
+  max-height: calc(100vh - 2rem);
+  max-height: calc(100dvh - 2rem);
+  margin: auto;
+  padding: 1.25rem;
+  border: 1px solid var(--border, #dce5df);
+  border-radius: 18px;
+  background: var(--surface, #fff);
+  color: var(--text, #172b23);
+  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.3);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.itin-archive-dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+.itin-archive-dialog h2 { margin: 0; font-size: 1.2rem; line-height: 1.35; }
+.itin-archive-dialog p { margin: 0.75rem 0 0; font-size: 0.9375rem; line-height: 1.5; overflow-wrap: anywhere; }
+.itin-archive-dialog .itin-archive-name { font-weight: 600; }
+.itin-archive-dialog .itin-archive-error { color: #dc2626; }
+.itin-archive-buttons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.625rem; margin-top: 1.25rem; }
+.itin-archive-buttons button { min-height: 44px; min-width: 0; padding: 0.65rem; border: 1px solid var(--border, #dce5df); background: var(--surface, #f1f5f9); color: inherit; line-height: 1.35; font-size: 0.875rem; white-space: normal; }
+.itin-archive-buttons .itin-archive-confirm { background: #dc2626; border-color: #dc2626; color: #fff; }
+.itin-archive-buttons button:disabled { opacity: 0.65; cursor: wait; }
+
 @media (max-width: 900px) {
   .itin-overview {
     grid-template-columns: 1fr !important;
@@ -11,6 +78,17 @@
 }
 
 @media (max-width: 768px) {
+  .website-main--itinerary-detail { margin-top: 0 !important; }
+  .itinerary-detail-page { padding-bottom: 1.5rem !important; }
+  .itinerary-detail-page .itin-sidebar { gap: 1rem !important; }
+  .itinerary-detail-page .itin-panel { padding: 1rem !important; }
+  .itinerary-detail-page .itin-panel > h2 { font-size: 1.25rem; }
+  .itinerary-detail-page .itin-panel > h3,
+  .itinerary-detail-page .itin-summary-heading h3 { font-size: 1.125rem; }
+  .itinerary-detail-page .itin-stop { padding: 0.875rem !important; gap: 0.75rem !important; }
+  .itinerary-detail-page .itin-summary-panel > div { gap: 0.75rem; }
+  .itinerary-detail-page .itin-summary-panel strong { max-width: 60%; overflow-wrap: anywhere; text-align: right; }
+
   .itin-content {
     padding: 1rem !important;
   }

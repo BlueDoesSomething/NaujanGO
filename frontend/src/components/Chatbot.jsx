@@ -132,6 +132,52 @@ const Chatbot = ({ language }) => {
   const isMobileViewport = () => typeof window !== 'undefined'
     && typeof window.matchMedia === 'function'
     && window.matchMedia('(max-width: 768px)').matches;
+  const clampBubblePosition = useCallback(position => {
+    const wrap = bubbleWrapRef.current;
+    if (!wrap) return position;
+    const rect = wrap.getBoundingClientRect();
+    const viewport = window.visualViewport;
+    const left = viewport?.offsetLeft || 0, top = viewport?.offsetTop || 0;
+    const width = viewport?.width || window.innerWidth, height = viewport?.height || window.innerHeight;
+    const margin = 12;
+    let ceiling = top + margin, floor = top + height - margin;
+    const headerElement = document.querySelector('.navbar');
+    const header = headerElement?.getBoundingClientRect();
+    if (header && header.top < top + height) {
+      // The navbar has an entry transform; reserve its settled height too.
+      ceiling = Math.max(ceiling, header.bottom + margin, top + headerElement.offsetHeight + margin);
+    }
+    const nav = document.querySelector('.eco-mobile-nav');
+    if (nav && getComputedStyle(nav).display !== 'none') {
+      const navRect = nav.getBoundingClientRect();
+      const center = nav.querySelector('.nav-center')?.getBoundingClientRect();
+      const navTop = Math.min(navRect.top, center?.top ?? navRect.top);
+      if (navTop < top + height && navRect.bottom > top) floor = Math.min(floor, navTop - margin);
+    }
+    const maxTop = Math.max(top + margin, floor - rect.height);
+    const minTop = Math.min(ceiling, maxTop);
+    return {
+      left: Math.max(left + margin, Math.min(position.left, left + width - rect.width - margin)),
+      top: Math.max(minTop, Math.min(position.top, maxTop))
+    };
+  }, []);
+  useEffect(() => {
+    const keepVisible = () => {
+      if (!isMobileViewport()) {
+        bubbleDragRef.current.dragging = false;
+        setBubblePos(null);
+      } else setBubblePos(previous => previous ? clampBubblePosition(previous) : previous);
+    };
+    keepVisible();
+    window.addEventListener('resize', keepVisible);
+    window.visualViewport?.addEventListener('resize', keepVisible);
+    window.visualViewport?.addEventListener('scroll', keepVisible);
+    return () => {
+      window.removeEventListener('resize', keepVisible);
+      window.visualViewport?.removeEventListener('resize', keepVisible);
+      window.visualViewport?.removeEventListener('scroll', keepVisible);
+    };
+  }, [isOpen, clampBubblePosition]);
   const onBubblePointerDown = (e) => {
     if (!isMobileViewport()) return;
     const wrap = bubbleWrapRef.current;
@@ -151,14 +197,7 @@ const Chatbot = ({ language }) => {
     const dy = e.clientY - d.startY;
     if (Math.abs(dx) + Math.abs(dy) > 8) d.moved = true;
     if (!d.moved) return;
-    const margin = 12;
-    const size = 65;
-    const maxLeft = Math.max(margin, window.innerWidth - size - margin);
-    const maxTop = Math.max(margin, window.innerHeight - size - margin);
-    setBubblePos({
-      left: Math.min(Math.max(margin, d.originLeft + dx), maxLeft),
-      top: Math.min(Math.max(margin, d.originTop + dy), maxTop)
-    });
+    setBubblePos(clampBubblePosition({ left: d.originLeft + dx, top: d.originTop + dy }));
   };
   const endBubbleDrag = () => { bubbleDragRef.current.dragging = false; };
   const onBubbleClick = (e) => {

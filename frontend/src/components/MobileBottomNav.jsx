@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import Icons from './Icons';
@@ -9,6 +9,11 @@ const MobileBottomNav = () => {
   const location = useLocation();
   const { t } = useLanguage();
   const path = location.pathname || '/';
+  useEffect(() => {
+    const wasPresent = document.body.classList.contains('has-mobile-bottom-nav');
+    document.body.classList.add('has-mobile-bottom-nav');
+    return () => { if (!wasPresent) document.body.classList.remove('has-mobile-bottom-nav'); };
+  }, []);
 
   const isActive = (key) => {
     if (key === 'home') return path === '/';

@@ -70,7 +70,9 @@ const waitFor = expression => evaluate(`new Promise((resolve, reject) => {
   const timer = setTimeout(() => { observer?.disconnect(); reject(new Error('Not ready: ' + ${JSON.stringify(expression)} + '; page: ' + document.body.innerText.slice(0, 1200))); }, 15000);
   let observer; const ready = () => { if (${expression}) { clearTimeout(timer); observer?.disconnect(); resolve(true); return true; } return false; };
   if (ready()) return; observer = new MutationObserver(ready);
-  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true });
+  // During initial navigation documentElement may not exist yet; Document is
+  // already a Node and also observes the root element being attached.
+  observer.observe(document, { childList: true, subtree: true, attributes: true });
 })`);
 const click = label => evaluate(`[...document.querySelectorAll('button')].find(button => button.textContent.trim() === ${JSON.stringify(label)}).click()`);
 const download = async action => {
