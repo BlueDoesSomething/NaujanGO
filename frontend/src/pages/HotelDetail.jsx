@@ -11,6 +11,7 @@ import Icons from '../components/Icons';
 import RoomManagement from '../components/RoomManagement';
 import { RoomPerfectFor, RoomCommonQuestions } from '../components/RoomGuestContent';
 import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
+import { formatHotelCurrency } from '../utils/hotelCurrency';
 import { getHourlyRates, getPaymentPlans, hourlyCheckout, philippineToday, STAY_HOURS } from '../utils/stayBooking';
 import './HotelDetail.css';
 
@@ -542,15 +543,8 @@ export default function HotelDetail() {
     }
   };
 
-  const formatCurrency = (value, currency) => {
-    try {
-      const numValue = parseFloat(value);
-      if (isNaN(numValue)) return `$0.00`;
-      return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(numValue);
-    } catch {
-      return `$0.00`;
-    }
-  };
+  const formatCurrency = (value, currency = hotel?.currency, options) =>
+    formatHotelCurrency(value, currency, options);
 
   const roomsAvailable = Number(hotel?.rooms_available);
   const hasAvailability = Number.isFinite(roomsAvailable);
@@ -1139,11 +1133,11 @@ export default function HotelDetail() {
   const priceMax = rooms.length > 0 ? Math.max(...rooms.map(r => parseFloat(r.price_per_night) || 0)) : null;
   const heroPrice = priceMin === null
     ? (hotel.pricePerNight || hotel.price_per_night
-      ? `₱${parseFloat(hotel.pricePerNight || hotel.price_per_night).toLocaleString()}`
+      ? formatCurrency(hotel.pricePerNight || hotel.price_per_night)
       : null)
     : priceMin === priceMax
-      ? `₱${priceMin.toLocaleString()}`
-      : `₱${priceMin.toLocaleString()} – ₱${priceMax.toLocaleString()}`;
+      ? formatCurrency(priceMin)
+      : `${formatCurrency(priceMin)} – ${formatCurrency(priceMax)}`;
 
   const availabilityText = hasAvailability || hasRoomTypes
     ? primaryAvailability > 0
@@ -1154,6 +1148,7 @@ export default function HotelDetail() {
   const totalRoomsCount = hotel.rooms_total || rooms.reduce((sum, r) => sum + (Number(r.quantity) || 0), 0) || 0;
   const ratingNote = reviewEligibilityReason || t('review_booking_history_note');
   const totalReviewsCount = averageRating.total || reviews.length;
+  const cancellationSummary = buildPolicyLines(hotel, { t })[0].text;
 
   // Room Details modal derived values
   // All uploaded photos: primary first, then the rest (deduped). image_urls
@@ -1341,14 +1336,14 @@ export default function HotelDetail() {
             <div>
               <div className="hd-price-label">{t('price_per_night')}</div>
               <div className="hd-price-amount">
-                ₱{parseFloat(rooms.find(r => r.room_id === bookingForm.selectedRoomId)?.price_per_night || 0).toLocaleString()}
+                {formatCurrency(rooms.find(r => r.room_id === bookingForm.selectedRoomId)?.price_per_night)}
               </div>
             </div>
           ) : rooms.length > 0 ? (
             <div>
               <div className="hd-price-label">{t('price_range')}</div>
               <div className="hd-price-amount">
-                ₱{priceMin.toLocaleString()} – ₱{priceMax.toLocaleString()}
+                {formatCurrency(priceMin)} – {formatCurrency(priceMax)}
               </div>
               <small className="hd-price-note">{t('select_room_for_exact_price')}</small>
             </div>
@@ -1397,9 +1392,7 @@ export default function HotelDetail() {
           </button>
 
           <ul className="hd-trust">
-            <li><Icons.Check size={14} />{t('booking_benefit_free_cancellation').replace('✓', '').trim()}</li>
-            <li><Icons.Check size={14} />{t('booking_benefit_no_fees').replace('✓', '').trim()}</li>
-            <li><Icons.Check size={14} />{t('booking_benefit_instant_confirmation').replace('✓', '').trim()}</li>
+            <li><Icons.Calendar size={14} />{cancellationSummary}</li>
           </ul>
         </section>
 
@@ -1511,7 +1504,7 @@ export default function HotelDetail() {
                       <div className="hd-room-foot">
                         <div className="hd-room-price">
                           <small>{t('per_night')}</small>
-                          <strong>₱{parseFloat(room.price_per_night).toLocaleString()}</strong>
+                          <strong>{formatCurrency(room.price_per_night)}</strong>
                         </div>
                         <button
                           className="hd-room-cta"
@@ -1840,7 +1833,7 @@ export default function HotelDetail() {
                                   disabled={!quantityOk}
                                   style={{ opacity: quantityOk ? 1 : 0.5 }}
                                 >
-                                  {room.room_type_name} (₱{parseFloat(room.price_per_night).toLocaleString()}/night, exact for {room.capacity} guest{room.capacity > 1 ? 's' : ''}, {room.quantity_available} avail){warningText}
+                                  {room.room_type_name} ({formatCurrency(room.price_per_night)}/night, exact for {room.capacity} guest{room.capacity > 1 ? 's' : ''}, {room.quantity_available} avail){warningText}
                                 </option>
                               );
                             })
@@ -1916,7 +1909,7 @@ export default function HotelDetail() {
                               <div
                                 key={dateKey}
                                 onClick={() => isSelectable && handleCalendarDayClick(dateKey)}
-                                title={day && day.price != null ? `₱${Number(day.price).toLocaleString()}` : undefined}
+                                title={day && day.price != null ? formatCurrency(day.price) : undefined}
                                 className={`hd-cal-day${dayState ? ` ${dayState}` : ''}`}
                               >
                                 <div className="hd-cal-day-num">{date.getDate()}</div>
@@ -2042,7 +2035,7 @@ export default function HotelDetail() {
                         <span className="hd-bm-payopt-s">{choice.subtitle}</span>
                         <span className="hd-bm-payopt-p">
                           {due !== null
-                            ? `₱${due.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                            ? formatCurrency(due, hotel.currency, { minimumFractionDigits: 2 })
                             : modalNights > 0 ? 'Select room' : 'Enter dates'}
                         </span>
                       </button>
@@ -2052,7 +2045,7 @@ export default function HotelDetail() {
                 {!paymentOptionChoices.length && <p role="alert">No enabled payment plan is usable for this total. Please contact the hotel.</p>}
                 {selectedDueNow !== null && selectedBalanceDue > 0 && (
                   <div className="hd-bm-balance">
-                    <Icons.Money size={13} /> Balance of ₱{selectedBalanceDue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <Icons.Money size={13} /> Balance of {formatCurrency(selectedBalanceDue, hotel.currency, { minimumFractionDigits: 2 })}
                     {selectedBalanceDueAt ? ` due by ${selectedBalanceDueAt}` : ''} (before check-in).
                   </div>
                 )}
@@ -2206,11 +2199,11 @@ export default function HotelDetail() {
                     </div>
                     <div className="hd-bm-sumrow">
                       <span>{isHourlyStay ? 'Package rate' : t('per_night')}</span>
-                      <strong>{modalPricePerNight != null && modalPricePerNight !== '' ? `₱${Number(modalPricePerNight).toLocaleString()}` : '—'}</strong>
+                      <strong>{modalPricePerNight != null && modalPricePerNight !== '' ? formatCurrency(modalPricePerNight) : '—'}</strong>
                     </div>
                     <div className="hd-bm-sumtotal">
                       <span>Total</span>
-                      <strong>₱{bookingTotal.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                      <strong>{formatCurrency(bookingTotal, hotel.currency, { minimumFractionDigits: 2 })}</strong>
                     </div>
                   </div>
 
@@ -2242,12 +2235,12 @@ export default function HotelDetail() {
                     </div>
                     <div className="hd-bm-sumrow is-due">
                       <span>Due now</span>
-                      <strong>{selectedDueNow !== null ? `₱${selectedDueNow.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</strong>
+                      <strong>{selectedDueNow !== null ? formatCurrency(selectedDueNow, hotel.currency, { minimumFractionDigits: 2 }) : '—'}</strong>
                     </div>
                     {selectedBalanceDue > 0 && (
                       <div className="hd-bm-sumrow">
                         <span>Balance</span>
-                        <strong>₱{selectedBalanceDue.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                        <strong>{formatCurrency(selectedBalanceDue, hotel.currency, { minimumFractionDigits: 2 })}</strong>
                       </div>
                     )}
                   </div>
@@ -2431,7 +2424,7 @@ export default function HotelDetail() {
                       </span>
                     ) : (
                       <span className="hd-rm-flag hd-rm-flag-ok">
-                        <Icons.Check size={12} /> Instant Confirmation
+                        <Icons.Check size={12} /> {t('available_for_booking')}
                       </span>
                     )}
                   </div>
@@ -2444,14 +2437,8 @@ export default function HotelDetail() {
                       {hotel.name} · {hotel.location}
                     </p>
                     <div className="hd-rm-chips">
-                      <span className="hd-rm-chip hd-rm-chip-green">
-                        <Icons.Check size={12} /> {t('booking_benefit_free_cancellation')}
-                      </span>
-                      <span className="hd-rm-chip hd-rm-chip-green">
-                        <Icons.Calendar size={12} /> {t('instant_booking')}
-                      </span>
-                      <span className="hd-rm-chip hd-rm-chip-amber">
-                        <Icons.Star size={12} filled /> {t('best_value')}
+                      <span className="hd-rm-chip">
+                        <Icons.Calendar size={12} /> {cancellationSummary}
                       </span>
                     </div>
                   </div>
@@ -2526,24 +2513,23 @@ export default function HotelDetail() {
                     )}
                   </div>
 
-                  {/* Highlights */}
-                  <div className="hd-rm-sec">
-                    <p className="hd-rm-sec-title">Why guests love this room</p>
-                    <div className="hd-rm-grid2">
-                      {(Array.isArray(selectedRoom.room_features) && selectedRoom.room_features.length > 0
-                        ? selectedRoom.room_features
-                        : ['Modern Design', 'Great Views', 'Premium Beds', 'Luxury Bath']
-                      ).slice(0, 8).map((text, i) => {
-                        const IconComponent = [Icons.Sparkles, Icons.Mountain, Icons.Heart, Icons.Waves][i % 4];
-                        return (
-                          <div className="hd-rm-mini" key={i}>
-                            <span className="hd-rm-mini-ic"><IconComponent size={14} /></span>
-                            <p>{text}</p>
-                          </div>
-                        );
-                      })}
+                  {/* Only show features supplied by the owner. */}
+                  {(Array.isArray(selectedRoom.room_features) && selectedRoom.room_features.length > 0) && (
+                    <div className="hd-rm-sec">
+                      <p className="hd-rm-sec-title">Why guests love this room</p>
+                      <div className="hd-rm-grid2">
+                        {selectedRoom.room_features.slice(0, 8).map((text, i) => {
+                          const IconComponent = [Icons.Sparkles, Icons.Mountain, Icons.Heart, Icons.Waves][i % 4];
+                          return (
+                            <div className="hd-rm-mini" key={i}>
+                              <span className="hd-rm-mini-ic"><IconComponent size={14} /></span>
+                              <p>{text}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Guest quotes (room-specific only, hidden when none) */}
                   {roomQuotes.length > 0 && (
@@ -2579,7 +2565,7 @@ export default function HotelDetail() {
                       <div className="hd-rm-policy">
                         <p className="hd-rm-policy-t"><Icons.Clock size={14} /> Check-in / Check-out</p>
                         <p className="hd-rm-policy-d">
-                          Check-in: {fmtTime(selectedRoom.check_in_time || '14:00')} · Check-out: {fmtTime(selectedRoom.check_out_time || '11:00')}
+                          Check-in: {fmtTime(selectedRoom.check_in_time || hotel.check_in_time || '14:00')} · Check-out: {fmtTime(selectedRoom.check_out_time || hotel.check_out_time || '12:00')}
                         </p>
                       </div>
                       <div className="hd-rm-policy">
@@ -2611,7 +2597,7 @@ export default function HotelDetail() {
                     <div className="hd-rm-pricebox">
                       <div>
                         <p className="hd-rm-sec-title">Price per night</p>
-                        <p className="hd-rm-price">₱{parseFloat(selectedRoom.price_per_night).toLocaleString()}</p>
+                        <p className="hd-rm-price">{formatCurrency(selectedRoom.price_per_night)}</p>
                         {STAY_HOURS.filter(hours => getHourlyRates(selectedRoom.hourly_rates)[hours]).map(hours => (
                           <p key={hours} className="hd-bm-note">{hours} hours: {formatCurrency(getHourlyRates(selectedRoom.hourly_rates)[hours], selectedRoom.currency || hotel.currency)} per room</p>
                         ))}
@@ -2627,25 +2613,6 @@ export default function HotelDetail() {
                             ? t('availability_rooms_pattern').replace('{count}', String(selectedRoom.quantity_available))
                             : t('room_currently_unavailable')}
                         </p>
-                      </div>
-                    </div>
-
-                    {/* Perks */}
-                    <div className="hd-rm-perks">
-                      <div className="hd-rm-perk hd-rm-perk-amber">
-                        <Icons.Money size={15} />
-                        <p className="hd-rm-perk-t">BEST RATES</p>
-                        <p className="hd-rm-perk-d">Guaranteed best price</p>
-                      </div>
-                      <div className="hd-rm-perk hd-rm-perk-green">
-                        <Icons.Check size={15} />
-                        <p className="hd-rm-perk-t">INSTANT BOOK</p>
-                        <p className="hd-rm-perk-d">Confirmation within 2 hours</p>
-                      </div>
-                      <div className="hd-rm-perk hd-rm-perk-purple">
-                        <Icons.Sparkles size={15} />
-                        <p className="hd-rm-perk-t">WELCOME OFFER</p>
-                        <p className="hd-rm-perk-d">Special perks for new guests</p>
                       </div>
                     </div>
 
@@ -2688,7 +2655,7 @@ export default function HotelDetail() {
             <div className="hd-rm-mbar">
               <div className="hd-rm-mbar-price">
                 <small>{t('per_night')}</small>
-                <strong>₱{parseFloat(selectedRoom.price_per_night).toLocaleString()}</strong>
+                <strong>{formatCurrency(selectedRoom.price_per_night)}</strong>
               </div>
               {roomBookable ? (
                 <button className="hd-rm-book" onClick={roomBookNow}>{t('book_now')}</button>

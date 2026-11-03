@@ -151,6 +151,9 @@ const mapHotelRows = (rows) => rows.map(hotel => {
       ? 1
       : Number(hotel.free_cancellation_days),
     custom_policy_text: hotel.custom_policy_text || null,
+    payment_terms_text: hotel.payment_terms_text || null,
+    modification_policy_text: hotel.modification_policy_text || null,
+    noshow_policy_text: hotel.noshow_policy_text || null,
     house_rules: hotel.house_rules || null,
     check_in_time: hotel.check_in_time ? String(hotel.check_in_time).slice(0, 5) : '14:00',
     check_out_time: hotel.check_out_time ? String(hotel.check_out_time).slice(0, 5) : '12:00',
@@ -161,7 +164,7 @@ const mapHotelRows = (rows) => rows.map(hotel => {
   };
 });
 
-const POLICY_COLUMNS = 'cancellation_type, free_cancellation_days, custom_policy_text, house_rules, check_in_time, check_out_time, balance_due_days';
+const POLICY_COLUMNS = 'cancellation_type, free_cancellation_days, custom_policy_text, payment_terms_text, modification_policy_text, noshow_policy_text, house_rules, check_in_time, check_out_time, balance_due_days';
 
 const getHotelPriceExpression = () => `
   COALESCE(
@@ -190,7 +193,7 @@ export const getHotels = async (req, res) => {
     [rows] = await db.promise().query(
       `SELECT h.hotel_id as id, h.name, h.location, h.description, h.price_per_night as pricePerNight,
               ${getHotelPriceExpression()} as derivedPricePerNight,
-              h.currency, h.rating, h.rooms_total, h.rooms_available, h.amenities, h.image_url as image_url, ${imageUrlsSelect}, ${paymentMethodsSelect}, ${reservationFeeSelect}, h.cancellation_type, h.free_cancellation_days, h.custom_policy_text, h.house_rules, h.check_in_time, h.check_out_time, h.balance_due_days, h.map_url as map,
+              h.currency, h.rating, h.rooms_total, h.rooms_available, h.amenities, h.image_url as image_url, ${imageUrlsSelect}, ${paymentMethodsSelect}, ${reservationFeeSelect}, ${POLICY_COLUMNS}, h.map_url as map,
               h.latitude, h.longitude, h.contact_phone as phone, h.contact_email as email,
               COUNT(r.review_id) as reviewCount
        FROM hotels h

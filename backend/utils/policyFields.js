@@ -8,7 +8,10 @@ const normalizeText = (value) =>
 // Returns { fields: { col: value } } or { error }.
 export const parsePolicyFields = (body) => {
   const fields = {};
-  const { cancellation_type, free_cancellation_days, custom_policy_text, house_rules, check_in_time, check_out_time, balance_due_days, is_active } = body || {};
+  const {
+    cancellation_type, free_cancellation_days, custom_policy_text, house_rules,
+    check_in_time, check_out_time, balance_due_days, is_active
+  } = body || {};
 
   if (cancellation_type !== undefined) {
     if (!CANCELLATION_TYPES.includes(cancellation_type)) {
@@ -57,6 +60,16 @@ export const parsePolicyFields = (body) => {
 
   if (custom_policy_text !== undefined) fields.custom_policy_text = normalizeText(custom_policy_text);
   if (house_rules !== undefined) fields.house_rules = normalizeText(house_rules);
+  // Owner wording for the standard policy lines. NULL/blank falls back to the
+  // platform default text in LanguageContext when the card is rendered.
+  for (const column of ['payment_terms_text', 'modification_policy_text', 'noshow_policy_text']) {
+    const value = body?.[column];
+    if (value === undefined) continue;
+    if (value !== null && (typeof value !== 'string' || value.trim().length > 4000)) {
+      return { error: `${column} must be text with at most 4000 characters` };
+    }
+    fields[column] = normalizeText(value);
+  }
   if (is_active !== undefined) fields.is_active = is_active ? 1 : 0;
 
   return { fields };
@@ -66,6 +79,9 @@ export const POLICY_FIELD_COLUMNS = [
   'cancellation_type',
   'free_cancellation_days',
   'custom_policy_text',
+  'payment_terms_text',
+  'modification_policy_text',
+  'noshow_policy_text',
   'house_rules',
   'check_in_time',
   'check_out_time',

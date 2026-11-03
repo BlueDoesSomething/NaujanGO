@@ -1431,6 +1431,10 @@ const translations = {
     house_rules_placeholder: 'Pets allowed, no smoking, quiet hours from 10 PM...',
     custom_policy_label: 'Additional cancellation policy text',
     custom_policy_placeholder: 'Extra terms shown to guests after the standard policy...',
+    payment_terms_label: 'Payment terms line',
+    modification_policy_label: 'Modification policy line',
+    noshow_policy_label: 'No-show policy line',
+    policy_owner_text_hint: 'Shown to guests in the booking policy card. Leave blank to keep the default wording. These notes do not change payment or refund calculations.',
     policy_preview_label: 'Guests will see',
     listing_status_label: 'Listing status',
     listing_active: 'Active',
@@ -6243,7 +6247,6 @@ export function useLanguage() {
 }
 
 export default LanguageContext
-
 
 
 

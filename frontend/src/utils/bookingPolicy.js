@@ -29,10 +29,18 @@ export const getCancellationCutoff = (checkInKey, freeDays) => {
   return date;
 };
 
+const ownerText = value => typeof value === 'string' ? value.trim() || null : null;
+
 const normalizePolicy = (policy) => ({
   cancellation_type: policy?.cancellation_type || 'free_until',
   free_cancellation_days: policy?.free_cancellation_days == null ? 1 : Number(policy.free_cancellation_days),
   custom_policy_text: policy?.custom_policy_text || null,
+  // Owner wording for the three standard lines. Blank/null falls back to the
+  // platform default text in LanguageContext, so hotels that never set them
+  // keep displaying exactly what they displayed before.
+  payment_terms_text: ownerText(policy?.payment_terms_text),
+  modification_policy_text: ownerText(policy?.modification_policy_text),
+  noshow_policy_text: ownerText(policy?.noshow_policy_text),
   house_rules: policy?.house_rules || null,
   check_in_time: policy?.check_in_time ? String(policy.check_in_time).slice(0, 5) : '14:00',
   check_out_time: policy?.check_out_time ? String(policy.check_out_time).slice(0, 5) : '12:00',
@@ -69,7 +77,7 @@ export const buildPolicyLines = (policy, options) => {
     });
   }
 
-  lines.push({ icon: 'money', text: t('policy_payment_terms') });
+  lines.push({ icon: 'money', text: p.payment_terms_text || t('policy_payment_terms') });
   if (p.reservation_fee != null && p.reservation_fee > 0) {
     lines.push({ icon: 'money', text: t('policy_fee_nonrefundable') });
   }
@@ -85,8 +93,8 @@ export const buildPolicyLines = (policy, options) => {
     icon: 'clock',
     text: `${t('policy_checkin_from')} ${p.check_in_time}  ·  ${t('policy_checkout_until')} ${p.check_out_time}`
   });
-  lines.push({ icon: 'rule', text: t('policy_modifications') });
-  lines.push({ icon: 'rule', text: t('policy_noshow') });
+  lines.push({ icon: 'rule', text: p.modification_policy_text || t('policy_modifications') });
+  lines.push({ icon: 'rule', text: p.noshow_policy_text || t('policy_noshow') });
 
   if (p.house_rules) {
     lines.push({ icon: 'house', text: `${t('policy_property_rules')}: ${p.house_rules}` });

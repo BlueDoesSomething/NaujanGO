@@ -307,6 +307,7 @@ export const createHotelBooking = async (req, res) => {
       const [hotel] = await connection.query(
         `SELECT hotel_id, rooms_total, allowed_payment_methods, allowed_payment_options, reservation_fee,
                 cancellation_type, free_cancellation_days, custom_policy_text,
+                payment_terms_text, modification_policy_text, noshow_policy_text,
                 house_rules, check_in_time, check_out_time, balance_due_days
          FROM hotels WHERE hotel_id = ? FOR UPDATE`,
         [hotel_id]
@@ -503,6 +504,9 @@ export const createHotelBooking = async (req, res) => {
           ? 1
           : Number(hotelRow.free_cancellation_days),
         custom_policy_text: hotelRow.custom_policy_text || null,
+        payment_terms_text: hotelRow.payment_terms_text || null,
+        modification_policy_text: hotelRow.modification_policy_text || null,
+        noshow_policy_text: hotelRow.noshow_policy_text || null,
         house_rules: hotelRow.house_rules || null,
         check_in_time: hotelRow.check_in_time ? String(hotelRow.check_in_time).slice(0, 5) : '14:00',
         check_out_time: hotelRow.check_out_time ? String(hotelRow.check_out_time).slice(0, 5) : '12:00',

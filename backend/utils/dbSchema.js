@@ -40,7 +40,10 @@ export const ensureHotelPolicySchema = async () => {
     await ensureColumn('hotels', 'cancellation_type', "ENUM('free_until','partial','non_refundable') NOT NULL DEFAULT 'free_until' AFTER `reservation_fee`");
     await ensureColumn('hotels', 'free_cancellation_days', 'INT NULL DEFAULT 1 AFTER `cancellation_type`');
     await ensureColumn('hotels', 'custom_policy_text', 'TEXT NULL AFTER `free_cancellation_days`');
-    await ensureColumn('hotels', 'house_rules', 'TEXT NULL AFTER `custom_policy_text`');
+    await ensureColumn('hotels', 'payment_terms_text', 'TEXT NULL AFTER `custom_policy_text`');
+    await ensureColumn('hotels', 'modification_policy_text', 'TEXT NULL AFTER `payment_terms_text`');
+    await ensureColumn('hotels', 'noshow_policy_text', 'TEXT NULL AFTER `modification_policy_text`');
+    await ensureColumn('hotels', 'house_rules', 'TEXT NULL AFTER `noshow_policy_text`');
     await ensureColumn('hotels', 'check_in_time', "TIME NOT NULL DEFAULT '14:00' AFTER `house_rules`");
     await ensureColumn('hotels', 'check_out_time', "TIME NOT NULL DEFAULT '12:00' AFTER `check_in_time`");
     await ensureColumn('hotels', 'balance_due_days', 'INT NULL DEFAULT 1 AFTER `check_out_time`');

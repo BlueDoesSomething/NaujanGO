@@ -10,7 +10,7 @@ import PaymentPlanSettings from '../components/PaymentPlanSettings';
 import StayExtensionControls from '../components/StayExtensionControls';
 import BusinessDocumentLink from '../components/BusinessDocumentLink';
 import { formatBookingBoundary } from '../utils/stayBooking';
-import { policyChip } from '../utils/bookingPolicy';
+import { buildPolicyLines, policyChip } from '../utils/bookingPolicy';
 import BookingIssuedCell from '../components/BookingIssuedCell';
 import { getBookingGuestName } from '../utils/bookingGuestName';
 import ReferenceDetails from '../components/ReferenceDetails';
@@ -59,6 +59,9 @@ const OwnerDashboard = () => {
     check_out_time: '12:00',
     house_rules: '',
     custom_policy_text: '',
+    payment_terms_text: '',
+    modification_policy_text: '',
+    noshow_policy_text: '',
     is_active: 1
   };
 
@@ -792,6 +795,9 @@ const OwnerDashboard = () => {
       check_out_time: hotel.check_out_time ? String(hotel.check_out_time).slice(0, 5) : '12:00',
       house_rules: hotel.house_rules || '',
       custom_policy_text: hotel.custom_policy_text || '',
+      payment_terms_text: hotel.payment_terms_text || '',
+      modification_policy_text: hotel.modification_policy_text || '',
+      noshow_policy_text: hotel.noshow_policy_text || '',
       is_active: hotel.is_active ? 1 : 0
     });
   };
@@ -829,6 +835,9 @@ const OwnerDashboard = () => {
         check_out_time: hotelForm.check_out_time || '12:00',
         house_rules: (hotelForm.house_rules || '').trim() || null,
         custom_policy_text: (hotelForm.custom_policy_text || '').trim() || null,
+        payment_terms_text: (hotelForm.payment_terms_text || '').trim() || null,
+        modification_policy_text: (hotelForm.modification_policy_text || '').trim() || null,
+        noshow_policy_text: (hotelForm.noshow_policy_text || '').trim() || null,
         is_active: Number(hotelForm.is_active) || 0
       };
 
@@ -887,6 +896,9 @@ const OwnerDashboard = () => {
         check_out_time: hotelForm.check_out_time || '12:00',
         house_rules: (hotelForm.house_rules || '').trim() || null,
         custom_policy_text: (hotelForm.custom_policy_text || '').trim() || null,
+        payment_terms_text: (hotelForm.payment_terms_text || '').trim() || null,
+        modification_policy_text: (hotelForm.modification_policy_text || '').trim() || null,
+        noshow_policy_text: (hotelForm.noshow_policy_text || '').trim() || null,
         is_active: Number(hotelForm.is_active) || 0
       };
 
@@ -1741,11 +1753,50 @@ const OwnerDashboard = () => {
                             placeholder={t('custom_policy_placeholder')}
                           />
                         </label>
+                        <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
+                          <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('payment_terms_label')}</span>
+                          <input
+                            type="text"
+                            value={hotelForm.payment_terms_text}
+                            maxLength={4000}
+                            onChange={(e) => setHotelForm({ ...hotelForm, payment_terms_text: e.target.value })}
+                            className="gov-input"
+                            style={{ borderRadius:'8px' }}
+                            placeholder={t('policy_payment_terms')}
+                          />
+                        </label>
+                        <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
+                          <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('modification_policy_label')}</span>
+                          <input
+                            type="text"
+                            value={hotelForm.modification_policy_text}
+                            maxLength={4000}
+                            onChange={(e) => setHotelForm({ ...hotelForm, modification_policy_text: e.target.value })}
+                            className="gov-input"
+                            style={{ borderRadius:'8px' }}
+                            placeholder={t('policy_modifications')}
+                          />
+                        </label>
+                        <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem', gridColumn:'1 / -1' }}>
+                          <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>{t('noshow_policy_label')}</span>
+                          <input
+                            type="text"
+                            value={hotelForm.noshow_policy_text}
+                            maxLength={4000}
+                            onChange={(e) => setHotelForm({ ...hotelForm, noshow_policy_text: e.target.value })}
+                            className="gov-input"
+                            style={{ borderRadius:'8px' }}
+                            placeholder={t('policy_noshow')}
+                          />
+                          <span style={{ fontSize:'0.72rem', color:'#6b7280' }}>{t('policy_owner_text_hint')}</span>
+                        </label>
                         <div style={{ gridColumn:'1 / -1', background:'#f8fdf7', border:'1px solid #c8e6c9', borderRadius:'8px', padding:'0.75rem 0.9rem', fontSize:'0.82rem', color:'#2E7D32' }}>
                           <span style={{ fontWeight:700, display:'block', marginBottom:'0.25rem', fontSize:'0.72rem', textTransform:'uppercase', letterSpacing:'0.06em' }}>{t('policy_preview_label')}</span>
-                          {hotelForm.cancellation_type === 'non_refundable'
-                            ? t('policy_nonrefundable_notice')
-                            : `${t('policy_free_cancel_until')} ${Number(hotelForm.free_cancellation_days ?? 1) || 0} ${t('policy_days_before_checkin')}`}
+                          <ul style={{ margin:'0.5rem 0 0', paddingLeft:'1.2rem' }}>
+                            {buildPolicyLines(hotelForm, { t }).map((line, index) => (
+                              <li key={index}>{line.text}</li>
+                            ))}
+                          </ul>
                         </div>
                       </div>
                     </div>
