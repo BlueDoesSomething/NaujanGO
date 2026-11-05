@@ -10,13 +10,14 @@ import {
 import { Bar } from 'react-chartjs-2';
 import api from '../api';
 import Icons from './Icons';
+import AdminTourismArrivals from './AdminTourismArrivals';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
 // Tourism Arrivals report — monthly LGU arrival log categorized by origin
 // (foreign / local) and sex (male / female). Rendered as the "Tourism
 // Arrivals" category inside the admin Reports page.
-const TouristArrivalsReport = () => {
+const LegacyTouristArrivalsReport = () => {
   const [touristArrivals, setTouristArrivals] = useState([]);
   const [touristSummary, setTouristSummary] = useState(null);
   const [touristArrivalsLoading, setTouristArrivalsLoading] = useState(false);
@@ -90,13 +91,13 @@ const TouristArrivalsReport = () => {
   }, []);
 
   return (
-    <section id="tourism-arrivals" className="reports-section">
+    <section id="tourism-arrivals-legacy" className="reports-section">
       <h2 className="gov-page-title">
         <Icons.Users size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} />
-        Tourist Arrivals
+        Historical / manual arrival log
       </h2>
       <p style={{ opacity: 0.7, marginBottom: '1.5rem' }}>
-        Monthly tourist arrival log categorized by origin (foreign / local) and sex (male / female) for LGU reporting.
+        Existing admin-entered monthly totals are preserved here. They have no Resident breakdown and are not combined with approved owner submissions.
       </p>
 
       {touristArrivalsLoading && !touristSummary ? (
@@ -280,4 +281,14 @@ const TouristArrivalsReport = () => {
   );
 };
 
-export default TouristArrivalsReport;
+export default function TouristArrivalsReport() {
+  const [view, setView] = useState('owners');
+  return <section id="tourism-arrivals" className="reports-section">
+    <h2 className="gov-page-title">Tourism Arrivals</h2>
+    <div className="tourism-actions" aria-label="Tourism arrival data source">
+      <button type="button" className="gov-btn-ghost" aria-pressed={view === 'owners'} onClick={() => setView('owners')}>Owner submissions</button>
+      <button type="button" className="gov-btn-ghost" aria-pressed={view === 'legacy'} onClick={() => setView('legacy')}>Historical / manual log</button>
+    </div>
+    {view === 'owners' ? <AdminTourismArrivals /> : <LegacyTouristArrivalsReport />}
+  </section>;
+}

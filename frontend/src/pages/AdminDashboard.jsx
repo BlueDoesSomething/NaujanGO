@@ -14,6 +14,7 @@ import {
 import { Bar, Pie } from 'react-chartjs-2';
 import ReportsAndAnalyticsDashboard from '../components/ReportsAndAnalyticsDashboard';
 import TouristArrivalsReport from '../components/TouristArrivalsReport';
+import TourismArrivalReminder from '../components/TourismArrivalReminder';
 import api from '../api';
 import Pagination from '../components/Pagination';
 import BookingIssuedCell from '../components/BookingIssuedCell';
@@ -2781,6 +2782,7 @@ const AdminDashboard = () => {
                   <p style={{ margin: 0, color: '#6b7280', fontSize: '0.95rem' }}>{t('dashboard_snapshot')}</p>
                 </div>
 
+                <TourismArrivalReminder admin onOpen={() => { setReportsInitialCategory('tourism-arrivals'); setActiveModule('reports'); loadAnalytics(); }} />
                 {/* Metric Cards */}
                 <div className="gov-grid-4" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
                   {[

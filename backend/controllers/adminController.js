@@ -14,6 +14,7 @@ import { fileURLToPath } from 'url';
 import { archiveSql, setPersonalArchive, respondArchiveError, archiveTransaction, archiveFailure, auditArchive } from '../services/dashboardArchive.js';
 import { dashboardPaymentStats, dashboardPayments } from '../services/dashboardPayments.js';
 import { reviewContentDeletion, deleteArchivedContent, setContentArchive } from '../services/archiveContent.js';
+import { adminArrivalReports } from './tourismArrivalReportsController.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -358,6 +359,7 @@ makePublicGet('auth-pages', AUTH_PAGES_DEFAULT);
 // All admin routes require authentication and admin role
 router.use(authenticateToken);
 router.use(requireAdmin);
+router.use('/tourism-arrival-reports', adminArrivalReports);
 
 // Financial archives are personal visibility settings, never DELETEs.
 router.get('/payments/stats', async (req, res) => {

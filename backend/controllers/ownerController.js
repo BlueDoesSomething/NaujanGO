@@ -28,6 +28,7 @@ import { validateOwnerRoomWrite, validateOwnerHotelWrite } from '../utils/ownerL
 import { archiveSql, setPersonalArchive, respondArchiveError } from '../services/dashboardArchive.js';
 import { dashboardPaymentStats, dashboardPayments } from '../services/dashboardPayments.js';
 import { DOCUMENT_MAX_BYTES, saveBusinessDocument, validateDocumentReferences, respondDocumentError } from '../services/businessDocuments.js';
+import { ownerArrivalReports } from './tourismArrivalReportsController.js';
 
 const router = express.Router();
 
@@ -195,6 +196,7 @@ const listDateKeys = (startKey, endKey) => {
 // All owner routes require authentication and owner or admin role
 router.use(authenticateToken);
 router.use(requireOwnerOrAdmin);
+router.use('/tourism-arrival-reports', ownerArrivalReports);
 
 // Full-authorization areas: reservations, payments, reviews, analytics and
 // overview stats. Limited owners (incomplete/ unverified requirements) are

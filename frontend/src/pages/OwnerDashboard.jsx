@@ -18,6 +18,8 @@ import ArchiveRecordModal from '../components/ArchiveRecordModal';
 import OwnerDialog from '../components/OwnerDialog';
 import OwnerReservationDetails from '../components/OwnerReservationDetails';
 import OwnerSetupChecklist from '../components/OwnerSetupChecklist';
+import OwnerTourismArrivals from '../components/OwnerTourismArrivals';
+import TourismArrivalReminder from '../components/TourismArrivalReminder';
 import { formatHotelCurrency } from '../utils/hotelCurrency';
 import { OWNER_PATHS, ownerTabFromPath, ownerStartingPrice, roomsForHotel, validateOwnerHotel, ownerTodayTasks } from '../utils/ownerDashboard';
 import { registerOwnerHistoryGuard } from '../utils/ownerHistoryGuard';
@@ -121,6 +123,11 @@ const OwnerDashboard = () => {
   const [plansBusy, setPlansBusy] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [roomHotelId, setRoomHotelId] = useState('');
+  const [arrivalDirty, setArrivalDirty] = useState(false);
+  const [arrivalBusy, setArrivalBusy] = useState(false);
+  const arrivalDraft = useRef(null);
+  const reportArrivalDirty = useCallback(value => setArrivalDirty(value), []);
+  const reportArrivalBusy = useCallback(value => setArrivalBusy(value), []);
   const roomDrafts = useRef(new Map());
   const reportRoomDirty = useCallback(value => setRoomDirty(value), []);
   const reportPlansDirty = useCallback(value => setPlansDirty(value), []);
@@ -195,9 +202,10 @@ const OwnerDashboard = () => {
   const hotelDirty = Boolean((editingHotel || creatingHotel) && JSON.stringify(hotelForm) !== hotelBaseline);
   const profileDirty = Boolean(profileEditing && profileBaseline.current && JSON.stringify(businessProfile) !== JSON.stringify(profileBaseline.current));
   const methodsDirty = Boolean(paymentMethodsBaseline.current && JSON.stringify([...paymentMethodSettings].sort()) !== paymentMethodsBaseline.current);
-  const hasUnsavedChanges = hotelDirty || profileDirty || roomDirty || plansDirty || calendarDirty || capacityDirty || (activeTab === 'payment-setup' && methodsDirty);
-  const editsBusy = hotelSaving || imageUploading || Boolean(docUploading) || paymentMethodSettingsSaving || availabilitySaving || roomBusy || plansBusy || profileSaving;
+  const hasUnsavedChanges = hotelDirty || profileDirty || roomDirty || plansDirty || calendarDirty || capacityDirty || arrivalDirty || (activeTab === 'payment-setup' && methodsDirty);
+  const editsBusy = hotelSaving || imageUploading || Boolean(docUploading) || paymentMethodSettingsSaving || availabilitySaving || roomBusy || plansBusy || profileSaving || arrivalBusy;
   const discardDrafts = (scope = 'all') => {
+    if (scope === 'all' || scope === 'arrivals') { arrivalDraft.current = null; setArrivalDirty(false); }
     if (scope === 'all' || scope === 'hotel') {
       setEditingHotel(null); setCreatingHotel(false); setHotelForm(emptyHotelForm); setGalleryUrlInput('');
     }
@@ -218,7 +226,7 @@ const OwnerDashboard = () => {
   };
   const requestLeave = (action, scope = 'all') => {
     if (editsBusy || historyRestoring) { setNotice('Please wait for the current save, upload or navigation to finish.'); return; }
-    const dirty = scope === 'hotel' ? hotelDirty : scope === 'profile' ? profileDirty : scope === 'room' ? roomDirty : hasUnsavedChanges;
+    const dirty = scope === 'hotel' ? hotelDirty : scope === 'profile' ? profileDirty : scope === 'room' ? roomDirty : scope === 'arrivals' ? arrivalDirty : hasUnsavedChanges;
     if (!dirty) { action(); return; }
     setPendingAction({ kind: 'discard', title: 'Discard unsaved changes?', run: () => { discardDrafts(scope); action(); } });
   };
@@ -1124,6 +1132,7 @@ const OwnerDashboard = () => {
     { id: 'payments', label: 'Payments', icon: <Icons.Money size={22} /> },
     { id: 'reviews', label: 'Reviews', icon: <Icons.Star size={22} /> },
     { id: 'analytics', label: 'Analytics', icon: <Icons.ChartLineUp size={22} /> },
+    { id: 'tourism-arrivals', label: 'Tourism Arrivals', icon: <Icons.Users size={22} /> },
     { id: 'profile', label: 'Business & Verification', icon: <Icons.User size={22} /> },
     { id: 'messages', label: 'Messages', icon: <Icons.Email size={22} /> },
     { id: 'archive', label: 'Archive', icon: <Icons.Archive size={22} /> }
@@ -1133,11 +1142,11 @@ const OwnerDashboard = () => {
   // restricts the dashboard to hotel listing management + business profile.
   const isLimitedOwner = authorization !== 'full' && user?.role !== 'admin';
   const visibleOwnerModules = isLimitedOwner
-    ? ownerModules.filter((module) => ['hotels', 'rooms', 'payment-setup', 'profile'].includes(module.id))
+    ? ownerModules.filter((module) => ['hotels', 'rooms', 'payment-setup', 'tourism-arrivals', 'profile'].includes(module.id))
     : ownerModules;
 
   useEffect(() => {
-    if (dashboardLoaded && isLimitedOwner && !['hotels', 'rooms', 'payment-setup', 'profile'].includes(activeTab)) {
+    if (dashboardLoaded && isLimitedOwner && !['hotels', 'rooms', 'payment-setup', 'tourism-arrivals', 'profile'].includes(activeTab)) {
       navigate(OWNER_PATHS.hotels, { replace: true });
     }
   }, [isLimitedOwner, activeTab, dashboardLoaded]);
@@ -1475,6 +1484,7 @@ const OwnerDashboard = () => {
             t={t} onRoomsChanged={refreshOwnerRooms} draftStore={roomDrafts.current} onDirtyChange={reportRoomDirty} onBusyChange={reportRoomBusy} confirmLeave={action => requestLeave(action, 'room')} />
             : <div className="gov-glass-panel"><p>Create your property before adding room types.</p><button type="button" className="gov-btn-primary" onClick={() => setActiveTab('hotels')}>Set up property</button></div>}
         </section>}
+        {activeTab === 'tourism-arrivals' && <OwnerTourismArrivals hotels={hotels} draftStore={arrivalDraft} onDirtyChange={reportArrivalDirty} onBusyChange={reportArrivalBusy} confirmLeave={action => requestLeave(action, 'arrivals')} />}
         {/* Overview */}
         {activeTab === 'overview' && stats && (() => {
           const total = stats.bookingStats?.total_bookings || 0;
@@ -1517,6 +1527,7 @@ const OwnerDashboard = () => {
                   <strong>{todayTasks[key].length}</strong><span>{label}</span>
                 </button>)}</div>
               </section>
+              <TourismArrivalReminder onOpen={() => setActiveTab('tourism-arrivals')} />
               <OwnerSetupChecklist hotel={hotels[0]} rooms={rooms} verified={!isLimitedOwner} onNavigate={setActiveTab}
                 onEdit={(hotel, section) => requestLeave(() => { navigate(OWNER_PATHS.hotels); startHotelEdit(hotel, section); })} />
               <div className="gov-grid-cards" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>

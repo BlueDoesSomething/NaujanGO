@@ -5,7 +5,7 @@ export const OWNER_PATHS = {
   overview: '/owner', hotels: '/owner/property', rooms: '/owner/rooms',
   calendar: '/owner/availability', 'payment-setup': '/owner/payment-setup',
   bookings: '/owner/bookings', payments: '/owner/payments', reviews: '/owner/reviews',
-  analytics: '/owner/analytics', profile: '/owner/profile', messages: '/owner/messages', archive: '/owner/archive'
+  analytics: '/owner/analytics', 'tourism-arrivals': '/owner/tourism-arrivals', profile: '/owner/profile', messages: '/owner/messages', archive: '/owner/archive'
 };
 export const ownerTabFromPath = pathname => {
   const path = pathname.replace(/\/$/, '');
