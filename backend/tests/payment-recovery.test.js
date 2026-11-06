@@ -35,6 +35,8 @@ const setup = (t, options = {}) => {
   const execute = async (sql, params = []) => {
     calls.push({ sql, params });
     assert.equal((sql.match(/\?/g) || []).length, params.length);
+    if (sql.includes('FROM booking_payment_policy')) return [[{ online_payments_enabled: 1, lock_version: 1 }]];
+    if (sql.startsWith('SELECT policy_snapshot FROM hotel_bookings')) return [[{ policy_snapshot: booking.policy_snapshot }]];
     if (sql.includes('AS reservation_expired')) return [Number(params[0]) === 10 && Number(params[1]) === 5 ? [structuredClone(booking)] : []];
     if (sql.startsWith('SELECT reservation_fee')) return [[{ reservation_fee: 50, allowed_payment_methods: '["qrph","pay_at_property"]' }]];
     if (sql.startsWith('SELECT * FROM hotel_payments')) return [structuredClone(payments).sort((a, b) => b.payment_id - a.payment_id)];

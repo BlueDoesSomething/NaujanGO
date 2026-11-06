@@ -10,6 +10,8 @@ import { getHotelLegitimacy } from '../utils/legitimacy.js';
 import { bookingInterval, makeStay, MANILA_OFFSET_MS, parsePaymentPlans, serializeStay } from '../utils/stayOptions.js';
 import { validateStayInventory } from '../services/stayInventory.js';
 import { createHourlyReservation, modifyHourlyReservation } from '../services/hourlyReservations.js';
+import { externalPaymentBooking } from '../services/bookingPaymentPolicy.js';
+import { modifyPayAtPropertyBooking } from '../services/payAtPropertyBookings.js';
 
 const EXTERNAL_CHECKOUT_METHODS = ['card', 'gcash', 'grabpay', 'qrph', 'paypal'];
 
@@ -656,6 +658,10 @@ export const getHotelBookings = async (req, res) => {
         row.balance_due = balanceOf(row.total_amount, paid, row.payment_status);
         const snapshot = parsePolicySnapshot(row.policy_snapshot);
         row.policy_snapshot = snapshot;
+        if (externalPaymentBooking(row)) {
+          row.payment_handling = 'external'; row.amount_paid = null; row.balance_due = null; row.balance_due_at = null; row.amount_due_now = null;
+          return;
+        }
         const balanceDays = snapshot?.balance_due_days ?? balanceDaysByHotel[row.hotel_id] ?? 1;
         row.balance_due_at = snapshot?.balance_due_at || balanceDueAt(toDateOnlyKey(row.check_in), balanceDays);
         row.payment_option = row.payment_option || 'full';
@@ -737,6 +743,7 @@ export const modifyHotelBooking = async (req, res) => {
     if (!booking.hotel_id) {
       return res.status(409).json({ error: 'This booking cannot be modified online' });
     }
+    if (externalPaymentBooking(booking)) return res.json(await modifyPayAtPropertyBooking(userId, booking, req.body));
 
     if (booking.stay_duration_hours) {
       await modifyHourlyReservation(userId, booking, req.body);
@@ -975,6 +982,7 @@ export const getHotelBookingReceipt = async (req, res) => {
 
   try {
     const booking = await fetchBooking(req.params.bookingId);
+    if (booking && Number(booking.user_id) === Number(userId) && externalPaymentBooking(booking)) return res.status(409).json({ error: 'This is a pay-at-property reservation, not a payment receipt. View its booking details in My Bookings.' });
     if (!booking || booking.user_id !== userId) {
       return res.status(404).json({ error: 'Receipt not found' });
     }

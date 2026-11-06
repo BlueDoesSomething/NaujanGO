@@ -29,6 +29,9 @@ import { archiveSql, setPersonalArchive, respondArchiveError } from '../services
 import { dashboardPaymentStats, dashboardPayments } from '../services/dashboardPayments.js';
 import { DOCUMENT_MAX_BYTES, saveBusinessDocument, validateDocumentReferences, respondDocumentError } from '../services/businessDocuments.js';
 import { ownerArrivalReports } from './tourismArrivalReportsController.js';
+import { ownerBookingMessages, postOwnerBookingMessage, bookingMessageLimiter } from './bookingMessagesController.js';
+import { assertPaymentAllowed, externalPaymentBooking, respondBookingPolicyError } from '../services/bookingPaymentPolicy.js';
+import { updatePayAtPropertyBookingStatus } from '../services/payAtPropertyBookings.js';
 
 const router = express.Router();
 
@@ -1047,6 +1050,9 @@ router.get('/bookings/:bookingId/extension-options', async (req, res) => {
   catch (error) { return extensionError(res, error); }
 });
 
+router.get('/bookings/:bookingId/messages', ownerBookingMessages);
+router.post('/bookings/:bookingId/messages', bookingMessageLimiter, postOwnerBookingMessage);
+
 router.post('/bookings/:bookingId/extend', async (req, res) => {
   try { res.json(await extendHourlyStay(req.user, req.params.bookingId, req.body || {})); }
   catch (error) { return extensionError(res, error); }
@@ -1079,7 +1085,7 @@ router.put('/bookings/:bookingId/status', async (req, res) => {
     }
 
     const [existing] = await db.promise().query(
-      'SELECT booking_id, status, rooms, hotel_id FROM hotel_bookings WHERE booking_id = ?',
+      'SELECT booking_id, status, rooms, hotel_id, policy_snapshot FROM hotel_bookings WHERE booking_id = ?',
       [bookingId]
     );
 
@@ -1088,6 +1094,7 @@ router.put('/bookings/:bookingId/status', async (req, res) => {
     }
 
     const current = existing[0];
+    if (externalPaymentBooking(current)) return res.json(await updatePayAtPropertyBookingStatus(req.user, bookingId, status));
 
     // Update booking status
     await db.promise().query(
@@ -1123,6 +1130,7 @@ router.put('/bookings/:bookingId/status', async (req, res) => {
     res.json({ success: true, message: 'Booking status updated successfully' });
   } catch (error) {
     console.error('Update booking status error:', error);
+    if (error.status) return respondBookingPolicyError(res, error);
     res.status(500).json({ error: 'Failed to update booking status' });
   }
 });
@@ -1759,6 +1767,8 @@ router.put('/payments/:paymentId/confirm', async (req, res) => {
 
     const payment = payments[0];
 
+    await assertPaymentAllowed(payment.booking_id);
+
     if (payment.status !== 'pending') {
       return res.status(400).json({ error: 'Can only confirm pending payments' });
     }
@@ -1773,6 +1783,7 @@ router.put('/payments/:paymentId/confirm', async (req, res) => {
     res.json({ success: true, message: 'Payment confirmed successfully' });
   } catch (error) {
     console.error('Confirm payment error:', error);
+    if (error.status) return respondBookingPolicyError(res, error);
     res.status(500).json({ error: 'Failed to confirm payment' });
   }
 });

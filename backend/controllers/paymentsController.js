@@ -14,6 +14,7 @@ import { balanceOf, dueNow, MIN_GATEWAY_AMOUNT } from '../utils/paymentAmounts.j
 import { syncBookingPaymentStatus, fetchAmountPaid } from '../utils/paymentSync.js';
 import { readJson } from '../utils/stayOptions.js';
 import { assertNoUnverifiedQrCheckout, getBookingPaymentStatus, handlePaymongoWebhook, startOrResumeQrCheckout } from '../services/paymongoCheckout.js';
+import { assertPaymentAllowed, getBookingPolicy, respondBookingPolicyError } from '../services/bookingPaymentPolicy.js';
 
 // Developer payment pages stay clearly labelled in development, never exposed
 // as a guest checkout or diagnostic endpoint on a deployed website.
@@ -22,6 +23,25 @@ router.use((req, res, next) => {
   const path = req.path.replace(/\/$/, '').toLowerCase();
   if (developerPaymentPaths.has(path) && process.env.NODE_ENV !== 'development') return res.status(404).json({ error: 'Not found' });
   next();
+});
+
+// Block every new collection/reference/manual-credit path, not signed provider
+// callbacks, history/status reads or refunds for money collected previously.
+router.use(async (req, res, next) => {
+  const path = req.path.replace(/\/$/, '').toLowerCase();
+  const collection = req.method === 'POST' && !path.startsWith('/webhook/') && !/\/refund$/.test(path)
+    || req.method === 'GET' && developerPaymentPaths.has(path.toLowerCase());
+  if (!collection) return next();
+  try {
+    let bookingId = req.body?.booking_id;
+    const paymentId = path.match(/^\/(\d+)\/(?:submit-reference|verify-reference|status)$/)?.[1];
+    if (paymentId) {
+      const [payments] = await db.promise().execute('SELECT booking_id FROM hotel_payments WHERE payment_id = ?', [paymentId]);
+      bookingId = payments[0]?.booking_id;
+    }
+    await assertPaymentAllowed(bookingId);
+    next();
+  } catch (error) { respondBookingPolicyError(res, error); }
 });
 
 // Rate limiters for payment endpoints
@@ -581,7 +601,11 @@ const statusCheckLimiter = createRateLimiter({
 
 router.get('/booking/:bookingId/status', authenticateToken, statusCheckLimiter, async (req, res) => {
   res.set('Cache-Control', 'private, no-store');
-  try { return res.json(await getBookingPaymentStatus(req.user.user_id, req.params.bookingId)); }
+  try {
+    const result = await getBookingPaymentStatus(req.user.user_id, req.params.bookingId);
+    const enabled = await getBookingPolicy().then(policy => policy.online_payments_enabled).catch(() => false);
+    return res.json({ ...result, can_retry: result.can_retry && enabled, online_payments_enabled: enabled });
+  }
   catch (error) { return paymentRecoveryError(res, error); }
 });
 

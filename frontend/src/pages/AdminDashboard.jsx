@@ -15,6 +15,7 @@ import { Bar, Pie } from 'react-chartjs-2';
 import ReportsAndAnalyticsDashboard from '../components/ReportsAndAnalyticsDashboard';
 import TouristArrivalsReport from '../components/TouristArrivalsReport';
 import TourismArrivalReminder from '../components/TourismArrivalReminder';
+import AdminBookingPolicy from '../components/AdminBookingPolicy';
 import api from '../api';
 import Pagination from '../components/Pagination';
 import BookingIssuedCell from '../components/BookingIssuedCell';
@@ -8004,7 +8005,7 @@ const AdminDashboard = () => {
             </ReportsAndAnalyticsDashboard>
           )}
 
-          {activeModule === 'payments' && <DashboardPaymentsPanel onChanged={refreshAdminSummary} />}
+          {activeModule === 'payments' && <><AdminBookingPolicy /><DashboardPaymentsPanel onChanged={refreshAdminSummary} /></>}
 
           {/* Archive */}
           {activeModule === 'archive' && (

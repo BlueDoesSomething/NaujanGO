@@ -23,6 +23,7 @@ const fields = request => {
 before(async () => {
   if (!browserAvailable) return;
   browser = await offlineBrowser('owner-dashboard', async (request, url) => {
+    if (url.pathname === '/api/bookings/policy') return { body: { online_payments_enabled: true, storage_ready: true, lock_version: 1 } };
     if (url.pathname.endsWith('/auth/profile')) return { body: { user: { user_id: 7, username: 'fixture_owner', role: 'owner', email_verified: true } } };
     if (url.pathname === '/api/owner/profile') return { body: { authorization: 'full', businessProfile: { verification_status: 'verified' } } };
     if (url.pathname === '/api/owner/hotels' && request.method === 'GET') return failLoad ? { status: 500, body: { error: 'Fixture load failure' } } : { body: hotels };

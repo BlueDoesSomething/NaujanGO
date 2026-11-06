@@ -43,13 +43,13 @@ export const computeAuthorization = (businessProfile) => {
 // hotel enables booking for it). Returns { ok, map } where ok=false means the
 // lookup itself failed — callers should fail open (booking stays enabled) so a
 // broken join never takes down reservations.
-export const getHotelLegitimacy = async (hotelIds) => {
+export const getHotelLegitimacy = async (hotelIds, connection = db.promise()) => {
   const map = new Map();
   const ids = [...new Set((hotelIds || []).map(Number).filter(id => Number.isSafeInteger(id) && id > 0))];
   if (ids.length === 0) return { ok: true, map };
 
   try {
-    const [rows] = await db.promise().execute(
+    const [rows] = await connection.execute(
       `SELECT ho.hotel_id,
               MAX(CASE WHEN bp.verification_status = 'verified'
                          AND bp.business_permit_no IS NOT NULL AND bp.business_permit_no <> '' THEN 1 ELSE 0 END) AS permit,

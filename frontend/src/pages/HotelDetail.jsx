@@ -13,6 +13,8 @@ import { RoomPerfectFor, RoomCommonQuestions } from '../components/RoomGuestCont
 import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
 import { formatHotelCurrency } from '../utils/hotelCurrency';
 import { getHourlyRates, getPaymentPlans, hourlyCheckout, philippineToday, STAY_HOURS } from '../utils/stayBooking';
+import useBookingPolicy from '../hooks/useBookingPolicy';
+import { PAY_AT_PROPERTY_NOTICE } from '../utils/bookingPaymentPolicy';
 import './HotelDetail.css';
 
 const API_BASE_URL = getApiBaseUrl() + '/api';
@@ -285,6 +287,10 @@ export default function HotelDetail() {
     selectedRoomId: null,        // NEW: Selected room type ID
     selectedRoomType: null       // NEW: Selected room type name
   });
+  const bookingPolicy = useBookingPolicy();
+  const paymentsDisabled = bookingPolicy.paymentsDisabled;
+  const bookingKey = useRef(null);
+  const submittingBooking = useRef(false);
   const [bookingError, setBookingError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [policyAgreed, setPolicyAgreed] = useState(false);
@@ -589,7 +595,7 @@ export default function HotelDetail() {
     { value: 'half', title: 'Half payment', subtitle: 'Pay 50% now, balance before check-in', available: true },
     { value: 'full', title: 'Full payment', subtitle: 'Pay the total amount now', available: true }
   ].filter(choice => choice.available && allowedPlans.includes(choice.value));
-  const selectedPaymentOption = paymentOptionChoices.some(choice => choice.value === bookingForm.paymentOption)
+  const selectedPaymentOption = paymentsDisabled ? 'full' : paymentOptionChoices.some(choice => choice.value === bookingForm.paymentOption)
     ? bookingForm.paymentOption : paymentOptionChoices[0]?.value || '';
   const computeDueNow = (option) => {
     if (!option || !bookingTotal || bookingTotal <= 0) return null;
@@ -597,8 +603,8 @@ export default function HotelDetail() {
     if (option === 'reservation') return reservationFeeValid ? Number(reservationFee) : null;
     return bookingTotal;
   };
-  const selectedDueNow = computeDueNow(selectedPaymentOption);
-  const selectedBalanceDue = selectedDueNow !== null ? Math.max(bookingTotal - selectedDueNow, 0) : 0;
+  const selectedDueNow = paymentsDisabled ? 0 : computeDueNow(selectedPaymentOption);
+  const selectedBalanceDue = paymentsDisabled ? 0 : selectedDueNow !== null ? Math.max(bookingTotal - selectedDueNow, 0) : 0;
   let selectedBalanceDueAt = null;
   if (selectedBalanceDue > 0 && bookingForm.checkIn) {
     const d = new Date(`${bookingForm.checkIn}T00:00:00`);
@@ -606,7 +612,8 @@ export default function HotelDetail() {
     d.setDate(d.getDate() - balanceDays);
     selectedBalanceDueAt = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
-  const policyLines = buildPolicyLines(isHourlyStay ? { ...hotel, check_in_time: bookingForm.checkInTime, check_out_time: hourlyEnd?.time } : hotel, {
+  const effectivePolicy = paymentsDisabled ? { ...hotel, payment_terms_text: PAY_AT_PROPERTY_NOTICE, reservation_fee: null, balance_due_at: null } : hotel;
+  const policyLines = buildPolicyLines(isHourlyStay ? { ...effectivePolicy, check_in_time: bookingForm.checkInTime, check_out_time: hourlyEnd?.time } : effectivePolicy, {
     checkIn: bookingForm.checkIn,
     balanceDueAt: selectedBalanceDueAt,
     showBalance: selectedBalanceDue > 0,
@@ -756,6 +763,10 @@ export default function HotelDetail() {
   };
 
   const handleSubmitBooking = async () => {
+    if (submittingBooking.current) return;
+    if (paymentsDisabled && !hasRoomTypes) { setBookingError('This property needs an active room type and rate before accepting bookings. Please contact the owner.'); return; }
+    if (bookingPolicy.loading || bookingPolicy.error) { setBookingError('Check the booking policy before submitting.'); return; }
+    if (paymentsDisabled && !bookingPolicy.policy.storage_ready) { setBookingError('Pay-at-property booking setup needs migration 055. Please contact the administrator.'); return; }
     if (!hotel) return;
     if (pendingBookingId) { navigate(`/hotels/payment/${pendingBookingId}`); return; }
 
@@ -826,6 +837,7 @@ export default function HotelDetail() {
       return;
     }
 
+    submittingBooking.current = true;
     setIsSubmitting(true);
     setBookingError('');
     setCheckoutState(null);
@@ -833,7 +845,7 @@ export default function HotelDetail() {
     setPendingBookingId(null);
 
     try {
-      const isExternalCheckout = ['paypal', 'gcash', 'grabpay', 'qrph', 'card'].includes(bookingForm.paymentMethod);
+      const isExternalCheckout = !paymentsDisabled && ['paypal', 'gcash', 'grabpay', 'qrph', 'card'].includes(bookingForm.paymentMethod);
 
       // Get the price from the selected room
       const selectedRoomData = rooms.find(r => r.room_id === bookingForm.selectedRoomId);
@@ -851,18 +863,25 @@ export default function HotelDetail() {
         guests: bookingForm.guests,
         rooms: bookingForm.rooms,
         special_requests: bookingForm.specialRequests,
-        payment_method: bookingForm.paymentMethod,
+        payment_method: paymentsDisabled ? 'pay_at_property' : bookingForm.paymentMethod,
         payment_option: selectedPaymentOption,
         pay_now: false,
         policy_agreed: policyAgreed,
         customer_name: bookingForm.customerName,
         customer_email: bookingForm.customerEmail,
         customer_phone: toPhilippineE164(bookingForm.customerPhone),
-        card_last4: bookingForm.paymentMethod === 'card' ? bookingForm.cardLast4.trim() : null,
+        card_last4: !paymentsDisabled && bookingForm.paymentMethod === 'card' ? bookingForm.cardLast4.trim() : null,
         room_id: bookingForm.selectedRoomId,           // NEW: Room selection (optional)
         room_type_name: bookingForm.selectedRoomType   // NEW: Room type name (optional)
       };
 
+      if (paymentsDisabled) {
+        payload.payment_handling = 'external';
+        const fingerprint = JSON.stringify(payload);
+        if (bookingKey.current?.fingerprint !== fingerprint) bookingKey.current = { fingerprint, key: crypto.randomUUID() };
+        payload.booking_key = bookingKey.current.key;
+        payload.quoted_total = bookingTotal;
+      }
       const bookingResponse = await createHotelBooking(payload);
 
       if (bookingResponse.status === 401) {
@@ -880,6 +899,7 @@ export default function HotelDetail() {
         setBookingError('Failed to create booking.');
         return;
       }
+      if (bookingResponse.data?.payment_handling === 'external') { setShowBookingModal(false); bookingKey.current = null; navigate('/bookings', { state: { bookingCreated: bookingId } }); return; }
 
       // Save booking ID so the user can navigate to My Bookings if checkout fails
       setPendingBookingId(bookingId);
@@ -960,6 +980,7 @@ export default function HotelDetail() {
     } catch (error) {
       setBookingError(error.response?.data?.error || t('booking_failed'));
     } finally {
+      submittingBooking.current = false;
       setIsSubmitting(false);
     }
   };
@@ -2017,7 +2038,7 @@ export default function HotelDetail() {
 
               </section>
 
-              <section className="hd-bm-sec">
+              {paymentsDisabled ? <section className="hd-bm-sec"><h3 className="hd-bm-sec-h">Pay at property</h3><p>{PAY_AT_PROPERTY_NOTICE}</p><p>Your booking will appear in My Bookings as pending until the owner confirms it. Use Message property on the booking to contact the owner. Online payment is not required for confirmation.</p>{bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}{!bookingPolicy.loading && !bookingPolicy.policy.storage_ready && <p role="alert">Pay-at-property bookings need migration 055 before they can be saved.</p>}</section> : <section className="hd-bm-sec">
               <h3 className="hd-bm-sec-h"><Icons.Money size={17} /> {t('modal_payment_details')}</h3>
 
               <div>
@@ -2088,7 +2109,7 @@ export default function HotelDetail() {
                 </div>
               )}
 
-              </section>
+              </section>}
 
               <section className="hd-bm-sec">
               <h3 className="hd-bm-sec-h"><Icons.Document size={17} /> {t('modal_additional_info')}</h3>
@@ -2228,7 +2249,7 @@ export default function HotelDetail() {
                     </div>
                   </div>
 
-                  <div className="hd-bm-sumcard">
+                  {paymentsDisabled ? <div className="hd-bm-sumcard"><div className="hd-bm-sumcard-h">Pay at property</div><p>No payment due through NaujanGO. Your booking remains in the normal reservations flow.</p></div> : <div className="hd-bm-sumcard">
                     <div className="hd-bm-sumcard-h"><Icons.Money size={15} /> {t('form_payment_method')}</div>
                     <div className="hd-bm-sumrow">
                       <span>Option</span>
@@ -2248,7 +2269,7 @@ export default function HotelDetail() {
                         <strong>{formatCurrency(selectedBalanceDue, bookingCurrency, { minimumFractionDigits: 2 })}</strong>
                       </div>
                     )}
-                  </div>
+                  </div>}
                 </aside>
               </div>
             </div>
@@ -2260,7 +2281,7 @@ export default function HotelDetail() {
               <button
                 className={`hd-bm-confirm${isSubmitting || !policyAgreed ? ' is-disabled' : ''}`}
                 onClick={handleSubmitBooking}
-                disabled={isSubmitting || !!checkoutState || !policyAgreed || !selectedPaymentOption}
+                disabled={isSubmitting || !!checkoutState || !policyAgreed || !selectedPaymentOption || bookingPolicy.loading || Boolean(bookingPolicy.error) || paymentsDisabled && !bookingPolicy.policy.storage_ready}
               >
                 {slowConnection ? (
                   <span className="hd-bm-foot-ic"><Icons.Clock size={15} /> {t('button_connecting_slow')}</span>

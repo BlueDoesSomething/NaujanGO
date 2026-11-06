@@ -1,0 +1,14 @@
+.booking-controls { min-width: 0; color: var(--text, #1f2937); }
+.booking-controls fieldset { min-width: 0; border: 0; margin: 0; padding: 0; }
+.booking-controls label { display: flex; flex-direction: column; gap: .4rem; margin: .8rem 0; }
+.booking-controls textarea, .booking-controls select, .booking-controls input { width: 100%; min-width: 0; box-sizing: border-box; padding: .65rem; }
+.booking-controls button { min-height: 44px; }
+.booking-controls .gov-btn-primary { background: #166534 !important; color: white !important; padding: .65rem 1rem !important; }
+.booking-controls .gov-btn-ghost { background: var(--surface, white) !important; color: var(--text, #1f2937) !important; padding: .65rem 1rem !important; }
+.booking-conversation-message { border-bottom: 1px solid var(--border, #cbd5e1); margin: .8rem 0; padding: .5rem 0; }
+.booking-conversation-message p { white-space: pre-wrap; overflow-wrap: anywhere; }
+.booking-conversation-notice { padding: .8rem; border: 1px solid #86efac; border-radius: 8px; }
+.booking-controls [role="alert"] { padding: .8rem; background: #fef2f2; color: #991b1b; border-radius: 8px; overflow-wrap: anywhere; }
+.booking-controls .booking-policy-checkbox { flex-direction: row; align-items: flex-start; }
+.booking-controls .booking-policy-checkbox input { width: 20px; flex: 0 0 20px; min-height: 20px; }
+.booking-conversation-tools { display: flex; flex-wrap: wrap; gap: .5rem; }

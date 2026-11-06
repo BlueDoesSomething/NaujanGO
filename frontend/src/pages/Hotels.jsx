@@ -9,9 +9,11 @@ import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy'
 import { downloadExportFile, downloadReportCsv, exportFilename } from '../utils/exportFiles'
 import ExportPdfButton from '../components/ExportPdfButton'
 import { receiptExportReport } from '../utils/itineraryExports'
+import useBookingPolicy from '../hooks/useBookingPolicy'
 import './Hotels.css'
 
 export default function Hotels() {
+  const bookingPolicy = useBookingPolicy()
   const { t } = useLanguage()
   const { isLoggedIn, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
@@ -62,6 +64,7 @@ export default function Hotels() {
   })
 
   const resetBookingForm = (hotel) => {
+    if (bookingPolicy.paymentsDisabled) { navigate(`/hotels/${hotel.id}`); return }
     setSelectedHotel(hotel)
     setBookingForm({
       checkIn: '',
@@ -180,6 +183,7 @@ export default function Hotels() {
   }
 
   const handleSubmitBooking = async () => {
+    if (bookingPolicy.paymentsDisabled) { if (selectedHotel) navigate(`/hotels/${selectedHotel.id}`); return }
     if (!selectedHotel) return
     if (!bookingForm.checkIn || !bookingForm.checkOut) {
       setBookingError(t('Booking_Dates_Required') || 'Please select check-in and check-out dates.')
@@ -647,7 +651,7 @@ export default function Hotels() {
         </section>
       )}
 
-      {showBookingModal && selectedHotel && (
+      {showBookingModal && selectedHotel && !bookingPolicy.paymentsDisabled && (
         <div style={modalBackdrop}>
           <div style={modalCard}>
             <div style={modalHeader}>

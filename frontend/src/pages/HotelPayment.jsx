@@ -32,6 +32,8 @@ import Icons from '../components/Icons';
 import { policyLinesFromSnapshot, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
 import { formatBookingBoundary } from '../utils/stayBooking';
 import StayExtensionHistory from '../components/StayExtensionHistory';
+import useBookingPolicy from '../hooks/useBookingPolicy';
+import { isExternalPaymentBooking, PAY_AT_PROPERTY_NOTICE } from '../utils/bookingPaymentPolicy';
 
 const getPaymentMethods = (t) => [
   { 
@@ -107,6 +109,7 @@ const HotelPayment = () => {
   const navigate = useNavigate();
   const { isLoggedIn } = useAuth();
   const { t } = useLanguage();
+  const bookingPolicy = useBookingPolicy();
   const [booking, setBooking] = useState(null);
   const [payment, setPayment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -189,6 +192,7 @@ const HotelPayment = () => {
   // resumes an active session, or safely creates/retries the recorded attempt.
 
   const handleCheckout = async () => {
+    if (bookingPolicy.paymentsDisabled || isExternalPaymentBooking(booking)) return;
     if (policyLines.length > 0 && !policyAgreed) return;
 
     if (!booking || !verification?.can_retry) return;
@@ -277,6 +281,7 @@ const HotelPayment = () => {
     } finally { clearTimeout(slowTimer); setSlowConnection(false); }
   };
 
+  if (bookingPolicy.paymentsDisabled || isExternalPaymentBooking(booking)) return <main style={pageStyle}><section style={cardStyle}><h1>Online payments are unavailable</h1><p>{PAY_AT_PROPERTY_NOTICE}</p><p>Existing bookings and payment records are retained. If you already paid online, check the recorded status before making any other payment.</p><button style={secondaryButtonStyle} onClick={() => navigate('/bookings')}>Open My Bookings</button>{bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button onClick={bookingPolicy.refresh}>Retry policy</button></p>}</section></main>;
   return (
     <div style={pageStyle}>
       <div style={headerSection}>

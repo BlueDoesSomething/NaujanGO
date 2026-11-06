@@ -156,6 +156,7 @@ before(async () => {
         // it is unrelated to exporting. All business-data writes are forbidden.
         if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method) && !url.pathname.startsWith('/api/languages/preference/')) writes.push(`${request.method} ${url.pathname}`);
         let body = [];
+        if (url.pathname === '/api/bookings/policy') body = { online_payments_enabled: true, storage_ready: true, lock_version: 1 };
         if (url.pathname.endsWith('/auth/profile')) body = { user: { user_id: 101, username: 'fixture', role: 'owner', email_verified: true } };
         if (url.pathname.endsWith('/attractions')) body = { data: [{ id: 1, name: 'Unlocated fixture attraction', location: 'Naujan', entrance_fee: 0, category: 'nature' }] };
         if (url.pathname === '/api/itinerary/42') body = trip;

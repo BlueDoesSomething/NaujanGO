@@ -1,5 +1,6 @@
 import { formatHotelCurrency } from './hotelCurrency.js';
 import { philippineToday } from './stayBooking.js';
+import { isExternalPaymentBooking } from './bookingPaymentPolicy.js';
 
 export const OWNER_PATHS = {
   overview: '/owner', hotels: '/owner/property', rooms: '/owner/rooms',
@@ -74,6 +75,6 @@ export const ownerTodayTasks = (bookings, today = philippineToday(), now = Date.
     arrivals: live.filter(booking => booking.status === 'confirmed' && boundary(booking, 'in') === today),
     departures: live.filter(booking => booking.status === 'confirmed' && boundary(booking, 'out') === today),
     pending: live.filter(booking => booking.status === 'pending'),
-    unpaid: live.filter(booking => Number(booking.balance_due) > 0)
+    unpaid: live.filter(booking => !isExternalPaymentBooking(booking) && Number(booking.balance_due) > 0)
   };
 };

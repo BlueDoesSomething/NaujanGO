@@ -115,6 +115,7 @@ const amountDue = (booking, hotel, payments) => {
   return dueNow(booking.payment_option || 'full', booking.total_amount, readJson(booking.policy_snapshot)?.reservation_fee ?? hotel.reservation_fee);
 };
 const statusResult = (booking, payments, unavailable = false, review = false) => {
+  if (readJson(booking.policy_snapshot)?.payment_handling === 'external') return { booking: serializeStay(booking), payment: null, state: 'external', can_retry: false, needs_staff_review: false, verification_unavailable: false };
   const payment = payments[0] || null;
   const paid = paidTotal(payments);
   const allowed = payable(booking, paid);
@@ -155,6 +156,7 @@ export const startOrResumeQrCheckout = async (userId, input) => {
   try {
     await connection.beginTransaction();
     booking = await loadBooking(connection, userId, id);
+    if (readJson(booking.policy_snapshot)?.payment_handling === 'external') throw errorFor('This reservation is pay-at-property. NaujanGO does not collect its payment.', 409, 'EXTERNAL_PAYMENT_BOOKING');
     const [hotels] = await connection.execute('SELECT reservation_fee, allowed_payment_methods FROM hotels WHERE hotel_id = ?', [booking.hotel_id]);
     if (!hotels.length) throw errorFor('Hotel not found.', 404);
     const payments = await paymentRows(connection, id);

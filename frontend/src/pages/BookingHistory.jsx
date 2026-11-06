@@ -13,13 +13,18 @@ import { canResumeBookingPayment } from '../utils/paymentRecovery';
 import { downloadReportCsv } from '../utils/exportFiles';
 import ExportPdfButton from '../components/ExportPdfButton';
 import { receiptExportReport } from '../utils/itineraryExports';
+import BookingConversation from '../components/BookingConversation';
+import useBookingPolicy from '../hooks/useBookingPolicy';
+import { isExternalPaymentBooking } from '../utils/bookingPaymentPolicy';
 
 export default function BookingHistory() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isLoggedIn } = useAuth();
   const { t } = useLanguage();
+  const bookingPolicy = useBookingPolicy();
   const [bookings, setBookings] = useState([]);
+  const [messageBooking, setMessageBooking] = useState(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all'); // all, upcoming, past, cancelled
   const [searchQuery, setSearchQuery] = useState('');
@@ -508,6 +513,7 @@ END:VCALENDAR`;
       />
 
       <div style={styles.contentWrapper}>
+        {location.state?.bookingCreated && <p role="status">Booking #{location.state.bookingCreated} saved. It is pending owner confirmation. Pay at the property; no online payment was collected.</p>}
         {/* Search Bar with Filter */}
         <div style={styles.searchContainer}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" style={{position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', zIndex: 1}}>
@@ -623,7 +629,7 @@ END:VCALENDAR`;
                   fontSize: '11px',
                   padding: '3px 9px'
                 }}>
-                  {booking.payment_status === 'partial' ? 'Partially paid' : (booking.payment_status || 'unpaid')}
+                  {isExternalPaymentBooking(booking) ? 'Pay at property · not verified by NaujanGO' : booking.payment_status === 'partial' ? 'Partially paid' : (booking.payment_status || 'unpaid')}
                 </span>
                 {Number(booking.amount_paid) > 0 && Number(booking.balance_due) > 0 && (
                   <span style={{ fontSize: '12px', color: '#4b5563', fontWeight: 600 }}>
@@ -719,7 +725,8 @@ END:VCALENDAR`;
                   )}
                 </div>
                 <div style={styles.actions}>
-                  {canResumeBookingPayment(booking) && (
+                  <button style={styles.actionBtn} onClick={() => setMessageBooking(booking)}>Message property</button>
+                  {!bookingPolicy.paymentsDisabled && canResumeBookingPayment(booking) && (
                     <button
                       style={{ ...styles.actionBtn, backgroundColor: '#2563eb', color: '#fff', border: 'none' }}
                       onClick={() => navigate(`/hotels/payment/${booking.booking_id}`)}
@@ -742,7 +749,7 @@ END:VCALENDAR`;
                       Modify
                     </button>
                   )}
-                  {['confirmed', 'completed'].includes(booking.status) && (
+                  {!isExternalPaymentBooking(booking) && ['confirmed', 'completed'].includes(booking.status) && (
                     <button style={styles.actionBtn} onClick={() => viewReceipt(booking.booking_id)}>
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
@@ -780,6 +787,7 @@ END:VCALENDAR`;
         )}
       </div>
     </div>
+      {messageBooking && <BookingConversation key={messageBooking.booking_id} booking={messageBooking} onClose={() => setMessageBooking(null)} />}
       {showReceipt && (
         <div style={styles.receiptOverlay}>
           <div style={styles.receiptModal}>

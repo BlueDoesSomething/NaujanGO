@@ -15,6 +15,8 @@ import { archiveSql, setPersonalArchive, respondArchiveError, archiveTransaction
 import { dashboardPaymentStats, dashboardPayments } from '../services/dashboardPayments.js';
 import { reviewContentDeletion, deleteArchivedContent, setContentArchive } from '../services/archiveContent.js';
 import { adminArrivalReports } from './tourismArrivalReportsController.js';
+import { publicBookingPolicy, saveBookingPolicy } from './bookingPaymentPolicyController.js';
+import { ownerBookingMessages, postOwnerBookingMessage, bookingMessageLimiter } from './bookingMessagesController.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -360,6 +362,10 @@ makePublicGet('auth-pages', AUTH_PAGES_DEFAULT);
 router.use(authenticateToken);
 router.use(requireAdmin);
 router.use('/tourism-arrival-reports', adminArrivalReports);
+router.get('/booking-policy', publicBookingPolicy);
+router.put('/booking-policy', saveBookingPolicy);
+router.get('/bookings/:bookingId/messages', ownerBookingMessages);
+router.post('/bookings/:bookingId/messages', bookingMessageLimiter, postOwnerBookingMessage);
 
 // Financial archives are personal visibility settings, never DELETEs.
 router.get('/payments/stats', async (req, res) => {

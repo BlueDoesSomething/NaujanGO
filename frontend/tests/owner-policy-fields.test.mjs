@@ -159,6 +159,8 @@ before(async () => {
           writes.push({ method, pathname: url.pathname, payload });
           if (method === 'PUT' && url.pathname === '/api/owner/hotels/46') Object.assign(hotel, payload);
           body = { success: true };
+        } else if (url.pathname === '/api/bookings/policy') {
+          body = { online_payments_enabled: true, storage_ready: true, lock_version: 1 };
         } else if (url.pathname.endsWith('/auth/profile')) {
           body = { user: { user_id: 7, username: 'owner_fixture', first_name: 'Ora', role: 'owner', email: 'ora@example.test', email_verified: true } };
         } else if (url.pathname === '/api/owner/hotels') {

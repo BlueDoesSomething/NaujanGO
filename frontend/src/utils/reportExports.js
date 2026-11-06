@@ -1,6 +1,7 @@
 import { formatBookingBoundary } from './stayBooking.js';
 import { getBookingGuestName } from './bookingGuestName.js';
 import { getBookingPaymentMethod, getPaymentMethodLabel, getPaymentReferences } from './paymentDisplay.js';
+import { isExternalPaymentBooking } from './bookingPaymentPolicy.js';
 
 const columns = entries => entries.map(([key, label]) => ({ key, label }));
 const number = value => value == null || value === '' || !Number.isFinite(Number(value)) ? '' : Number(value);
@@ -20,8 +21,8 @@ export const ownerRecordReport = (type, rows, notes = '') => {
       ['method', 'Payment method'], ['paymentStatus', 'Payment status'], ['status', 'Booking status'], ['archived', 'Archived']], rows.map(row => ({
         id: row.booking_id, reference: row.booking_reference || row.receipt_number || '', hotel: row.hotel_name, room: row.room_type_name,
         guest: getBookingGuestName(row), checkIn: formatBookingBoundary(row), checkOut: formatBookingBoundary(row, 'out'), rooms: row.rooms, guests: row.guests,
-        booked: row.booking_date || row.created_at || '', currency: row.currency || 'PHP', total: number(row.total_amount), paid: number(row.amount_paid),
-        balance: number(row.balance_due), method: getPaymentMethodLabel(getBookingPaymentMethod(row)), paymentStatus: row.payment_status,
+        booked: row.booking_date || row.created_at || '', currency: row.currency || 'PHP', total: number(row.total_amount), paid: isExternalPaymentBooking(row) ? '' : number(row.amount_paid),
+        balance: isExternalPaymentBooking(row) ? '' : number(row.balance_due), method: getPaymentMethodLabel(getBookingPaymentMethod(row)), paymentStatus: isExternalPaymentBooking(row) ? 'Pay at property; not verified by NaujanGO' : row.payment_status,
         status: row.status, archived: Number(row.archived) === 1 ? 'Yes' : 'No'
       })), notes);
     result.printColumns = result.columns.filter(column => ['id', 'hotel', 'guest', 'checkIn', 'checkOut', 'total', 'balance', 'currency', 'status', 'paymentStatus'].includes(column.key));

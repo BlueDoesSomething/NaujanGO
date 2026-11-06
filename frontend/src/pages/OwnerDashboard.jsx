@@ -20,6 +20,9 @@ import OwnerReservationDetails from '../components/OwnerReservationDetails';
 import OwnerSetupChecklist from '../components/OwnerSetupChecklist';
 import OwnerTourismArrivals from '../components/OwnerTourismArrivals';
 import TourismArrivalReminder from '../components/TourismArrivalReminder';
+import BookingConversation from '../components/BookingConversation';
+import useBookingPolicy from '../hooks/useBookingPolicy';
+import { isExternalPaymentBooking } from '../utils/bookingPaymentPolicy';
 import { formatHotelCurrency } from '../utils/hotelCurrency';
 import { OWNER_PATHS, ownerTabFromPath, ownerStartingPrice, roomsForHotel, validateOwnerHotel, ownerTodayTasks } from '../utils/ownerDashboard';
 import { registerOwnerHistoryGuard } from '../utils/ownerHistoryGuard';
@@ -40,6 +43,7 @@ import './HotelDetail.css';
 const getHotelPaymentMethodOptions = HOTEL_PAYMENT_METHOD_OPTIONS;
 
 const OwnerDashboard = () => {
+  const bookingPolicy = useBookingPolicy();
   const { user, logout } = useAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -111,6 +115,7 @@ const OwnerDashboard = () => {
   const [actionBusy, setActionBusy] = useState(false);
   const actionBusyRef = useRef(false);
   const [selectedReservation, setSelectedReservation] = useState(null);
+  const [messageBooking, setMessageBooking] = useState(null);
   const [hotelErrors, setHotelErrors] = useState({});
   const [hotelSaveError, setHotelSaveError] = useState('');
   const [hotelSection, setHotelSection] = useState('details');
@@ -124,6 +129,10 @@ const OwnerDashboard = () => {
   const [profileSaving, setProfileSaving] = useState(false);
   const [roomHotelId, setRoomHotelId] = useState('');
   const [arrivalDirty, setArrivalDirty] = useState(false);
+  const [conversationDirty, setConversationDirty] = useState(false);
+  const [conversationBusy, setConversationBusy] = useState(false);
+  const reportConversationDirty = useCallback(value => setConversationDirty(value), []);
+  const reportConversationBusy = useCallback(value => setConversationBusy(value), []);
   const [arrivalBusy, setArrivalBusy] = useState(false);
   const arrivalDraft = useRef(null);
   const reportArrivalDirty = useCallback(value => setArrivalDirty(value), []);
@@ -202,8 +211,8 @@ const OwnerDashboard = () => {
   const hotelDirty = Boolean((editingHotel || creatingHotel) && JSON.stringify(hotelForm) !== hotelBaseline);
   const profileDirty = Boolean(profileEditing && profileBaseline.current && JSON.stringify(businessProfile) !== JSON.stringify(profileBaseline.current));
   const methodsDirty = Boolean(paymentMethodsBaseline.current && JSON.stringify([...paymentMethodSettings].sort()) !== paymentMethodsBaseline.current);
-  const hasUnsavedChanges = hotelDirty || profileDirty || roomDirty || plansDirty || calendarDirty || capacityDirty || arrivalDirty || (activeTab === 'payment-setup' && methodsDirty);
-  const editsBusy = hotelSaving || imageUploading || Boolean(docUploading) || paymentMethodSettingsSaving || availabilitySaving || roomBusy || plansBusy || profileSaving || arrivalBusy;
+  const hasUnsavedChanges = hotelDirty || profileDirty || roomDirty || plansDirty || calendarDirty || capacityDirty || arrivalDirty || conversationDirty || (activeTab === 'payment-setup' && methodsDirty);
+  const editsBusy = hotelSaving || imageUploading || Boolean(docUploading) || paymentMethodSettingsSaving || availabilitySaving || roomBusy || plansBusy || profileSaving || arrivalBusy || conversationBusy;
   const discardDrafts = (scope = 'all') => {
     if (scope === 'all' || scope === 'arrivals') { arrivalDraft.current = null; setArrivalDirty(false); }
     if (scope === 'all' || scope === 'hotel') {
@@ -218,6 +227,7 @@ const OwnerDashboard = () => {
       roomDrafts.current.clear(); setRoomDirty(false);
     }
     if (scope === 'all') {
+      setConversationDirty(false); setMessageBooking(null);
       setPlansDirty(false); setCalendarDirty(false); setCapacityDirty(false);
       setSelectedAvailabilityRange({ start: null, end: null }); setAvailabilityEditForm({ rooms_available: '', is_closed: 0 });
       if (selectedHotelForCalendar) setAvailabilityForm({ rooms_total: selectedHotelForCalendar.rooms_total ?? '', rooms_available: selectedHotelForCalendar.rooms_available ?? '' });
@@ -231,6 +241,7 @@ const OwnerDashboard = () => {
     setPendingAction({ kind: 'discard', title: 'Discard unsaved changes?', run: () => { discardDrafts(scope); action(); } });
   };
   const setActiveTab = tab => requestLeave(() => { setNavOpen(false); navigate(OWNER_PATHS[tab] || OWNER_PATHS.overview); });
+  useEffect(() => { setMessageBooking(null); }, [activeTab]);
   useEffect(() => {
     const warn = event => { if (hasUnsavedChanges || editsBusy) { event.preventDefault(); event.returnValue = ''; } };
     window.addEventListener('beforeunload', warn);
@@ -2233,8 +2244,7 @@ const OwnerDashboard = () => {
                         <td>
                           <div style={{ fontWeight: 700 }}>{formatHotelCurrency(booking.total_amount, booking.currency)}</div>
                           <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>
-                            Paid {formatHotelCurrency(booking.amount_paid ?? 0, booking.currency)}
-                            {Number(booking.balance_due) > 0 ? ` · ${formatHotelCurrency(booking.balance_due, booking.currency)} due` : ''}
+                            {isExternalPaymentBooking(booking) ? 'Payment outside NaujanGO' : <>Paid {formatHotelCurrency(booking.amount_paid ?? 0, booking.currency)}{Number(booking.balance_due) > 0 ? ` · ${formatHotelCurrency(booking.balance_due, booking.currency)} due` : ''}</>}
                           </div>
                           {booking.payment_status && (
                             <span style={{
@@ -2251,7 +2261,7 @@ const OwnerDashboard = () => {
                                 booking.payment_status === 'pending' ? '#2563eb' :
                                 booking.payment_status === 'failed' ? '#dc2626' : '#6b7280'
                             }}>
-                              {booking.payment_status}
+                              {isExternalPaymentBooking(booking) ? 'Pay at property' : booking.payment_status}
                             </span>
                           )}
                         </td>
@@ -2264,6 +2274,7 @@ const OwnerDashboard = () => {
                         <td>
                            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                             <button type="button" className="gov-btn-ghost" onClick={() => setSelectedReservation(booking)}>View details</button>
+                            <button type="button" className="gov-btn-ghost" onClick={() => setMessageBooking(booking)}>Message guest</button>
                             {booking.status === 'pending' && (
                               <>
                                 <button
@@ -2338,7 +2349,8 @@ const OwnerDashboard = () => {
         )}
 
         {/* Payment configuration is separate from the transaction ledger. */}
-        {activeTab === 'payment-setup' && (
+        {activeTab === 'payment-setup' && bookingPolicy.paymentsDisabled && <section className="gov-glass-panel"><h1 className="gov-page-title">Online payments disabled</h1><p>Bookings remain available in the existing Reservations module. Review and confirm bookings as usual, and use Message guest for direct communication. Guests pay at the property; no online payment or advance deposit is required through NaujanGO.</p><p>Saved gateway methods and payment plans are retained but are not offered to guests while this restriction is active. Owners cannot override the admin switch.</p><button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('bookings')}>Open Reservations</button>{bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}</section>}
+        {activeTab === 'payment-setup' && !bookingPolicy.paymentsDisabled && (
           <div>
             <h1 className="gov-page-title">
               <Icons.Money size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Payment Setup
@@ -2631,7 +2643,7 @@ const OwnerDashboard = () => {
                             )}
                             {payment.status === 'pending' && (
                               <>
-                                <button
+                                {!bookingPolicy.paymentsDisabled && <button
                                   onClick={async () => {
                                     if (window.confirm('Confirm this pending payment?')) {
                                       try {
@@ -2648,7 +2660,7 @@ const OwnerDashboard = () => {
                                   className="gov-btn-primary"
                                 >
                                   Confirm
-                                </button>
+                                </button>}
                                 <button
                                   onClick={async () => {
                                     if (window.confirm('Cancel this pending payment?')) {
@@ -4104,8 +4116,10 @@ const OwnerDashboard = () => {
             </div>
           )}
           {archiveSelection && <ArchiveRecordModal {...archiveSelection} onClose={() => setArchiveSelection(null)} />}
+          {activeTab === 'bookings' && messageBooking && <BookingConversation key={messageBooking.booking_id} booking={messageBooking} owner onClose={() => setMessageBooking(null)} onDirtyChange={reportConversationDirty} onBusyChange={reportConversationBusy} />}
           {selectedReservation && !pendingAction && <OwnerReservationDetails booking={selectedReservation} t={t} onClose={() => setSelectedReservation(null)}
             onCancel={() => handleBookingStatusChange(selectedReservation.booking_id, 'cancelled')}
+            onMessage={() => { setMessageBooking(selectedReservation); setSelectedReservation(null); }}
             onPayments={() => { setSelectedReservation(null); setPaymentSearch(selectedReservation.receipt_number || ''); setActiveTab('payments'); }} />}
           {pendingAction && <OwnerDialog title={pendingAction.title} busy={actionBusy || historyRestoring} onClose={() => { if (!actionBusyRef.current && !historyRestoring) { setPendingAction(null); setActionError(''); } }} actions={<>
             <button type="button" className="gov-btn-ghost" disabled={actionBusy || historyRestoring} onClick={() => { setPendingAction(null); setActionError(''); }}>{pendingAction.kind === 'discard' ? 'Keep editing' : 'Keep current status'}</button>

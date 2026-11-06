@@ -20,6 +20,7 @@ before(async () => {
   if (!browserAvailable) return;
   browser = await offlineBrowser('tourism-arrivals', async (request, url) => {
     const path = url.pathname; requests.push({ path, method: request.method });
+    if (path === '/api/bookings/policy') return { body: { online_payments_enabled: true, storage_ready: true, lock_version: 1 } };
     if (path.endsWith('/auth/profile')) return { body: { user: { user_id: role === 'admin' ? 1 : 7, username: `fixture_${role}`, role, email_verified: true } } };
     if (path === '/api/owner/profile') return { body: { authorization: limited ? 'limited' : 'full', businessProfile: { verification_status: limited ? 'pending' : 'verified' } } };
     if (path === '/api/owner/hotels') return { body: [hotel] };
