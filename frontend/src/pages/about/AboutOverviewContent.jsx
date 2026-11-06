@@ -3,9 +3,12 @@ import Breadcrumb from '../../components/Breadcrumb';
 import Icons from '../../components/Icons';
 import { useLanguage } from '../../context/LanguageContext';
 import { aboutCopy } from './aboutTranslations';
+import { useAboutContent } from '../../context/AboutContentContext';
+import { aboutNumber, aboutGrowth } from '../../utils/aboutContent';
 
 const AboutOverviewContent = () => {
   const { t, getCurrentLanguage } = useLanguage();
+  const { settings } = useAboutContent();
   const copy = (key, fallback) => aboutCopy(getCurrentLanguage()?.code || 'en', key, fallback);
   const journey = [
     { number: '01', label: copy('land', 'The land'), title: copy('landTitle', 'Water and soil'), text: copy('landText', 'Begin with Naujan Lake, mountain air, and the agricultural landscapes that sustain the municipality.'), href: '/about/quick-facts', icon: 'Map' },
@@ -79,7 +82,7 @@ const AboutOverviewContent = () => {
           marginBottom: 'var(--space-6)',
           maxWidth: '100%'
         }}>
-          {defaultContent.introduction}
+          {settings?.overview_text ?? defaultContent.introduction}
         </div>
         <div className="about-story-intro">
           <div>
@@ -114,7 +117,12 @@ const AboutOverviewContent = () => {
           gap: 'var(--space-4)',
           marginBottom: 'var(--space-8)'
         }}>
-          {defaultContent.highlights.map((highlight, idx) => {
+          {[
+            { label: 'Barangays', value: aboutNumber(settings?.num_barangays), icon: 'Map' },
+            { label: 'Population', value: aboutNumber(settings?.population), icon: 'Users' },
+            { label: 'Municipal rank', value: settings?.municipal_rank || 'Not available', icon: 'Trophy' },
+            { label: 'Land area', value: settings?.land_area_sq_km == null ? 'Not available' : `${aboutNumber(settings.land_area_sq_km)} km²`, icon: 'Globe' }
+          ].map((highlight, idx) => {
             const IconComponent = Icons[highlight.icon];
             return (
               <div key={idx} style={{
@@ -239,7 +247,12 @@ const AboutOverviewContent = () => {
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: 'var(--space-4)'
           }}>
-            {defaultContent.keyFacts.map((fact, idx) => (
+            {[
+              { stat: aboutNumber(settings?.population), label: 'Population' },
+              { stat: aboutGrowth(settings?.visitor_arrivals_2023, settings?.visitor_arrivals_2022), label: 'Visitor growth (2022–2023)' },
+              { stat: aboutNumber(settings?.num_barangays), label: 'Barangays' },
+              { stat: aboutNumber(settings?.tourism_total_employment), label: 'Reported tourism employment' }
+            ].map((fact, idx) => (
               <div key={idx} style={{
                 textAlign: 'center',
                 padding: 'var(--space-3)'
@@ -267,14 +280,13 @@ const AboutOverviewContent = () => {
 
         <div className="about-voices-block">
           <div className="about-voices-heading">
-            <p className="about-story-label">{copy('voices', 'Voices of Naujan')}</p>
+            <p className="about-story-label">About the place</p>
             <h3>{copy('listen', 'Listen to the place.')}</h3>
           </div>
           <div className="about-voices-grid">
             {voices.map((voice, index) => (
               <figure key={index} className="about-voice-card">
-                <span className="about-quote-mark" aria-hidden="true">“</span>
-                <blockquote>{voice.quote}</blockquote>
+                <p>{voice.quote}</p>
                 <figcaption>{voice.role}</figcaption>
               </figure>
             ))}

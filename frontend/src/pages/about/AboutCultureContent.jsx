@@ -32,13 +32,14 @@ const AboutCultureContent = () => {
     { id: 'queen-3', year: 2023, name: 'Myrea Manely V. Caccam', photo: null },
     { id: 'queen-4', year: 2022, name: 'Cribari Brandy M. Motol', photo: null },
   ];
-  const [beautyQueens, setBeautyQueens] = React.useState(defaultQueens);
+  const [beautyQueens, setBeautyQueens] = React.useState([]);
+  const [loadError, setLoadError] = React.useState('');
 
   React.useEffect(() => {
     fetch(`${API_BASE_URL}/api/about-pageant-queens`)
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (Array.isArray(data) && data.length) setBeautyQueens(data); })
-      .catch(() => {});
+      .then(r => { if (!r.ok) throw new Error('Miss Naujan unavailable'); return r.json(); })
+      .then(data => { if (!Array.isArray(data)) throw new Error('Invalid roster'); setBeautyQueens(data); })
+      .catch(() => setLoadError('The Miss Naujan roster could not be loaded. Reload this page to retry.'));
   }, []);
 
   const PageantCard = ({ queen, idx }) => {
@@ -142,12 +143,13 @@ const AboutCultureContent = () => {
           { label: t('about_culture_arts'), active: true }
         ]} />
         <h2 className="about-section-title">{t('about_culture_arts')}</h2>
+        {loadError && <p className="about-data-status" role="alert">{loadError}</p>}
 
         <div className="about-card-grid">
           {culturalItems.map((card, idx) => (
             <details key={idx} className="about-image-card about-culture-story">
+              <summary><span>{card.title}</span><span aria-hidden="true">+</span></summary>
               <div className="about-image-card-content">
-                <summary><h4>{card.title}</h4><span aria-hidden="true">+</span></summary>
                 <p>{card.description}</p>
               </div>
             </details>

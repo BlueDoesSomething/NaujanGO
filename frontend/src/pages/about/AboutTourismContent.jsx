@@ -2,20 +2,18 @@ import React from 'react';
 import Breadcrumb from '../../components/Breadcrumb';
 import Icons from '../../components/Icons';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAboutContent } from '../../context/AboutContentContext';
+import { aboutNumber, aboutGrowth } from '../../utils/aboutContent';
 
 const AboutTourismContent = () => {
   const { t } = useLanguage();
-  const years = [
-    { year: '2022', arrivals: '15,605', growth: '-', icon: 'RouteIcon' },
-    { year: '2023', arrivals: '42,561', growth: '+172.74%', icon: 'TrendingUp' },
-    { year: '2024', arrivals: '62,788', growth: '+47.52%', icon: 'TrendingUp' },
-    { year: '2025', arrivals: '36,074', growth: '-42.55%', icon: 'TrendingDown' }
-  ];
+  const { settings } = useAboutContent();
+  const years = [2022, 2023, 2024, 2025].map(year => ({ year, arrivals: aboutNumber(settings?.[`visitor_arrivals_${year}`]), growth: year === 2022 ? 'Base year' : aboutGrowth(settings?.[`visitor_arrivals_${year}`], settings?.[`visitor_arrivals_${year - 1}`]), icon: 'RouteIcon' }));
 
   const employment = [
-    { label: 'Total Employment', value: '580', icon: 'Users' },
-    { label: 'Tourist Attractions', value: '475', icon: 'MapPin', breakdown: ['Female: 296', 'Male: 179'] },
-    { label: 'Accommodation', value: '105', icon: 'Building', breakdown: ['Female: 42', 'Male: 63'] }
+    { label: 'Total Employment', value: aboutNumber(settings?.tourism_total_employment), icon: 'Users', breakdown: [`Female: ${aboutNumber(settings?.tourism_female_employed)}`, `Male: ${aboutNumber(settings?.tourism_male_employed)}`] },
+    { label: 'Tourist Attractions', value: aboutNumber(settings?.tourism_attractions_count), icon: 'MapPin' },
+    { label: 'Accommodation', value: aboutNumber(settings?.tourism_accommodation_count), icon: 'Building' }
   ];
 
   const jobRoles = [
@@ -57,6 +55,7 @@ const AboutTourismContent = () => {
           { label: t('about_tourism_growth'), active: true }
         ]} />
         <h2 className="about-section-title">{t('about_tourism_growth')}</h2>
+        <p className="about-data-status">Historical municipal figures maintained for this page. These are separate from approved monthly accommodation arrival reports.</p>
         
         <div className="about-stats-timeline">
           <div className="about-growth-chart">

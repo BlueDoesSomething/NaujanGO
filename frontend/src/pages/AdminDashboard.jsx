@@ -18,6 +18,7 @@ import TourismArrivalReminder from '../components/TourismArrivalReminder';
 import AdminBookingPolicy from '../components/AdminBookingPolicy';
 import DashboardNotifications, { NotificationBadge } from '../components/DashboardNotifications';
 import useDashboardNotifications from '../hooks/useDashboardNotifications';
+import AboutPageManager from '../components/AboutPageManager';
 import api from '../api';
 import Pagination from '../components/Pagination';
 import BookingIssuedCell from '../components/BookingIssuedCell';
@@ -231,6 +232,7 @@ const AdminDashboard = () => {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
+  const aboutLeaveGuard = useRef(action => action());
   const emptyHotelForm = {
     name: '',
     location: '',
@@ -285,11 +287,17 @@ const AdminDashboard = () => {
   // Keep the new notification URL independent of the existing state-based
   // modules, so direct links, reload and Back work without rewriting their flows.
   const onNotificationsPage = location.pathname.replace(/\/$/, '') === '/admin/notifications';
-  const activeModule = onNotificationsPage ? 'notifications' : selectedModule;
+  const onAboutPage = location.pathname.replace(/\/$/, '') === '/admin/about';
+  const activeModule = onAboutPage ? 'about' : onNotificationsPage ? 'notifications' : selectedModule;
   const setActiveModule = module => {
-    if (module === 'notifications') { if (!onNotificationsPage) navigate('/admin/notifications'); return; }
-    setSelectedModule(module);
-    if (onNotificationsPage) navigate('/admin', { state: { dashboardModule: module } });
+    if (module === 'about' && onAboutPage) return;
+    return aboutLeaveGuard.current(() => {
+      if (module === 'about') { if (!onAboutPage) navigate('/admin/about'); return; }
+      if (module === 'notifications') { if (!onNotificationsPage) navigate('/admin/notifications'); return; }
+      if (module === 'moderation') { navigate('/admin/moderation'); return; }
+      setSelectedModule(module);
+      if (onNotificationsPage || onAboutPage) navigate('/admin', { state: { dashboardModule: module } });
+    });
   };
   const [navOpen, setNavOpen] = useState(false);
   useEffect(() => {
@@ -986,7 +994,8 @@ const AdminDashboard = () => {
     loadAnalytics();
     // Focus refresh replaces the auth object; it must not remount dashboard
     // content and discard notification filters or other in-progress edits.
-  }, [user?.user_id, user?.role, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.user_id, user?.role]);
 
   useEffect(() => {
     return () => {
@@ -2579,6 +2588,7 @@ const AdminDashboard = () => {
     { id: 'users', label: 'Users', icon: <Icons.User size={22} />, group: 'People & verification', guide: 'Accounts & owner requirements' },
     { id: 'business-verification', label: 'Business Verification', icon: <Icons.Shield size={22} /> },
     { id: 'hotels', label: 'Hotels', icon: <Icons.Hotel size={22} />, group: 'Tourism content', guide: 'Listings, trips & guest feedback' },
+    { id: 'about', label: 'About Us', icon: <Icons.Info size={22} /> },
     { id: 'attractions', label: 'Attractions', icon: <Icons.Attraction size={22} /> },
     { id: 'itineraries', label: 'Itineraries', icon: <Icons.Route size={22} /> },
     { id: 'maps', label: 'Maps', icon: <Icons.Map size={22} /> },
@@ -2707,7 +2717,7 @@ const AdminDashboard = () => {
         <aside className={`gov-sidebar${navOpen ? ' is-open' : ''}`}>
           {/* Sidebar Brand */}
           <div className="gov-sidebar-brand">
-            <Link to="/admin" className="gov-brand" onClick={event => { event.preventDefault(); setSelectedModule('overview'); setNavOpen(false); navigate('/admin'); }}>
+            <Link to="/admin" className="gov-brand" onClick={event => { event.preventDefault(); aboutLeaveGuard.current(() => { setSelectedModule('overview'); setNavOpen(false); navigate('/admin'); }); }}>
               <img
                 className="gov-logo-image"
                 src={naujanGoLogo}
@@ -2725,7 +2735,7 @@ const AdminDashboard = () => {
               <div className="gov-user__name">{user?.first_name || user?.username}</div>
               <div className="gov-user__role">{t('administrator')}</div>
             </div>
-            <button className="gov-logout" onClick={handleLogout}>
+            <button className="gov-logout" onClick={() => aboutLeaveGuard.current(handleLogout)}>
               {t('logout')}
             </button>
           </div>
@@ -2747,11 +2757,9 @@ const AdminDashboard = () => {
                   if (mod.id === 'attractions') loadAttractions();
                   if (mod.id === 'reviews') loadReviews();
                   if (mod.id === 'maps') { loadHotels(); loadAttractions(); }
-                  if (mod.id === 'about') loadCustomizationSettings();
                   if (mod.id === 'hero') loadCustomizationSettings();
                   if (mod.id === 'chatbot') loadChatbotData();
                   if (mod.id === 'reports') { loadAnalytics(); setReportsInitialCategory('overview'); }
-                  if (mod.id === 'moderation') navigate('/admin/moderation');
                   if (mod.id === 'archive') { loadArchivedBookings(); loadArchivedItineraries(); loadArchivedHotels(); loadArchivedAttractions(); }
                   if (mod.id === 'system-logs') loadLogStats();
                 }}
@@ -2778,6 +2786,7 @@ const AdminDashboard = () => {
         </aside>
 
         <main className="gov-main">
+          {activeModule === 'about' && <AboutPageManager leaveGuard={aboutLeaveGuard} />}
           {activeModule === 'notifications' && <DashboardNotifications feed={notificationFeed} role="admin" onOpen={setActiveModule} />}
           {/* Overview — loading / error fallback */}
           {activeModule === 'overview' && !stats && (
@@ -5400,7 +5409,7 @@ const AdminDashboard = () => {
                     { id: 'auth',         label: 'Auth Pages',                  icon: <Icons.Shield size={15} /> },
                     { id: 'about',        label: t('admin_tab_about'),     icon: <Icons.Globe size={15} /> },
                   ].map(tab => (
-                    <button key={tab.id} onClick={() => setCustomTab(tab.id)}
+                    <button key={tab.id} onClick={() => tab.id === 'about' ? setActiveModule('about') : setCustomTab(tab.id)}
                       style={{ padding: '0.6rem 1rem', border: 'none', background: 'none', cursor: 'pointer',
                         fontWeight: customTab === tab.id ? 800 : 500, fontSize: '0.83rem',
                         color: customTab === tab.id ? '#16a34a' : '#6b7280',

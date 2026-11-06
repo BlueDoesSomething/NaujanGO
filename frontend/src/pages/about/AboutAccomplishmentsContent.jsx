@@ -4,9 +4,12 @@ import Icons from '../../components/Icons';
 import { useLanguage } from '../../context/LanguageContext';
 import { getApiBaseUrl } from '../../api';
 import { aboutCopy } from './aboutTranslations';
+import { useAboutContent } from '../../context/AboutContentContext';
+import { aboutNumber } from '../../utils/aboutContent';
 
 const AboutAccomplishmentsContent = () => {
   const { t, getCurrentLanguage } = useLanguage();
+  const { settings } = useAboutContent();
   const copy = (key, fallback) => aboutCopy(getCurrentLanguage()?.code || 'en', key, fallback);
   const defaultMilestones = [
     {
@@ -46,17 +49,20 @@ const AboutAccomplishmentsContent = () => {
       id: 'accomplishment-12', date: 'November 28, 2025', category: 'RECOGNITION', title: 'Naujan Vloggers Grand Ball and Awards Night', description: 'Local storytellers and creators were recognized for sharing Naujan with wider audiences.'
     }
   ];
-  const [milestones, setMilestones] = React.useState(defaultMilestones);
+  const [milestones, setMilestones] = React.useState([]);
+  const [loadError, setLoadError] = React.useState(''), [loading, setLoading] = React.useState(true);
   const [activeCategory, setActiveCategory] = React.useState('ALL');
   const categories = ['ALL', ...new Set(milestones.map((milestone) => milestone.category || 'COMMUNITY'))];
 
   React.useEffect(() => {
     fetch(`${getApiBaseUrl()}/api/about-accomplishments`)
-      .then((response) => response.ok ? response.json() : [])
+      .then((response) => { if (!response.ok) throw new Error('Milestones unavailable'); return response.json(); })
       .then((entries) => {
-        if (Array.isArray(entries) && entries.length) setMilestones(entries);
+        if (!Array.isArray(entries)) throw new Error('Invalid milestones');
+        setMilestones(entries);
       })
-      .catch(() => {});
+      .catch(() => setLoadError('Milestones could not be loaded. Reload this page to retry.'))
+      .finally(() => setLoading(false));
   }, []);
 
   const visibleMilestones = activeCategory === 'ALL'
@@ -64,10 +70,10 @@ const AboutAccomplishmentsContent = () => {
     : milestones.filter((milestone) => (milestone.category || 'COMMUNITY') === activeCategory);
 
   const impact = [
-    { value: '475', label: 'tourism attractions', icon: 'MapPin' },
-    { value: '105', label: 'accommodation establishments', icon: 'Building' },
-    { value: '5', label: 'indigenous people barangays', icon: 'Users' },
-    { value: '70', label: 'barangays moving forward together', icon: 'Layers' }
+    { value: aboutNumber(settings?.tourism_attractions_count), label: 'tourism attractions', icon: 'MapPin' },
+    { value: aboutNumber(settings?.tourism_accommodation_count), label: 'accommodation establishments', icon: 'Building' },
+    { value: aboutNumber(settings?.tourism_total_employment), label: 'reported tourism employment', icon: 'Users' },
+    { value: aboutNumber(settings?.num_barangays), label: 'barangays moving forward together', icon: 'Layers' }
   ];
 
   return (
@@ -87,6 +93,9 @@ const AboutAccomplishmentsContent = () => {
         </div>
 
         <div className="accomplishments-impact-grid">
+          {loading && <p role="status">Loading milestones…</p>}
+          {loadError && <p role="alert">{loadError}</p>}
+          {!loading && !loadError && !milestones.length && <p>No milestones have been published yet.</p>}
           {impact.map((item) => {
             const IconComponent = Icons[item.icon];
             return (

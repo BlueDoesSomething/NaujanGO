@@ -1,269 +1,87 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import api from '../api';
-import Icons from '../components/Icons'; 
-import './About.css';
+import { AboutContentProvider, useAboutContent } from '../context/AboutContentContext';
+import Icons from '../components/Icons';
+import { ABOUT_TOPICS } from './about/aboutNavigation';
 import { aboutCopy } from './about/aboutTranslations';
+import './About.css';
+import './about/AboutNavigation.css';
 
-// Lazy load all section components for code splitting
-const AboutOverviewContent = lazy(() => import('./about/AboutOverviewContent'));
-const AboutVisionMissionContent = lazy(() => import('./about/AboutVisionMissionContent'));
-const AboutHistoryContent = lazy(() => import('./about/AboutHistoryContent'));
-const AboutLeadershipContent = lazy(() => import('./about/AboutLeadershipContent'));
-const AboutQuickFactsContent = lazy(() => import('./about/AboutQuickFactsContent'));
-const AboutIndigenousContent = lazy(() => import('./about/AboutIndigenousContent'));
-const AboutAlangangContent = lazy(() => import('./about/AboutAlangangContent'));
-const AboutCultureContent = lazy(() => import('./about/AboutCultureContent'));
-const AboutEconomyContent = lazy(() => import('./about/AboutEconomyContent'));
-const AboutTourismContent = lazy(() => import('./about/AboutTourismContent'));
-const AboutGovernanceContent = lazy(() => import('./about/AboutGovernanceContent'));
-const AboutAccomplishmentsContent = lazy(() => import('./about/AboutAccomplishmentsContent'));
-
-const getSections = (t) => ({
-  overview: { id: 'overview', title: t('about_welcome_naujan'), component: AboutOverviewContent },
-  'vision-mission': { id: 'vision-mission', title: t('about_vision_mission'), component: AboutVisionMissionContent },
-  history: { id: 'history', title: t('about_history_naujan'), component: AboutHistoryContent },
-  leadership: { id: 'leadership', title: t('about_leadership_governance'), component: AboutLeadershipContent },
-  'quick-facts': { id: 'quick-facts', title: t('about_quick_facts'), component: AboutQuickFactsContent },
-  indigenous: { id: 'indigenous', title: t('about_indigenous_communities'), component: AboutIndigenousContent },
-  alangan: { id: 'alangan', title: t('about_alangan_culture'), component: AboutAlangangContent },
-  culture: { id: 'culture', title: t('about_culture_arts'), component: AboutCultureContent },
-  economy: { id: 'economy', title: t('about_economy_livelihood'), component: AboutEconomyContent },
-  tourism: { id: 'tourism', title: t('about_tourism_growth'), component: AboutTourismContent },
-  governance: { id: 'governance', title: t('about_governance_development'), component: AboutGovernanceContent },
-  accomplishments: { id: 'accomplishments', title: 'Accomplishments & Milestones', component: AboutAccomplishmentsContent }
-});
-
-const SECTION_ICONS = {
-  'overview': 'Info',
-  'vision-mission': 'Sparkles',
-  'history': 'Archive',
-  'leadership': 'Users',
-  'quick-facts': 'ChartLineUp',
-  'indigenous': 'Leaf',
-  'alangan': 'Mountain',
-  'culture': 'Palette',
-  'economy': 'Money',
-  'tourism': 'RouteIcon',
-  'governance': 'Shield',
-  'accomplishments': 'Trophy'
+const components = {
+  overview: lazy(() => import('./about/AboutOverviewContent')),
+  'vision-mission': lazy(() => import('./about/AboutVisionMissionContent')),
+  history: lazy(() => import('./about/AboutHistoryContent')),
+  leadership: lazy(() => import('./about/AboutLeadershipContent')),
+  'quick-facts': lazy(() => import('./about/AboutQuickFactsContent')),
+  indigenous: lazy(() => import('./about/AboutIndigenousContent')),
+  alangan: lazy(() => import('./about/AboutAlangangContent')),
+  culture: lazy(() => import('./about/AboutCultureContent')),
+  economy: lazy(() => import('./about/AboutEconomyContent')),
+  tourism: lazy(() => import('./about/AboutTourismContent')),
+  governance: lazy(() => import('./about/AboutGovernanceContent')),
+  accomplishments: lazy(() => import('./about/AboutAccomplishmentsContent'))
 };
 
-const About = () => {
+function AboutPage() {
   const { user } = useAuth();
   const { t, getCurrentLanguage } = useLanguage();
+  const { error, loading, refresh } = useAboutContent();
   const copy = (key, fallback) => aboutCopy(getCurrentLanguage?.()?.code || 'en', key, fallback);
   const location = useLocation();
-  const navigate = useNavigate();
-  const SECTIONS = getSections(t);
-  
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showBackToTop, setShowBackToTop] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
-
-  // Extract section from URL
-  const pathParts = location.pathname.split('/').filter(Boolean);
-  const currentSection = pathParts.length > 1 ? pathParts[1] : 'overview';
-  const viewMode = pathParts.length > 1 ? 'single' : 'all';
-
-  const handleSectionClick = (sectionId) => {
-    navigate(`/about/${sectionId}`);
-    setMobileMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Scroll progress tracking
+  const [menuOpen, setMenuOpen] = useState(false), [search, setSearch] = useState('');
+  const heading = useRef(null), menuButton = useRef(null), firstPath = useRef(true);
+  const current = location.pathname.split('/').filter(Boolean)[1] || 'overview';
+  const readAll = new URLSearchParams(location.search).get('view') === 'all' && current === 'overview';
+  const topics = ABOUT_TOPICS.map(([id, key, fallback, group, icon, description]) => ({ id, title: key ? t(key) : fallback, group, icon, description }));
+  const index = topics.findIndex(topic => topic.id === current);
+  const Component = components[current];
   useEffect(() => {
-    const handleScroll = () => {
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight - windowHeight;
-      const scrolled = window.scrollY;
-      const progress = (scrolled / documentHeight) * 100;
-      
-      setScrollProgress(progress);
-      setShowBackToTop(scrolled > 400);
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
+    setMenuOpen(false); setSearch('');
+    if (!firstPath.current) heading.current?.focus({ preventScroll: true });
+    firstPath.current = false;
+  }, [location.pathname, location.search]);
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'auto' });
-  }, [location.pathname]);
-
-  const handleLeadershipUpdate = async (index, field, value) => {
-    if (!user?.isAdmin) return;
-    
-    try {
-      if (field === 'photo' && value instanceof File) {
-        const formData = new FormData();
-        const photoField = index === 0 ? 'mayorPhoto' : 'viceMayorPhoto';
-        formData.append('file', value);
-        formData.append('type', photoField);
-        formData.append(
-          'leaderKey',
-          index === 0
-            ? 'mayor:Henry Joel C. Teves:2022–Present'
-            : 'vice-mayor:Candido J. Melgar Jr.:2025–Present'
-        );
-        
-        await api.post('/admin/leader-photo', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      }
-    } catch (err) {
-      console.error('Error updating leadership:', err);
-    }
-  };
-
-  // Loading fallback
-  const LoadingFallback = () => (
-    <section className="about-section section-visible">
-      <div className="about-container">
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
-          <Icons.Loader size={48} />
-        </div>
-      </div>
-    </section>
-  );
-
-  return (
-    <div className="about-page">
-      {/* Scroll Progress Bar */}
-      <div className="about-scroll-progress" style={{ width: `${scrollProgress}%` }} />
-
-      {/* Mobile Menu Button */}
-      <button
-        className="about-mobile-menu-btn"
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        aria-expanded={mobileMenuOpen}
-        aria-controls="about-navigation"
-        aria-label={mobileMenuOpen ? 'Close About navigation' : 'Open About navigation'}
-      >
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-
-      <header className="about-masthead">
-        <div className="about-masthead-inner">
-          <div className="about-masthead-copy">
-              <p className="about-kicker">{copy('fieldGuide', 'A field guide to place')}</p>
-              <h1>{copy('mastheadTitle', 'Meet Naujan')}<span>.</span></h1>
-            <p className="about-masthead-lede">
-                {copy('mastheadLede', 'A living municipality shaped by water, soil, memory, and the people who call Oriental Mindoro home.')}
-            </p>
-          </div>
-          <div className="about-masthead-mark" aria-hidden="true">
-            <Icons.Mountain size={76} strokeWidth={1.2} />
-            <span>Oriental<br />Mindoro</span>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Layout Wrapper */}
-      <div className={`about-main-wrapper ${viewMode === 'single' ? 'single-section-mode' : 'all-sections-mode'}`}>
-        
-        {/* Navigation Sidebar */}
-        <div className={`about-nav-sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-        <div className="about-nav-header">
-          <Icons.Document size={24} />
-          <h3>{t('contents')}</h3>
-        </div>
-        <nav className="about-nav" id="about-navigation">
-          {Object.entries(SECTIONS).map(([key, section]) => {
-            const IconComponent = Icons[SECTION_ICONS[key]];
-            const isActive = viewMode === 'single' 
-              ? currentSection === key 
-              : false;
-            
-            return (
-              <button
-                key={key}
-                className={`about-nav-link ${isActive ? 'active' : ''}`}
-                onClick={() => handleSectionClick(key)}
-                title={section.title}
-              >
-                <div className="about-nav-left">
-                  {IconComponent && (
-                    <span className="about-nav-icon">
-                      <IconComponent size={20} />
-                    </span>
-                  )}
-                  <span className="about-nav-text">{section.title}</span>
-                </div>
-                <span className="about-nav-arrow">
-                  <Icons.ChevronRight size={16} />
-                </span>
-              </button>
-            );
+    if (!menuOpen) return;
+    const close = event => { if (event.key === 'Escape') { setMenuOpen(false); menuButton.current?.focus(); } };
+    window.addEventListener('keydown', close); return () => window.removeEventListener('keydown', close);
+  }, [menuOpen]);
+  return <div className="about-page">
+    <header className="about-masthead"><div className="about-masthead-inner"><div className="about-masthead-copy">
+      <p className="about-kicker">{copy('fieldGuide', 'A field guide to place')}</p>
+      <h1 id="about-page-title" ref={heading} tabIndex={-1}>{copy('mastheadTitle', 'Meet Naujan')}<span>.</span></h1>
+      <p className="about-masthead-lede">{copy('mastheadLede', 'A living municipality shaped by water, soil, memory, and the people who call Oriental Mindoro home.')}</p>
+      <div className="about-page-actions"><Link to="/about">Start here</Link><Link to="/about?view=all">Read all topics</Link>{user?.role === 'admin' && <Link to="/admin/about">Manage About Us ↗</Link>}</div>
+    </div><div className="about-masthead-mark" aria-hidden="true"><Icons.Mountain size={76} /><span>Oriental<br />Mindoro</span></div></div></header>
+    <button ref={menuButton} className="about-topic-toggle" type="button" aria-expanded={menuOpen} aria-controls="about-navigation" onClick={() => setMenuOpen(value => !value)}><Icons.Document size={20} /> {menuOpen ? 'Close topics' : 'Browse topics'}</button>
+    <div className="about-main-wrapper single-section-mode">
+      <aside className={`about-nav-sidebar about-topic-sidebar${menuOpen ? ' mobile-open' : ''}`}>
+        <div className="about-nav-header"><Icons.Document size={20} /><h2>Explore Naujan</h2></div>
+        <label className="about-topic-search">Find a topic<input type="search" value={search} onChange={event => setSearch(event.target.value)} /></label>
+        <nav className="about-nav" id="about-navigation" aria-label="About topics">
+          {topics.filter(topic => topic.title.toLowerCase().includes(search.trim().toLowerCase())).map((topic, position, list) => {
+            const Icon = Icons[topic.icon];
+            return <React.Fragment key={topic.id}>{(position === 0 || list[position - 1].group !== topic.group) && <p className="about-topic-group">{topic.group}</p>}
+              <Link className={`about-nav-link${current === topic.id && !readAll ? ' active' : ''}`} to={`/about/${topic.id}`} aria-current={current === topic.id && !readAll ? 'page' : undefined}><span className="about-nav-left">{Icon && <Icon size={18} />}<span className="about-nav-text">{topic.title}</span></span></Link>
+            </React.Fragment>;
           })}
+          {search && !topics.some(topic => topic.title.toLowerCase().includes(search.trim().toLowerCase())) && <p className="about-topic-empty">No matching topics.</p>}
         </nav>
-        </div>
-
-        {/* Content Area */}
-        <div className="about-sections-container">
-        <Suspense fallback={<LoadingFallback />}>
-          {viewMode === 'single' && SECTIONS[currentSection] ? (
-            (() => {
-              const Component = SECTIONS[currentSection].component;
-              return <Component 
-                onEdit={handleLeadershipUpdate} 
-                isAdmin={user?.isAdmin}
-              />;
-            })()
-          ) : !viewMode || viewMode === 'all' ? (
-            // Show all sections
-            Object.entries(SECTIONS).map(([key, section]) => {
-              const Component = section.component;
-              return (
-                <Component 
-                  key={key}
-                  onEdit={handleLeadershipUpdate}
-                  isAdmin={user?.isAdmin}
-                />
-              );
-            })
-          ) : (
-            <section className="about-section">
-              <div className="about-container">
-                <p>{t('section_not_found')} <a href="/about">{t('back_to_about')}</a></p>
-              </div>
-            </section>
-          )}
+      </aside>
+      <div className="about-sections-container">
+        {loading && <p className="about-data-status" role="status">Loading municipal content…</p>}
+        {error && <p className="about-data-status" role="alert">{error} <button type="button" onClick={refresh}>Retry content</button></p>}
+        <Suspense fallback={<p className="about-data-status" role="status">Loading topic…</p>}>
+          {readAll ? topics.map(topic => { const Section = components[topic.id]; return <Section key={topic.id} />; }) : Component ? <Component /> : <section className="about-section"><h2>Topic not found</h2><Link to="/about">Back to About</Link></section>}
         </Suspense>
+        {current === 'overview' && !readAll && <section className="about-topic-directory" aria-label="Topic directory"><h2>Choose your next chapter</h2><div>{topics.filter(topic => topic.id !== 'overview').map(topic => <Link key={topic.id} to={`/about/${topic.id}`}><span>{topic.group}</span><h3>{topic.title}</h3><p>{topic.description}</p><strong>Explore topic →</strong></Link>)}</div></section>}
+        {index >= 0 && !readAll && <nav className="about-chapter-navigation" aria-label="Previous and next topics">{index > 0 ? <Link to={`/about/${topics[index - 1].id}`}>← {topics[index - 1].title}</Link> : <span />}<span>{index + 1} / {topics.length}</span>{index < topics.length - 1 ? <Link to={`/about/${topics[index + 1].id}`}>{topics[index + 1].title} →</Link> : <Link to="/about">Back to introduction ↑</Link>}</nav>}
+        <a className="about-return-top" href="#about-page-title">Back to top ↑</a>
       </div>
-      </div>
-
-      {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
-        <div 
-          className="about-mobile-overlay visible" 
-          onClick={() => setMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Back to Top Button */}
-      {showBackToTop && (
-        <button 
-          className="about-back-to-top" 
-          onClick={scrollToTop}
-          aria-label={t('back_to_top')}
-          title={t('back_to_top')}
-        >
-          <Icons.ChevronUp size={24} />
-        </button>
-      )}
-
     </div>
-  );
-};
+    {menuOpen && <button type="button" className="about-mobile-overlay visible" aria-label="Close topic navigation" onClick={() => { setMenuOpen(false); menuButton.current?.focus(); }} />}
+  </div>;
+}
 
-export default About;
+export default function About() { return <AboutContentProvider><AboutPage /></AboutContentProvider>; }

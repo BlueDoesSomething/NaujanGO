@@ -1,18 +1,19 @@
 import React from 'react';
-import AnimatedCounter from '../../components/AnimatedCounter';
 import Icons from '../../components/Icons';
 import Breadcrumb from '../../components/Breadcrumb';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAboutContent } from '../../context/AboutContentContext';
+import { aboutNumber } from '../../utils/aboutContent';
 
 const AboutQuickFactsContent = () => {
   const { t } = useLanguage();
+  const { settings } = useAboutContent();
   const stats = [
-    { label: 'Population (2024)', value: '109,122', icon: 'Users' },
-    { label: 'Land Area', value: '503.10 km²', icon: 'Map' },
-    { label: 'Population Density', value: '216–218/km²', icon: 'Grid' },
-    { label: 'Barangays', value: '70', icon: 'Layers' },
-    { label: 'Rank', value: '2nd in Prov.', icon: 'Trophy' },
-    { label: 'Class', value: '1st Class', icon: 'Star' }
+    { label: 'Population', value: aboutNumber(settings?.population), icon: 'Users' },
+    { label: 'Land Area (km²)', value: aboutNumber(settings?.land_area_sq_km), icon: 'Map' },
+    { label: 'Population Density (per km²)', value: aboutNumber(settings?.density_per_sq_km), icon: 'Grid' },
+    { label: 'Barangays', value: aboutNumber(settings?.num_barangays), icon: 'Layers' },
+    { label: 'Municipal rank', value: settings?.municipal_rank || 'Not available', icon: 'Trophy' }
   ];
 
   return (
@@ -29,13 +30,7 @@ const AboutQuickFactsContent = () => {
           {stats.map((stat, idx) => {
             const IconComponent = stat.icon ? Icons[stat.icon] : null;
             return (
-              <AnimatedCounter
-                key={idx}
-                value={stat.value}
-                label={stat.label}
-                icon={IconComponent}
-                color={['primary', 'blue', 'purple', 'orange'][idx % 4]}
-              />
+              <div className="about-stat-card" key={stat.label}>{IconComponent && <IconComponent size={28} />}<strong className="about-stat-value">{stat.value}</strong><span className="about-stat-label">{stat.label}</span></div>
             );
           })}
         </div>

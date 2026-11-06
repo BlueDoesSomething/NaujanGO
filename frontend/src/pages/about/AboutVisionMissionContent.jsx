@@ -2,9 +2,11 @@ import React from 'react';
 import Icons from '../../components/Icons';
 import Breadcrumb from '../../components/Breadcrumb';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAboutContent } from '../../context/AboutContentContext';
 
 const AboutVisionMissionContent = () => {
   const { t } = useLanguage();
+  const { settings } = useAboutContent();
   const defaultContent = {
     title: 'Vision & Mission',
     vision: {
@@ -40,14 +42,14 @@ const AboutVisionMissionContent = () => {
           <div className="about-card about-vision-card">
             <div className="about-card-icon"><Icons.Sparkles size={40} /></div>
             <h3>{defaultContent.vision.title}</h3>
-            <p>{defaultContent.vision.content}</p>
+            <p>{settings?.vision_text ?? defaultContent.vision.content}</p>
           </div>
           <div className="about-card about-mission-card">
             <div className="about-card-icon"><Icons.Heart size={40} filled /></div>
             <h3>{defaultContent.mission.title}</h3>
             <p>{defaultContent.mission.content}</p>
             <ul className="about-mission-list">
-              {defaultContent.missionPoints.map((point, idx) => (
+              {(settings?.mission_text?.points ?? defaultContent.missionPoints).map((point, idx) => (
                 <li key={idx}><span className="bullet">•</span> {point}</li>
               ))}
             </ul>

@@ -3,31 +3,34 @@ import Breadcrumb from '../../components/Breadcrumb';
 import LeadershipCard from '../../components/LeadershipCard';
 import { useLanguage } from '../../context/LanguageContext';
 import { getApiBaseUrl } from '../../api';
+import { useAboutContent } from '../../context/AboutContentContext';
 
 const leaderKey = (role, name, term) => `${role}:${name}:${term}`;
 
 const AboutLeadershipContent = ({ onEdit, isAdmin }) => {
   const { t } = useLanguage();
+  const { settings } = useAboutContent();
   const [photos, setPhotos] = React.useState({});
   const [roster, setRoster] = React.useState(null);
+  const [loadError, setLoadError] = React.useState('');
 
   React.useEffect(() => {
     fetch(`${getApiBaseUrl()}/api/about-leadership-photos`)
-      .then((response) => response.ok ? response.json() : {})
+      .then((response) => { if (!response.ok) throw new Error('Portraits unavailable'); return response.json(); })
       .then(setPhotos)
-      .catch(() => {});
+      .catch(() => setLoadError('Some leadership information could not be loaded. Reload this page to retry.'));
     fetch(`${getApiBaseUrl()}/api/about-leadership-roster`)
-      .then((response) => response.ok ? response.json() : [])
-      .then((savedRoster) => setRoster(Array.isArray(savedRoster) && savedRoster.length ? savedRoster : null))
-      .catch(() => {});
+      .then((response) => { if (!response.ok) throw new Error('Roster unavailable'); return response.json(); })
+      .then((savedRoster) => { if (!Array.isArray(savedRoster)) throw new Error('Invalid roster'); setRoster(savedRoster); })
+      .catch(() => setLoadError('Some leadership information could not be loaded. Reload this page to retry.'));
   }, []);
   const defaultContent = {
-    mayor: 'Henry Joel C. Teves',
-    mayorTerm: '2022–Present',
-    mayorPhotoUrl: photos[leaderKey('mayor', 'Henry Joel C. Teves', '2022–Present')] || null,
-    viceMayor: 'Candido J. Melgar Jr.',
-    viceMayorTerm: '2025–Present',
-    viceMayorPhotoUrl: photos[leaderKey('vice-mayor', 'Candido J. Melgar Jr.', '2025–Present')] || null
+    mayor: settings?.current_mayor_name || 'Not provided',
+    mayorTerm: settings?.current_mayor_term || 'Not provided',
+    mayorPhotoUrl: photos[leaderKey('mayor', settings?.current_mayor_name, settings?.current_mayor_term)] || null,
+    viceMayor: settings?.current_vice_mayor_name || 'Not provided',
+    viceMayorTerm: settings?.current_vice_mayor_term || 'Not provided',
+    viceMayorPhotoUrl: photos[leaderKey('vice-mayor', settings?.current_vice_mayor_name, settings?.current_vice_mayor_term)] || null
   };
 
   const mayors = [
@@ -69,10 +72,10 @@ const AboutLeadershipContent = ({ onEdit, isAdmin }) => {
     { name: 'Candido J. Melgar Jr.', term: '2025–Present', current: true }
   ];
 
-  const savedMayors = roster?.filter((person) => person.role === 'mayor') || mayors;
-  const savedViceMayors = roster?.filter((person) => person.role === 'vice-mayor') || viceMayors;
-  const currentMayor = savedMayors.find((person) => person.current) || savedMayors[savedMayors.length - 1];
-  const currentViceMayor = savedViceMayors.find((person) => person.current) || savedViceMayors[savedViceMayors.length - 1];
+  const savedMayors = roster?.filter((person) => person.role === 'mayor') || [];
+  const savedViceMayors = roster?.filter((person) => person.role === 'vice-mayor') || [];
+  const currentMayor = savedMayors.find((person) => person.current);
+  const currentViceMayor = savedViceMayors.find((person) => person.current);
 
   return (
     <section className="about-section about-section-leadership section-visible">
@@ -83,6 +86,8 @@ const AboutLeadershipContent = ({ onEdit, isAdmin }) => {
           { label: t('about_leadership_governance'), active: true }
         ]} />
         <h2 className="about-section-title">{t('about_leadership_governance')}</h2>
+        {loadError && <p className="about-data-status" role="alert">{loadError}</p>}
+        {roster?.length === 0 && <p>No historical leadership entries have been published. Current officials below use the municipality's saved page details when no roster official is marked current.</p>}
         
         <div style={{ marginTop: '2rem' }}>
           <h3 style={{ textAlign: 'center', marginBottom: '2rem', color: '#111827' }}>

@@ -12,6 +12,7 @@ import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { execute } from '../db.js';
 import { authenticateToken, requireAdmin } from '../middleware/auth.js';
+import { validateAboutSettings, validateAboutList } from '../utils/aboutContent.js';
 
 const router = express.Router();
 
@@ -207,6 +208,7 @@ router.put('/admin/about-pageant-queens', authenticateToken, requireAdmin, async
   try {
     const queens = Array.isArray(req.body) ? req.body : req.body.queens;
     if (!Array.isArray(queens)) return res.status(400).json({ error: 'Queens must be an array' });
+    validateAboutList(queens, 'queens');
     const cleaned = queens.map((q, i) => ({
       id: String(q.id || `queen-${Date.now()}-${i}`),
       year: Number(q.year) || new Date().getFullYear(),
@@ -222,6 +224,7 @@ router.put('/admin/about-pageant-queens', authenticateToken, requireAdmin, async
     res.json({ success: true, queens: cleaned });
   } catch (error) {
     console.error('Save pageant queens error:', error);
+    if (error.status === 400) return res.status(400).json({ error: error.message });
     res.status(500).json({ error: 'Failed to save pageant queens' });
   }
 });
@@ -275,6 +278,7 @@ router.put('/admin/about-accomplishments', authenticateToken, requireAdmin, asyn
   try {
     const entries = Array.isArray(req.body) ? req.body : req.body.entries;
     if (!Array.isArray(entries)) return res.status(400).json({ error: 'Accomplishments must be an array' });
+    validateAboutList(entries, 'milestones');
     const cleanedEntries = entries.map((entry, index) => ({
       id: String(entry.id || `accomplishment-${Date.now()}-${index}`),
       date: String(entry.date || '').trim().slice(0, 80),
@@ -292,6 +296,7 @@ router.put('/admin/about-accomplishments', authenticateToken, requireAdmin, asyn
     res.json({ success: true, entries: cleanedEntries });
   } catch (error) {
     console.error('Save accomplishments error:', error);
+    if (error.status === 400) return res.status(400).json({ error: error.message });
     res.status(500).json({ error: 'Failed to save accomplishments' });
   }
 });
@@ -300,6 +305,9 @@ router.put('/admin/about-accomplishments', authenticateToken, requireAdmin, asyn
 router.post('/admin/about/accomplishment-image', authenticateToken, requireAdmin, upload.single('file'), async (req, res) => {
   try {
     if (!req.file || !req.body.entryId) return res.status(400).json({ error: 'Image and entry ID are required' });
+    const directory = path.join(aboutMediaDir, 'accomplishments');
+    fs.mkdirSync(directory, { recursive: true });
+    if (path.dirname(req.file.path) !== directory) fs.renameSync(req.file.path, path.join(directory, req.file.filename));
     const imageUrl = `/uploads/about/accomplishments/${req.file.filename}`;
     const [rows] = await execute(
       'SELECT setting_value FROM site_settings WHERE setting_key = ?',
@@ -326,6 +334,7 @@ router.put('/admin/about-leadership-roster', authenticateToken, requireAdmin, as
     if (!Array.isArray(roster)) {
       return res.status(400).json({ error: 'Roster must be an array' });
     }
+    validateAboutList(roster, 'leaders');
 
     const cleanedRoster = roster.map((person, index) => ({
       id: String(person.id || `leader-${Date.now()}-${index}`),
@@ -344,6 +353,7 @@ router.put('/admin/about-leadership-roster', authenticateToken, requireAdmin, as
     res.json({ success: true, roster: cleanedRoster });
   } catch (error) {
     console.error('Save leadership roster error:', error);
+    if (error.status === 400) return res.status(400).json({ error: error.message });
     res.status(500).json({ error: 'Failed to save leadership roster' });
   }
 });
@@ -354,6 +364,9 @@ router.put('/admin/about-leadership-roster', authenticateToken, requireAdmin, as
  */
 router.put('/admin/about-settings', authenticateToken, requireAdmin, async (req, res) => {
   try {
+    validateAboutSettings(req.body);
+    const [existing] = await execute('SELECT id FROM about_settings WHERE id = 1');
+    if (!existing.length) return res.status(503).json({ error: 'About settings storage has no editable record. Ask the administrator to check the existing About settings setup before saving.' });
     const {
       overview_text, vision_text, mission_text, population, land_area_sq_km, density_per_sq_km, num_barangays,
       municipal_rank, current_mayor_name, current_mayor_term, current_vice_mayor_name, current_vice_mayor_term,
@@ -409,7 +422,7 @@ router.put('/admin/about-settings', authenticateToken, requireAdmin, async (req,
     });
   } catch (err) {
     console.error('Update about settings error:', err);
-    res.status(500).json({ error: 'Failed to update about settings', details: err.message });
+    res.status(err.status || 500).json({ error: err.status ? err.message : 'Failed to update about settings' });
   }
 });
 
