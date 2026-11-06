@@ -16,6 +16,8 @@ import ReportsAndAnalyticsDashboard from '../components/ReportsAndAnalyticsDashb
 import TouristArrivalsReport from '../components/TouristArrivalsReport';
 import TourismArrivalReminder from '../components/TourismArrivalReminder';
 import AdminBookingPolicy from '../components/AdminBookingPolicy';
+import DashboardNotifications, { NotificationBadge } from '../components/DashboardNotifications';
+import useDashboardNotifications from '../hooks/useDashboardNotifications';
 import api from '../api';
 import Pagination from '../components/Pagination';
 import BookingIssuedCell from '../components/BookingIssuedCell';
@@ -225,6 +227,7 @@ const parseHotelImageUrls = (value) => {
 
 const AdminDashboard = () => {
   const { user, logout, refreshProfile } = useAuth();
+  const notificationFeed = useDashboardNotifications(user?.user_id);
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -278,8 +281,23 @@ const AdminDashboard = () => {
   };
 
   const [loading, setLoading] = useState(true);
-  const [activeModule, setActiveModule] = useState(() => location.pathname.endsWith('/payments') ? 'payments' : 'overview');
+  const [selectedModule, setSelectedModule] = useState(() => location.state?.dashboardModule || (location.pathname.endsWith('/payments') ? 'payments' : 'overview'));
+  // Keep the new notification URL independent of the existing state-based
+  // modules, so direct links, reload and Back work without rewriting their flows.
+  const onNotificationsPage = location.pathname.replace(/\/$/, '') === '/admin/notifications';
+  const activeModule = onNotificationsPage ? 'notifications' : selectedModule;
+  const setActiveModule = module => {
+    if (module === 'notifications') { if (!onNotificationsPage) navigate('/admin/notifications'); return; }
+    setSelectedModule(module);
+    if (onNotificationsPage) navigate('/admin', { state: { dashboardModule: module } });
+  };
   const [navOpen, setNavOpen] = useState(false);
+  useEffect(() => {
+    if (!navOpen) return;
+    const keyboard = event => { if (event.key === 'Escape') { setNavOpen(false); document.querySelector('.gov-menu-btn')?.focus(); } };
+    window.addEventListener('keydown', keyboard);
+    return () => window.removeEventListener('keydown', keyboard);
+  }, [navOpen]);
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -966,7 +984,9 @@ const AdminDashboard = () => {
     }
     loadAdminData();
     loadAnalytics();
-  }, [user, navigate]);
+    // Focus refresh replaces the auth object; it must not remount dashboard
+    // content and discard notification filters or other in-progress edits.
+  }, [user?.user_id, user?.role, navigate]);
 
   useEffect(() => {
     return () => {
@@ -2553,19 +2573,20 @@ const AdminDashboard = () => {
 
   const modules = [
     { id: 'overview', label: 'Overview', icon: <Icons.ChartPie size={22} /> },
-    { id: 'users', label: 'Users', icon: <Icons.User size={22} /> },
-    { id: 'business-verification', label: 'Business Verification', icon: <Icons.Shield size={22} /> },
-    { id: 'bookings', label: 'Bookings', icon: <Icons.Calendar size={22} /> },
+    { id: 'bookings', label: 'Bookings', icon: <Icons.Calendar size={22} />, group: 'Daily work', guide: 'Reservations, payments & alerts' },
     { id: 'payments', label: 'Payments', icon: <Icons.Money size={22} /> },
-    { id: 'hotels', label: 'Hotels', icon: <Icons.Hotel size={22} /> },
-    { id: 'itineraries', label: 'Itineraries', icon: <Icons.Route size={22} /> },
+    { id: 'notifications', label: 'Notifications', icon: <Icons.Bell size={22} /> },
+    { id: 'users', label: 'Users', icon: <Icons.User size={22} />, group: 'People & verification', guide: 'Accounts & owner requirements' },
+    { id: 'business-verification', label: 'Business Verification', icon: <Icons.Shield size={22} /> },
+    { id: 'hotels', label: 'Hotels', icon: <Icons.Hotel size={22} />, group: 'Tourism content', guide: 'Listings, trips & guest feedback' },
     { id: 'attractions', label: 'Attractions', icon: <Icons.Attraction size={22} /> },
-    { id: 'reviews', label: 'Reviews', icon: <Icons.Star size={22} /> },
+    { id: 'itineraries', label: 'Itineraries', icon: <Icons.Route size={22} /> },
     { id: 'maps', label: 'Maps', icon: <Icons.Map size={22} /> },
+    { id: 'reviews', label: 'Reviews', icon: <Icons.Star size={22} /> },
+    { id: 'reports', label: 'Reports', icon: <Icons.ChartLineUp size={22} />, group: 'Insights & system', guide: 'Reporting, settings & history' },
     { id: 'hero', label: 'Customization', icon: <Icons.Sun size={22} /> },
     { id: 'chatbot', label: 'Chatbot', icon: <Icons.Chat size={22} /> },
     { id: 'moderation', label: 'Moderation', icon: <Icons.Chat size={22} /> },
-    { id: 'reports', label: 'Reports', icon: <Icons.ChartLineUp size={22} /> },
     { id: 'archive', label: 'Archive', icon: <Icons.Archive size={22} /> },
     { id: 'system-logs', label: 'System Logs', icon: <Icons.Document size={22} /> },
   ];
@@ -2686,7 +2707,7 @@ const AdminDashboard = () => {
         <aside className={`gov-sidebar${navOpen ? ' is-open' : ''}`}>
           {/* Sidebar Brand */}
           <div className="gov-sidebar-brand">
-            <Link to="/admin" className="gov-brand">
+            <Link to="/admin" className="gov-brand" onClick={event => { event.preventDefault(); setSelectedModule('overview'); setNavOpen(false); navigate('/admin'); }}>
               <img
                 className="gov-logo-image"
                 src={naujanGoLogo}
@@ -2709,14 +2730,17 @@ const AdminDashboard = () => {
             </button>
           </div>
           <nav className="gov-nav" id="admin-nav">
-            {modules.map((mod, i) => (
+            {modules.map((mod, i) => (<React.Fragment key={mod.id}>
+              {mod.group && <div className="admin-nav-group" role="heading" aria-level="2"><strong>{mod.group}</strong><small>{mod.guide}</small></div>}
               <button
-                key={mod.id}
                 style={{ '--i': i }}
                 className={`gov-nav-btn${activeModule === mod.id ? ' is-active' : ''}`}
+                aria-current={activeModule === mod.id ? 'page' : undefined}
+                aria-label={mod.id === 'notifications' ? 'Notifications' : undefined}
                 onClick={() => {
                   setNavOpen(false);
                   setActiveModule(mod.id);
+                  if (mod.id === 'notifications') notificationFeed.refresh();
                   if (mod.id === 'users') loadUsers();
                   if (mod.id === 'hotels') { loadHotels(); loadUsers(); }
                   if (mod.id === 'itineraries') { loadItineraries(); loadItineraryTemplates(); }
@@ -2734,6 +2758,7 @@ const AdminDashboard = () => {
               >
                 <span className="gov-nav-btn__icon">{mod.icon}</span>
                 <span className="gov-nav-btn__label">{mod.label}</span>
+                {mod.id === 'notifications' && <NotificationBadge count={notificationFeed.unreadCount} />}
                 {mod.id === 'system-logs' && Number(logStats?.error || 0) > 0 && (
                   <span
                     title={`${logStats.error} error(s) in the last 24 hours`}
@@ -2747,12 +2772,13 @@ const AdminDashboard = () => {
                     {logStats.error}
                   </span>
                 )}
-              </button>
+              </button></React.Fragment>
             ))}
           </nav>
         </aside>
 
         <main className="gov-main">
+          {activeModule === 'notifications' && <DashboardNotifications feed={notificationFeed} role="admin" onOpen={setActiveModule} />}
           {/* Overview — loading / error fallback */}
           {activeModule === 'overview' && !stats && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '1rem' }}>

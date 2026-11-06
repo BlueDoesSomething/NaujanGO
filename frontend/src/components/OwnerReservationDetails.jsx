@@ -7,7 +7,7 @@ import { formatHotelCurrency } from '../utils/hotelCurrency';
 import { getBookingPaymentMethod, getPaymentMethodLabel } from '../utils/paymentDisplay';
 import { isExternalPaymentBooking, PAY_AT_PROPERTY_NOTICE } from '../utils/bookingPaymentPolicy';
 
-export default function OwnerReservationDetails({ booking, onClose, onCancel, onPayments, onMessage, t }) {
+export default function OwnerReservationDetails({ booking, onClose, onCancel, onPayments, onMessage, paymentsDisabled = false, t }) {
   const external = isExternalPaymentBooking(booking);
   let snapshot = booking.policy_snapshot;
   if (typeof snapshot === 'string') { try { snapshot = JSON.parse(snapshot); } catch { snapshot = null; } }
@@ -23,7 +23,7 @@ export default function OwnerReservationDetails({ booking, onClose, onCancel, on
   ];
   return <OwnerDialog title={`Reservation #${booking.booking_id}`} onClose={onClose} actions={<>
     {onMessage && <button type="button" className="gov-btn-ghost" onClick={onMessage}>Message guest</button>}
-    {!external && <button type="button" className="gov-btn-ghost" onClick={onPayments}>View payments</button>}
+    {!external && <button type="button" className="gov-btn-ghost" onClick={onPayments}>{paymentsDisabled ? 'View payment history' : 'View payments'}</button>}
     {['pending', 'confirmed'].includes(booking.status) && <button type="button" className="gov-btn-danger" onClick={onCancel}>Cancel reservation…</button>}
   </>}>
     {external && <p>{PAY_AT_PROPERTY_NOTICE}</p>}

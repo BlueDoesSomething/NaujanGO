@@ -22,6 +22,8 @@ import OwnerTourismArrivals from '../components/OwnerTourismArrivals';
 import TourismArrivalReminder from '../components/TourismArrivalReminder';
 import BookingConversation from '../components/BookingConversation';
 import useBookingPolicy from '../hooks/useBookingPolicy';
+import useDashboardNotifications from '../hooks/useDashboardNotifications';
+import DashboardNotifications, { NotificationBadge } from '../components/DashboardNotifications';
 import { isExternalPaymentBooking } from '../utils/bookingPaymentPolicy';
 import { formatHotelCurrency } from '../utils/hotelCurrency';
 import { OWNER_PATHS, ownerTabFromPath, ownerStartingPrice, roomsForHotel, validateOwnerHotel, ownerTodayTasks } from '../utils/ownerDashboard';
@@ -45,6 +47,7 @@ const getHotelPaymentMethodOptions = HOTEL_PAYMENT_METHOD_OPTIONS;
 const OwnerDashboard = () => {
   const bookingPolicy = useBookingPolicy();
   const { user, logout } = useAuth();
+  const notificationFeed = useDashboardNotifications(user?.user_id);
   const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
@@ -277,7 +280,7 @@ const OwnerDashboard = () => {
     setNavOpen(false);
     if (activeTab === 'reviews') fetchReviews();
     if (activeTab === 'analytics') loadAnalytics();
-    if (activeTab === 'messages') loadNotifications();
+    if (activeTab === 'messages') loadMessages();
     if (activeTab === 'archive') { loadArchivedBookings(); loadArchivedPayments(); }
   }, [activeTab, dashboardLoaded]);
 
@@ -294,8 +297,6 @@ const OwnerDashboard = () => {
     const [replyingToReview, setReplyingToReview] = useState(null);
     const [reviewReply, setReviewReply] = useState('');
   
-    // Notifications State
-    const [notifications, setNotifications] = useState([]);
   const [messages, setMessages] = useState([]);
     const [messageSearch, setMessageSearch] = useState('');
     const [messageFilter, setMessageFilter] = useState('all');
@@ -1140,11 +1141,12 @@ const OwnerDashboard = () => {
     { id: 'payment-setup', label: 'Payment Setup', icon: <Icons.Money size={22} /> },
     { id: 'bookings', label: 'Reservations', icon: <Icons.Calendar size={22} /> },
     { id: 'calendar', label: 'Availability', icon: <Icons.Calendar size={22} /> },
-    { id: 'payments', label: 'Payments', icon: <Icons.Money size={22} /> },
+    { id: 'payments', label: bookingPolicy.paymentsDisabled ? 'Payment History' : 'Payments', icon: <Icons.Money size={22} /> },
     { id: 'reviews', label: 'Reviews', icon: <Icons.Star size={22} /> },
     { id: 'analytics', label: 'Analytics', icon: <Icons.ChartLineUp size={22} /> },
     { id: 'tourism-arrivals', label: 'Tourism Arrivals', icon: <Icons.Users size={22} /> },
     { id: 'profile', label: 'Business & Verification', icon: <Icons.User size={22} /> },
+    { id: 'notifications', label: 'Notifications', icon: <Icons.Bell size={22} /> },
     { id: 'messages', label: 'Messages', icon: <Icons.Email size={22} /> },
     { id: 'archive', label: 'Archive', icon: <Icons.Archive size={22} /> }
   ];
@@ -1152,12 +1154,13 @@ const OwnerDashboard = () => {
   // Limited authorization: incomplete/ unverified legitimacy requirements
   // restricts the dashboard to hotel listing management + business profile.
   const isLimitedOwner = authorization !== 'full' && user?.role !== 'admin';
-  const visibleOwnerModules = isLimitedOwner
-    ? ownerModules.filter((module) => ['hotels', 'rooms', 'payment-setup', 'tourism-arrivals', 'profile'].includes(module.id))
-    : ownerModules;
+  const visibleOwnerModules = ownerModules.filter(module =>
+    (module.id !== 'payment-setup' || !bookingPolicy.paymentsDisabled)
+    && (!isLimitedOwner || ['hotels', 'rooms', 'payment-setup', 'tourism-arrivals', 'profile', 'notifications'].includes(module.id))
+  );
 
   useEffect(() => {
-    if (dashboardLoaded && isLimitedOwner && !['hotels', 'rooms', 'payment-setup', 'tourism-arrivals', 'profile'].includes(activeTab)) {
+    if (dashboardLoaded && isLimitedOwner && !['hotels', 'rooms', 'payment-setup', 'tourism-arrivals', 'profile', 'notifications'].includes(activeTab)) {
       navigate(OWNER_PATHS.hotels, { replace: true });
     }
   }, [isLimitedOwner, activeTab, dashboardLoaded]);
@@ -1198,11 +1201,6 @@ const OwnerDashboard = () => {
     });
 
     const normalizedMessageSearch = messageSearch.trim().toLowerCase();
-    const filteredNotifications = notifications.filter((notification) => {
-      if (messageFilter === 'unread' && notification.is_read) return false;
-      if (!normalizedMessageSearch) return true;
-      return `${notification.title} ${notification.message}`.toLowerCase().includes(normalizedMessageSearch);
-    });
     const filteredMessages = messages.filter((message) => {
       if (messageFilter === 'unread' && (message.is_read || !isCurrentUser(message.receiver_id))) return false;
       if (messageFilter === 'sent' && !isCurrentUser(message.sender_id)) return false;
@@ -1212,7 +1210,6 @@ const OwnerDashboard = () => {
         .toLowerCase()
         .includes(normalizedMessageSearch);
     });
-    const unreadNotificationCount = notifications.filter((notification) => !notification.is_read).length;
     const unreadMessageCount = messages.filter((message) => !message.is_read && isCurrentUser(message.receiver_id)).length;
   
     const handleBookingStatusChange = (bookingId, newStatus) => {
@@ -1282,30 +1279,13 @@ const OwnerDashboard = () => {
       }
     };
   
-    const loadNotifications = async () => {
+    const loadMessages = async () => {
       try {
-        const [notifRes, messagesRes] = await Promise.all([
-          api.get('/messages/notifications'),
-          api.get('/messages/messages')
-        ]);
-        setNotifications(notifRes.data || []);
+        const messagesRes = await api.get('/messages/messages');
         setMessages(messagesRes.data || []);
       } catch (error) {
-        console.error('Error loading notifications:', error);
-        setNotifications([]);
+        console.error('Error loading messages:', error);
         setMessages([]);
-      }
-    };
-
-    const markAllNotificationsRead = async () => {
-      try {
-        await api.put('/messages/notifications/read-all');
-        setNotifications((currentNotifications) => currentNotifications.map((notification) => ({
-          ...notification,
-          is_read: true
-        })));
-      } catch (error) {
-        console.error('Failed to mark all notifications as read:', error);
       }
     };
 
@@ -1334,7 +1314,8 @@ const OwnerDashboard = () => {
           message: messageComposer.message.trim()
         });
         setMessageComposer(null);
-        await loadNotifications();
+        await loadMessages();
+        await notificationFeed.refresh();
       } catch (error) {
         console.error('Failed to send message:', error);
         setMessageSendError(error.response?.data?.error || 'Failed to send message. Please try again.');
@@ -1462,21 +1443,25 @@ const OwnerDashboard = () => {
                 <button
                   key={module.id}
                   className={`gov-nav-btn${isActive ? ' is-active' : ''}`}
+                  aria-current={isActive ? 'page' : undefined}
+                  aria-label={module.id === 'notifications' ? 'Notifications' : undefined}
                   style={{ '--i': index }}
                   onClick={() => {
                     setNavOpen(false);
                     setActiveTab(module.id);
+                    if (module.id === 'notifications') notificationFeed.refresh();
                   }}
                 >
                   <span className="gov-nav-btn__icon">{module.icon}</span>
                   <span className="gov-nav-btn__label">
                     {module.label}
-                    {module.id === 'messages' && (unreadNotificationCount + unreadMessageCount) > 0 && (
+                    {module.id === 'messages' && unreadMessageCount > 0 && (
                       <span style={{ marginLeft: '0.5rem', minWidth: '1.25rem', padding: '0.1rem 0.35rem', borderRadius: '999px', background: '#c62828', color: '#fff', fontSize: '0.7rem', fontWeight: 800, textAlign: 'center' }}>
-                        {unreadNotificationCount + unreadMessageCount}
+                        {unreadMessageCount}
                       </span>
                     )}
                   </span>
+                  {module.id === 'notifications' && <NotificationBadge count={notificationFeed.unreadCount} />}
                 </button></React.Fragment>
               );
             })}
@@ -1487,6 +1472,7 @@ const OwnerDashboard = () => {
         {notice && <div className="owner-notice" role="status">{notice}<button type="button" aria-label="Dismiss notification" onClick={() => setNotice('')}>×</button></div>}
         {dashboardError && <div className="owner-error" role="alert">{dashboardError} Displayed data may be out of date. <button type="button" onClick={fetchDashboardData}>Retry</button></div>}
         {actionError && <p className="owner-error" role="alert">{actionError}</p>}
+        {activeTab === 'notifications' && <DashboardNotifications feed={notificationFeed} role="owner" onOpen={isLimitedOwner ? undefined : setActiveTab} />}
         {activeTab === 'rooms' && <section className="owner-rooms-page">
           <h1 className="gov-page-title">Rooms &amp; Rates</h1>
           <p>Set room types, physical inventory and prices here. Use Availability for date-specific limits and closures.</p>
@@ -1706,7 +1692,7 @@ const OwnerDashboard = () => {
                   </div>
                   <nav className="owner-editor-tabs" aria-label="Property editor sections">
                     {[['details', 'Details & Contact'], ['photos', 'Photos'], ['policies', 'Policies & House Rules']].map(([value, label]) => <button type="button" key={value} aria-pressed={hotelSection === value} onClick={() => setHotelSection(value)}>{label}</button>)}
-                    {!creatingHotel && <button type="button" onClick={() => setActiveTab('payment-setup')}>Payment setup ↗</button>}
+                    {!creatingHotel && !bookingPolicy.paymentsDisabled && <button type="button" onClick={() => setActiveTab('payment-setup')}>Payment setup ↗</button>}
                   </nav>
                   {hotelSaveError && <p className="owner-error" role="alert">{hotelSaveError}</p>}
                   {Object.keys(hotelErrors).length > 0 && <div className="owner-error" role="alert"><strong>Please check these fields:</strong><ul>{Object.entries(hotelErrors).map(([key, error]) => <li key={key}>{error}</li>)}</ul></div>}
@@ -2349,7 +2335,7 @@ const OwnerDashboard = () => {
         )}
 
         {/* Payment configuration is separate from the transaction ledger. */}
-        {activeTab === 'payment-setup' && bookingPolicy.paymentsDisabled && <section className="gov-glass-panel"><h1 className="gov-page-title">Online payments disabled</h1><p>Bookings remain available in the existing Reservations module. Review and confirm bookings as usual, and use Message guest for direct communication. Guests pay at the property; no online payment or advance deposit is required through NaujanGO.</p><p>Saved gateway methods and payment plans are retained but are not offered to guests while this restriction is active. Owners cannot override the admin switch.</p><button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('bookings')}>Open Reservations</button>{bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}</section>}
+        {activeTab === 'payment-setup' && bookingPolicy.paymentsDisabled && <section className="gov-glass-panel"><h1 className="gov-page-title">{bookingPolicy.loading ? 'Checking online payment policy…' : bookingPolicy.error ? 'Online payment policy unavailable' : 'Online payments disabled'}</h1><p>Bookings remain available in the existing Reservations module. Review and confirm bookings as usual, and use Message guest for direct communication. Guests pay at the property; no online payment or advance deposit is required through NaujanGO.</p><p>Saved gateway methods and payment plans are retained but are not offered to guests while this restriction is active. Owners cannot override the admin switch.</p><button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('bookings')}>Open Reservations</button>{bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}</section>}
         {activeTab === 'payment-setup' && !bookingPolicy.paymentsDisabled && (
           <div>
             <h1 className="gov-page-title">
@@ -2421,8 +2407,13 @@ const OwnerDashboard = () => {
 
         {activeTab === 'payments' && (
           <div>
-            <h1 className="gov-page-title">Payments</h1>
-            <p>Recorded transactions and payment attempts. To change how guests pay, open <button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('payment-setup')}>Payment Setup</button>.</p>
+            <h1 className="gov-page-title">{bookingPolicy.paymentsDisabled ? 'Payment History' : 'Payments'}</h1>
+            {bookingPolicy.paymentsDisabled ? <section className="gov-glass-panel" aria-label="Online payment availability" aria-busy={bookingPolicy.loading}>
+              <p role="status"><strong>{bookingPolicy.loading ? 'Checking online payment policy…' : bookingPolicy.error ? 'Online payment policy unavailable.' : 'Online payments disabled by the administrator.'}</strong></p>
+              <p>{bookingPolicy.loading || bookingPolicy.error ? 'Payment setup and financial actions remain unavailable until the current policy can be confirmed.' : 'Guests pay at the property. Owners cannot override the admin switch.'} Bookings remain available under Reservations; use Message guest to contact guests.</p>
+              <p>View-only history: existing transactions, filters and downloads are retained. Historical totals do not mean online payments are enabled. Contact the administrator about refunds for earlier payments.</p>
+              {bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" className="gov-btn-ghost" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}
+            </section> : <p>Recorded transactions and payment attempts. To change how guests pay, open <button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('payment-setup')}>Payment Setup</button>.</p>}
              {/* Payment Filters */}
             <div className="gov-glass-panel">
               {/* Search Bar Section - Prominent and Full Width */}
@@ -2614,7 +2605,7 @@ const OwnerDashboard = () => {
                             >
                               View
                             </button>
-                            {payment.status === 'succeeded' && (
+                            {!bookingPolicy.paymentsDisabled && payment.status === 'succeeded' && (
                               <button
                                 className="gov-btn-warning"
                                 onClick={() => setRefundModal(payment)}
@@ -2622,7 +2613,7 @@ const OwnerDashboard = () => {
                                 Refund
                               </button>
                             )}
-                            {Number(payment.archived) === 0 && ['succeeded', 'failed', 'refunded'].includes(payment.status) && (
+                            {!bookingPolicy.paymentsDisabled && Number(payment.archived) === 0 && ['succeeded', 'failed', 'refunded'].includes(payment.status) && (
                               <button
                                 className="gov-btn-ghost"
                                 onClick={async () => {
@@ -2641,9 +2632,9 @@ const OwnerDashboard = () => {
                                 Archive
                               </button>
                             )}
-                            {payment.status === 'pending' && (
+                            {!bookingPolicy.paymentsDisabled && payment.status === 'pending' && (
                               <>
-                                {!bookingPolicy.paymentsDisabled && <button
+                                <button
                                   onClick={async () => {
                                     if (window.confirm('Confirm this pending payment?')) {
                                       try {
@@ -2660,7 +2651,7 @@ const OwnerDashboard = () => {
                                   className="gov-btn-primary"
                                 >
                                   Confirm
-                                </button>}
+                                </button>
                                 <button
                                   onClick={async () => {
                                     if (window.confirm('Cancel this pending payment?')) {
@@ -2785,7 +2776,7 @@ const OwnerDashboard = () => {
             )}
 
             {/* Refund Modal */}
-            {refundModal && (
+            {refundModal && !bookingPolicy.paymentsDisabled && (
               <div style={{
                 position: 'fixed',
                 top: 0,
@@ -3708,11 +3699,11 @@ const OwnerDashboard = () => {
             </div>
           )}
 
-          {/* Messages & Notifications */}
+          {/* Direct messages remain separate from account notifications. */}
           {activeTab === 'messages' && (
             <div>
               <h1 className="gov-page-title">
-                <Icons.Email size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Messages & Notifications
+                <Icons.Email size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Messages
               </h1>
 
               <div className="gov-glass-panel" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -3720,8 +3711,8 @@ const OwnerDashboard = () => {
                   type="search"
                   value={messageSearch}
                   onChange={(event) => setMessageSearch(event.target.value)}
-                  placeholder="Search messages and notifications"
-                  aria-label="Search messages and notifications"
+                  placeholder="Search messages"
+                  aria-label="Search messages"
                   style={{ flex: '1 1 260px', minWidth: '220px', padding: '0.7rem 0.85rem', border: '1px solid #c8e6c9', borderRadius: '6px' }}
                 />
                 <select
@@ -3730,83 +3721,16 @@ const OwnerDashboard = () => {
                   aria-label="Filter messages"
                   style={{ padding: '0.7rem 0.85rem', border: '1px solid #c8e6c9', borderRadius: '6px' }}
                 >
-                  <option value="all">All activity</option>
-                  <option value="unread">Unread ({unreadNotificationCount + unreadMessageCount})</option>
+                  <option value="all">All messages</option>
+                  <option value="unread">Unread ({unreadMessageCount})</option>
                   <option value="received">Received messages</option>
                   <option value="sent">Sent messages</option>
                 </select>
-                <button className="gov-btn-ghost" onClick={markAllNotificationsRead} disabled={unreadNotificationCount === 0}>
-                  Mark notifications read
-                </button>
                 <button className="gov-btn-ghost" onClick={markAllMessagesRead} disabled={unreadMessageCount === 0}>
                   Mark messages read
                 </button>
               </div>
             
-              {/* Notifications Section */}
-              <div className="gov-glass-panel">
-                <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1B5E20', marginBottom: '1.5rem' }}>
-                  <Icons.Sparkles size={20} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Recent Notifications
-                </h2>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  {filteredNotifications.length > 0 ? (
-                    filteredNotifications.map((notif) => (
-                      <div key={notif.notification_id} style={{
-                        padding: '1.25rem',
-                        background: notif.is_read ? '#f8fdf7' : '#e8f5e9',
-                        borderRadius: '8px',
-                        border: '1px solid #c8e6c9',
-                        borderLeft: `4px solid ${notif.is_read ? '#c8e6c9' : '#2E7D32'}`,
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        gap: '1rem',
-                        transition: 'all 0.2s',
-                        cursor: 'pointer'
-                      }}
-                      onClick={async () => {
-                        if (!notif.is_read) {
-                          try {
-                            await api.put(`/messages/notifications/${notif.notification_id}/read`);
-                            loadNotifications();
-                          } catch (err) {
-                            console.error('Failed to mark as read:', err);
-                          }
-                        }
-                      }}
-                      onMouseOver={(e) => e.currentTarget.style.background = '#e8f5e9'}
-                      onMouseOut={(e) => e.currentTarget.style.background = notif.is_read ? '#f8fdf7' : '#e8f5e9'}>
-                        <div style={{ fontSize: '2rem' }}>
-                          {notif.type === 'booking' ? <Icons.Calendar size={20} /> : notif.type === 'payment' ? <Icons.Money size={20} /> : notif.type === 'message' ? <Icons.Chat size={20} /> : <Icons.Sparkles size={20} />}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '1rem', fontWeight: 700, color: '#1B5E20', marginBottom: '0.25rem' }}>
-                            {notif.title}
-                          </div>
-                          <div style={{ fontSize: '0.9rem', color: '#2d3748', marginBottom: '0.5rem' }}>
-                            {notif.message}
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: '#718096' }}>
-                            {new Date(notif.created_at).toLocaleString()}
-                          </div>
-                        </div>
-                        {!notif.is_read && (
-                          <div style={{
-                            width: '10px',
-                            height: '10px',
-                            borderRadius: '50%',
-                            background: '#2E7D32'
-                          }} />
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div style={{ padding: '2rem', textAlign: 'center', color: '#718096' }}>
-                      {notifications.length > 0 ? 'No notifications match your filter' : 'No notifications yet'}
-                    </div>
-                  )}
-                </div>
-              </div>
-
               {/* Messages Section */}
               <div className="gov-glass-panel">
                 <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#1B5E20', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
@@ -3833,7 +3757,8 @@ const OwnerDashboard = () => {
                                   ? { ...currentMessage, is_read: true }
                                   : currentMessage
                               )));
-                              loadNotifications();
+                              loadMessages();
+                              notificationFeed.refresh();
                           } catch (err) {
                             console.error('Failed to mark message as read:', err);
                           }
@@ -3958,7 +3883,7 @@ const OwnerDashboard = () => {
               }}>
                 {[
                   { id: 'bookings', label: 'Booking & Reservation', icon: <Icons.Calendar size={18} /> },
-                  { id: 'payments', label: 'Payment Management', icon: <Icons.Money size={18} /> }
+                  { id: 'payments', label: bookingPolicy.paymentsDisabled ? 'Payment History' : 'Payment Management', icon: <Icons.Money size={18} /> }
                 ].map((sub) => (
                   <button
                     key={sub.id}
@@ -4117,7 +4042,7 @@ const OwnerDashboard = () => {
           )}
           {archiveSelection && <ArchiveRecordModal {...archiveSelection} onClose={() => setArchiveSelection(null)} />}
           {activeTab === 'bookings' && messageBooking && <BookingConversation key={messageBooking.booking_id} booking={messageBooking} owner onClose={() => setMessageBooking(null)} onDirtyChange={reportConversationDirty} onBusyChange={reportConversationBusy} />}
-          {selectedReservation && !pendingAction && <OwnerReservationDetails booking={selectedReservation} t={t} onClose={() => setSelectedReservation(null)}
+          {selectedReservation && !pendingAction && <OwnerReservationDetails booking={selectedReservation} t={t} paymentsDisabled={bookingPolicy.paymentsDisabled} onClose={() => setSelectedReservation(null)}
             onCancel={() => handleBookingStatusChange(selectedReservation.booking_id, 'cancelled')}
             onMessage={() => { setMessageBooking(selectedReservation); setSelectedReservation(null); }}
             onPayments={() => { setSelectedReservation(null); setPaymentSearch(selectedReservation.receipt_number || ''); setActiveTab('payments'); }} />}

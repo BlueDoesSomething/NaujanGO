@@ -1332,6 +1332,26 @@
   padding: 0.75rem 0.8rem 0.25rem;
 }
 
+/* Sidebar guide: match the owner's labeled sections without shrinking actions. */
+.gov-dashboard--admin .gov-nav { justify-content: flex-start; flex: 0 0 auto; }
+.gov-dashboard--admin .gov-nav-btn { flex: 0 0 auto; min-height: 44px; }
+.admin-nav-group { padding: 1rem .65rem .4rem; color: #475569; line-height: 1.4; }
+.admin-nav-group strong { display: block; font-size: .67rem; text-transform: uppercase; letter-spacing: .07em; }
+.admin-nav-group small { display: block; margin-top: .2rem; font-size: .68rem; }
+[data-theme="dark"] .admin-nav-group { color: #cbd5e1; }
+.gov-dashboard--admin .gov-menu-btn { display: none; }
+@media (max-width: 1024px) {
+  .gov-dashboard--admin .gov-shell { margin-left: 0; }
+  .gov-dashboard--admin .gov-sidebar { position: fixed; top: 0; left: 0; width: min(300px, 85vw); height: 100dvh; overflow-y: auto; transform: translateX(-105%); z-index: 1400; background: var(--surface, white); transition: transform .15s ease; animation: none; }
+  .gov-dashboard--admin .gov-sidebar.is-open { transform: translateX(0); }
+  .gov-dashboard--admin .gov-nav { flex-direction: column; flex-wrap: nowrap; overflow-x: visible; align-items: stretch; }
+  .gov-dashboard--admin .gov-nav-btn { border-radius: 8px; white-space: normal; }
+  .gov-dashboard--admin .gov-menu-btn { display: flex; position: fixed; top: .75rem; left: .75rem; width: 44px; height: 44px; border-radius: 10px; border: 1px solid #cbd5e1; background: #166534; flex-direction: column; align-items: center; justify-content: center; gap: 5px; z-index: 1450; }
+  .gov-dashboard--admin .gov-menu-btn span { display: block; width: 20px; height: 2px; background: white; }
+  .gov-dashboard--admin .gov-nav-scrim { position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1350; }
+  .gov-dashboard--admin .gov-main { padding-top: 4.5rem; min-width: 0; }
+}
+
 /* ════════════════════════════════════════
    CHARTS
 ════════════════════════════════════════ */

@@ -360,6 +360,7 @@ const App = () => {
                   <Route path="/users" element={<AdminDashboard />} />
                   <Route path="/bookings" element={<AdminDashboard />} />
                   <Route path="/payments" element={<AdminDashboard />} />
+                  <Route path="/notifications" element={<AdminDashboard />} />
                   <Route path="/itineraries" element={<AdminDashboard />} />
                   <Route path="/roles" element={<AdminDashboard />} />
                   <Route path="/attractions" element={<AdminDashboard />} />

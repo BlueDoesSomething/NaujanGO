@@ -6,12 +6,11 @@ export const OWNER_PATHS = {
   overview: '/owner', hotels: '/owner/property', rooms: '/owner/rooms',
   calendar: '/owner/availability', 'payment-setup': '/owner/payment-setup',
   bookings: '/owner/bookings', payments: '/owner/payments', reviews: '/owner/reviews',
-  analytics: '/owner/analytics', 'tourism-arrivals': '/owner/tourism-arrivals', profile: '/owner/profile', messages: '/owner/messages', archive: '/owner/archive'
+  analytics: '/owner/analytics', 'tourism-arrivals': '/owner/tourism-arrivals', profile: '/owner/profile', notifications: '/owner/notifications', messages: '/owner/messages', archive: '/owner/archive'
 };
 export const ownerTabFromPath = pathname => {
   const path = pathname.replace(/\/$/, '');
   if (path === '/owner/hotels') return 'hotels';
-  if (path === '/owner/notifications') return 'messages';
   return Object.keys(OWNER_PATHS).find(key => OWNER_PATHS[key] === path) || 'overview';
 };
 

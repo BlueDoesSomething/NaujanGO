@@ -5,10 +5,10 @@ import { OWNER_PATHS, ownerTabFromPath, ownerStartingPrice, validateOwnerHotel, 
 const hotel = { hotel_id: 1, currency: 'PHP', price_per_night: '0.00' };
 const room = { room_id: 2, hotel_id: 1, price_per_night: 450, is_active: 1, quantity_available: 2 };
 
-test('owner routes have stable URLs and old hotel/notification links still resolve', () => {
+test('owner routes have stable URLs, notifications have their own page and old hotel links still resolve', () => {
   for (const [tab, path] of Object.entries(OWNER_PATHS)) assert.equal(ownerTabFromPath(path), tab);
   assert.equal(ownerTabFromPath('/owner/hotels'), 'hotels');
-  assert.equal(ownerTabFromPath('/owner/notifications'), 'messages');
+  assert.equal(ownerTabFromPath('/owner/notifications'), 'notifications');
   assert.equal(ownerTabFromPath('/owner/rooms/'), 'rooms');
 });
 

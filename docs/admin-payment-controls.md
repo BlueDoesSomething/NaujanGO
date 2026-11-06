@@ -23,6 +23,8 @@ Payment is made at the property. NaujanGO does not process or verify that paymen
 
 Existing payment history, valid receipts, provider verification/callbacks and refunds for previously collected money are preserved. **Turning OFF cannot retract gateway checkout pages already opened**: administrators must review active sessions and outstanding charges/refunds in the provider dashboard. Never stop recording genuine earlier provider results.
 
+The owner menu hides **Payment Setup** while OFF. **Payment History** (`/owner/payments`) remains available for viewing, filtering and downloading earlier records, with an explicit disabled notice and no payment-status or archive actions. Owners should contact the administrator about refunds for earlier payments; admin refund handling is unchanged. Direct links to `/owner/payment-setup` explain the restriction instead of offering configuration. While the policy is loading or unavailable, controls stay hidden without claiming the administrator has disabled payments. Enabling payments restores the usual setup links and transaction controls.
+
 ## Direct booking-linked messages, not a chatbot
 
 - Guests select **Message property** on the booking; owners select **Message guest** on the same reservation (also available from reservation details).

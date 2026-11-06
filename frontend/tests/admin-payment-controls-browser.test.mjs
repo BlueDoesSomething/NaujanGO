@@ -6,6 +6,28 @@ const options = { skip: browserAvailable ? false : 'Requires Node 22+ and Chromi
 const hotel = { id: 46, hotel_id: 46, name: 'Booking Fixture Inn', location: 'Naujan', pricePerNight: 500, price_per_night: 500, currency: 'PHP', amenities: [], images: [], image_urls: [], rooms_total: 2, rooms_available: 2, is_active: 1, booking_enabled: true, allowed_payment_methods: ['card', 'qrph'], allowed_payment_options: ['reservation'], reservation_fee: 100, check_in_time: '14:00', check_out_time: '12:00', payment_terms_text: 'OLD ADVANCE DEPOSIT LINE' };
 const room = { room_id: 9, hotel_id: 46, room_type_name: 'Standard Queen', price_per_night: 500, currency: 'PHP', capacity: 2, quantity_available: 2, is_active: 1, image_urls: [], amenities: [], room_features: [] };
 let browser, role = 'user', policy = { online_payments_enabled: false, storage_ready: true, lock_version: 1 }, messages = [], bookings = [], failSend = false;
+let failPolicy = false, heldPolicyResponse = null, authorization = 'full';
+const historicalPayments = [
+  { payment_id: 601, booking_id: 81, booking_reference: 'HB000081', hotel_name: hotel.name, room_type_name: room.room_type_name, customer_name: 'Historical Paid Guest', amount: 750, currency: 'PHP', method: 'card', provider: 'paymongo', status: 'succeeded', archived: 0, customer_reference_number: 'HISTORY-PAID-601', transaction_reference: 'TX-601', created_at: '2026-10-01T00:00:00Z', paid_at: '2026-10-01T00:01:00Z' },
+  { payment_id: 602, booking_id: 82, booking_reference: 'HB000082', hotel_name: hotel.name, room_type_name: room.room_type_name, customer_name: 'Historical Pending Guest', amount: 250, currency: 'PHP', method: 'gcash', provider: 'paymongo', status: 'pending', archived: 0, customer_reference_number: 'HISTORY-PENDING-602', created_at: '2026-10-02T00:00:00Z' },
+  { payment_id: 603, booking_id: 83, booking_reference: 'HB000083', hotel_name: hotel.name, customer_name: 'Historical Archived Guest', amount: 100, currency: 'PHP', method: 'card', status: 'succeeded', archived: 1, created_at: '2026-09-01T00:00:00Z' }
+];
+const originalPaymentHistory = JSON.stringify(historicalPayments);
+const matchingPayments = url => historicalPayments.filter(payment => {
+  const query = url.searchParams;
+  return (query.get('archived') === 'all' || Number(payment.archived) === 0)
+    && (!query.has('status') || payment.status === query.get('status'))
+    && (!query.has('method') || payment.method === query.get('method'))
+    && (!query.has('search') || JSON.stringify(payment).toLowerCase().includes(query.get('search').toLowerCase()));
+});
+const financialWrites = () => browser.writes.filter(request => /^\/api\/(?:owner\/payments|payments)(?:\/|$)/.test(new URL(request.url).pathname));
+const assertHistoryOnly = async () => {
+  assert.equal(await browser.evaluate(`document.querySelector('.gov-page-title').textContent`), 'Payment History');
+  assert.match(await browser.evaluate(`document.querySelector('#owner-nav').textContent`), /Payment History/);
+  assert.doesNotMatch(await browser.evaluate(`document.querySelector('#owner-nav').textContent`), /Payment Setup/);
+  assert.ok(!await browser.evaluate(`[...document.querySelectorAll('.gov-main button')].some(node => /^(Payment Setup|Payment setup ↗|Confirm|Cancel|Refund|Process Refund|Archive)$/.test(node.textContent.trim()))`));
+  assert.ok(await browser.evaluate(`[...document.querySelectorAll('.gov-table tbody button')].every(node => node.textContent.trim() === 'View')`));
+};
 const setInput = (selector, value) => browser.evaluate(`(() => { const node = document.querySelector(${JSON.stringify(selector)}); if (!node) throw new Error('Input not found: ' + ${JSON.stringify(selector)}); Object.getOwnPropertyDescriptor(node.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, 'value').set.call(node, ${JSON.stringify(value)}); node.dispatchEvent(new Event('input', { bubbles: true })); })()`);
 const setSelect = (selector, value) => browser.evaluate(`(() => { const node = document.querySelector(${JSON.stringify(selector)}); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(node, ${JSON.stringify(value)}); node.dispatchEvent(new Event('change', { bubbles: true })); })()`);
 before(async () => {
@@ -13,7 +35,10 @@ before(async () => {
   browser = await offlineBrowser('admin-payment-controls', async (incoming, url) => {
     const path = url.pathname, body = JSON.parse(incoming.postData || '{}');
     if (path.endsWith('/auth/profile')) return { body: { user: { user_id: role === 'user' ? 1 : 7, role, username: 'Fixture Guest', email: 'guest@example.test', phone: '+639123456789', email_verified: true } } };
-    if (path === '/api/bookings/policy' || path === '/api/admin/booking-policy' && incoming.method === 'GET') return { body: policy };
+    if (path === '/api/bookings/policy' || path === '/api/admin/booking-policy' && incoming.method === 'GET') {
+      if (heldPolicyResponse) await heldPolicyResponse;
+      return failPolicy ? { status: 503, body: { error: 'Fixture policy check unavailable.' } } : { body: policy };
+    }
     if (path === '/api/admin/booking-policy' && incoming.method === 'PUT') { policy = { ...policy, online_payments_enabled: body.online_payments_enabled, lock_version: policy.lock_version + 1 }; return { body: policy }; }
     if (path === '/api/hotels') return { body: { data: [hotel] } };
     if (path === '/api/hotels/46/rooms' || path === '/api/owner/rooms') return { body: [room] };
@@ -34,8 +59,15 @@ before(async () => {
     }
     if (path === '/api/bookings/hotels' || path === '/api/owner/bookings') return { body: bookings };
     if (path === '/api/owner/hotels') return { body: [hotel] };
-    if (path === '/api/owner/profile') return { body: { authorization: 'full', businessProfile: { verification_status: 'verified' } } };
+    if (path === '/api/owner/profile') return { body: { authorization, businessProfile: { verification_status: authorization === 'full' ? 'verified' : 'pending' } } };
     if (path.endsWith('/dashboard/stats')) return { body: { hotelCount: 1, bookingStats: {}, userStats: {}, recentBookings: [] } };
+    if (path === '/api/owner/payments') return { body: matchingPayments(url) };
+    if (path === '/api/owner/payments/stats') {
+      const rows = matchingPayments(url);
+      return { body: { total_transactions: rows.length, successful_transactions: rows.filter(row => row.status === 'succeeded').length,
+        total_revenue: 850, pending_amount: rows.filter(row => row.status === 'pending').reduce((total, row) => total + row.amount, 0), currency: 'PHP', currency_count: 1,
+        historical: { currency: 'PHP', currency_count: 1 }, archive_scope: url.searchParams.get('archived') === 'all' ? 'including_archived' : 'excluding_archived' } };
+    }
     if (path.endsWith('/payments/stats')) return { body: {} };
     return { body: [] };
   });
@@ -102,4 +134,106 @@ test('only admin can control payments; disabling does not disable normal booking
   await browser.evaluate(`document.querySelector('.booking-policy-checkbox input').click()`); await browser.click('Save platform policy'); await browser.waitFor(`document.querySelector('[aria-label="Platform payment policy"] [role="status"]')`); assert.equal(policy.online_payments_enabled, true);
   await setSelect('[aria-label="Platform payment policy"] select', 'off'); await setInput('[aria-label="Platform payment policy"] textarea', 'Keep payments outside the platform.'); await browser.click('Save platform policy'); await browser.waitFor(`document.querySelector('[aria-label="Platform payment policy"]').textContent.includes('Online payments OFF')`);
   assert.equal(bookings.length, 1); assert.equal(bookings[0].status, 'confirmed'); assert.deepEqual(browser.errors, []);
+});
+
+test('disabled owner payments are view-only history with working filters and custom CSV/PDF downloads', options, async () => {
+  role = 'owner'; await browser.navigate('/owner/payments');
+  await browser.waitFor(`document.querySelector('[aria-label="Online payment availability"]')?.textContent.includes('disabled by the administrator') && document.querySelectorAll('.gov-table tbody tr').length === 2`);
+  await assertHistoryOnly();
+  assert.match(await browser.evaluate(`document.querySelector('.gov-main').textContent`), /View-only history|Guests pay at the property|Contact the administrator about refunds/);
+  assert.match(await browser.evaluate(`document.querySelector('.gov-main').textContent`), /Lifetime revenue.*₱850/s);
+  await browser.click('View'); await browser.waitFor(`document.querySelector('.gov-main').textContent.includes('Payment Details #601')`);
+  assert.match(await browser.evaluate(`document.querySelector('.gov-main').textContent`), /HISTORY-PAID-601|TX-601/);
+  await browser.click('×');
+  await browser.click('Pending'); await browser.waitFor(`document.querySelectorAll('.gov-table tbody tr').length === 1 && document.querySelector('.gov-table tbody').textContent.includes('Historical Pending Guest')`);
+  await assertHistoryOnly();
+  await browser.click('All'); await browser.waitFor(`document.querySelectorAll('.gov-table tbody tr').length === 2`);
+  await setSelect('.gov-main select', 'card'); await browser.waitFor(`document.querySelectorAll('.gov-table tbody tr').length === 1 && document.querySelector('.gov-table tbody').textContent.includes('Historical Paid Guest')`);
+  await browser.click('Clear Filters'); await browser.waitFor(`document.querySelectorAll('.gov-table tbody tr').length === 2`);
+  await browser.click('Show archived'); await browser.waitFor(`document.querySelectorAll('.gov-table tbody tr').length === 3`);
+  await setInput('.gov-main input[type="text"]', 'Historical Pending Guest');
+  await browser.waitFor(`document.querySelectorAll('.gov-table tbody tr').length === 1 && [...document.querySelectorAll('.gov-main button')].some(node => node.textContent.trim() === 'Export CSV' && !node.disabled)`);
+  await browser.evaluate(`(() => {
+    window.historyDownloads = []; window.historyBlobs = []; window.historyPrints = 0;
+    const create = URL.createObjectURL.bind(URL);
+    URL.createObjectURL = blob => { window.historyBlobs.push(blob); return create(blob); };
+    HTMLAnchorElement.prototype.click = function () { window.historyDownloads.push(this.download); };
+    window.print = () => { window.historyPrints += 1; };
+  })()`);
+  await browser.click('Export CSV');
+  const csv = await browser.evaluate(`window.historyBlobs[0].text()`);
+  assert.match(csv, /Historical Pending Guest/); assert.doesNotMatch(csv, /Historical Paid Guest|Historical Archived Guest/);
+  await browser.click('Export PDF'); await browser.waitFor(`window.historyDownloads.length === 2 && [...document.querySelectorAll('.gov-main button')].some(node => node.textContent.trim() === 'Export PDF' && !node.disabled)`);
+  assert.match(await browser.evaluate(`window.historyBlobs[1].text().then(text => text.slice(0, 5))`), /^%PDF-/);
+  assert.deepEqual(await browser.evaluate('window.historyDownloads.map(name => name.slice(-4))'), ['.csv', '.pdf']);
+  assert.equal(await browser.evaluate('window.historyPrints'), 0);
+  assert.equal(await browser.evaluate('document.querySelectorAll("iframe").length'), 0);
+  for (const width of [320, 393, 768]) {
+    await browser.viewport(width); await browser.evaluate(`document.documentElement.dataset.theme = 'dark'`);
+    assert.ok(await browser.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'), `history overflows at ${width}`);
+    await assertHistoryOnly();
+  }
+  await browser.viewport(1280); await browser.click('My Property'); await browser.waitFor(`document.querySelector('.owner-starting-price')`); await browser.click('Edit details');
+  assert.doesNotMatch(await browser.evaluate(`document.querySelector('.owner-editor-tabs').textContent`), /Payment setup/i);
+  await browser.click('Back to property');
+  await browser.navigate('/owner/payment-setup'); await browser.waitFor(`document.querySelector('.gov-page-title')?.textContent === 'Online payments disabled'`);
+  assert.equal(await browser.evaluate(`document.querySelector('[aria-label="Payment plan settings"]')`), null);
+  assert.equal(JSON.stringify(historicalPayments), originalPaymentHistory);
+  assert.deepEqual(financialWrites(), []); assert.deepEqual(browser.errors, []);
+});
+
+test('re-enabling restores owner controls; refreshing an open refund fails closed before applying an admin disable', options, async () => {
+  await browser.viewport(1280); role = 'owner'; await browser.navigate('/owner/payments');
+  await browser.waitFor(`document.querySelector('[aria-label="Online payment availability"]')?.textContent.includes('disabled by the administrator')`);
+  policy = { ...policy, online_payments_enabled: true };
+  await browser.evaluate(`window.dispatchEvent(new Event('focus'))`);
+  await browser.waitFor(`document.querySelector('.gov-page-title')?.textContent === 'Payments' && document.querySelectorAll('.gov-table tbody tr').length === 2`);
+  assert.match(await browser.evaluate(`document.querySelector('#owner-nav').textContent`), /Payment Setup/);
+  assert.ok(await browser.evaluate(`[...document.querySelectorAll('.gov-main button')].filter(node => /^(Confirm|Cancel|Refund|Archive)$/.test(node.textContent.trim())).length === 4`));
+  await browser.click('Payment Setup'); await browser.waitFor(`document.querySelector('[aria-label="Payment plan settings"]')`);
+  await browser.click('My Property'); await browser.waitFor(`document.querySelector('.owner-starting-price')`); await browser.click('Edit details');
+  assert.match(await browser.evaluate(`document.querySelector('.owner-editor-tabs').textContent`), /Payment setup/i);
+  await browser.click('Back to property'); await browser.click('Payments'); await browser.waitFor(`document.querySelectorAll('.gov-table tbody tr').length === 2`);
+  await browser.click('Refund'); await browser.waitFor(`document.querySelector('.gov-main').textContent.includes('Process Refund')`);
+  let releasePolicy;
+  heldPolicyResponse = new Promise(resolve => { releasePolicy = resolve; });
+  try {
+    await browser.evaluate(`window.dispatchEvent(new Event('focus'))`);
+    await browser.waitFor(`document.querySelector('[aria-label="Online payment availability"]')?.textContent.includes('Checking online payment policy')`);
+    await assertHistoryOnly();
+    assert.doesNotMatch(await browser.evaluate(`document.querySelector('[aria-label="Online payment availability"]').textContent`), /disabled by the administrator/);
+    policy = { ...policy, online_payments_enabled: false };
+  } finally { heldPolicyResponse = null; releasePolicy(); }
+  await browser.waitFor(`document.querySelector('[aria-label="Online payment availability"]')?.textContent.includes('disabled by the administrator')`);
+  await assertHistoryOnly(); assert.deepEqual(financialWrites(), []);
+  assert.equal(JSON.stringify(historicalPayments), originalPaymentHistory); assert.deepEqual(browser.errors, []);
+});
+
+test('policy failures show an honest unavailable notice and retry restores controls without hiding history', options, async () => {
+  role = 'owner'; policy = { ...policy, online_payments_enabled: true }; failPolicy = true;
+  try {
+    await browser.navigate('/owner/payments');
+    await browser.waitFor(`document.querySelector('[aria-label="Online payment availability"] [role="alert"]') && document.querySelectorAll('.gov-table tbody tr').length === 2`);
+    await assertHistoryOnly();
+    const notice = await browser.evaluate(`document.querySelector('[aria-label="Online payment availability"]').textContent`);
+    assert.match(notice, /Online payment policy unavailable|Fixture policy check unavailable/); assert.doesNotMatch(notice, /disabled by the administrator/);
+    await browser.navigate('/owner/payment-setup'); await browser.waitFor(`document.querySelector('.gov-page-title')?.textContent === 'Online payment policy unavailable'`);
+    assert.equal(await browser.evaluate(`document.querySelector('[aria-label="Payment plan settings"]')`), null);
+    failPolicy = false; await browser.click('Retry booking policy'); await browser.waitFor(`document.querySelector('[aria-label="Payment plan settings"]')`);
+    await browser.click('Payments'); await browser.waitFor(`document.querySelector('.gov-page-title')?.textContent === 'Payments' && document.querySelectorAll('.gov-table tbody tr').length === 2`);
+    assert.equal(await browser.evaluate(`document.querySelector('[aria-label="Online payment availability"]')`), null);
+    assert.deepEqual(financialWrites(), []); assert.deepEqual(browser.errors, []);
+  } finally { failPolicy = false; policy = { ...policy, online_payments_enabled: false }; }
+});
+
+test('limited owners also lose payment setup while disabled without gaining access to history', options, async () => {
+  role = 'owner'; authorization = 'limited';
+  try {
+    await browser.navigate('/owner/property'); await browser.waitFor(`document.querySelector('#owner-nav')`);
+    assert.doesNotMatch(await browser.evaluate(`document.querySelector('#owner-nav').textContent`), /Payment Setup|Payment History/);
+    policy = { ...policy, online_payments_enabled: true }; await browser.evaluate(`window.dispatchEvent(new Event('focus'))`);
+    await browser.waitFor(`document.querySelector('#owner-nav').textContent.includes('Payment Setup')`);
+    assert.doesNotMatch(await browser.evaluate(`document.querySelector('#owner-nav').textContent`), /Payment History|Daily work/);
+    assert.deepEqual(financialWrites(), []); assert.deepEqual(browser.errors, []);
+  } finally { authorization = 'full'; policy = { ...policy, online_payments_enabled: false }; }
 });
