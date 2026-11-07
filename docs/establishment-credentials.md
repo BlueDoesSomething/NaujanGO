@@ -33,18 +33,18 @@ Accepted files remain **JPG, PNG, WEBP and PDF, up to 6 MB**. All five document 
 
 Credential data continues to live on the existing owner business profile. The current owner interface links one property per owner. This is not a new multi-establishment licensing registry.
 
-## Badges and administrative follow-up
+## Owner/admin statuses and administrative follow-up
 
 - Expiry is evaluated on each API read against the **Asia/Manila calendar date**; the printed expiry day is inclusive. Within 30 days is **Expiring soon**; before today is **Expired**.
 - A number alone is not a current badge. A current badge requires the number, document reference, applicable registration authority, recorded future expiry, profile review and no active follow-up flag. A platform review is not an issuing agency's certification or an inspection.
 - Missing, incomplete, pending/rejected review, unknown expiry and flagged records have distinct non-current states. Expired remains expired even if the profile is verified or a flag is resolved. A missing SEC/CDA expiry is not automatically called expired, but also does not establish indefinite current validity.
-- Badges on the property page and accommodation list expose only type/status/expiry and a follow-up indicator. They do not expose uploads, permit numbers, private reasons or reviewer identities. When lookup/setup fails, show **Credential information unavailable**, not fabricated valid/missing badges.
+- Credential badges and review guidance are confined to owner/admin screens. Public property details and accommodation grid/list cards do not render credential labels, expiry badges, verification disclaimers, or credential-unavailable notices, even when credential data is returned by the API. Listing cards keep the photo separate from the name, location, rating, nightly price and detail/calendar actions; amenities remain available on property details and through listing filters.
 - Admin **Business Verification** supports search, profile review state, credential type, **Expired**, **Expiring within 30 days**, **Flagged**, **Expiry unknown**, **Not submitted**, **Incomplete**, and **Reviewed and current** filters. Type and condition must match the **same credential**. Filtering applies before pagination. The protected API supports corresponding type/condition query filters too.
 - **Flag for follow-up** and **Resolve flag** require a reason. The current flag version prevents stale sessions or repeated writes from overwriting a newer decision. A row lock and transaction save the decision and an append-only `business_credential_events` audit row together; failed audit writes roll back the decision. A profile save/upload does not silently clear a flag.
 - Failed loads retain stale records with a warning and disable administrative decisions until refresh succeeds. Failed flag decisions retain the typed reason.
 - Badges reflect saved data, not unsaved form edits. Refresh/reopen to reevaluate dates; no scheduled email/SMS reminders or background government-record verification is implied.
 
-For a property with multiple existing owner links, public summaries use one coherent owner profile (verified first, then most recently updated, then owner ID). They do not combine different owners' documents into a manufactured complete credential set.
+For a property with multiple existing owner links, the API's public credential summaries still use one coherent owner profile (verified first, then most recently updated, then owner ID). They do not combine different owners' documents into a manufactured complete credential set, and expose no uploads, permit numbers, private reasons or reviewer identities. The public hotel UI does not render these summaries.
 
 ## Existing authorization is not regulatory compliance
 
@@ -58,7 +58,7 @@ The existing technical access rule—admin-verified business permit number plus 
 2. Apply `migrations/056_establishment_credentials.sql`. It conditionally adds nullable registration/sanitary/flag fields and creates the flag event table. It does not rename/backfill old permits, set expiries, verify owners, or alter financial/booking data.
 3. Ensure the existing migration `051_durable_business_documents.sql` is present for uploaded-file storage.
 4. Deploy frontend/backend together. The existing startup business-schema routine also attempts the idempotent additions; if privileges are insufficient, use the migration with an authorized database administrator. Missing schema returns actionable setup errors.
-5. In staging, verify old permit preservation, both new upload types, private viewing after redeployment, date boundaries, flags/audit rollback, and filters. Public badges must not disclose document URLs or private notes.
+5. In staging, verify old permit preservation, both new upload types, private viewing after redeployment, date boundaries, flags/audit rollback, and filters. Confirm public hotel detail/grid/list pages have no credential badges or notices, and that public API summaries disclose no document URLs or private notes.
 
 The migration has **not been applied** by this development work. No live documents, government queries, reservations or payment-provider operations were performed.
 
@@ -73,7 +73,7 @@ node --test tests/business-credentials.test.js tests/business-documents.test.js 
 From `frontend/`:
 
 ```powershell
-node --test --test-concurrency=1 tests/business-credentials.test.mjs tests/business-credentials-browser.test.mjs tests/business-documents.test.mjs
+node --test --test-concurrency=1 tests/business-credentials.test.mjs tests/business-credentials-browser.test.mjs tests/business-documents.test.mjs tests/hotel-listing-browser.test.mjs tests/hotel-detail-responsive.test.mjs
 ```
 
 Tests use mocked storage/APIs and temporary browser fixtures, not live business documents or production data. Production deployment and a real MySQL migration remain separate verification steps.

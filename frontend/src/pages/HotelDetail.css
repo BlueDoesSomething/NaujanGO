@@ -1629,7 +1629,7 @@
   /* App.css gives every `main` a 72px top margin so content clears the fixed
      navbar. On this page the hero above already starts below that navbar, so
      the inner main would otherwise paint a second 72px white band between the
-     accreditation badges and the first card. */
+     hero and the first card. */
   main.hd-layout {
     margin-top: 0 !important;
   }

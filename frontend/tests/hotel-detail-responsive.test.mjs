@@ -249,15 +249,15 @@ const measure = () => evaluate(`(() => {
     body: box('.hd-hero-body'), title: box('.hd-hero-title'), loc: box('.hd-hero-loc'),
     pills: box('.hd-hero-pills'), lastPill: box('.hd-hero-pills > .hd-pill:last-child'),
     heroImg: box('.hd-hero-img'),
-    legitWrap: box('.hd-legit-wrap'), legit: box('.hd-legit'),
+    credentialElements: document.querySelectorAll('.hd-legit-wrap, .credential-badges, .credential-unavailable').length,
     layout: box('.hd-layout'), gallery: box('.hd-gallery')
   };
 })()`);
 
 // Mobile widths where the fixed-height hero used to clip and the fixed navbar
-// used to leave a second 72px band under the accreditation badges.
+// used to leave a second 72px band before the gallery.
 for (const [width, height] of [[320, 568], [360, 640], [393, 780], [480, 900], [640, 900], [768, 1024]]) {
-  test(`hotel hero fits its content and badges sit against the first card at ${width}×${height}`, options, async () => {
+  test(`hotel hero fits its content and leads directly to the gallery at ${width}×${height}`, options, async () => {
     await open(width, height);
     const view = await measure();
 
@@ -275,10 +275,11 @@ for (const [width, height] of [[320, 568], [360, 640], [393, 780], [480, 900], [
     assert.ok(view.title.bottom <= view.loc.top, `title overlaps location: ${JSON.stringify(view)}`);
     assert.ok(view.heroImg.height >= view.hero.height - 1, 'hero image fills the grown hero');
 
-    // No second 72px spacer between the badges and the first card.
+    // No credential strip or second 72px spacer before the first card.
+    assert.equal(view.credentialElements, 0);
     assert.equal(view.layout.marginTop, '0px');
-    const badgeGap = view.gallery.top - view.legit.bottom;
-    assert.ok(badgeGap >= 8 && badgeGap <= 32, `badge-to-card gap is ${badgeGap}px`);
+    const galleryGap = view.gallery.top - view.hero.bottom;
+    assert.ok(galleryGap >= 8 && galleryGap <= 32, `hero-to-card gap is ${galleryGap}px`);
 
     // Single arrow: the icon is the arrow, the label must not repeat it.
     assert.equal(view.backIcons, 1);
@@ -295,8 +296,9 @@ test('hotel hero keeps the designed desktop height and full-bleed image', option
   assert.ok(view.hero.scrollHeight <= view.hero.clientHeight, 'desktop hero must not clip');
   assert.ok(view.lastPill.bottom <= view.hero.bottom - 8, 'desktop pills clipped');
   assert.equal(view.layout.marginTop, '0px');
-  const badgeGap = view.gallery.top - view.legit.bottom;
-  assert.ok(badgeGap >= 8 && badgeGap <= 32, `badge-to-card gap is ${badgeGap}px`);
+  assert.equal(view.credentialElements, 0);
+  const galleryGap = view.gallery.top - view.hero.bottom;
+  assert.ok(galleryGap >= 8 && galleryGap <= 32, `hero-to-card gap is ${galleryGap}px`);
   assert.equal(view.backIcons, 1);
   assert.ok(!/[←‹<]/.test(view.backText), view.backText);
   const screenshot = await client.send('Page.captureScreenshot', { format: 'png' });

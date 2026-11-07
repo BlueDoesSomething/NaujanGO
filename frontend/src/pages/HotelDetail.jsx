@@ -8,7 +8,6 @@ import * as api from '../api';
 import axios from 'axios';
 import LeafletMap from '../components/LeafletMap';
 import Icons from '../components/Icons';
-import CredentialBadges from '../components/CredentialBadges';
 import RoomManagement from '../components/RoomManagement';
 import { RoomPerfectFor, RoomCommonQuestions } from '../components/RoomGuestContent';
 import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
@@ -1289,8 +1288,6 @@ export default function HotelDetail() {
           </div>
         </div>
       </header>
-
-      <div className="hd-legit-wrap"><CredentialBadges credentials={hotel.credentials} /></div>
 
       <main className="hd-layout">
         {/* Gallery */}

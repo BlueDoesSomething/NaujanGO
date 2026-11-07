@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { createHotelBooking, fetchHotels, processPayment, startPaymentCheckout } from '../api'
 import Icons from '../components/Icons'
-import CredentialBadges from '../components/CredentialBadges'
 import HeroSlideshow from '../components/HeroSlideshow'
 import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy'
 import { downloadExportFile, downloadReportCsv, exportFilename } from '../utils/exportFiles'
@@ -461,8 +460,8 @@ export default function Hotels() {
       {!loading && (
         <div className="attr-toolbar">
           <div className="attr-view-toggle">
-            <button className={`attr-view-btn${view === 'grid' ? ' attr-view-btn--active' : ''}`} onClick={() => setView('grid')}>{t('view_grid')}</button>
-            <button className={`attr-view-btn${view === 'list' ? ' attr-view-btn--active' : ''}`} onClick={() => setView('list')}>{t('view_list')}</button>
+            <button className={`attr-view-btn${view === 'grid' ? ' attr-view-btn--active' : ''}`} aria-pressed={view === 'grid'} onClick={() => setView('grid')}>{t('view_grid')}</button>
+            <button className={`attr-view-btn${view === 'list' ? ' attr-view-btn--active' : ''}`} aria-pressed={view === 'list'} onClick={() => setView('list')}>{t('view_list')}</button>
           </div>
           <div className="attr-results"><strong>{filteredHotels.length}</strong>{t('hotels_found_count')}</div>
         </div>
@@ -476,140 +475,52 @@ export default function Hotels() {
         <div style={{ textAlign: 'center', padding: '50px' }}>
           <p>{t('no_hotels_found')}</p>
         </div>
-      ) : view === 'grid' ? (
+      ) : (
         <section style={contentSection}>
-          <div className="attr-grid">
+          <div className={view === 'grid' ? 'attr-grid' : 'attr-list'}>
             {filteredHotels.map((hotel) => {
               const rating = (Number(hotel.rating) || 0).toFixed(1)
               const rooms = Number(hotel.rooms_available)
-              const hasRooms = Number.isFinite(rooms)
+              const hasRooms = hotel.rooms_available != null && hotel.rooms_available !== '' && Number.isFinite(rooms)
               const soldOut = hasRooms && rooms <= 0
               const availText = !hasRooms
                 ? t('availability_check_availability')
                 : soldOut
                   ? t('availability_sold_out')
                   : t('availability_rooms_pattern').replace('{count}', String(rooms))
-              const amenities = Array.isArray(hotel.amenities) ? hotel.amenities.slice(0, 3) : []
-              const extraAmenities = Array.isArray(hotel.amenities) && hotel.amenities.length > 3 ? hotel.amenities.length - 3 : 0
               return (
-            <article key={hotel.id} className="attr-card hotel-card" onClick={() => navigate(`/hotels/${hotel.id}`)}>
-              <img
-                src={hotel.image || '/placeholder-hotel.svg'}
-                alt={hotel.name}
-                className="attr-card-img"
-                onError={handleImageError}
-              />
-              <div className="attr-card-shade" />
-              {hotel.map ? (
-                <a href={hotel.map} className="hotel-map-chip" aria-label={t('button_map')} onClick={(e) => e.stopPropagation()}>
-                  <Icons.Location size={13} />
-                </a>
-              ) : null}
-              <div className="attr-card-content">
-                <div>
-                  <h3 className="attr-card-title">{hotel.name}</h3>
-                  <p className="attr-card-location"><Icons.Location size={12} /> {hotel.location}</p>
-                </div>
-                <CredentialBadges credentials={hotel.credentials} compact />
-                <span className="attr-rating-badge">
-                  <span className="attr-rating-star">★</span>
-                  <span>{rating} ({hotel.reviewCount || 0})</span>
-                </span>
-                <div className="hotel-card-extra">
-                  <div className="hotel-card-meta">
-                    <span className="hotel-card-price">
-                      <span className="h">{t('price_from')}</span>
-                      <b>{formatCurrency(hotel.pricePerNight, hotel.currency)}</b>
-                      <span className="n">{t('price_per_night')}</span>
-                    </span>
-                    <button
-                      type="button"
-                      className={`hotel-card-avail${soldOut ? ' hotel-card-avail--out' : ''}${!hasRooms ? ' hotel-card-avail--check' : ''}`}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        navigate(`/hotels/${hotel.id}?calendar=1`)
-                      }}
-                    >
-                      {availText}
-                    </button>
-                  </div>
-                  {amenities.length > 0 && (
-                    <div className="hotel-card-amenities">
-                      {amenities.map((item) => (
-                        <span key={item} className="hotel-card-amenity">{item}</span>
-                      ))}
-                      {extraAmenities > 0 && <span className="hotel-card-amenity">+{extraAmenities}</span>}
-                    </div>
-                  )}
-                </div>
-                <span className="attr-glass-btn">
-                  <span className="attr-glass-label">{t('view_details')}</span>
-                  <span className="attr-glass-chevron"><Icons.ChevronRight size={13} /></span>
-                </span>
-              </div>
-            </article>
-              );
-            })}
-          </div>
-        </section>
-      ) : (
-        <section style={contentSection}>
-          <div className="attr-list">
-            {filteredHotels.map((hotel, index) => {
-              const rating = (Number(hotel.rating) || 0).toFixed(1)
-              const rooms = Number(hotel.rooms_available)
-              const hasRooms = Number.isFinite(rooms)
-              const soldOut = hasRooms && rooms <= 0
-              const availText = !hasRooms
-                ? t('availability_check_availability')
-                : soldOut
-                  ? t('availability_sold_out')
-                  : t('availability_rooms_pattern').replace('{count}', String(rooms))
-              const amenities = Array.isArray(hotel.amenities) ? hotel.amenities.slice(0, 4) : []
-              const extraAmenities = Array.isArray(hotel.amenities) && hotel.amenities.length > 4 ? hotel.amenities.length - 4 : 0
-              return (
-                <div key={hotel.id} className="attr-list-card" onClick={() => navigate(`/hotels/${hotel.id}`)}>
-                  <div className="attr-list-rank">#{index + 1}</div>
-                  <div className="attr-list-media">
+                <article key={hotel.id} className={`hotel-result-card${view === 'list' ? ' hotel-result-card--list' : ''}`} aria-labelledby={`hotel-result-${hotel.id}`} onClick={() => navigate(`/hotels/${hotel.id}`)}>
+                  <div className="hotel-result-media">
                     <img
                       src={hotel.image || '/placeholder-hotel.svg'}
                       alt={hotel.name}
                       onError={handleImageError}
                     />
-                  </div>
-                  <div className="attr-list-body">
-                    <h3 className="attr-list-title">{hotel.name}</h3>
-                    <p className="attr-list-location"><Icons.Location size={13} /> {hotel.location}</p>
-                    <p className="attr-list-desc">{hotel.description?.substring(0, 180)}{hotel.description?.length > 180 ? '...' : ''}</p>
-                    <div className="attr-list-meta">
-                      <span className="attr-list-chip"><span className="attr-rating-star">★</span> {rating} ({hotel.reviewCount || 0})</span>
-                      <span className="attr-list-chip">{formatCurrency(hotel.pricePerNight, hotel.currency)}</span>
-                      <button
-                        type="button"
-                        className={`hotel-card-avail${soldOut ? ' hotel-card-avail--out' : ''}${!hasRooms ? ' hotel-card-avail--check' : ''}`}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          navigate(`/hotels/${hotel.id}?calendar=1`)
-                        }}
-                      >
-                        {availText}
-                      </button>
-                    </div>
-                    <CredentialBadges credentials={hotel.credentials} compact />
-                    {amenities.length > 0 && (
-                      <div className="hotel-card-amenities" style={{ marginBottom: 8 }}>
-                        {amenities.map((item) => (
-                          <span key={item} className="hotel-card-amenity">{item}</span>
-                        ))}
-                        {extraAmenities > 0 && <span className="hotel-card-amenity">+{extraAmenities}</span>}
-                      </div>
+                    {hotel.map && (
+                      <a href={hotel.map} className="hotel-result-map" aria-label={`${t('button_map')} · ${hotel.name}`} onClick={(e) => e.stopPropagation()}>
+                        <Icons.Location size={18} />
+                      </a>
                     )}
-                    <span className="attr-glass-btn attr-glass-btn--sm">
-                      <span className="attr-glass-label">{t('view_details')}</span>
-                      <span className="attr-glass-chevron"><Icons.ChevronRight size={13} /></span>
-                    </span>
                   </div>
-                </div>
+                  <div className="hotel-result-content">
+                    <div className="hotel-result-heading">
+                      <h3 id={`hotel-result-${hotel.id}`} className="hotel-result-title">{hotel.name}</h3>
+                      <p className="hotel-result-location"><Icons.Location size={14} /><span>{hotel.location}</span></p>
+                      <p className="hotel-result-rating"><span aria-hidden="true">★</span><strong>{rating}</strong><span>({hotel.reviewCount || 0} {t('reviews_label')})</span></p>
+                    </div>
+                    <div className="hotel-result-footer">
+                      <p className="hotel-result-price"><span>{t('price_from')}</span><strong>{formatCurrency(hotel.pricePerNight, hotel.currency)}</strong><span>{t('per_night')}</span></p>
+                      <div className="hotel-result-actions">
+                        <Link to={`/hotels/${hotel.id}?calendar=1`} className={`hotel-result-availability${soldOut ? ' hotel-result-availability--out' : ''}`} onClick={(e) => e.stopPropagation()}>
+                          <Icons.Calendar size={15} /><span>{availText}</span>
+                        </Link>
+                        <Link to={`/hotels/${hotel.id}`} className="hotel-result-details" onClick={(e) => e.stopPropagation()}>
+                          {t('view_details')}<Icons.ChevronRight size={15} />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                </article>
               );
             })}
           </div>
