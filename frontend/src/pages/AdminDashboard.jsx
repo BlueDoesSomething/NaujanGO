@@ -4666,7 +4666,7 @@ const AdminDashboard = () => {
                               <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{review.email}</div>
                             </td>
                             <td>{review.rating}</td>
-                            <td style={{ maxWidth: '320px' }}>{review.comment || '-'}</td>
+                            <td style={{ maxWidth: '320px', overflow: 'hidden', textOverflow: 'ellipsis' }}>{review.comment || '-'}</td>
                             <td>
                               <span className={`gov-badge-status gov-badge-status--${isHidden ? 'cancelled' : 'confirmed'}`}>
                                 {isHidden ? t('hidden') : t('visible')}

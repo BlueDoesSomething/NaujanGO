@@ -38,6 +38,21 @@
   border-color: #334155;
 }
 
+/* Pinned table action cell (see .gov-row-actions rules in the dashboards) */
+[data-theme="dark"] .gov-table:has(.gov-row-actions) th:last-child {
+  background: #0f172a;
+  border-left-color: #334155;
+}
+
+[data-theme="dark"] .gov-table td:has(.gov-row-actions) {
+  background: #1e293b;
+  border-left-color: #334155;
+}
+
+[data-theme="dark"] .gov-table tbody tr:hover td:has(.gov-row-actions) {
+  background: #283548;
+}
+
 [data-theme="dark"] .gov-empty {
   background: #1e293b;
   color: #94a3b8;

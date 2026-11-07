@@ -632,7 +632,11 @@
 .gov-table th { padding: .8rem 1rem; text-align: left; font-weight: 700; font-size: .72rem; text-transform: uppercase; letter-spacing: .8px; color: #2e7d32; white-space: nowrap; }
 .gov-table tbody tr { border-bottom: 1px solid #f1f5f1; transition: background .15s ease; }
 .gov-table tbody tr:hover { background: #f7fdf7; }
-.gov-table td { padding: .8rem 1rem; color: #374151; vertical-align: middle; }
+/* Data cells never wrap: a wrapped cell collapses the column to its shortest
+   word (the row below sets overflow-wrap:anywhere), which stacks dates and
+   names into very tall rows. Columns keep readable widths and the table
+   scrolls inside .gov-table-wrap instead. */
+.gov-table td { padding: .8rem 1rem; color: #374151; vertical-align: middle; white-space: nowrap; }
 .gov-table td strong { color: #111827; font-weight: 700; }
 
 /* Table row actions: one compact, non-wrapping row with consistent sizing. */
@@ -668,6 +672,26 @@
   font-size: .72rem;
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* Columns stay single-line, so a wide table scrolls inside .gov-table-wrap.
+   Pin the action cell (and its header) to the right edge so the buttons stay
+   reachable instead of scrolling out of view. Uses :has() and degrades to a
+   plain scroll on browsers without it. */
+.gov-table:has(.gov-row-actions) th:last-child,
+.gov-table td:has(.gov-row-actions) {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: #fff;
+  border-left: 1px solid #e5e7eb;
+}
+.gov-table:has(.gov-row-actions) thead th:last-child {
+  z-index: 2;
+  background: #f0fdf4;
+}
+.gov-table tbody tr:hover td:has(.gov-row-actions) {
+  background: #f7fdf7;
 }
 
 /* STATUS BADGES */

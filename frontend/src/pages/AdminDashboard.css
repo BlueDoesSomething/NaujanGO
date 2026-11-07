@@ -780,6 +780,10 @@
   padding: 0.8rem 1rem;
   color: #374151;
   vertical-align: middle;
+  /* Never wrap: .gov-dashboard * sets overflow-wrap:anywhere, so a wrapping
+     cell collapses its column to a few pixels and rows grow very tall.
+     Columns keep readable widths and the table scrolls in .gov-table-wrap. */
+  white-space: nowrap;
 }
 
 .gov-table td strong {
@@ -827,6 +831,28 @@
   font-size: 0.72rem;
   font-weight: 600;
   white-space: nowrap;
+}
+
+/* Columns stay single-line, so a wide table scrolls inside .gov-table-wrap.
+   Pin the action cell (and its header) to the right edge so the buttons stay
+   reachable instead of scrolling out of view. Uses :has() and degrades to a
+   plain scroll on browsers without it. */
+.gov-table:has(.gov-row-actions) th:last-child,
+.gov-table td:has(.gov-row-actions) {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: #fff;
+  border-left: 1px solid #e5e7eb;
+}
+
+.gov-table:has(.gov-row-actions) thead th:last-child {
+  z-index: 2;
+  background: #f0fdf4;
+}
+
+.gov-table tbody tr:hover td:has(.gov-row-actions) {
+  background: #f7fdf7;
 }
 
 /* ════════════════════════════════════════
