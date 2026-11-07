@@ -55,9 +55,10 @@ const DashboardPaymentsPanel = ({ archivedOnly = false, onChanged }) => {
       <tbody>{payments.map(payment => <tr key={payment.payment_id}>
         <td>#{payment.payment_id}</td><td>{payment.booking_reference || payment.booking_id}</td><td>{payment.customer_name || '—'}</td>
         <td>₱{Number(payment.amount || 0).toLocaleString()}</td><td>{payment.status}{Number(payment.archived) === 1 ? ' · Archived' : ''}</td>
-        <td><button type="button" className="gov-btn gov-btn-ghost" onClick={() => setSelected(payment)}>View</button>{' '}
+        <td><div className="gov-row-actions">
+          <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setSelected(payment)}>View</button>
           {(Number(payment.archived) === 1 || ['failed', 'refunded', 'succeeded'].includes(payment.status)) && <button type="button" className="gov-btn gov-btn-primary" disabled={busy === payment.payment_id} onClick={() => changeArchive(payment)}>{Number(payment.archived) === 1 ? 'Restore' : 'Archive'}</button>}
-        </td>
+        </div></td>
       </tr>)}</tbody>
     </table></div>
     {!payments.length && <p>No matching payments.</p>}

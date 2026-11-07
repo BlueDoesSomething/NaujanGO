@@ -3095,19 +3095,19 @@ const AdminDashboard = () => {
                               </select>
                             </td>
                             <td>
-                              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <div className="gov-row-actions">
+                                <button
+                                  className="gov-btn gov-btn-primary"
+                                  onClick={() => startUserEdit(user)}
+                                >
+                                  Edit
+                                </button>
                                 <button
                                   className="gov-btn gov-btn-danger"
                                   onClick={() => handleUserDelete(user.user_id)}
                                   disabled={userActionLoading[`${user.user_id}:delete`]}
                                 >
                                   {userActionLoading[`${user.user_id}:delete`] ? 'Deleting...' : 'Delete'}
-                                </button>
-                                <button
-                                  className="gov-btn gov-btn-primary"
-                                  onClick={() => startUserEdit(user)}
-                                >
-                                  Edit
                                 </button>
                               </div>
                             </td>
@@ -3198,7 +3198,7 @@ const AdminDashboard = () => {
                             </span>
                           </td>
                           <td>
-                            <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                            <div className="gov-row-actions">
                               {booking.status === 'pending' && (
                                 <>
                                   <button
@@ -3219,7 +3219,7 @@ const AdminDashboard = () => {
                               )}
                               {booking.status === 'confirmed' && (
                                 <button
-                                  className="gov-btn gov-btn-warning"
+                                  className="gov-btn gov-btn-danger"
                                   onClick={() => handleBookingStatusChange(booking.booking_id, 'cancelled')}
                                   disabled={bookingActionLoading[`${booking.booking_id}:cancelled`]}
                                 >
@@ -3227,7 +3227,7 @@ const AdminDashboard = () => {
                                 </button>
                               )}
                               <button
-                                className="gov-btn gov-btn-warning"
+                                className="gov-btn gov-btn-ghost"
                                 onClick={() => handleBookingDelete(booking.booking_id)}
                                 disabled={bookingActionLoading[`${booking.booking_id}:delete`]}
                               >
@@ -4673,23 +4673,25 @@ const AdminDashboard = () => {
                               </span>
                             </td>
                             <td>
-                              {isHidden ? (
-                                <button
-                                  className="gov-btn gov-btn-primary"
-                                  onClick={() => handleModerateReview(review, true)}
-                                  disabled={busy}
-                                >
-                                  {busy ? t('saving') : t('restore_review')}
-                                </button>
-                              ) : (
-                                <button
-                                  className="gov-btn gov-btn-danger"
-                                  onClick={() => handleModerateReview(review, false)}
-                                  disabled={busy}
-                                >
-                                  {busy ? t('saving') : t('hide_review')}
-                                </button>
-                              )}
+                              <div className="gov-row-actions">
+                                {isHidden ? (
+                                  <button
+                                    className="gov-btn gov-btn-primary"
+                                    onClick={() => handleModerateReview(review, true)}
+                                    disabled={busy}
+                                  >
+                                    {busy ? t('saving') : t('restore_review')}
+                                  </button>
+                                ) : (
+                                  <button
+                                    className="gov-btn gov-btn-danger"
+                                    onClick={() => handleModerateReview(review, false)}
+                                    disabled={busy}
+                                  >
+                                    {busy ? t('saving') : t('hide_review')}
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         );
@@ -7762,7 +7764,9 @@ const AdminDashboard = () => {
                                     <td style={{ fontSize:'0.82rem', color:'#6b7280', whiteSpace:'nowrap' }}>{new Date(conv.started_at).toLocaleString()}</td>
                                     <td style={{ fontSize:'0.82rem', color:'#6b7280', whiteSpace:'nowrap' }}>{conv.last_message_at ? new Date(conv.last_message_at).toLocaleString() : '—'}</td>
                                     <td onClick={(e) => e.stopPropagation()}>
-                                      <button className="gov-btn gov-btn-danger" style={{ fontSize:'0.78rem', padding:'0.3rem 0.65rem' }} onClick={(e) => handleDeleteConversation(conv.conversation_id, e)}>Delete</button>
+                                      <div className="gov-row-actions">
+                                        <button className="gov-btn gov-btn-danger" onClick={(e) => handleDeleteConversation(conv.conversation_id, e)}>Delete</button>
+                                      </div>
                                     </td>
                                   </tr>
                                 );
@@ -7871,22 +7875,24 @@ const AdminDashboard = () => {
                               </span>
                             </td>
                             <td>
-                              <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'booking', record: booking })}>View</button>{' '}
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    await api.put(`/admin/bookings/${booking.booking_id}/restore`);
-                                    loadArchivedBookings();
-                                    loadAdminData();
-                                  } catch (error) {
-                                    console.error('Restore error:', error);
-                                    alert(error.response?.data?.error || 'Failed to restore booking');
-                                  }
-                                }}
-                                className="gov-btn gov-btn-primary"
-                              >
-                                Restore
-                              </button>
+                              <div className="gov-row-actions">
+                                <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'booking', record: booking })}>View</button>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await api.put(`/admin/bookings/${booking.booking_id}/restore`);
+                                      loadArchivedBookings();
+                                      loadAdminData();
+                                    } catch (error) {
+                                      console.error('Restore error:', error);
+                                      alert(error.response?.data?.error || 'Failed to restore booking');
+                                    }
+                                  }}
+                                  className="gov-btn gov-btn-primary"
+                                >
+                                  Restore
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -7926,22 +7932,24 @@ const AdminDashboard = () => {
                             <td>{hotel.owner_names || '—'}</td>
                             <td>{hotel.archived_at ? new Date(hotel.archived_at).toLocaleDateString() : '—'}</td>
                             <td>
-                              <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'hotel', record: hotel })}>View</button>{' '}
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    await api.put(`/admin/hotels/${hotel.hotel_id}/restore`);
-                                    loadArchivedHotels();
-                                    loadHotels();
-                                  } catch (error) {
-                                    console.error('Restore error:', error);
-                                    alert(error.response?.data?.error || 'Failed to restore hotel');
-                                  }
-                                }}
-                                className="gov-btn gov-btn-primary"
-                              >
-                                Restore
-                              </button>
+                              <div className="gov-row-actions">
+                                <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'hotel', record: hotel })}>View</button>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await api.put(`/admin/hotels/${hotel.hotel_id}/restore`);
+                                      loadArchivedHotels();
+                                      loadHotels();
+                                    } catch (error) {
+                                      console.error('Restore error:', error);
+                                      alert(error.response?.data?.error || 'Failed to restore hotel');
+                                    }
+                                  }}
+                                  className="gov-btn gov-btn-primary"
+                                >
+                                  Restore
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -8029,22 +8037,24 @@ const AdminDashboard = () => {
                             <td>{attraction.location}</td>
                             <td>{attraction.archived_at ? new Date(attraction.archived_at).toLocaleDateString() : '—'}</td>
                             <td>
-                              <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'attraction', record: attraction })}>View</button>{' '}
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    await api.put(`/admin/attractions/${attraction.id}/restore`);
-                                    loadArchivedAttractions();
-                                    loadAttractions();
-                                  } catch (error) {
-                                    console.error('Restore error:', error);
-                                    alert(error.response?.data?.error || 'Failed to restore attraction');
-                                  }
-                                }}
-                                className="gov-btn gov-btn-primary"
-                              >
-                                Restore
-                              </button>
+                              <div className="gov-row-actions">
+                                <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'attraction', record: attraction })}>View</button>
+                                <button
+                                  onClick={async () => {
+                                    try {
+                                      await api.put(`/admin/attractions/${attraction.id}/restore`);
+                                      loadArchivedAttractions();
+                                      loadAttractions();
+                                    } catch (error) {
+                                      console.error('Restore error:', error);
+                                      alert(error.response?.data?.error || 'Failed to restore attraction');
+                                    }
+                                  }}
+                                  className="gov-btn gov-btn-primary"
+                                >
+                                  Restore
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}

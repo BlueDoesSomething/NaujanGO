@@ -84,12 +84,12 @@ export default function StayExtensionControls({ booking, onSaved }) {
     } catch (error) { setError(error.response?.data?.error || 'Could not confirm the extension. Retrying this approval will not add the amount twice.'); }
     finally { setSaving(false); }
   };
-  return <div style={{ flexBasis: '100%', marginTop: 4 }}>
-    <small role="status" style={{ display: 'block', color: progress.state === 'overdue' ? '#b91c1c' : progress.state === 'soon' ? '#92400e' : '#64748b' }}>{progress.label}</small>
-    {progress.canExtend && <button type="button" className="gov-btn-primary" style={{ marginTop: 6 }} onClick={() => setOpen(true)}>Extend Stay</button>}
+  return <div className="gov-row-extension">
+    <small role="status" style={{ color: progress.state === 'overdue' ? '#b91c1c' : progress.state === 'soon' ? '#92400e' : '#64748b' }}>{progress.label}</small>
+    {progress.canExtend && <button type="button" className="gov-btn gov-btn-primary" onClick={() => setOpen(true)}>Extend Stay</button>}
     {open && createPortal(<div className="hd-modal-back">
       <section ref={dialogRef} role="dialog" aria-modal="true" aria-label="Approve stay extension" style={{ background: 'white', borderRadius: 14, padding: 24, width: 'min(94vw, 560px)', maxHeight: '90vh', overflowY: 'auto' }}>
-        <button ref={closeButton} type="button" className="gov-btn-ghost" style={{ float: 'right' }} disabled={saving} onClick={() => setOpen(false)}>Close</button>
+        <button ref={closeButton} type="button" className="gov-btn gov-btn-ghost" style={{ float: 'right' }} disabled={saving} onClick={() => setOpen(false)}>Close</button>
         <h2>Extend Stay</h2>
         <p>Booking #{booking.booking_id} · {booking.room_type_name}</p>
         {loading ? <p>Loading configured room packages…</p> : <>
@@ -120,8 +120,8 @@ export default function StayExtensionControls({ booking, onSaved }) {
           </>}
           {error && <p role="alert" style={{ color: '#b91c1c' }}>{error}</p>}
           {!saved && <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-            <button className="gov-btn-ghost" type="button" disabled={saving} onClick={load}>Reload Details</button>
-            <button className="gov-btn-primary" type="button" disabled={saving || !agreed || !preview || overduePreview} onClick={confirm}>{saving ? 'Saving…' : 'Approve Extension'}</button>
+            <button className="gov-btn gov-btn-ghost" type="button" disabled={saving} onClick={load}>Reload Details</button>
+            <button className="gov-btn gov-btn-primary" type="button" disabled={saving || !agreed || !preview || overduePreview} onClick={confirm}>{saving ? 'Saving…' : 'Approve Extension'}</button>
           </div>}
         </>}
       </section>

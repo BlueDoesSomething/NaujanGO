@@ -2143,60 +2143,41 @@ const OwnerDashboard = () => {
                           </span>
                         </td>
                         <td>
-                           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                            <button type="button" className="gov-btn-ghost" onClick={() => setSelectedReservation(booking)}>View details</button>
-                            <button type="button" className="gov-btn-ghost" onClick={() => setMessageBooking(booking)}>Message guest</button>
+                           <div className="gov-row-actions">
+                            <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setSelectedReservation(booking)}>View details</button>
+                            <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setMessageBooking(booking)}>Message guest</button>
                             {booking.status === 'pending' && (
                               <>
                                 <button
-                                  className="gov-btn-primary"
+                                  className="gov-btn gov-btn-primary"
                                   onClick={() => handleBookingStatusChange(booking.booking_id, 'confirmed')}
                                   title="Confirm this booking"
                                 >
                                   Confirm
                                 </button>
                                 <button
-                                  className="gov-btn-danger"
+                                  className="gov-btn gov-btn-danger"
                                   onClick={() => handleBookingStatusChange(booking.booking_id, 'cancelled')}
                                   title="Cancel this booking"
                                 >
                                   Cancel Booking
-                                </button>
-                                <button
-                                  className="gov-btn-ghost"
-                                  onClick={() => handleArchiveBooking(booking.booking_id)}
-                                  title="Archive this booking"
-                                  style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
-                                >
-                                  Archive
                                 </button>
                               </>
                             )}
                             {booking.status === 'confirmed' && (
-                              <>
-                                <button
-                                  className="gov-btn-danger"
-                                  onClick={() => handleBookingStatusChange(booking.booking_id, 'cancelled')}
-                                  title="Cancel this booking"
-                                >
-                                  Cancel Booking
-                                </button>
-                                <button
-                                  className="gov-btn-ghost"
-                                  onClick={() => handleArchiveBooking(booking.booking_id)}
-                                  title="Archive this booking"
-                                  style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
-                                >
-                                  Archive
-                                </button>
-                              </>
-                            )}
-                            {booking.status === 'cancelled' && (
                               <button
-                                className="gov-btn-ghost"
+                                className="gov-btn gov-btn-danger"
+                                onClick={() => handleBookingStatusChange(booking.booking_id, 'cancelled')}
+                                title="Cancel this booking"
+                              >
+                                Cancel Booking
+                              </button>
+                            )}
+                            {(booking.status === 'pending' || booking.status === 'confirmed' || booking.status === 'cancelled') && (
+                              <button
+                                className="gov-btn gov-btn-ghost"
                                 onClick={() => handleArchiveBooking(booking.booking_id)}
-                                title="Archive this cancelled booking"
-                                style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
+                                title="Archive this booking"
                               >
                                 Archive
                               </button>
@@ -2483,16 +2464,16 @@ const OwnerDashboard = () => {
                           </span>
                         </td>
                         <td>
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <div className="gov-row-actions">
                             <button
-                              className="gov-btn-primary"
+                              className="gov-btn gov-btn-ghost"
                               onClick={() => setSelectedPayment(payment)}
                             >
                               View
                             </button>
                             {!bookingPolicy.paymentsDisabled && payment.status === 'succeeded' && (
                               <button
-                                className="gov-btn-warning"
+                                className="gov-btn gov-btn-warning"
                                 onClick={() => setRefundModal(payment)}
                               >
                                 Refund
@@ -2500,7 +2481,7 @@ const OwnerDashboard = () => {
                             )}
                             {!bookingPolicy.paymentsDisabled && Number(payment.archived) === 0 && ['succeeded', 'failed', 'refunded'].includes(payment.status) && (
                               <button
-                                className="gov-btn-ghost"
+                                className="gov-btn gov-btn-ghost"
                                 onClick={async () => {
                                   if (window.confirm('Archive this payment in your dashboard only? Financial history and lifetime revenue are retained.')) {
                                     try {
@@ -2533,7 +2514,7 @@ const OwnerDashboard = () => {
                                       }
                                     }
                                   }}
-                                  className="gov-btn-primary"
+                                  className="gov-btn gov-btn-primary"
                                 >
                                   Confirm
                                 </button>
@@ -2551,7 +2532,7 @@ const OwnerDashboard = () => {
                                       }
                                     }
                                   }}
-                                  className="gov-btn-danger"
+                                  className="gov-btn gov-btn-danger"
                                 >
                                   Cancel
                                 </button>
@@ -3812,22 +3793,24 @@ const OwnerDashboard = () => {
                               </span>
                             </td>
                             <td>
-                              <button type="button" className="gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'booking', record: booking })}>View</button>{' '}
-                              <button
-                                className="gov-btn-primary"
-                                onClick={async () => {
-                                  try {
-                                    await api.put(`/owner/bookings/${booking.booking_id}/restore`);
-                                    loadArchivedBookings();
-                                    fetchDashboardData();
-                                  } catch (error) {
-                                    console.error('Restore error:', error);
-                                    alert(error.response?.data?.error || 'Failed to restore booking');
-                                  }
-                                }}
-                              >
-                                ↺ Restore
-                              </button>
+                              <div className="gov-row-actions">
+                                <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'booking', record: booking })}>View</button>
+                                <button
+                                  className="gov-btn gov-btn-primary"
+                                  onClick={async () => {
+                                    try {
+                                      await api.put(`/owner/bookings/${booking.booking_id}/restore`);
+                                      loadArchivedBookings();
+                                      fetchDashboardData();
+                                    } catch (error) {
+                                      console.error('Restore error:', error);
+                                      alert(error.response?.data?.error || 'Failed to restore booking');
+                                    }
+                                  }}
+                                >
+                                  Restore
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -3883,23 +3866,25 @@ const OwnerDashboard = () => {
                               {payment.paid_at ? new Date(payment.paid_at).toLocaleDateString() : 'N/A'}
                             </td>
                             <td>
-                              <button type="button" className="gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'payment', record: payment })}>View</button>{' '}
-                              <button
-                                className="gov-btn-primary"
-                                onClick={async () => {
-                                  try {
-                                    await api.put(`/owner/payments/${payment.payment_id}/restore`);
-                                    loadArchivedPayments();
-                                    fetchPayments();
-                                    fetchPaymentStats();
-                                  } catch (error) {
-                                    console.error('Restore error:', error);
-                                    alert(error.response?.data?.error || 'Failed to restore payment');
-                                  }
-                                }}
-                              >
-                                ↺ Restore
-                              </button>
+                              <div className="gov-row-actions">
+                                <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'payment', record: payment })}>View</button>
+                                <button
+                                  className="gov-btn gov-btn-primary"
+                                  onClick={async () => {
+                                    try {
+                                      await api.put(`/owner/payments/${payment.payment_id}/restore`);
+                                      loadArchivedPayments();
+                                      fetchPayments();
+                                      fetchPaymentStats();
+                                    } catch (error) {
+                                      console.error('Restore error:', error);
+                                      alert(error.response?.data?.error || 'Failed to restore payment');
+                                    }
+                                  }}
+                                >
+                                  Restore
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ))}

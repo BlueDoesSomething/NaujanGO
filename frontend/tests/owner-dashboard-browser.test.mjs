@@ -127,6 +127,23 @@ test('property validation retains drafts, hides redundant price/rating, and sect
 test('reservation details retain historical policies and cancellation is explicit and retryable', options, async () => {
   await browser.click('Reservations'); await browser.waitFor(`document.querySelector('.gov-table tbody tr')`);
   assert.match(await browser.evaluate(`document.querySelector('.gov-main table').textContent`), /€450/);
+  const actions = await browser.evaluate(`(() => {
+    const group = document.querySelector('.gov-table .gov-row-actions');
+    const buttons = [...group.querySelectorAll('button')];
+    const rects = buttons.map(button => button.getBoundingClientRect());
+    return {
+      wrap: getComputedStyle(group).flexWrap,
+      labels: buttons.map(button => button.textContent.trim()),
+      baseClass: buttons.every(button => button.classList.contains('gov-btn')),
+      heights: rects.map(rect => Math.round(rect.height)),
+      tops: rects.map(rect => Math.round(rect.top))
+    };
+  })()`);
+  assert.equal(actions.wrap, 'nowrap', 'row actions must stay on one line');
+  assert.ok(actions.baseClass, 'every row action must use the shared button base class');
+  assert.deepEqual(actions.labels, ['View details', 'Message guest', 'Cancel Booking', 'Archive']);
+  assert.equal(new Set(actions.heights).size, 1, `row action buttons must share one height: ${actions.heights.join(', ')}`);
+  assert.equal(new Set(actions.tops).size, 1, `row action buttons must share one baseline: ${actions.tops.join(', ')}`);
   await browser.click('View details');
   assert.match(await browser.evaluate(`document.querySelector('[role="dialog"]').textContent`), /Frozen original terms/);
   assert.match(await browser.evaluate(`document.querySelector('[role="dialog"]').textContent`), /Quiet room please/);

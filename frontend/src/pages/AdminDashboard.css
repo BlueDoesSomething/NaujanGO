@@ -787,6 +787,48 @@
   font-weight: 700;
 }
 
+/* Table row actions: one compact, non-wrapping row with consistent sizing. */
+.gov-row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+  vertical-align: middle;
+}
+
+.gov-row-actions .gov-btn {
+  flex: 0 0 auto;
+  /* global-buttons.css forces large !important padding/borders on class substrings
+     such as "primary" and "ghost"; this scoped rule outranks it so every row
+     action keeps one compact size while variant colors still apply. */
+  padding: 0.45rem 0.85rem !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-radius: 8px !important;
+  font-size: 0.8rem !important;
+  line-height: 1.15 !important;
+  white-space: nowrap !important;
+}
+
+.gov-row-actions .gov-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.gov-row-extension {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.gov-row-extension small {
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* ════════════════════════════════════════
    STATUS BADGES
 ════════════════════════════════════════ */
