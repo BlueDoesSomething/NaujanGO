@@ -17,6 +17,8 @@ import { reviewContentDeletion, deleteArchivedContent, setContentArchive } from 
 import { adminArrivalReports } from './tourismArrivalReportsController.js';
 import { publicBookingPolicy, saveBookingPolicy } from './bookingPaymentPolicyController.js';
 import { ownerBookingMessages, postOwnerBookingMessage, bookingMessageLimiter } from './bookingMessagesController.js';
+import { CREDENTIAL_TYPES, credentialMatches, serializeCredentialProfile } from '../utils/businessCredentials.js';
+import { flagBusinessCredential, respondCredentialError } from '../services/businessCredentials.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -1552,6 +1554,8 @@ router.delete('/attractions/:id', async (req, res) => {
 // GET /api/admin/business-profiles?status=pending|verified|rejected
 router.get('/business-profiles', async (req, res) => {
   try {
+    const credentialType = req.query.credential_type || 'all', credentialState = req.query.credential_state || 'all';
+    if (!['all', ...CREDENTIAL_TYPES.map(type => type.key)].includes(credentialType) || !['all', 'expired', 'expiring_soon', 'flagged', 'unknown', 'missing', 'incomplete', 'pending', 'rejected', 'current'].includes(credentialState)) return res.status(400).json({ error: 'Invalid credential filter.' });
     const status = ['pending', 'verified', 'rejected'].includes(req.query.status)
       ? req.query.status
       : null;
@@ -1563,6 +1567,8 @@ router.get('/business-profiles', async (req, res) => {
               bp.business_permit_no, bp.business_permit_expiry, bp.business_permit_file,
               bp.dot_no, bp.dot_expiry, bp.dot_file,
               bp.philgeps_no, bp.philgeps_expiry, bp.philgeps_file,
+              bp.registration_authority, bp.registration_no, bp.registration_expiry, bp.registration_file,
+              bp.sanitary_permit_no, bp.sanitary_permit_expiry, bp.sanitary_permit_file, bp.credential_flags,
               u.username, u.email, u.first_name, u.last_name
        FROM business_profiles bp
        JOIN users u ON u.user_id = bp.owner_id
@@ -1571,11 +1577,18 @@ router.get('/business-profiles', async (req, res) => {
       status ? [status] : []
     );
 
-    res.json({ success: true, data: profiles });
+    const data = profiles.map(serializeCredentialProfile).filter(profile => credentialMatches(profile.credentials, { type: credentialType, state: credentialState }));
+    res.set('Cache-Control', 'private, no-store').json({ success: true, data });
   } catch (error) {
     console.error('Get business profiles error:', error);
+    if (error.status || ['ER_NO_SUCH_TABLE', 'ER_BAD_FIELD_ERROR'].includes(error.code)) return respondCredentialError(res, error);
     res.status(500).json({ error: 'Failed to fetch business profiles' });
   }
+});
+
+router.put('/business-profiles/:id/credentials/:type/flag', async (req, res) => {
+  try { res.set('Cache-Control', 'private, no-store').json(await flagBusinessCredential(req.user, req.params.id, req.params.type, req.body)); }
+  catch (error) { return respondCredentialError(res, error); }
 });
 
 // GET /api/admin/reviews - every review across hotels and attractions.

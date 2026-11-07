@@ -39,7 +39,7 @@ const setup = async (t, options = {}) => {
       return [{ affectedRows: 1 }];
     }
     if (sql.includes('SELECT owner_id FROM business_profiles')) {
-      const allowed = DOCUMENT_FIELDS.some(field => profile[field] === params[0]) && (params[3] === 'admin' || Number(params[4]) === profile.owner_id);
+      const allowed = DOCUMENT_FIELDS.some(field => profile[field] === params[0]) && (params[DOCUMENT_FIELDS.length] === 'admin' || Number(params[DOCUMENT_FIELDS.length + 1]) === profile.owner_id);
       return [allowed ? [{ owner_id: profile.owner_id }] : []];
     }
     if (sql.includes('FROM business_documents')) {
@@ -138,6 +138,18 @@ test('missing legacy files return a useful re-upload error instead of Cannot GET
     assert.match(data.error, /upload it again/);
   }
   assert.equal(fixture.profile().verification_status, 'verified', 'viewing a missing file never changes verification');
+});
+
+test('new registration/sanitary documents remain private and cannot be attached to another document group', async t => {
+  const fixture = await setup(t);
+  for (const field of ['registration_file', 'sanitary_permit_file']) {
+    const { url } = await (await fixture.upload(field)).json();
+    assert.equal((await fixture.request(url, 6)).status, 404);
+    assert.equal((await fixture.request(url, 7)).status, 403);
+    assert.equal((await fixture.request(url, null)).status, 401);
+    await assert.rejects(validateDocumentReferences(6, { [field]: url }), { status: 400 });
+    await assert.rejects(validateDocumentReferences(5, { dot_file: url }), { status: 400 });
+  }
 });
 
 test('legacy files still on disk remain viewable even before the storage migration is applied', async t => {

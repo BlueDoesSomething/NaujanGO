@@ -14,6 +14,12 @@ Do not mark a missing document as verified just to dismiss the error.
 
 ## Changes
 
+The additional business-registration and sanitary-permit fields, expiry-aware
+badges and admin follow-up filters use the same private upload mechanism. See
+`establishment-credentials.md` and migration `056_establishment_credentials.sql`.
+Existing Business Permit fields represent the LGU Business/Mayor's Permit;
+they are not duplicate DTI/SEC/CDA registration fields.
+
 - New JPG, PNG, WEBP and PDF uploads (maximum 6MB) are stored in the existing
   MySQL database, in `business_documents`, instead of the container filesystem.
   No new cloud account, storage credentials, or public file bucket is required.

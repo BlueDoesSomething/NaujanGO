@@ -8,7 +8,6 @@ import RoomManagement from '../components/RoomManagement';
 import RoomRevenueReport from '../components/RoomRevenueReport';
 import PaymentPlanSettings from '../components/PaymentPlanSettings';
 import StayExtensionControls from '../components/StayExtensionControls';
-import BusinessDocumentLink from '../components/BusinessDocumentLink';
 import { formatBookingBoundary } from '../utils/stayBooking';
 import { buildPolicyLines, policyChip } from '../utils/bookingPolicy';
 import BookingIssuedCell from '../components/BookingIssuedCell';
@@ -31,6 +30,8 @@ import { registerOwnerHistoryGuard } from '../utils/ownerHistoryGuard';
 import PaymentSummaryCards from '../components/PaymentSummaryCards';
 import { getPaymentMethodLabel, getBookingPaymentMethod, getPaymentReferences } from '../utils/paymentDisplay';
 import { ownerRecordReport } from '../utils/reportExports';
+import OwnerCredentialFields from '../components/OwnerCredentialFields';
+import { credentialForm } from '../utils/businessCredentials';
 import { downloadReportCsv } from '../utils/exportFiles';
 import ExportPdfButton from '../components/ExportPdfButton';
 import { HOTEL_PAYMENT_METHOD_OPTIONS, DEFAULT_HOTEL_PAYMENT_METHODS } from '../utils/hotelPaymentMethods';
@@ -177,15 +178,7 @@ const OwnerDashboard = () => {
       business_address: '',
       tax_id: '',
       bank_name: '',
-      business_permit_no: '',
-      business_permit_expiry: '',
-      business_permit_file: '',
-      dot_no: '',
-      dot_expiry: '',
-      dot_file: '',
-      philgeps_no: '',
-      philgeps_expiry: '',
-      philgeps_file: ''
+      ...credentialForm()
     });
     const [profileEditing, setProfileEditing] = useState(false);
     // Ref mirror of profileEditing so async refetches (focus/auth refresh)
@@ -372,7 +365,8 @@ const OwnerDashboard = () => {
     const bp = profileData.businessProfile;
     setProfileStatus({
       verification_status: bp?.verification_status || 'pending',
-      rejection_reason: bp?.rejection_reason || ''
+      rejection_reason: bp?.rejection_reason || '',
+      credentials: Array.isArray(bp?.credentials) ? bp.credentials : null
     });
 
     // Admins always get the full dashboard; owners depend on legitimacy.
@@ -452,15 +446,7 @@ const OwnerDashboard = () => {
           business_address: bp.business_address || '',
           tax_id: bp.tax_id || '',
           bank_name: bp.bank_name || '',
-          business_permit_no: bp.business_permit_no || '',
-          business_permit_expiry: bp.business_permit_expiry ? String(bp.business_permit_expiry).slice(0, 10) : '',
-          business_permit_file: bp.business_permit_file || '',
-          dot_no: bp.dot_no || '',
-          dot_expiry: bp.dot_expiry ? String(bp.dot_expiry).slice(0, 10) : '',
-          dot_file: bp.dot_file || '',
-          philgeps_no: bp.philgeps_no || '',
-          philgeps_expiry: bp.philgeps_expiry ? String(bp.philgeps_expiry).slice(0, 10) : '',
-          philgeps_file: bp.philgeps_file || ''
+          ...credentialForm(bp)
         });
       }
       await applyAccess(profileData);
@@ -579,15 +565,7 @@ const OwnerDashboard = () => {
         taxId: businessProfile.tax_id,
         bankName: businessProfile.bank_name,
         // Legitimacy & accreditation details
-        business_permit_no: businessProfile.business_permit_no,
-        business_permit_expiry: businessProfile.business_permit_expiry,
-        business_permit_file: businessProfile.business_permit_file,
-        dot_no: businessProfile.dot_no,
-        dot_expiry: businessProfile.dot_expiry,
-        dot_file: businessProfile.dot_file,
-        philgeps_no: businessProfile.philgeps_no,
-        philgeps_expiry: businessProfile.philgeps_expiry,
-        philgeps_file: businessProfile.philgeps_file
+        ...credentialForm(businessProfile)
       };
 
       const res = await api.put('/owner/profile', payload);
@@ -606,7 +584,7 @@ const OwnerDashboard = () => {
   };
 
   const handleDocumentUpload = async (field, file) => {
-    if (!file) return;
+    if (!file || docUploading || profileSaving) return;
     setDocUploading(field);
     try {
       const formData = new FormData();
@@ -616,6 +594,9 @@ const OwnerDashboard = () => {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setBusinessProfile((prev) => ({ ...prev, [field]: res.data.url }));
+      if (profileBaseline.current) profileBaseline.current = { ...profileBaseline.current, [field]: res.data.url };
+      setProfileStatus(current => ({ ...current, verification_status: 'pending' }));
+      await refreshAccess();
     } catch (error) {
       console.error('Document upload failed:', error);
       alert(error.response?.data?.error || 'Document upload failed');
@@ -632,102 +613,6 @@ const OwnerDashboard = () => {
         : t('missing_verification');
 
   // One legitimacy document group (number + expiry + file upload)
-  const docGroup = (label, numberLabel, noKey, expiryKey, fileKey) => {
-    const submitted = Boolean(businessProfile[noKey] || businessProfile[fileKey]);
-    const isVerified = profileStatus.verification_status === 'verified';
-    const inputStyle = {
-      width: '100%',
-      padding: '0.75rem',
-      border: '1px solid #c8e6c9',
-      borderRadius: '8px',
-      fontSize: '0.95rem',
-      background: profileEditing ? 'white' : '#f8fdf7'
-    };
-
-    return (
-      <div style={{ gridColumn: '1 / -1', border: '1px solid #c8e6c9', borderRadius: '10px', padding: '1.1rem 1.25rem', background: '#fbfffb' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem' }}>
-          <span style={{ fontWeight: 800, color: '#1B5E20', fontSize: '0.95rem' }}>{label}</span>
-          {submitted && (
-            <span style={{
-              fontSize: '0.72rem',
-              fontWeight: 800,
-              padding: '0.25rem 0.6rem',
-              borderRadius: '999px',
-              background: isVerified ? '#dcfce7' : profileStatus.verification_status === 'rejected' ? '#fee2e2' : '#fef3c7',
-              color: isVerified ? '#166534' : profileStatus.verification_status === 'rejected' ? '#991b1b' : '#92400e'
-            }}>
-              {isVerified
-                ? t('verification_verified')
-                : profileStatus.verification_status === 'rejected'
-                  ? t('verification_rejected')
-                  : t('verification_pending')}
-            </span>
-          )}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
-          <div>
-            <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#2d3748', display: 'block', marginBottom: '0.5rem' }}>
-              {numberLabel}
-            </label>
-            <input
-              type="text"
-              value={businessProfile[noKey]}
-              onChange={(e) => setBusinessProfile({ ...businessProfile, [noKey]: e.target.value })}
-              disabled={!profileEditing}
-              style={inputStyle}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#2d3748', display: 'block', marginBottom: '0.5rem' }}>
-              {t('field_doc_expiry')}
-            </label>
-            <input
-              type="date"
-              value={businessProfile[expiryKey]}
-              onChange={(e) => setBusinessProfile({ ...businessProfile, [expiryKey]: e.target.value })}
-              disabled={!profileEditing}
-              style={inputStyle}
-            />
-          </div>
-          <div>
-            <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#2d3748', display: 'block', marginBottom: '0.5rem' }}>
-              {t('upload_document')}
-            </label>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              {businessProfile[fileKey] ? (
-                <BusinessDocumentLink
-                  url={businessProfile[fileKey]}
-                  style={{ fontSize: '0.85rem', fontWeight: 700, color: '#1B5E20', wordBreak: 'break-all' }}
-                >
-                  {t('document_uploaded')}
-                </BusinessDocumentLink>
-              ) : (
-                <span style={{ fontSize: '0.85rem', color: '#9ca3af' }}>—</span>
-              )}
-              {profileEditing && (
-                <label className="gov-btn-ghost" style={{ cursor: 'pointer', margin: 0, padding: '0.4rem 0.7rem', fontSize: '0.8rem' }}>
-                  {docUploading === fileKey ? '…' : t('upload_document')}
-                  <input
-                    type="file"
-                    accept=".jpg,.jpeg,.png,.webp,.pdf"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      // Reset so selecting the same file again re-fires onChange.
-                      e.target.value = '';
-                      handleDocumentUpload(fileKey, file);
-                    }}
-                  />
-                </label>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const parseImageUrls = (value) => {
     if (Array.isArray(value)) return value;
     if (!value) return [];
@@ -3543,7 +3428,7 @@ const OwnerDashboard = () => {
                           ? t('verification_rejected')
                           : t('verification_pending')}
                       {' — '}
-                      {isLimitedOwner ? t('requirements_incomplete') : t('requirements_complete')}
+                      Existing dashboard access: {isLimitedOwner ? 'limited' : 'full'}
                     </div>
                     {isLimitedOwner && missingRequirements.length > 0 && (
                       <div style={{ fontSize: '0.85rem', color: '#92400e', marginTop: '0.35rem' }}>
@@ -3557,7 +3442,7 @@ const OwnerDashboard = () => {
                     )}
                     {!isLimitedOwner && (
                       <div style={{ fontSize: '0.82rem', color: '#4b5563', marginTop: '0.35rem' }}>
-                        {t('legitimacy_hint')}
+                        Profile review and dashboard access are separate from credential validity. Check the recorded expiry dates and follow-up notices below.
                       </div>
                     )}
                   </div>
@@ -3665,17 +3550,7 @@ const OwnerDashboard = () => {
                       payload still forwards the loaded bank_name unchanged, and
                       the API never stored bank_account. */}
 
-                  {/* Legitimacy & Accreditation */}
-                  <div style={{ gridColumn: '1 / -1', marginTop: '0.5rem' }}>
-                    <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1B5E20', borderBottom: '2px solid #e5e7eb', paddingBottom: '0.4rem' }}>
-                      <Icons.Shield size={18} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />
-                      {t('legitimacy_section')}
-                    </div>
-                    <div style={{ fontSize: '0.82rem', color: '#6b7280', marginTop: '0.4rem' }}>{t('legitimacy_hint')}</div>
-                  </div>
-                  {docGroup(t('field_business_permit_no'), t('field_business_permit_no'), 'business_permit_no', 'business_permit_expiry', 'business_permit_file')}
-                  {docGroup(t('field_dot_no'), t('field_dot_no'), 'dot_no', 'dot_expiry', 'dot_file')}
-                  {docGroup(t('field_philgeps_no'), t('field_philgeps_no'), 'philgeps_no', 'philgeps_expiry', 'philgeps_file')}
+                  <OwnerCredentialFields profile={businessProfile} onChange={setBusinessProfile} editing={profileEditing} uploading={docUploading} saving={profileSaving} onUpload={handleDocumentUpload} credentials={profileStatus.credentials} />
                 </div>
               
                 {profileEditing && (

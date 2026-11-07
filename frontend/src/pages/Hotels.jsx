@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { createHotelBooking, fetchHotels, processPayment, startPaymentCheckout } from '../api'
 import Icons from '../components/Icons'
+import CredentialBadges from '../components/CredentialBadges'
 import HeroSlideshow from '../components/HeroSlideshow'
 import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy'
 import { downloadExportFile, downloadReportCsv, exportFilename } from '../utils/exportFiles'
@@ -509,25 +510,7 @@ export default function Hotels() {
                   <h3 className="attr-card-title">{hotel.name}</h3>
                   <p className="attr-card-location"><Icons.Location size={12} /> {hotel.location}</p>
                 </div>
-                {hotel.legitimacy && (hotel.legitimacy.business_permit || hotel.legitimacy.dot || hotel.legitimacy.philgeps) ? (
-                  <div className="hotel-card-badges">
-                    {hotel.legitimacy.business_permit && (
-                      <span className="hotel-legit-chip hotel-legit-chip--permit">
-                        <Icons.Shield size={11} /> {t('badge_business_permit')}
-                      </span>
-                    )}
-                    {hotel.legitimacy.dot && (
-                      <span className="hotel-legit-chip hotel-legit-chip--dot">
-                        <Icons.ShieldCheck size={11} /> {t('badge_dot')}
-                      </span>
-                    )}
-                    {hotel.legitimacy.philgeps && (
-                      <span className="hotel-legit-chip hotel-legit-chip--ph">
-                        <Icons.Document size={11} /> {t('badge_philgeps')}
-                      </span>
-                    )}
-                  </div>
-                ) : null}
+                <CredentialBadges credentials={hotel.credentials} compact />
                 <span className="attr-rating-badge">
                   <span className="attr-rating-star">★</span>
                   <span>{rating} ({hotel.reviewCount || 0})</span>
@@ -612,25 +595,7 @@ export default function Hotels() {
                         {availText}
                       </button>
                     </div>
-                    {hotel.legitimacy && (hotel.legitimacy.business_permit || hotel.legitimacy.dot || hotel.legitimacy.philgeps) ? (
-                      <div className="hotel-card-badges" style={{ marginBottom: 6 }}>
-                        {hotel.legitimacy.business_permit && (
-                          <span className="hotel-legit-chip hotel-legit-chip--permit">
-                            <Icons.Shield size={11} /> {t('badge_business_permit')}
-                          </span>
-                        )}
-                        {hotel.legitimacy.dot && (
-                          <span className="hotel-legit-chip hotel-legit-chip--dot">
-                            <Icons.ShieldCheck size={11} /> {t('badge_dot')}
-                          </span>
-                        )}
-                        {hotel.legitimacy.philgeps && (
-                          <span className="hotel-legit-chip hotel-legit-chip--ph">
-                            <Icons.Document size={11} /> {t('badge_philgeps')}
-                          </span>
-                        )}
-                      </div>
-                    ) : null}
+                    <CredentialBadges credentials={hotel.credentials} compact />
                     {amenities.length > 0 && (
                       <div className="hotel-card-amenities" style={{ marginBottom: 8 }}>
                         {amenities.map((item) => (

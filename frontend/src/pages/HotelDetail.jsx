@@ -8,6 +8,7 @@ import * as api from '../api';
 import axios from 'axios';
 import LeafletMap from '../components/LeafletMap';
 import Icons from '../components/Icons';
+import CredentialBadges from '../components/CredentialBadges';
 import RoomManagement from '../components/RoomManagement';
 import { RoomPerfectFor, RoomCommonQuestions } from '../components/RoomGuestContent';
 import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
@@ -1289,28 +1290,7 @@ export default function HotelDetail() {
         </div>
       </header>
 
-      {/* Legitimacy & accreditation tags (verified items only) */}
-      {hotel.legitimacy && (hotel.legitimacy.business_permit || hotel.legitimacy.dot || hotel.legitimacy.philgeps) ? (
-        <div className="hd-legit-wrap">
-          <div className="hd-legit">
-            {hotel.legitimacy.business_permit && (
-              <span className="hd-legit-item hd-legit-green">
-                <Icons.Shield size={14} /> {t('badge_business_permit')}
-              </span>
-            )}
-            {hotel.legitimacy.dot && (
-              <span className="hd-legit-item hd-legit-blue">
-                <Icons.ShieldCheck size={14} /> {t('badge_dot')}
-              </span>
-            )}
-            {hotel.legitimacy.philgeps && (
-              <span className="hd-legit-item hd-legit-amber">
-                <Icons.Document size={14} /> {t('badge_philgeps')}
-              </span>
-            )}
-          </div>
-        </div>
-      ) : null}
+      <div className="hd-legit-wrap"><CredentialBadges credentials={hotel.credentials} /></div>
 
       <main className="hd-layout">
         {/* Gallery */}

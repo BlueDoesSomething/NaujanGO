@@ -1,5 +1,6 @@
 import db from '../db.js';
 import { sqlPlaceholders } from './sqlParams.js';
+import { attachHotelCredentialSummaries } from '../services/businessCredentials.js';
 
 // Legitimacy & authorization rules (feature: Legitimacy & Accreditation Badges).
 //
@@ -10,6 +11,8 @@ import { sqlPlaceholders } from './sqlParams.js';
 const hasText = (value) => typeof value === 'string' && value.trim() !== '';
 
 export const LEGITIMACY_FIELDS = [
+  'registration_authority', 'registration_no', 'registration_expiry', 'registration_file',
+  'sanitary_permit_no', 'sanitary_permit_expiry', 'sanitary_permit_file',
   'business_permit_no', 'business_permit_expiry', 'business_permit_file',
   'dot_no', 'dot_expiry', 'dot_file',
   'philgeps_no', 'philgeps_expiry', 'philgeps_file'
@@ -96,6 +99,7 @@ export const attachHotelLegitimacy = async (hotel) => {
   const info = ok ? (map.get(Number(hotel.id)) || NO_LEGITIMACY) : NO_LEGITIMACY;
   hotel.legitimacy = info.legitimacy;
   hotel.booking_enabled = ok ? info.booking_enabled : true;
+  await attachHotelCredentialSummaries([hotel]);
   return hotel;
 };
 
@@ -108,5 +112,6 @@ export const attachHotelLegitimacyList = async (hotels) => {
     hotel.legitimacy = info.legitimacy;
     hotel.booking_enabled = ok ? info.booking_enabled : true;
   }
+  await attachHotelCredentialSummaries(hotels);
   return hotels;
 };

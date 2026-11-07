@@ -1,4 +1,5 @@
 import db from '../db.js';
+import { CREDENTIAL_EVENT_SCHEMA } from '../services/businessCredentials.js';
 
 // Keeps the flexible-payment columns present even when the SQL migration was
 // not applied by hand (Railway). Every statement is conditional and idempotent.
@@ -86,6 +87,13 @@ export const ensureBusinessLegitimacySchema = async () => {
     await ensureColumn('business_profiles', 'philgeps_no', 'VARCHAR(150) NULL DEFAULT NULL AFTER `dot_file`');
     await ensureColumn('business_profiles', 'philgeps_expiry', 'DATE NULL DEFAULT NULL AFTER `philgeps_no`');
     await ensureColumn('business_profiles', 'philgeps_file', 'VARCHAR(500) NULL DEFAULT NULL AFTER `philgeps_expiry`');
+    for (const [name, definition] of [
+      ['registration_authority', 'VARCHAR(10) NULL'], ['registration_no', 'VARCHAR(150) NULL'],
+      ['registration_expiry', 'DATE NULL'], ['registration_file', 'VARCHAR(500) NULL'],
+      ['sanitary_permit_no', 'VARCHAR(150) NULL'], ['sanitary_permit_expiry', 'DATE NULL'],
+      ['sanitary_permit_file', 'VARCHAR(500) NULL'], ['credential_flags', 'TEXT NULL']
+    ]) await ensureColumn('business_profiles', name, definition);
+    await db.promise().query(CREDENTIAL_EVENT_SCHEMA);
   } catch (error) {
     console.error('Schema ensure (business legitimacy) failed:', error.message);
   }

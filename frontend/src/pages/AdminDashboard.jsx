@@ -19,10 +19,10 @@ import AdminBookingPolicy from '../components/AdminBookingPolicy';
 import DashboardNotifications, { NotificationBadge } from '../components/DashboardNotifications';
 import useDashboardNotifications from '../hooks/useDashboardNotifications';
 import AboutPageManager from '../components/AboutPageManager';
+import AdminCredentialReview from '../components/AdminCredentialReview';
 import api from '../api';
 import Pagination from '../components/Pagination';
 import BookingIssuedCell from '../components/BookingIssuedCell';
-import BusinessDocumentLink from '../components/BusinessDocumentLink';
 import { formatBookingBoundary } from '../utils/stayBooking';
 import { getBookingGuestName } from '../utils/bookingGuestName';
 import { useAuth } from '../context/AuthContext';
@@ -364,11 +364,6 @@ const AdminDashboard = () => {
   const [ownerAssignments, setOwnerAssignments] = useState({});
   const [ownerAssigning, setOwnerAssigning] = useState({});
   // Business legitimacy verification (permit / DOT / PhilGEPS)
-  const [businessProfiles, setBusinessProfiles] = useState([]);
-  const [businessProfilesLoading, setBusinessProfilesLoading] = useState(false);
-  const [rejectProfile, setRejectProfile] = useState(null);
-  const [rejectReason, setRejectReason] = useState('');
-  const [rejectSaving, setRejectSaving] = useState(false);
   const [reportsLoading, setReportsLoading] = useState(false);
   const [reportsInitialCategory, setReportsInitialCategory] = useState(null);
   const [analyticsData, setAnalyticsData] = useState({ dailyTrends: [], monthlyTrends: [] });
@@ -2141,65 +2136,6 @@ const AdminDashboard = () => {
     loadChatbotData();
   }, [activeModule, chatbotData]);
 
-  const loadBusinessProfiles = async () => {
-    setBusinessProfilesLoading(true);
-    try {
-      const res = await api.get('/admin/business-profiles');
-      setBusinessProfiles(res.data.data || []);
-    } catch (error) {
-      console.error('Failed to load business profiles:', error);
-      alert(error.response?.data?.error || 'Failed to load business profiles');
-    } finally {
-      setBusinessProfilesLoading(false);
-    }
-  };
-
-  // Mirror of the backend authorization rule — keep in sync with
-  // backend/utils/legitimacy.js computeAuthorization().
-  const missingRequirementsFor = (bp) => {
-    const has = (v) => typeof v === 'string' && v.trim() !== '';
-    const missing = [];
-    if (!has(bp.business_permit_no)) missing.push('business_permit');
-    if (!(has(bp.dot_no) || has(bp.philgeps_no))) missing.push('dot_or_philgeps');
-    if (bp.verification_status !== 'verified') missing.push('verification');
-    return missing;
-  };
-
-  const missingLabel = (key) =>
-    key === 'business_permit'
-      ? t('missing_business_permit')
-      : key === 'dot_or_philgeps'
-        ? t('missing_dot_or_philgeps')
-        : t('missing_verification');
-
-  const verifyBusinessProfile = async (id, status, reason) => {
-    try {
-      await api.put(`/admin/business-profiles/${id}/verification`, {
-        verification_status: status,
-        rejection_reason: reason && reason.trim()
-      });
-      await loadBusinessProfiles();
-    } catch (error) {
-      console.error('Verification update failed:', error);
-      alert(error.response?.data?.error || 'Failed to update verification');
-    }
-  };
-
-  const confirmReject = async () => {
-    if (!rejectReason.trim()) return;
-    const id = rejectProfile.id;
-    setRejectSaving(true);
-    await verifyBusinessProfile(id, 'rejected', rejectReason);
-    setRejectSaving(false);
-    setRejectProfile(null);
-    setRejectReason('');
-  };
-
-  useEffect(() => {
-    if (activeModule !== 'business-verification') return;
-    loadBusinessProfiles();
-  }, [activeModule]);
-
   useEffect(() => {
     const openConversationId = location.state?.openConversationId;
     if (activeModule !== 'chatbot' || !openConversationId || !chatbotData?.conversations?.length) return;
@@ -2987,183 +2923,7 @@ const AdminDashboard = () => {
             );
           })()}
 
-          {/* Users */}
-          {/* Business Verification (legitimacy & accreditation) */}
-          {activeModule === 'business-verification' && (
-            <div>
-              <h1 className="gov-page-title">
-                <Icons.Shield size={32} style={{ verticalAlign: 'middle' }} /> {t('admin_business_verification')}
-              </h1>
-              <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '0 0 1.5rem' }}>{t('legitimacy_hint')}</p>
-
-              <div className="gov-table-wrap">
-                <table className="gov-table" style={{ fontSize: '0.875rem' }}>
-                  <thead>
-                    <tr>
-                      <th>Owner</th>
-                      <th>Business</th>
-                      <th>{t('field_business_permit_no')}</th>
-                      <th>{t('field_dot_no')}</th>
-                      <th>{t('field_philgeps_no')}</th>
-                      <th>Status</th>
-                      <th style={{ textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {businessProfilesLoading ? (
-                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>…</td></tr>
-                    ) : businessProfiles.length === 0 ? (
-                      <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#6b7280' }}>No business profiles yet.</td></tr>
-                    ) : businessProfiles.map((bp) => (
-                      <tr key={bp.id}>
-                        <td>
-                          <div style={{ fontWeight: 700 }}>{bp.first_name} {bp.last_name}</div>
-                          <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>{bp.email}</div>
-                        </td>
-                        <td>
-                          <div style={{ fontWeight: 600 }}>{bp.business_name || '—'}</div>
-                          <div style={{ fontSize: '0.78rem', color: '#6b7280' }}>{bp.business_phone || bp.business_email || ''}</div>
-                        </td>
-                        {[['business_permit_no', 'business_permit_expiry', 'business_permit_file'], ['dot_no', 'dot_expiry', 'dot_file'], ['philgeps_no', 'philgeps_expiry', 'philgeps_file']].map(([noKey, expKey, fileKey]) => (
-                          <td key={noKey}>
-                            <div style={{ fontWeight: 600 }}>{bp[noKey] || '—'}</div>
-                            {bp[expKey] && <div style={{ fontSize: '0.75rem', color: '#6b7280' }}>{t('field_doc_expiry')}: {String(bp[expKey]).slice(0, 10)}</div>}
-                            {bp[fileKey] && (
-                              <BusinessDocumentLink url={bp[fileKey]} style={{ fontSize: '0.75rem', fontWeight: 700 }}>{t('document_uploaded')}</BusinessDocumentLink>
-                            )}
-                          </td>
-                        ))}
-                        <td>
-                          {(() => {
-                            const missing = missingRequirementsFor(bp);
-                            const docsMissing = missing.filter((key) => key !== 'verification');
-                            const isVerifiedButIncomplete = bp.verification_status === 'verified' && docsMissing.length > 0;
-                            const note = docsMissing.length > 0
-                              ? `${t('requirements_missing_label')}${docsMissing.map(missingLabel).join(', ')}`
-                              : missing.length > 0
-                                ? t('admin_ready_to_unlock')
-                                : '';
-                            return (
-                              <>
-                                <span style={{
-                                  fontSize: '0.72rem', fontWeight: 800, padding: '0.25rem 0.6rem', borderRadius: '999px',
-                                  background: bp.verification_status === 'rejected'
-                                    ? '#fee2e2'
-                                    : isVerifiedButIncomplete
-                                      ? '#fef3c7'
-                                      : bp.verification_status === 'verified'
-                                        ? '#dcfce7'
-                                        : '#e0f2fe',
-                                  color: bp.verification_status === 'rejected'
-                                    ? '#991b1b'
-                                    : isVerifiedButIncomplete
-                                      ? '#b45309'
-                                      : bp.verification_status === 'verified'
-                                        ? '#166534'
-                                        : '#1e40af'
-                                }}>
-                                  {bp.verification_status === 'rejected' ? t('verification_rejected')
-                                    : bp.verification_status === 'verified' ? t('verification_verified')
-                                    : t('verification_pending')}
-                                </span>
-                                {note && (
-                                  <span
-                                    title={note}
-                                    aria-label={note}
-                                    style={{
-                                      display: 'inline-flex', verticalAlign: 'middle',
-                                      marginLeft: '0.4rem', cursor: 'help',
-                                      color: docsMissing.length > 0 ? '#d97706' : '#166534',
-                                      borderRadius: '50%'
-                                    }}
-                                  >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                      <circle cx="12" cy="12" r="10" />
-                                      <line x1="12" y1="8" x2="12" y2="13" />
-                                      <line x1="12" y1="16.5" x2="12.01" y2="16.5" />
-                                    </svg>
-                                  </span>
-                                )}
-                                {bp.verification_status === 'rejected' && bp.rejection_reason && (
-                                  <div style={{ fontSize: '0.75rem', color: '#991b1b', marginTop: '0.25rem' }}>{bp.rejection_reason}</div>
-                                )}
-                              </>
-                            );
-                          })()}
-                        </td>
-                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
-                          <button
-                            className="gov-btn-primary"
-                            style={{ marginRight: '0.5rem', padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                            onClick={() => {
-                              const docsMissing = missingRequirementsFor(bp).filter((key) => key !== 'verification');
-                              if (docsMissing.length > 0 && !window.confirm(t('admin_verify_incomplete_confirm'))) return;
-                              verifyBusinessProfile(bp.id, 'verified');
-                            }}
-                            disabled={bp.verification_status === 'verified'}
-                          >
-                            {t('admin_verify')}
-                          </button>
-                          <button
-                            className="gov-btn-ghost"
-                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                            onClick={() => {
-                              setRejectReason('');
-                              setRejectProfile(bp);
-                            }}
-                            disabled={bp.verification_status === 'rejected' || rejectSaving}
-                          >
-                            {t('admin_reject')}
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
-          {rejectProfile && (
-            <div
-              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
-              onClick={(e) => { if (e.target === e.currentTarget) setRejectProfile(null); }}
-            >
-              <div style={{ background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '440px', padding: '1.5rem', boxShadow: '0 24px 64px rgba(0,0,0,0.22)' }}>
-                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, color: '#991b1b' }}>
-                  {t('admin_reject')}: {rejectProfile.business_name || rejectProfile.username || ''}
-                </h3>
-                <p style={{ margin: '0.5rem 0 0.75rem', fontSize: '0.875rem', color: '#6b7280' }}>
-                  {t('admin_rejection_reason')}
-                </p>
-                <textarea
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  rows={4}
-                  placeholder={t('admin_rejection_reason')}
-                  style={{ width: '100%', boxSizing: 'border-box', padding: '0.6rem 0.75rem', borderRadius: '8px', border: '1px solid #d1d5db', fontSize: '0.875rem', fontFamily: 'inherit', resize: 'vertical' }}
-                />
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
-                  <button
-                    className="gov-btn-ghost"
-                    style={{ padding: '0.5rem 1rem', fontSize: '0.875rem' }}
-                    onClick={() => setRejectProfile(null)}
-                    disabled={rejectSaving}
-                  >
-                    {t('cancel')}
-                  </button>
-                  <button
-                    className="gov-btn-primary"
-                    style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', background: '#dc2626', borderColor: '#dc2626' }}
-                    onClick={confirmReject}
-                    disabled={rejectSaving || !rejectReason.trim()}
-                  >
-                    {rejectSaving ? t('saving') || 'Saving...' : t('admin_reject')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {activeModule === 'business-verification' && <AdminCredentialReview />}
 
           {activeModule === 'users' && (
             <div>

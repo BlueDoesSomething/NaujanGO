@@ -32,6 +32,8 @@ import { ownerArrivalReports } from './tourismArrivalReportsController.js';
 import { ownerBookingMessages, postOwnerBookingMessage, bookingMessageLimiter } from './bookingMessagesController.js';
 import { assertPaymentAllowed, externalPaymentBooking, respondBookingPolicyError } from '../services/bookingPaymentPolicy.js';
 import { updatePayAtPropertyBookingStatus } from '../services/payAtPropertyBookings.js';
+import { serializeCredentialProfile, validateCredentialInput } from '../utils/businessCredentials.js';
+import { respondCredentialError } from '../services/businessCredentials.js';
 
 const router = express.Router();
 
@@ -1565,7 +1567,9 @@ router.get('/profile', async (req, res) => {
               verification_status, rejection_reason, verified_at,
               business_permit_no, business_permit_expiry, business_permit_file,
               dot_no, dot_expiry, dot_file,
-              philgeps_no, philgeps_expiry, philgeps_file
+              philgeps_no, philgeps_expiry, philgeps_file,
+              registration_authority, registration_no, registration_expiry, registration_file,
+              sanitary_permit_no, sanitary_permit_expiry, sanitary_permit_file, credential_flags
        FROM business_profiles WHERE owner_id = ?`,
       [userId]
     );
@@ -1575,12 +1579,13 @@ router.get('/profile', async (req, res) => {
 
     res.json({
       ...users[0],
-      businessProfile,
+      businessProfile: serializeCredentialProfile(businessProfile),
       authorization,
       missing_requirements
     });
   } catch (error) {
     console.error('Get profile error:', error);
+    if (error.status || ['ER_NO_SUCH_TABLE', 'ER_BAD_FIELD_ERROR'].includes(error.code)) return respondCredentialError(res, error);
     res.status(500).json({ error: 'Failed to fetch profile' });
   }
 });
@@ -1591,20 +1596,20 @@ router.put('/profile', async (req, res) => {
   const { first_name, last_name, phone, email, businessName, businessEmail, businessPhone, businessAddress, taxId, bankAccount, bankName } = req.body;
 
   try {
-    // Update user basic info
+    // Check if business profile exists
+    const [existingProfiles] = await db.promise().query(
+      'SELECT * FROM business_profiles WHERE owner_id = ?',
+      [userId]
+    );
+    validateCredentialInput(req.body, existingProfiles[0] || {});
+    await validateDocumentReferences(userId, req.body, existingProfiles[0] || {});
+
     if (first_name || last_name || phone || email) {
       await db.promise().query(
         'UPDATE users SET first_name = ?, last_name = ?, phone = ?, email = ? WHERE user_id = ?',
         [first_name, last_name, phone, email, userId]
       );
     }
-
-    // Check if business profile exists
-    const [existingProfiles] = await db.promise().query(
-      'SELECT * FROM business_profiles WHERE owner_id = ?',
-      [userId]
-    );
-    await validateDocumentReferences(userId, req.body, existingProfiles[0] || {});
 
     // Legitimacy fields are sent as-is (snake_case); empty strings become NULL.
     const legitimacyUpdates = {};

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import db from '../db.js';
 
-export const DOCUMENT_FIELDS = ['business_permit_file', 'dot_file', 'philgeps_file'];
+export const DOCUMENT_FIELDS = ['business_permit_file', 'dot_file', 'philgeps_file', 'registration_file', 'sanitary_permit_file'];
 export const DOCUMENT_MAX_BYTES = 6 * 1024 * 1024;
 export const LEGACY_DOCUMENT_DIR = fileURLToPath(new URL('../uploads/permits/', import.meta.url));
 const failure = (message, status, code) => Object.assign(new Error(message), { status, code });
@@ -93,9 +93,9 @@ export const readBusinessDocument = async (actor, filename, legacyDir = LEGACY_D
   const url = `/uploads/permits/${filename}`;
   const [profiles] = await db.promise().execute(
     `SELECT owner_id FROM business_profiles
-     WHERE (business_permit_file = ? OR dot_file = ? OR philgeps_file = ?)
+     WHERE (${DOCUMENT_FIELDS.map(field => `${field} = ?`).join(' OR ')})
        AND (? = 'admin' OR owner_id = ?) LIMIT 1`,
-    [url, url, url, actor.role, actor.user_id]);
+    [...DOCUMENT_FIELDS.map(() => url), actor.role, actor.user_id]);
   if (!profiles.length) throw failure('Document not found or access denied.', 404, 'DOCUMENT_NOT_FOUND');
   let rows = [];
   try {
@@ -128,7 +128,7 @@ export const readBusinessDocument = async (actor, filename, legacyDir = LEGACY_D
 
 export const respondDocumentError = (res, error) => {
   res.set('Cache-Control', 'private, no-store');
-  if (storageMissing(error)) return res.status(503).json({ error: 'Verification document storage needs migrations/051_durable_business_documents.sql.', code: 'DOCUMENT_SCHEMA_MISSING' });
+  if (storageMissing(error)) return res.status(503).json({ error: 'Verification document storage needs migrations/051_durable_business_documents.sql and credential fields need migrations/056_establishment_credentials.sql.', code: 'DOCUMENT_SCHEMA_MISSING' });
   if (error.code === 'ER_NET_PACKET_TOO_LARGE') return res.status(503).json({ error: 'Document storage rejected the file size. Contact the administrator to check the database upload limit.', code: 'DOCUMENT_STORAGE_LIMIT' });
   return res.status(error.status || 500).json({ error: error.status ? error.message : 'Unable to access this verification document.', code: error.status ? error.code : 'DOCUMENT_STORAGE_ERROR' });
 };
