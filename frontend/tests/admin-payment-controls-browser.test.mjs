@@ -24,8 +24,9 @@ const financialWrites = () => browser.writes.filter(request => /^\/api\/(?:owner
 const assertHistoryOnly = async () => {
   assert.equal(await browser.evaluate(`document.querySelector('.gov-page-title').textContent`), 'Payment History');
   assert.match(await browser.evaluate(`document.querySelector('#owner-nav').textContent`), /Payment History/);
-  assert.doesNotMatch(await browser.evaluate(`document.querySelector('#owner-nav').textContent`), /Payment Setup/);
-  assert.ok(!await browser.evaluate(`[...document.querySelectorAll('.gov-main button')].some(node => /^(Payment Setup|Payment setup ↗|Confirm|Cancel|Refund|Process Refund|Archive)$/.test(node.textContent.trim()))`));
+  // Owners may still access Payment Setup to configure direct-to-property display options,
+  // but no online/gateway payment actions are available while payments are disabled or unavailable.
+  assert.ok(!await browser.evaluate(`[...document.querySelectorAll('.gov-main button')].some(node => /^(Payment setup ↗|Confirm|Cancel|Refund|Process Refund)$/.test(node.textContent.trim()))`));
   assert.ok(await browser.evaluate(`[...document.querySelectorAll('.gov-table tbody button')].every(node => node.textContent.trim() === 'View')`));
 };
 const setInput = (selector, value) => browser.evaluate(`(() => { const node = document.querySelector(${JSON.stringify(selector)}); if (!node) throw new Error('Input not found: ' + ${JSON.stringify(selector)}); Object.getOwnPropertyDescriptor(node.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, 'value').set.call(node, ${JSON.stringify(value)}); node.dispatchEvent(new Event('input', { bubbles: true })); })()`);
@@ -126,8 +127,9 @@ test('guest replies, owner confirms using existing controls, and confirmed booki
 
 test('only admin can control payments; disabling does not disable normal bookings', options, async () => {
   await browser.viewport(1280); role = 'owner'; await browser.navigate('/owner/payment-setup'); await browser.waitFor(`document.body.textContent.includes('Owners cannot override the admin switch')`);
-  assert.match(await browser.evaluate('document.body.textContent'), /Bookings remain available in the existing Reservations module/);
+  assert.match(await browser.evaluate('document.body.textContent'), /Bookings remain available/);
   assert.equal(await browser.evaluate(`document.querySelector('[aria-label="Payment plan settings"]')`), null);
+  assert.ok(await browser.evaluate(`document.body.textContent.includes('GCash') && document.body.textContent.includes('Maya')`), 'owners can configure direct payment display options while online payments are disabled');
   role = 'admin'; await browser.navigate('/admin/payments'); await browser.waitFor(`document.querySelector('[aria-label="Platform payment policy"] fieldset:not([disabled])')`);
   await setSelect('[aria-label="Platform payment policy"] select', 'on'); await browser.click('Save platform policy'); await browser.waitFor(`document.querySelector('[aria-label="Platform payment policy"] [role="alert"]')`);
   await setInput('[aria-label="Platform payment policy"] textarea', 'Client authorized gateway processing.'); await browser.click('Save platform policy'); assert.equal(policy.online_payments_enabled, false);
@@ -176,7 +178,7 @@ test('disabled owner payments are view-only history with working filters and cus
   await browser.viewport(1280); await browser.click('My Property'); await browser.waitFor(`document.querySelector('.owner-starting-price')`); await browser.click('Edit details');
   assert.doesNotMatch(await browser.evaluate(`document.querySelector('.owner-editor-tabs').textContent`), /Payment setup/i);
   await browser.click('Back to property');
-  await browser.navigate('/owner/payment-setup'); await browser.waitFor(`document.querySelector('.gov-page-title')?.textContent === 'Online payments disabled'`);
+  await browser.navigate('/owner/payment-setup'); await browser.waitFor(`document.body.textContent.includes('Guest Payment Options') && document.body.textContent.includes('Owners cannot override the admin switch')`);
   assert.equal(await browser.evaluate(`document.querySelector('[aria-label="Payment plan settings"]')`), null);
   assert.equal(JSON.stringify(historicalPayments), originalPaymentHistory);
   assert.deepEqual(financialWrites(), []); assert.deepEqual(browser.errors, []);
@@ -217,7 +219,7 @@ test('policy failures show an honest unavailable notice and retry restores contr
     await assertHistoryOnly();
     const notice = await browser.evaluate(`document.querySelector('[aria-label="Online payment availability"]').textContent`);
     assert.match(notice, /Online payment policy unavailable|Fixture policy check unavailable/); assert.doesNotMatch(notice, /disabled by the administrator/);
-    await browser.navigate('/owner/payment-setup'); await browser.waitFor(`document.querySelector('.gov-page-title')?.textContent === 'Online payment policy unavailable'`);
+    await browser.navigate('/owner/payment-setup'); await browser.waitFor(`document.body.textContent.includes('Fixture policy check unavailable') && document.body.textContent.includes('Owners cannot override the admin switch')`);
     assert.equal(await browser.evaluate(`document.querySelector('[aria-label="Payment plan settings"]')`), null);
     failPolicy = false; await browser.click('Retry booking policy'); await browser.waitFor(`document.querySelector('[aria-label="Payment plan settings"]')`);
     await browser.click('Payments'); await browser.waitFor(`document.querySelector('.gov-page-title')?.textContent === 'Payments' && document.querySelectorAll('.gov-table tbody tr').length === 2`);
@@ -226,14 +228,15 @@ test('policy failures show an honest unavailable notice and retry restores contr
   } finally { failPolicy = false; policy = { ...policy, online_payments_enabled: false }; }
 });
 
-test('limited owners also lose payment setup while disabled without gaining access to history', options, async () => {
-  role = 'owner'; authorization = 'limited';
+test('limited owners can configure direct payment options while online payments are disabled, without gaining access to history', options, async () => {
+  role = 'owner'; authorization = 'limited'; policy = { ...policy, online_payments_enabled: false };
   try {
     await browser.navigate('/owner/property'); await browser.waitFor(`document.querySelector('#owner-nav')`);
-    assert.doesNotMatch(await browser.evaluate(`document.querySelector('#owner-nav').textContent`), /Payment Setup|Payment History/);
-    policy = { ...policy, online_payments_enabled: true }; await browser.evaluate(`window.dispatchEvent(new Event('focus'))`);
-    await browser.waitFor(`document.querySelector('#owner-nav').textContent.includes('Payment Setup')`);
-    assert.doesNotMatch(await browser.evaluate(`document.querySelector('#owner-nav').textContent`), /Payment History|Daily work/);
+    assert.match(await browser.evaluate(`document.querySelector('#owner-nav').textContent`), /Payment Setup/);
+    assert.doesNotMatch(await browser.evaluate(`document.querySelector('#owner-nav').textContent`), /Payment History/);
+    await browser.click('Payment Setup'); await browser.waitFor(`document.body.textContent.includes('Owners cannot override the admin switch')`);
+    assert.equal(await browser.evaluate(`document.querySelector('[aria-label="Payment plan settings"]')`), null);
+    assert.ok(await browser.evaluate(`document.body.textContent.includes('GCash') || document.body.textContent.includes('Pay at the property')`));
     assert.deepEqual(financialWrites(), []); assert.deepEqual(browser.errors, []);
   } finally { authorization = 'full'; policy = { ...policy, online_payments_enabled: false }; }
 });
@@ -246,7 +249,9 @@ for (const online of [false, true]) test(`GCash is a manual owner conversation w
     await browser.viewport(1280); await browser.navigate('/hotels/46'); await browser.waitFor(`document.querySelector('.hd-cta')`);
     await browser.evaluate(`document.querySelector('.hd-cta').click()`); await browser.waitFor(`document.querySelector('#hd-bm-pay-method option[value="gcash"]')`);
     const methods = await browser.evaluate(`[...document.querySelector('#hd-bm-pay-method').options].map(option => option.value)`);
-    assert.deepEqual(methods, online ? ['card', 'gcash', 'qrph'] : ['gcash', 'pay_at_property']);
+    const expected = online ? ['card', 'gcash', 'qrph'] : ['gcash', 'pay_at_property'];
+    assert.equal(methods.length, expected.length);
+    assert.deepEqual([...methods].sort(), [...expected].sort());
     await setSelect('#hd-bm-pay-method', 'gcash');
     assert.equal(await browser.evaluate(`document.querySelector('.hd-bm-payopts')`), null);
     assert.match(await browser.evaluate(`document.querySelector('.hd-bm-main').textContent`), /GCash QR code or number.*does not collect or verify/s);

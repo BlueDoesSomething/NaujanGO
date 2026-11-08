@@ -14,21 +14,23 @@ import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
 import { formatHotelCurrency } from '../utils/hotelCurrency';
 import { getHourlyRates, getPaymentPlans, hourlyCheckout, philippineToday, STAY_HOURS } from '../utils/stayBooking';
 import useBookingPolicy from '../hooks/useBookingPolicy';
-import { PAY_AT_PROPERTY_NOTICE, MANUAL_GCASH_NOTICE } from '../utils/bookingPaymentPolicy';
+import { PAY_AT_PROPERTY_NOTICE, manualDirectNotice } from '../utils/bookingPaymentPolicy';
 import './HotelDetail.css';
 
 const API_BASE_URL = getApiBaseUrl() + '/api';
 
-const DEFAULT_PAYMENT_METHOD_VALUES = ['card', 'gcash', 'grabpay', 'qrph', 'paypal', 'bank_transfer', 'pay_at_property'];
+const DEFAULT_PAYMENT_METHOD_VALUES = ['card', 'gcash', 'maya', 'grabpay', 'qrph', 'paypal', 'bank_transfer', 'pay_at_property'];
+const MANUAL_DIRECT_METHODS = new Set(['gcash', 'maya']);
 
 const getPaymentMethodOptions = (t) => [
+  { value: 'pay_at_property', label: t('payment_method_pay_at_property') },
+  { value: 'gcash', label: t('payment_provider_gcash') || 'GCash' },
+  { value: 'maya', label: t('payment_provider_maya') || 'Maya' },
+  { value: 'bank_transfer', label: t('payment_provider_bank_transfer') },
   { value: 'card', label: t('payment_method_card') },
-  { value: 'gcash', label: t('payment_provider_gcash') },
   { value: 'grabpay', label: t('payment_provider_grabpay') },
   { value: 'qrph', label: t('payment_provider_qrph') || 'QR PH' },
-  { value: 'paypal', label: t('payment_provider_paypal') },
-  { value: 'bank_transfer', label: t('payment_provider_bank_transfer') },
-  { value: 'pay_at_property', label: t('payment_method_pay_at_property') }
+  { value: 'paypal', label: t('payment_provider_paypal') }
 ];
 
 const DEFAULT_ALLOWED_PAYMENT_METHODS = DEFAULT_PAYMENT_METHOD_VALUES;
@@ -289,8 +291,9 @@ export default function HotelDetail() {
   });
   const bookingPolicy = useBookingPolicy();
   const paymentsDisabled = bookingPolicy.paymentsDisabled;
-  const manualPayment = paymentsDisabled || bookingForm.paymentMethod === 'gcash';
-  const manualPaymentNotice = bookingForm.paymentMethod === 'gcash' ? MANUAL_GCASH_NOTICE : PAY_AT_PROPERTY_NOTICE;
+  const manualDirect = MANUAL_DIRECT_METHODS.has(bookingForm.paymentMethod);
+  const manualPayment = paymentsDisabled || manualDirect;
+  const manualPaymentNotice = manualDirect ? manualDirectNotice(bookingForm.paymentMethod) : PAY_AT_PROPERTY_NOTICE;
   const bookingKey = useRef(null);
   const submittingBooking = useRef(false);
   const [bookingError, setBookingError] = useState('');
@@ -313,7 +316,7 @@ export default function HotelDetail() {
     const configured = Array.isArray(hotel.allowed_payment_methods) && hotel.allowed_payment_methods.length
       ? hotel.allowed_payment_methods
       : DEFAULT_ALLOWED_PAYMENT_METHODS;
-    const allowed = paymentsDisabled ? ['pay_at_property', ...configured.filter(method => method === 'gcash')] : configured;
+    const allowed = paymentsDisabled ? ['pay_at_property', ...configured.filter(method => MANUAL_DIRECT_METHODS.has(method))] : configured;
 
     setBookingForm((prev) => {
       if (allowed.includes(prev.paymentMethod)) return prev;
@@ -575,8 +578,8 @@ export default function HotelDetail() {
     ? hotel.allowed_payment_methods
     : DEFAULT_ALLOWED_PAYMENT_METHODS;
   const paymentMethodOptions = getPaymentMethodOptions(t).filter((option) => paymentsDisabled
-    ? option.value === 'pay_at_property' || option.value === 'gcash' && allowedPaymentMethods.includes('gcash')
-    : allowedPaymentMethods.includes(option.value)).map(option => option.value === 'gcash' ? { ...option, label: `${option.label} (direct to owner)` } : option);
+    ? option.value === 'pay_at_property' || MANUAL_DIRECT_METHODS.has(option.value) && allowedPaymentMethods.includes(option.value)
+    : allowedPaymentMethods.includes(option.value)).map(option => MANUAL_DIRECT_METHODS.has(option.value) ? { ...option, label: `${option.label} (direct to owner)` } : option);
 
   // Flexible payment option (reservation fee / half / full) — mirrors backend
   // utils/paymentAmounts.js dueNow() so the card amounts match what the
@@ -1731,12 +1734,11 @@ export default function HotelDetail() {
                   <input
                     type="date"
                     value={bookingForm.checkIn}
-                    onChange={(e) => {
-                      setBookingForm({ ...bookingForm, checkIn: e.target.value });
-                      setBookingError('');
-                    }}
+                    readOnly
+                    onChange={(e) => { setBookingForm({ ...bookingForm, checkIn: e.target.value }); setCalendarRange({ start: null, end: null }); setBookingError(''); }}
                     className="hd-input"
                     min={philippineToday()}
+                    aria-describedby="hd-bm-date-help"
                   />
                 </div>
                 <div>
@@ -1745,14 +1747,13 @@ export default function HotelDetail() {
                     type="date"
                     value={isHourlyStay ? hourlyEnd?.date || '' : bookingForm.checkOut}
                     readOnly={isHourlyStay}
-                    onChange={(e) => {
-                      setBookingForm({ ...bookingForm, checkOut: e.target.value });
-                      setBookingError('');
-                    }}
+                    onChange={(e) => { if (isHourlyStay) return; setBookingForm({ ...bookingForm, checkOut: e.target.value }); setCalendarRange({ start: null, end: null }); setBookingError(''); }}
                     className="hd-input"
                     min={bookingForm.checkIn || philippineToday()}
+                    aria-describedby="hd-bm-date-help"
                   />
                 </div>
+                <p id="hd-bm-date-help" className="hd-bm-note hd-bm-grid-full">Select your dates using the availability calendar below so only available dates can be chosen.</p>
                 {isHourlyStay && <div>
                   <label className="hd-bm-label">Check-in time (Philippine time)</label>
                   <input className="hd-input" type="time" value={bookingForm.checkInTime}

@@ -11,9 +11,12 @@
 // owner controller so both dashboards behave identically.
 export const HOTEL_UPLOAD_MAX_BYTES = 15 * 1024 * 1024;
 
+export const MANUAL_DIRECT_METHODS = ['gcash', 'maya'];
+
 export const DEFAULT_PAYMENT_METHODS = [
   'card',
   'gcash',
+  'maya',
   'grabpay',
   'qrph',
   'paypal',

@@ -1,6 +1,7 @@
 const METHODS = {
   card: ['payment_provider_card', 'Credit/Debit Card'],
   gcash: ['payment_provider_gcash', 'GCash'],
+  maya: ['payment_provider_maya', 'Maya'],
   grabpay: ['payment_provider_grabpay', 'GrabPay'],
   qrph: ['payment_provider_qrph', 'QR PH'],
   paypal: ['payment_provider_paypal', 'PayPal'],

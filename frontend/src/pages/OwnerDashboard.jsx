@@ -799,7 +799,7 @@ const OwnerDashboard = () => {
       image_urls: parseImageUrls(hotel.image_urls),
       allowed_payment_methods: Array.isArray(hotel.allowed_payment_methods) && hotel.allowed_payment_methods.length
         ? hotel.allowed_payment_methods
-        : ['card', 'gcash', 'paypal', 'bank_transfer', 'pay_at_property'],
+        : ['card', 'gcash', 'maya', 'paypal', 'bank_transfer', 'pay_at_property'],
       reservation_fee: hotel.reservation_fee ?? '',
       map_url: hotel.map_url || '',
       contact_phone: hotel.contact_phone || '',
@@ -1040,8 +1040,7 @@ const OwnerDashboard = () => {
   // restricts the dashboard to hotel listing management + business profile.
   const isLimitedOwner = authorization !== 'full' && user?.role !== 'admin';
   const visibleOwnerModules = ownerModules.filter(module =>
-    (module.id !== 'payment-setup' || !bookingPolicy.paymentsDisabled)
-    && (!isLimitedOwner || ['hotels', 'rooms', 'payment-setup', 'tourism-arrivals', 'profile', 'notifications'].includes(module.id))
+    (!isLimitedOwner || ['hotels', 'rooms', 'payment-setup', 'tourism-arrivals', 'profile', 'notifications'].includes(module.id))
   );
 
   useEffect(() => {
@@ -2201,43 +2200,61 @@ const OwnerDashboard = () => {
         )}
 
         {/* Payment configuration is separate from the transaction ledger. */}
-        {activeTab === 'payment-setup' && bookingPolicy.paymentsDisabled && <section className="gov-glass-panel"><h1 className="gov-page-title">{bookingPolicy.loading ? 'Checking online payment policy…' : bookingPolicy.error ? 'Online payment policy unavailable' : 'Online payments disabled'}</h1><p>Bookings remain available in the existing Reservations module. Review and confirm bookings as usual, and use Message guest for direct communication. Guests can pay at the property or choose GCash if accepted by the property, then message you for your GCash QR code or number. NaujanGO does not collect or verify these transfers.</p><p>Saved online gateway methods and payment plans are retained but are not offered while this restriction is active. GCash is arranged directly with the owner, not through a gateway. Owners cannot override the admin switch.</p><button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('bookings')}>Open Reservations</button>{bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}</section>}
-        {activeTab === 'payment-setup' && !bookingPolicy.paymentsDisabled && (
+        {activeTab === 'payment-setup' && (
           <div>
             <h1 className="gov-page-title">
-              <Icons.Money size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Payment Setup
+              <Icons.Money size={28} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> {bookingPolicy.paymentsDisabled ? 'Guest Payment Options' : 'Payment Setup'}
             </h1>
-            <p><strong>Payment plans</strong> control when guests pay. <strong>Payment methods</strong> control how they pay. Neither setting changes existing reservations.</p>
+            {bookingPolicy.paymentsDisabled ? (
+              <section className="gov-glass-panel" style={{ marginBottom: '1rem' }}>
+                <p><strong>Online payments are disabled by the administrator.</strong> Owners cannot override the admin switch. Bookings remain available in Reservations.</p>
+                <p style={{ color: '#374151' }}>Choose which direct payment options guests can see. For GCash or Maya, guests will message you for your QR code or number after booking. NaujanGO does not collect or verify these transfers.</p>
+                {bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" className="gov-btn-ghost" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}
+              </section>
+            ) : <p><strong>Payment plans</strong> control when guests pay online. <strong>Payment methods</strong> control how guests pay. GCash and Maya are arranged directly with you (no online checkout). Neither setting changes existing reservations.</p>}
 
-            <PaymentPlanSettings hotels={hotels} onSaved={fetchDashboardData} onDirtyChange={reportPlansDirty} onBusyChange={reportPlansBusy} confirmLeave={requestLeave} />
+            {!bookingPolicy.paymentsDisabled && <PaymentPlanSettings hotels={hotels} onSaved={fetchDashboardData} onDirtyChange={reportPlansDirty} onBusyChange={reportPlansBusy} confirmLeave={requestLeave} />}
 
             {hotels.length > 0 && (
               <div className="gov-glass-panel" style={{ marginBottom: '1rem' }}>
-                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#1B5E20', marginBottom: '0.65rem' }}>
-                  Payment Method Settings
+                <div style={{ fontSize: '1rem', fontWeight: 800, color: '#1B5E20', marginBottom: '0.35rem' }}>
+                  {bookingPolicy.paymentsDisabled ? 'Display to guests' : 'Payment Method Settings'}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.85rem' }}>
-                        Choose the methods guests may use for {hotels[0].name || 'this hotel'}. GCash is paid directly to you; guests message you for your QR code or GCash number. It does not use online checkout.
+                <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '1rem' }}>
+                  {bookingPolicy.paymentsDisabled
+                    ? `Guests booking ${hotels[0].name || 'this hotel'} can choose from the options you enable below.`
+                    : `Choose the methods guests may use for ${hotels[0].name || 'this hotel'}. GCash and Maya are paid directly to you; guests message you for your QR code or number.`}
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem 1rem', marginBottom: '0.85rem' }}>
-                  {getHotelPaymentMethodOptions(t).map((option) => {
-                    const checked = paymentMethodSettings.includes(option.value);
-                    return (
-                      <label key={option.value} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.9rem', color: '#374151' }}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(event) => {
-                            const next = event.target.checked
-                              ? [...new Set([...paymentMethodSettings, option.value])]
-                              : paymentMethodSettings.filter((item) => item !== option.value);
-                            setPaymentMethodSettings(next);
-                          }}
-                        />
-                        {option.label}
-                      </label>
-                    );
-                  })}
+                <div style={{ display: 'grid', gap: '0.75rem', marginBottom: '1rem' }}>
+                  {getHotelPaymentMethodOptions(t)
+                    .filter(option => !bookingPolicy.paymentsDisabled || ['pay_at_property', 'gcash', 'maya', 'bank_transfer'].includes(option.value))
+                    .map((option) => {
+                      const checked = paymentMethodSettings.includes(option.value);
+                      const direct = ['gcash', 'maya'].includes(option.value);
+                      const note = option.value === 'pay_at_property' ? 'Guest pays you at the property.'
+                        : direct ? 'Guest messages you for your QR code or number. Not collected by NaujanGO.'
+                        : option.value === 'bank_transfer' ? 'Handled directly with the guest.'
+                        : bookingPolicy.paymentsDisabled ? null : 'Available when online payments are enabled by the administrator.';
+                      return (
+                        <label key={option.value} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '0.85rem 1rem', border: `1px solid ${checked ? '#86efac' : '#e5e7eb'}`, borderRadius: 12, background: checked ? '#f0fdf4' : '#fff', cursor: 'pointer' }}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(event) => {
+                              const next = event.target.checked
+                                ? [...new Set([...paymentMethodSettings, option.value])]
+                                : paymentMethodSettings.filter((item) => item !== option.value);
+                              setPaymentMethodSettings(next);
+                            }}
+                            style={{ marginTop: 2 }}
+                          />
+                          <span style={{ minWidth: 0 }}>
+                            <span style={{ display: 'block', fontWeight: 700, color: '#111827' }}>{option.label}{direct ? ' (direct to owner)' : ''}</span>
+                            {note && <span style={{ display: 'block', fontSize: '0.82rem', color: '#4b5563', marginTop: 2 }}>{note}</span>}
+                          </span>
+                        </label>
+                      );
+                    })}
                 </div>
                 <button
                   className="gov-btn-primary"
@@ -2254,7 +2271,7 @@ const OwnerDashboard = () => {
                        });
                        paymentMethodsBaseline.current = JSON.stringify([...paymentMethodSettings].sort());
                       await fetchDashboardData();
-                       setActionError(''); setNotice('Payment methods saved.');
+                       setActionError(''); setNotice('Payment options saved.');
                     } catch (error) {
                       console.error('Failed to update payment methods:', error);
                        setActionError(error.response?.data?.error || 'Failed to update payment settings.');
@@ -2263,11 +2280,10 @@ const OwnerDashboard = () => {
                     }
                   }}
                 >
-                  {paymentMethodSettingsSaving ? 'Saving...' : 'Save Payment Settings'}
+                  {paymentMethodSettingsSaving ? 'Saving...' : 'Save Payment Options'}
                 </button>
               </div>
             )}
-
           </div>
         )}
 
@@ -2331,6 +2347,7 @@ const OwnerDashboard = () => {
                     <option value="card">Card</option>
                     <option value="paypal">PayPal</option>
                     <option value="gcash">GCash</option>
+                    <option value="maya">Maya</option>
                     <option value="grabpay">GrabPay</option>
                     <option value="qrph">QR PH</option>
                     <option value="bank_transfer">Bank Transfer</option>

@@ -4,10 +4,12 @@ import { dateKey, makeStay, bookingInterval, MANILA_OFFSET_MS, parseHourlyRates,
 import { validateStayInventory } from './stayInventory.js';
 import { getHotelLegitimacy } from '../utils/legitimacy.js';
 import { externalPaymentBooking, getBookingPolicy, policyError } from './bookingPaymentPolicy.js';
-import { parseStoredPaymentMethods } from '../utils/paymentMethods.js';
+import { MANUAL_DIRECT_METHODS, parseStoredPaymentMethods } from '../utils/paymentMethods.js';
 
 export const PAY_AT_PROPERTY_NOTICE = 'Pay at the property. No advance deposit is requested through NaujanGO. NaujanGO does not process or verify this payment.';
-export const MANUAL_GCASH_NOTICE = 'Pay the owner directly through GCash. Use Message property on your booking to ask for the owner’s GCash QR code or number. Confirm the recipient and amount with the owner before transferring. NaujanGO does not collect or verify this payment.';
+const labelFor = method => method === 'maya' ? 'Maya' : 'GCash';
+export const manualDirectNotice = method => `Pay the owner directly through ${labelFor(method)}. Use Message property on your booking to ask for the owner’s ${labelFor(method)} QR code or number. Confirm the recipient and amount with the owner before transferring. NaujanGO does not collect or verify this payment.`;
+export const MANUAL_GCASH_NOTICE = manualDirectNotice('gcash');
 export const bookingId = value => {
   if (!['number', 'string'].includes(typeof value) || !/^\d+$/.test(String(value)) || !Number.isSafeInteger(Number(value)) || Number(value) < 1) throw policyError('Invalid record ID.');
   return Number(value);
@@ -41,16 +43,16 @@ const load = async (connection, id) => {
 // same hotel_bookings table. Only payment collection is bypassed.
 export const createPayAtPropertyBooking = async (user, body) => {
   const method = body.payment_method ?? 'pay_at_property';
-  if (!['gcash', 'pay_at_property'].includes(method)) throw policyError('Choose GCash (direct to owner) or pay at property for a payment handled outside NaujanGO.');
+  const manualDirect = MANUAL_DIRECT_METHODS.includes(method);
+  if (!manualDirect && method !== 'pay_at_property') throw policyError('Choose a direct payment option (GCash, Maya, or pay at property) handled outside NaujanGO.');
   const hotelId = bookingId(body.hotel_id), roomId = bookingId(body.room_id), rooms = quantity(body.rooms ?? 1), guests = quantity(body.guests ?? 1);
   if (body.policy_agreed !== true && body.policy_agreed !== 'true') throw policyError('Please read and agree to the booking policies.');
   const name = text(body.customer_name, 'Guest name', 255), email = text(body.customer_email, 'Email', 255), phone = text(body.customer_phone, 'Phone', 40);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !/^\+?[\d ()-]{7,30}$/.test(phone) || phone.replace(/\D/g, '').length < 7) throw policyError('Provide a valid contact email and phone number.');
   const notes = text(body.special_requests, 'Special requests', 4000, false);
   const submissionKey = body.booking_key == null ? crypto.randomUUID() : text(body.booking_key, 'Booking key', 100);
-  // Retain the original pay-at-property fingerprint for interrupted submissions
-  // across deployment; include GCash so a retry cannot change the arrangement.
-  const fingerprint = crypto.createHash('sha256').update(JSON.stringify({ hotelId, roomId, rooms, guests, name, email, phone, notes, check_in: body.check_in, check_out: body.check_out, check_in_time: body.check_in_time, hours: body.stay_duration_hours, quoted_total: body.quoted_total, ...(method === 'gcash' ? { payment_method: method } : {}) })).digest('hex');
+  // Include the direct arrangement in the fingerprint so a retry cannot change it.
+  const fingerprint = crypto.createHash('sha256').update(JSON.stringify({ hotelId, roomId, rooms, guests, name, email, phone, notes, check_in: body.check_in, check_out: body.check_out, check_in_time: body.check_in_time, hours: body.stay_duration_hours, quoted_total: body.quoted_total, ...(manualDirect ? { payment_method: method } : {}) })).digest('hex');
   return bookingTransaction(async connection => {
     const policy = await getBookingPolicy(connection, true);
     if (!policy.storage_ready) throw policyError('Apply migrations/055_admin_payment_controls.sql before accepting direct-to-owner bookings.', 503);
@@ -63,9 +65,9 @@ export const createPayAtPropertyBooking = async (user, body) => {
       if (readJson(retry[0].policy_snapshot)?.submission_fingerprint !== fingerprint) throw policyError('That booking key was already used with different details. Refresh before submitting.', 409);
       return { booking: safeBooking(retry[0]), payment_handling: 'external' };
     }
-    if (policy.online_payments_enabled && method !== 'gcash') throw policyError('Payment settings changed. Reload the property and review the current terms before booking.', 409, 'PAYMENT_MODE_CHANGED');
+    if (policy.online_payments_enabled && !manualDirect) throw policyError('Payment settings changed. Reload the property and review the current terms before booking.', 409, 'PAYMENT_MODE_CHANGED');
     activeHotel(hotel);
-    if (method === 'gcash' && !parseStoredPaymentMethods(hotel.allowed_payment_methods).includes(method)) throw policyError('GCash is not accepted by this property. Reload and choose another payment method.', 409);
+    if (manualDirect && !parseStoredPaymentMethods(hotel.allowed_payment_methods).includes(method)) throw policyError(`${labelFor(method)} is not accepted by this property. Reload and choose another payment method.`, 409);
     await bookable(hotelId, connection);
     const [roomRows] = await connection.execute('SELECT * FROM rooms WHERE room_id = ? AND hotel_id = ? FOR UPDATE', [roomId, hotelId]);
     const room = roomRows[0]; activeRoom(room, guests);
@@ -82,7 +84,7 @@ export const createPayAtPropertyBooking = async (user, body) => {
       cancellation_type: hotel.cancellation_type || 'free_until', free_cancellation_days: Number(hotel.free_cancellation_days ?? 1),
       custom_policy_text: hotel.custom_policy_text || null, modification_policy_text: hotel.modification_policy_text || null,
       noshow_policy_text: hotel.noshow_policy_text || null, house_rules: hotel.house_rules || null,
-      payment_terms_text: method === 'gcash' ? MANUAL_GCASH_NOTICE : PAY_AT_PROPERTY_NOTICE, reservation_fee: null, balance_due_days: null, balance_due_at: null,
+      payment_terms_text: manualDirect ? manualDirectNotice(method) : PAY_AT_PROPERTY_NOTICE, reservation_fee: null, balance_due_days: null, balance_due_at: null,
       check_in_time: stay.checkInAt.slice(11, 16), check_out_time: stay.checkOutAt.slice(11, 16),
       check_in_at: stay.checkInAt, check_out_at: stay.checkOutAt, stay_duration_hours: stay.hours, stay_rate: rate,
       agreed_at: new Date().toISOString()
@@ -90,7 +92,8 @@ export const createPayAtPropertyBooking = async (user, body) => {
     const [insert] = await connection.execute("INSERT INTO hotel_bookings (user_id, hotel_id, hotel_name, hotel_location, price_per_night, currency, check_in, check_out, nights, rooms, guests, special_requests, status, payment_status, payment_method, payment_option, total_amount, receipt_number, customer_name, customer_email, customer_phone, room_id, room_type_name, expires_at, policy_snapshot, check_in_at, check_out_at, stay_duration_hours, stay_rate) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, 'full', ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)", [user.user_id, hotelId, hotel.name, hotel.location || null, Number(room.price_per_night) || 0, room.currency || hotel.currency || 'PHP', stay.checkIn, stay.checkOut, stay.nights, rooms, guests, notes || null, method, total, `HB-${crypto.randomUUID()}`, name, email, phone, roomId, room.room_type_name, JSON.stringify(snapshot), stay.checkInAt, stay.checkOutAt, stay.hours, rate]);
     const id = insert.insertId;
     await connection.execute('UPDATE hotel_bookings SET booking_reference = ? WHERE booking_id = ?', [`HB${String(id).padStart(6, '0')}`, id]);
-    await connection.execute("INSERT INTO notifications (user_id, type, title, message, related_id) SELECT DISTINCT ho.user_id, 'booking', 'New booking', ?, ? FROM hotel_owners ho WHERE ho.hotel_id = ? AND ho.user_id <> ?", [`Booking #${id} for ${hotel.name} is pending. Review it under Reservations. ${method === 'gcash' ? 'The guest chose GCash; use Message guest to share your GCash number or QR details.' : 'Payment is at the property.'}`, id, hotelId, user.user_id]);
+    await connection.execute("INSERT INTO notifications (user_id, type, title, message, related_id) SELECT DISTINCT ho.user_id, 'booking', 'New booking', ?, ? FROM hotel_owners ho WHERE ho.hotel_id = ? AND ho.user_id <> ?", [`Booking #${id} for ${hotel.name} is pending. Review it under Reservations. ${manualDirect ? `The guest chose ${labelFor(method)}; use Message guest to share your ${labelFor(method)} number or QR details.` : 'Payment is at the property.'}`, id, hotelId, user.user_id]);
+    if (manualDirect) await connection.execute('INSERT INTO booking_messages (booking_id, sender_id, sender_role, client_key, message) VALUES (?, ?, ?, ?, ?)', [id, user.user_id, 'guest', 'manual-payment-request', `Automated request: I selected ${labelFor(method)} (direct to owner) for booking #${id}. Please send your ${labelFor(method)} QR code or number, recipient name, and the amount to pay. NaujanGO does not collect or verify this payment.`]);
     return { booking: await load(connection, id), payment_handling: 'external' };
   });
 };

@@ -763,6 +763,7 @@ const translations = {
     
     // Payment Provider Labels
     payment_provider_gcash: 'GCash',
+    payment_provider_maya: 'Maya',
     payment_provider_grabpay: 'GrabPay',
     payment_provider_qrph: 'QR PH',
     payment_provider_paypal: 'PayPal',
@@ -1937,6 +1938,7 @@ const translations = {
     
     // Payment Provider Labels
     payment_provider_gcash: 'GCash',
+    payment_provider_maya: 'Maya',
     payment_provider_grabpay: 'GrabPay',
     payment_provider_paypal: 'PayPal',
     payment_provider_card: 'Tarjeta de Crédito/Débito',
@@ -2622,6 +2624,7 @@ const translations = {
     
     // Payment Provider Labels
     payment_provider_gcash: 'GCash',
+    payment_provider_maya: 'Maya',
     payment_provider_grabpay: 'GrabPay',
     payment_provider_paypal: 'PayPal',
     payment_provider_card: 'Credit/Debit Card',
@@ -3383,6 +3386,7 @@ const translations = {
     
     // Payment Provider Labels
     payment_provider_gcash: 'GCash',
+    payment_provider_maya: 'Maya',
     payment_provider_grabpay: 'GrabPay',
     payment_provider_paypal: 'PayPal',
     payment_provider_card: '信用卡/借记卡',
@@ -4049,6 +4053,7 @@ const translations = {
     
     // Payment Provider Labels
     payment_provider_gcash: 'GCash',
+    payment_provider_maya: 'Maya',
     payment_provider_grabpay: 'GrabPay',
     payment_provider_paypal: 'PayPal',
     payment_provider_card: 'クレジット/デビットカード',
@@ -4610,6 +4615,7 @@ const translations = {
     
     // Payment Provider Labels
     payment_provider_gcash: 'GCash',
+    payment_provider_maya: 'Maya',
     payment_provider_grabpay: 'GrabPay',
     payment_provider_paypal: 'PayPal',
     payment_provider_card: '신용카드/직불카드',
@@ -5172,6 +5178,7 @@ const translations = {
     
     // Payment Provider Labels
     payment_provider_gcash: 'GCash',
+    payment_provider_maya: 'Maya',
     payment_provider_grabpay: 'GrabPay',
     payment_provider_paypal: 'PayPal',
     payment_provider_card: 'Carte de crédit/débit',
@@ -5771,6 +5778,7 @@ const translations = {
     
     // Payment Provider Labels
     payment_provider_gcash: 'GCash',
+    payment_provider_maya: 'Maya',
     payment_provider_grabpay: 'GrabPay',
     payment_provider_paypal: 'PayPal',
     payment_provider_card: 'Kredit-/Debitkarte',
