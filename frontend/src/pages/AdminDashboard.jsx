@@ -25,6 +25,8 @@ import Pagination from '../components/Pagination';
 import BookingIssuedCell from '../components/BookingIssuedCell';
 import { formatBookingBoundary } from '../utils/stayBooking';
 import { getBookingGuestName } from '../utils/bookingGuestName';
+import { getBookingPaymentMethod, getPaymentMethodLabel } from '../utils/paymentDisplay';
+import { isExternalPaymentBooking, externalPaymentLabel } from '../utils/bookingPaymentPolicy';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import LeafletMap from '../components/LeafletMap';
@@ -3164,6 +3166,7 @@ const AdminDashboard = () => {
                         <th>{t('dates')}</th>
                         <th>Booked On</th>
                         <th>{t('amount')}</th>
+                        <th>{t('form_payment_method')}</th>
                         <th>{t('status')}</th>
                         <th>{t('actions')}</th>
                       </tr>
@@ -3192,6 +3195,7 @@ const AdminDashboard = () => {
                           <td>
                             ₱{parseFloat(booking.total_amount || 0).toLocaleString()}
                           </td>
+                          <td>{isExternalPaymentBooking(booking) ? externalPaymentLabel(booking) : getPaymentMethodLabel(getBookingPaymentMethod(booking), t)}</td>
                           <td>
                             <span className={`gov-badge-status gov-badge-status--${booking.status}`}>
                               {t(booking.status) || booking.status}

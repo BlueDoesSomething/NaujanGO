@@ -36,7 +36,7 @@ export const assertPaymentAllowed = async bookingId => {
   if (bookingId) {
     if (!/^\d+$/.test(String(bookingId))) throw policyError('Invalid booking ID.');
     const [rows] = await db.promise().execute('SELECT policy_snapshot FROM hotel_bookings WHERE booking_id = ?', [String(bookingId)]);
-    if (rows.length && externalPaymentBooking(rows[0])) throw policyError('This reservation is pay-at-property. NaujanGO does not process or verify its payment.', 409, 'EXTERNAL_PAYMENT_BOOKING');
+    if (rows.length && externalPaymentBooking(rows[0])) throw policyError('Payment for this reservation is arranged directly with the property. NaujanGO does not process or verify it.', 409, 'EXTERNAL_PAYMENT_BOOKING');
   }
 };
 export const respondBookingPolicyError = (res, error) => {

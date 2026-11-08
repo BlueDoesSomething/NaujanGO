@@ -16,6 +16,8 @@ import { dashboardPaymentStats, dashboardPayments } from '../services/dashboardP
 import { reviewContentDeletion, deleteArchivedContent, setContentArchive } from '../services/archiveContent.js';
 import { adminArrivalReports } from './tourismArrivalReportsController.js';
 import { publicBookingPolicy, saveBookingPolicy } from './bookingPaymentPolicyController.js';
+import { externalPaymentBooking, respondBookingPolicyError } from '../services/bookingPaymentPolicy.js';
+import { updatePayAtPropertyBookingStatus } from '../services/payAtPropertyBookings.js';
 import { ownerBookingMessages, postOwnerBookingMessage, bookingMessageLimiter } from './bookingMessagesController.js';
 import { CREDENTIAL_TYPES, credentialMatches, serializeCredentialProfile } from '../utils/businessCredentials.js';
 import { flagBusinessCredential, respondCredentialError } from '../services/businessCredentials.js';
@@ -1112,7 +1114,7 @@ router.put('/bookings/:bookingId/status', async (req, res) => {
 
   try {
     const [existing] = await db.promise().query(
-      'SELECT booking_id, status, rooms, hotel_id FROM hotel_bookings WHERE booking_id = ?',
+      'SELECT booking_id, status, rooms, hotel_id, policy_snapshot FROM hotel_bookings WHERE booking_id = ?',
       [bookingId]
     );
 
@@ -1121,6 +1123,7 @@ router.put('/bookings/:bookingId/status', async (req, res) => {
     }
 
     const current = existing[0];
+    if (externalPaymentBooking(current)) return res.json(await updatePayAtPropertyBookingStatus(req.user, bookingId, status));
     await db.promise().query(
       'UPDATE hotel_bookings SET status = ? WHERE booking_id = ?',
       [status, bookingId]
@@ -1154,6 +1157,7 @@ router.put('/bookings/:bookingId/status', async (req, res) => {
     res.json({ success: true, message: 'Booking status updated successfully' });
   } catch (error) {
     console.error('Update booking status error:', error);
+    if (error.status) return respondBookingPolicyError(res, error);
     res.status(500).json({ error: 'Failed to update booking status' });
   }
 });

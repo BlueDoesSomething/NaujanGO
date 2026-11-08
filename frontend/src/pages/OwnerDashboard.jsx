@@ -23,7 +23,7 @@ import BookingConversation from '../components/BookingConversation';
 import useBookingPolicy from '../hooks/useBookingPolicy';
 import useDashboardNotifications from '../hooks/useDashboardNotifications';
 import DashboardNotifications, { NotificationBadge } from '../components/DashboardNotifications';
-import { isExternalPaymentBooking } from '../utils/bookingPaymentPolicy';
+import { isExternalPaymentBooking, externalPaymentLabel } from '../utils/bookingPaymentPolicy';
 import { formatHotelCurrency } from '../utils/hotelCurrency';
 import { OWNER_PATHS, ownerTabFromPath, ownerStartingPrice, roomsForHotel, validateOwnerHotel, ownerTodayTasks } from '../utils/ownerDashboard';
 import { registerOwnerHistoryGuard } from '../utils/ownerHistoryGuard';
@@ -2132,7 +2132,7 @@ const OwnerDashboard = () => {
                                 booking.payment_status === 'pending' ? '#2563eb' :
                                 booking.payment_status === 'failed' ? '#dc2626' : '#6b7280'
                             }}>
-                              {isExternalPaymentBooking(booking) ? 'Pay at property' : booking.payment_status}
+                              {isExternalPaymentBooking(booking) ? externalPaymentLabel(booking) : booking.payment_status}
                             </span>
                           )}
                         </td>
@@ -2201,7 +2201,7 @@ const OwnerDashboard = () => {
         )}
 
         {/* Payment configuration is separate from the transaction ledger. */}
-        {activeTab === 'payment-setup' && bookingPolicy.paymentsDisabled && <section className="gov-glass-panel"><h1 className="gov-page-title">{bookingPolicy.loading ? 'Checking online payment policy…' : bookingPolicy.error ? 'Online payment policy unavailable' : 'Online payments disabled'}</h1><p>Bookings remain available in the existing Reservations module. Review and confirm bookings as usual, and use Message guest for direct communication. Guests pay at the property; no online payment or advance deposit is required through NaujanGO.</p><p>Saved gateway methods and payment plans are retained but are not offered to guests while this restriction is active. Owners cannot override the admin switch.</p><button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('bookings')}>Open Reservations</button>{bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}</section>}
+        {activeTab === 'payment-setup' && bookingPolicy.paymentsDisabled && <section className="gov-glass-panel"><h1 className="gov-page-title">{bookingPolicy.loading ? 'Checking online payment policy…' : bookingPolicy.error ? 'Online payment policy unavailable' : 'Online payments disabled'}</h1><p>Bookings remain available in the existing Reservations module. Review and confirm bookings as usual, and use Message guest for direct communication. Guests can pay at the property or choose GCash if accepted by the property, then message you for your GCash QR code or number. NaujanGO does not collect or verify these transfers.</p><p>Saved online gateway methods and payment plans are retained but are not offered while this restriction is active. GCash is arranged directly with the owner, not through a gateway. Owners cannot override the admin switch.</p><button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('bookings')}>Open Reservations</button>{bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}</section>}
         {activeTab === 'payment-setup' && !bookingPolicy.paymentsDisabled && (
           <div>
             <h1 className="gov-page-title">
@@ -2217,7 +2217,7 @@ const OwnerDashboard = () => {
                   Payment Method Settings
                 </div>
                 <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '0.85rem' }}>
-                       Choose the methods guests may use for {hotels[0].name || 'this hotel'} (for example GCash or pay at property).
+                        Choose the methods guests may use for {hotels[0].name || 'this hotel'}. GCash is paid directly to you; guests message you for your QR code or GCash number. It does not use online checkout.
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.8rem 1rem', marginBottom: '0.85rem' }}>
                   {getHotelPaymentMethodOptions(t).map((option) => {
@@ -2276,7 +2276,7 @@ const OwnerDashboard = () => {
             <h1 className="gov-page-title">{bookingPolicy.paymentsDisabled ? 'Payment History' : 'Payments'}</h1>
             {bookingPolicy.paymentsDisabled ? <section className="gov-glass-panel" aria-label="Online payment availability" aria-busy={bookingPolicy.loading}>
               <p role="status"><strong>{bookingPolicy.loading ? 'Checking online payment policy…' : bookingPolicy.error ? 'Online payment policy unavailable.' : 'Online payments disabled by the administrator.'}</strong></p>
-              <p>{bookingPolicy.loading || bookingPolicy.error ? 'Payment setup and financial actions remain unavailable until the current policy can be confirmed.' : 'Guests pay at the property. Owners cannot override the admin switch.'} Bookings remain available under Reservations; use Message guest to contact guests.</p>
+              <p>{bookingPolicy.loading || bookingPolicy.error ? 'Payment setup and financial actions remain unavailable until the current policy can be confirmed.' : 'Guests pay at the property or arrange accepted GCash payments directly with you. Owners cannot override the admin switch.'} Bookings remain available under Reservations; use Message guest to contact guests.</p>
               <p>View-only history: existing transactions, filters and downloads are retained. Historical totals do not mean online payments are enabled. Contact the administrator about refunds for earlier payments.</p>
               {bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" className="gov-btn-ghost" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}
             </section> : <p>Recorded transactions and payment attempts. To change how guests pay, open <button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('payment-setup')}>Payment Setup</button>.</p>}

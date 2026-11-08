@@ -15,7 +15,7 @@ import ExportPdfButton from '../components/ExportPdfButton';
 import { receiptExportReport } from '../utils/itineraryExports';
 import BookingConversation from '../components/BookingConversation';
 import useBookingPolicy from '../hooks/useBookingPolicy';
-import { isExternalPaymentBooking } from '../utils/bookingPaymentPolicy';
+import { isExternalPaymentBooking, isManualGCashBooking, externalPaymentLabel, externalPaymentNotice } from '../utils/bookingPaymentPolicy';
 
 export default function BookingHistory() {
   const navigate = useNavigate();
@@ -629,7 +629,7 @@ END:VCALENDAR`;
                   fontSize: '11px',
                   padding: '3px 9px'
                 }}>
-                  {isExternalPaymentBooking(booking) ? 'Pay at property · not verified by NaujanGO' : booking.payment_status === 'partial' ? 'Partially paid' : (booking.payment_status || 'unpaid')}
+                  {isExternalPaymentBooking(booking) ? `${externalPaymentLabel(booking)} · not verified by NaujanGO` : booking.payment_status === 'partial' ? 'Partially paid' : (booking.payment_status || 'unpaid')}
                 </span>
                 {Number(booking.amount_paid) > 0 && Number(booking.balance_due) > 0 && (
                   <span style={{ fontSize: '12px', color: '#4b5563', fontWeight: 600 }}>
@@ -638,6 +638,8 @@ END:VCALENDAR`;
                   </span>
                 )}
               </div>
+
+              {isManualGCashBooking(booking) && <p>{externalPaymentNotice(booking)}</p>}
 
               {Number(booking.amount_paid) > 0 && Number(booking.balance_due) > 0 && (
                 <div style={{ margin: '0.35rem 0 0.5rem' }}>
@@ -738,7 +740,7 @@ END:VCALENDAR`;
                       {Number(booking.amount_paid) > 0 ? 'Pay balance' : booking.payment_status === 'pending' ? 'Resume payment' : 'Complete payment'}
                     </button>
                   )}
-                  {(booking.payment_method === 'qrph' || booking.payment_status === 'pending') && <button style={styles.actionBtn}
+                  {!isExternalPaymentBooking(booking) && (booking.payment_method === 'qrph' || booking.payment_status === 'pending') && <button style={styles.actionBtn}
                     onClick={() => navigate(`/payment-success?booking_id=${booking.booking_id}`)}>Check payment status</button>}
                   {['pending', 'confirmed'].includes(booking.status) && isUpcoming(booking) && (
                     <button style={styles.actionBtn} onClick={() => openModifyModal(booking)}>

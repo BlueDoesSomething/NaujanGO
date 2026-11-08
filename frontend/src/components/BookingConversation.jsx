@@ -2,7 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import api from '../api';
 import OwnerDialog from './OwnerDialog';
 import { formatBookingBoundary } from '../utils/stayBooking';
-import { PAY_AT_PROPERTY_NOTICE, isExternalPaymentBooking } from '../utils/bookingPaymentPolicy';
+import { externalPaymentNotice, isExternalPaymentBooking, isManualGCashBooking } from '../utils/bookingPaymentPolicy';
 import './BookingControls.css';
 
 export default function BookingConversation({ booking, owner = false, admin = false, onClose, onDirtyChange, onBusyChange }) {
@@ -39,12 +39,13 @@ export default function BookingConversation({ booking, owner = false, admin = fa
   return <OwnerDialog className="booking-controls" title={`Booking #${booking.booking_id} · ${booking.hotel_name}`} busy={busy} onClose={() => message ? setDiscard(true) : onClose()} actions={<button type="button" className="gov-btn-primary" onClick={send} disabled={busy || loading || !data || !message.trim()}>{busy ? 'Sending…' : 'Send message'}</button>}>
     <p><strong>Booking status:</strong> {current.status} · {formatBookingBoundary(current)} — {formatBookingBoundary(current, 'out')}</p>
     <p>This is a direct conversation with {owner || admin ? 'the guest' : 'the property'}, linked to this booking. Messages do not confirm bookings or verify payments.</p>
-    {isExternalPaymentBooking(booking) && <p className="booking-conversation-notice">{PAY_AT_PROPERTY_NOTICE}</p>}
+    {isExternalPaymentBooking(booking) && <p className="booking-conversation-notice">{externalPaymentNotice(booking)}</p>}
+    {isManualGCashBooking(booking) && (owner || admin ? <p>The guest chose GCash. Reply with the property’s GCash number or QR details and confirm the recipient name and amount. This conversation does not verify a transfer.</p> : <button type="button" className="gov-btn-ghost" disabled={busy || loading || !data || Boolean(message)} onClick={() => setMessage(`Hello, I chose GCash for booking #${booking.booking_id}. Could you send your GCash QR code or number, recipient name, and the amount I should pay?`)}>Ask for GCash QR / number</button>)}
     <div className="booking-conversation-tools"><button className="gov-btn-ghost" type="button" onClick={() => load()} disabled={loading || busy}>Refresh conversation</button>{data?.has_more && <button className="gov-btn-ghost" type="button" onClick={() => load(data.oldest_id)} disabled={loading || busy}>Load earlier messages</button>}</div>
     {loading && <p>Loading conversation…</p>}
     {notice && <p role="status">{notice}</p>}
     {error && <p role="alert">{error} <button type="button" disabled={busy || loading} onClick={() => load()}>Retry conversation</button></p>}
     {data && <div aria-label="Booking conversation">{data.messages.length ? data.messages.map(item => <article key={item.message_id} className="booking-conversation-message"><strong>{item.sender_role === 'guest' ? 'Guest' : item.sender_role === 'admin' ? 'Administration' : 'Property'}</strong><p>{item.message}</p></article>) : <p>No messages yet.</p>}</div>}
-    <fieldset disabled={busy}><label>Message<textarea rows={3} maxLength={4000} value={message} onChange={event => setMessage(event.target.value)} /></label><p>Never send PINs, OTPs, card details, banking passwords, or identity-document photos. Pay at the property when online payments are disabled.</p></fieldset>
+    <fieldset disabled={busy}><label>Message<textarea rows={3} maxLength={4000} value={message} onChange={event => setMessage(event.target.value)} /></label><p>Never send PINs, OTPs, card details, banking passwords, or identity-document photos. Confirm any GCash recipient and amount directly with the property before transferring.</p></fieldset>
   </OwnerDialog>;
 }

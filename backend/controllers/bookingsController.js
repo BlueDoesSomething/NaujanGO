@@ -982,7 +982,7 @@ export const getHotelBookingReceipt = async (req, res) => {
 
   try {
     const booking = await fetchBooking(req.params.bookingId);
-    if (booking && Number(booking.user_id) === Number(userId) && externalPaymentBooking(booking)) return res.status(409).json({ error: 'This is a pay-at-property reservation, not a payment receipt. View its booking details in My Bookings.' });
+    if (booking && Number(booking.user_id) === Number(userId) && externalPaymentBooking(booking)) return res.status(409).json({ error: 'Payment is arranged directly with the property, so NaujanGO cannot issue a payment receipt. View the reservation in My Bookings.' });
     if (!booking || booking.user_id !== userId) {
       return res.status(404).json({ error: 'Receipt not found' });
     }

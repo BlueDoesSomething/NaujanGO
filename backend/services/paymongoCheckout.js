@@ -156,7 +156,7 @@ export const startOrResumeQrCheckout = async (userId, input) => {
   try {
     await connection.beginTransaction();
     booking = await loadBooking(connection, userId, id);
-    if (readJson(booking.policy_snapshot)?.payment_handling === 'external') throw errorFor('This reservation is pay-at-property. NaujanGO does not collect its payment.', 409, 'EXTERNAL_PAYMENT_BOOKING');
+    if (readJson(booking.policy_snapshot)?.payment_handling === 'external') throw errorFor('Payment for this reservation is arranged directly with the property. NaujanGO does not collect it.', 409, 'EXTERNAL_PAYMENT_BOOKING');
     const [hotels] = await connection.execute('SELECT reservation_fee, allowed_payment_methods FROM hotels WHERE hotel_id = ?', [booking.hotel_id]);
     if (!hotels.length) throw errorFor('Hotel not found.', 404);
     const payments = await paymentRows(connection, id);

@@ -14,7 +14,7 @@ import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
 import { formatHotelCurrency } from '../utils/hotelCurrency';
 import { getHourlyRates, getPaymentPlans, hourlyCheckout, philippineToday, STAY_HOURS } from '../utils/stayBooking';
 import useBookingPolicy from '../hooks/useBookingPolicy';
-import { PAY_AT_PROPERTY_NOTICE } from '../utils/bookingPaymentPolicy';
+import { PAY_AT_PROPERTY_NOTICE, MANUAL_GCASH_NOTICE } from '../utils/bookingPaymentPolicy';
 import './HotelDetail.css';
 
 const API_BASE_URL = getApiBaseUrl() + '/api';
@@ -289,6 +289,8 @@ export default function HotelDetail() {
   });
   const bookingPolicy = useBookingPolicy();
   const paymentsDisabled = bookingPolicy.paymentsDisabled;
+  const manualPayment = paymentsDisabled || bookingForm.paymentMethod === 'gcash';
+  const manualPaymentNotice = bookingForm.paymentMethod === 'gcash' ? MANUAL_GCASH_NOTICE : PAY_AT_PROPERTY_NOTICE;
   const bookingKey = useRef(null);
   const submittingBooking = useRef(false);
   const [bookingError, setBookingError] = useState('');
@@ -308,15 +310,16 @@ export default function HotelDetail() {
 
   useEffect(() => {
     if (!hotel) return;
-    const allowed = Array.isArray(hotel.allowed_payment_methods) && hotel.allowed_payment_methods.length
+    const configured = Array.isArray(hotel.allowed_payment_methods) && hotel.allowed_payment_methods.length
       ? hotel.allowed_payment_methods
       : DEFAULT_ALLOWED_PAYMENT_METHODS;
+    const allowed = paymentsDisabled ? ['pay_at_property', ...configured.filter(method => method === 'gcash')] : configured;
 
     setBookingForm((prev) => {
       if (allowed.includes(prev.paymentMethod)) return prev;
       return { ...prev, paymentMethod: allowed[0] || 'pay_at_property' };
     });
-  }, [hotel]);
+  }, [hotel, paymentsDisabled]);
 
   useEffect(() => {
     if (!bookingForm.stayHours) return;
@@ -571,7 +574,9 @@ export default function HotelDetail() {
   const allowedPaymentMethods = Array.isArray(hotel?.allowed_payment_methods) && hotel.allowed_payment_methods.length
     ? hotel.allowed_payment_methods
     : DEFAULT_ALLOWED_PAYMENT_METHODS;
-  const paymentMethodOptions = getPaymentMethodOptions(t).filter((option) => allowedPaymentMethods.includes(option.value));
+  const paymentMethodOptions = getPaymentMethodOptions(t).filter((option) => paymentsDisabled
+    ? option.value === 'pay_at_property' || option.value === 'gcash' && allowedPaymentMethods.includes('gcash')
+    : allowedPaymentMethods.includes(option.value)).map(option => option.value === 'gcash' ? { ...option, label: `${option.label} (direct to owner)` } : option);
 
   // Flexible payment option (reservation fee / half / full) — mirrors backend
   // utils/paymentAmounts.js dueNow() so the card amounts match what the
@@ -595,7 +600,7 @@ export default function HotelDetail() {
     { value: 'half', title: 'Half payment', subtitle: 'Pay 50% now, balance before check-in', available: true },
     { value: 'full', title: 'Full payment', subtitle: 'Pay the total amount now', available: true }
   ].filter(choice => choice.available && allowedPlans.includes(choice.value));
-  const selectedPaymentOption = paymentsDisabled ? 'full' : paymentOptionChoices.some(choice => choice.value === bookingForm.paymentOption)
+  const selectedPaymentOption = manualPayment ? 'full' : paymentOptionChoices.some(choice => choice.value === bookingForm.paymentOption)
     ? bookingForm.paymentOption : paymentOptionChoices[0]?.value || '';
   const computeDueNow = (option) => {
     if (!option || !bookingTotal || bookingTotal <= 0) return null;
@@ -603,8 +608,8 @@ export default function HotelDetail() {
     if (option === 'reservation') return reservationFeeValid ? Number(reservationFee) : null;
     return bookingTotal;
   };
-  const selectedDueNow = paymentsDisabled ? 0 : computeDueNow(selectedPaymentOption);
-  const selectedBalanceDue = paymentsDisabled ? 0 : selectedDueNow !== null ? Math.max(bookingTotal - selectedDueNow, 0) : 0;
+  const selectedDueNow = manualPayment ? 0 : computeDueNow(selectedPaymentOption);
+  const selectedBalanceDue = manualPayment ? 0 : selectedDueNow !== null ? Math.max(bookingTotal - selectedDueNow, 0) : 0;
   let selectedBalanceDueAt = null;
   if (selectedBalanceDue > 0 && bookingForm.checkIn) {
     const d = new Date(`${bookingForm.checkIn}T00:00:00`);
@@ -612,7 +617,7 @@ export default function HotelDetail() {
     d.setDate(d.getDate() - balanceDays);
     selectedBalanceDueAt = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
-  const effectivePolicy = paymentsDisabled ? { ...hotel, payment_terms_text: PAY_AT_PROPERTY_NOTICE, reservation_fee: null, balance_due_at: null } : hotel;
+  const effectivePolicy = manualPayment ? { ...hotel, payment_terms_text: manualPaymentNotice, reservation_fee: null, balance_due_at: null } : hotel;
   const policyLines = buildPolicyLines(isHourlyStay ? { ...effectivePolicy, check_in_time: bookingForm.checkInTime, check_out_time: hourlyEnd?.time } : effectivePolicy, {
     checkIn: bookingForm.checkIn,
     balanceDueAt: selectedBalanceDueAt,
@@ -764,9 +769,9 @@ export default function HotelDetail() {
 
   const handleSubmitBooking = async () => {
     if (submittingBooking.current) return;
-    if (paymentsDisabled && !hasRoomTypes) { setBookingError('This property needs an active room type and rate before accepting bookings. Please contact the owner.'); return; }
+    if (manualPayment && !hasRoomTypes) { setBookingError('This property needs an active room type and rate before accepting bookings. Please contact the owner.'); return; }
     if (bookingPolicy.loading || bookingPolicy.error) { setBookingError('Check the booking policy before submitting.'); return; }
-    if (paymentsDisabled && !bookingPolicy.policy.storage_ready) { setBookingError('Pay-at-property booking setup needs migration 055. Please contact the administrator.'); return; }
+    if (manualPayment && !bookingPolicy.policy.storage_ready) { setBookingError('Direct-to-owner booking setup needs migration 055. Please contact the administrator.'); return; }
     if (!hotel) return;
     if (pendingBookingId) { navigate(`/hotels/payment/${pendingBookingId}`); return; }
 
@@ -845,7 +850,7 @@ export default function HotelDetail() {
     setPendingBookingId(null);
 
     try {
-      const isExternalCheckout = !paymentsDisabled && ['paypal', 'gcash', 'grabpay', 'qrph', 'card'].includes(bookingForm.paymentMethod);
+      const isExternalCheckout = !manualPayment && ['paypal', 'grabpay', 'qrph', 'card'].includes(bookingForm.paymentMethod);
 
       // Get the price from the selected room
       const selectedRoomData = rooms.find(r => r.room_id === bookingForm.selectedRoomId);
@@ -863,19 +868,19 @@ export default function HotelDetail() {
         guests: bookingForm.guests,
         rooms: bookingForm.rooms,
         special_requests: bookingForm.specialRequests,
-        payment_method: paymentsDisabled ? 'pay_at_property' : bookingForm.paymentMethod,
+        payment_method: bookingForm.paymentMethod,
         payment_option: selectedPaymentOption,
         pay_now: false,
         policy_agreed: policyAgreed,
         customer_name: bookingForm.customerName,
         customer_email: bookingForm.customerEmail,
         customer_phone: toPhilippineE164(bookingForm.customerPhone),
-        card_last4: !paymentsDisabled && bookingForm.paymentMethod === 'card' ? bookingForm.cardLast4.trim() : null,
+        card_last4: !manualPayment && bookingForm.paymentMethod === 'card' ? bookingForm.cardLast4.trim() : null,
         room_id: bookingForm.selectedRoomId,           // NEW: Room selection (optional)
         room_type_name: bookingForm.selectedRoomType   // NEW: Room type name (optional)
       };
 
-      if (paymentsDisabled) {
+      if (manualPayment) {
         payload.payment_handling = 'external';
         const fingerprint = JSON.stringify(payload);
         if (bookingKey.current?.fingerprint !== fingerprint) bookingKey.current = { fingerprint, key: crypto.randomUUID() };
@@ -2015,10 +2020,10 @@ export default function HotelDetail() {
 
               </section>
 
-              {paymentsDisabled ? <section className="hd-bm-sec"><h3 className="hd-bm-sec-h">Pay at property</h3><p>{PAY_AT_PROPERTY_NOTICE}</p><p>Your booking will appear in My Bookings as pending until the owner confirms it. Use Message property on the booking to contact the owner. Online payment is not required for confirmation.</p>{bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}{!bookingPolicy.loading && !bookingPolicy.policy.storage_ready && <p role="alert">Pay-at-property bookings need migration 055 before they can be saved.</p>}</section> : <section className="hd-bm-sec">
+              <section className="hd-bm-sec">
               <h3 className="hd-bm-sec-h"><Icons.Money size={17} /> {t('modal_payment_details')}</h3>
 
-              <div>
+              {!manualPayment && <div>
                 <label className="hd-bm-label">Payment option</label>
                 <div className="hd-bm-payopts">
                   {paymentOptionChoices.map((choice) => {
@@ -2052,7 +2057,7 @@ export default function HotelDetail() {
                     {selectedBalanceDueAt ? ` due by ${selectedBalanceDueAt}` : ''} (before check-in).
                   </div>
                 )}
-              </div>
+              </div>}
 
               <div className="hd-bm-method">
                 <span className="hd-bm-method-ic"><Icons.Money size={17} /></span>
@@ -2061,7 +2066,7 @@ export default function HotelDetail() {
                   <select
                     id="hd-bm-pay-method"
                     value={bookingForm.paymentMethod}
-                    onChange={(e) => setBookingForm({ ...bookingForm, paymentMethod: e.target.value })}
+                    onChange={(e) => { setBookingForm({ ...bookingForm, paymentMethod: e.target.value }); setPolicyAgreed(false); }}
                     className="hd-input hd-bm-method-select"
                   >
                     {paymentMethodOptions.map((option) => (
@@ -2071,7 +2076,14 @@ export default function HotelDetail() {
                 </div>
               </div>
 
-              {bookingForm.paymentMethod === 'card' && (
+              {manualPayment && <>
+                <p>{manualPaymentNotice}</p>
+                <p>Your booking will appear in My Bookings as pending until the owner confirms it. Use Message property on the booking to contact the owner. Online payment is not required for confirmation.</p>
+                {bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}
+                {!bookingPolicy.loading && !bookingPolicy.policy.storage_ready && <p role="alert">Direct-to-owner bookings need migration 055 before they can be saved.</p>}
+              </>}
+
+              {!manualPayment && bookingForm.paymentMethod === 'card' && (
                 <div>
                   <label className="hd-bm-label"><Icons.Shield size={16} /> {t('form_card_last_4')}</label>
                   <input
@@ -2086,7 +2098,7 @@ export default function HotelDetail() {
                 </div>
               )}
 
-              </section>}
+              </section>
 
               <section className="hd-bm-sec">
               <h3 className="hd-bm-sec-h"><Icons.Document size={17} /> {t('modal_additional_info')}</h3>
@@ -2226,7 +2238,7 @@ export default function HotelDetail() {
                     </div>
                   </div>
 
-                  {paymentsDisabled ? <div className="hd-bm-sumcard"><div className="hd-bm-sumcard-h">Pay at property</div><p>No payment due through NaujanGO. Your booking remains in the normal reservations flow.</p></div> : <div className="hd-bm-sumcard">
+                  {manualPayment ? <div className="hd-bm-sumcard"><div className="hd-bm-sumcard-h">{paymentMethodOptions.find(option => option.value === bookingForm.paymentMethod)?.label || 'Pay at property'}</div><p>No payment due through NaujanGO.</p><p>{manualPaymentNotice}</p></div> : <div className="hd-bm-sumcard">
                     <div className="hd-bm-sumcard-h"><Icons.Money size={15} /> {t('form_payment_method')}</div>
                     <div className="hd-bm-sumrow">
                       <span>Option</span>
@@ -2258,7 +2270,7 @@ export default function HotelDetail() {
               <button
                 className={`hd-bm-confirm${isSubmitting || !policyAgreed ? ' is-disabled' : ''}`}
                 onClick={handleSubmitBooking}
-                disabled={isSubmitting || !!checkoutState || !policyAgreed || !selectedPaymentOption || bookingPolicy.loading || Boolean(bookingPolicy.error) || paymentsDisabled && !bookingPolicy.policy.storage_ready}
+                disabled={isSubmitting || !!checkoutState || !policyAgreed || !selectedPaymentOption || bookingPolicy.loading || Boolean(bookingPolicy.error) || manualPayment && !bookingPolicy.policy.storage_ready}
               >
                 {slowConnection ? (
                   <span className="hd-bm-foot-ic"><Icons.Clock size={15} /> {t('button_connecting_slow')}</span>

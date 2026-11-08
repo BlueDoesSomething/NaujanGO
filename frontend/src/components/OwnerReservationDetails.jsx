@@ -5,7 +5,7 @@ import { formatBookingBoundary } from '../utils/stayBooking';
 import { policyLinesFromSnapshot } from '../utils/bookingPolicy';
 import { formatHotelCurrency } from '../utils/hotelCurrency';
 import { getBookingPaymentMethod, getPaymentMethodLabel } from '../utils/paymentDisplay';
-import { isExternalPaymentBooking, PAY_AT_PROPERTY_NOTICE } from '../utils/bookingPaymentPolicy';
+import { isExternalPaymentBooking, externalPaymentLabel, externalPaymentNotice } from '../utils/bookingPaymentPolicy';
 
 export default function OwnerReservationDetails({ booking, onClose, onCancel, onPayments, onMessage, paymentsDisabled = false, t }) {
   const external = isExternalPaymentBooking(booking);
@@ -17,7 +17,7 @@ export default function OwnerReservationDetails({ booking, onClose, onCancel, on
     ['Guest', getBookingGuestName(booking)], ['Email', booking.customer_email || booking.email || 'Not provided'], ['Phone', booking.customer_phone || 'Not provided'],
     ['Room type', booking.room_type_name || 'Not specified'], ['Rooms / guests', `${booking.rooms} room(s) · ${booking.guests ?? '—'} guest(s)`],
     ['Check-in', formatBookingBoundary(booking)], ['Check-out', formatBookingBoundary(booking, 'out')],
-    ['Reservation status', booking.status], ['Payment status', external ? 'Pay at property · not processed or verified by NaujanGO' : booking.payment_status || 'Not available'],
+    ['Reservation status', booking.status], ['Payment status', external ? `${externalPaymentLabel(booking)} · not processed or verified by NaujanGO` : booking.payment_status || 'Not available'],
     ['Total', money(booking.total_amount)], ['Recorded paid', money(booking.amount_paid)], ['Balance due', money(booking.balance_due)],
     ['Payment method', getPaymentMethodLabel(getBookingPaymentMethod(booking), t)]
   ];
@@ -26,7 +26,7 @@ export default function OwnerReservationDetails({ booking, onClose, onCancel, on
     {!external && <button type="button" className="gov-btn-ghost" onClick={onPayments}>{paymentsDisabled ? 'View payment history' : 'View payments'}</button>}
     {['pending', 'confirmed'].includes(booking.status) && <button type="button" className="gov-btn-danger" onClick={onCancel}>Cancel reservation…</button>}
   </>}>
-    {external && <p>{PAY_AT_PROPERTY_NOTICE}</p>}
+    {external && <p>{externalPaymentNotice(booking)}</p>}
     <dl className="owner-detail-fields">{rows.filter(([label]) => !external || !['Recorded paid', 'Balance due'].includes(label)).map(([label, value]) => <React.Fragment key={label}><dt>{label}</dt><dd>{value}</dd></React.Fragment>)}</dl>
     <h3>Guest requests</h3><p>{booking.special_requests || 'No special requests.'}</p>
     <h3>Policies agreed at booking</h3>

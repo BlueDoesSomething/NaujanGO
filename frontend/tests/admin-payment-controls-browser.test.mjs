@@ -45,7 +45,7 @@ before(async () => {
     if (path === '/api/hotels/46/average-rating') return { body: { average_rating: null, total_reviews: 0 } };
     if (path.endsWith('/calendar')) return { body: { days: [] } };
     if (path === '/api/bookings/hotels' && incoming.method === 'POST') {
-      const booking = { ...body, booking_id: 88, hotel_id: 46, hotel_name: hotel.name, room_type_name: room.room_type_name, status: 'pending', total_amount: body.quoted_total, currency: 'PHP', check_in_at: `${body.check_in} 14:00:00`, check_out_at: `${body.check_out} 12:00:00`, payment_status: 'unpaid', amount_paid: null, balance_due: null, expires_at: null, created_at: '2026-11-06T00:00:00Z', policy_snapshot: { payment_handling: 'external', payment_arrangement: 'pay_at_property' } };
+      const booking = { ...body, booking_id: 88, hotel_id: 46, hotel_name: hotel.name, room_type_name: room.room_type_name, status: 'pending', total_amount: body.quoted_total, currency: 'PHP', check_in_at: `${body.check_in} 14:00:00`, check_out_at: `${body.check_out} 12:00:00`, payment_status: 'unpaid', amount_paid: null, balance_due: null, expires_at: null, created_at: '2026-11-06T00:00:00Z', policy_snapshot: { payment_handling: 'external', payment_arrangement: body.payment_method } };
       bookings = [booking]; return { body: { booking, payment_handling: 'external' } };
     }
     if (path === '/api/owner/bookings/88/status') { bookings[0].status = body.status; return { body: { success: true } }; }
@@ -57,7 +57,7 @@ before(async () => {
       }
       return { body: { booking: bookings[0], messages, has_more: false, oldest_id: messages[0]?.message_id || null } };
     }
-    if (path === '/api/bookings/hotels' || path === '/api/owner/bookings') return { body: bookings };
+    if (path === '/api/bookings/hotels' || path === '/api/owner/bookings' || path === '/api/admin/bookings') return { body: bookings };
     if (path === '/api/owner/hotels') return { body: [hotel] };
     if (path === '/api/owner/profile') return { body: { authorization, businessProfile: { verification_status: authorization === 'full' ? 'verified' : 'pending' } } };
     if (path.endsWith('/dashboard/stats')) return { body: { hotelCount: 1, bookingStats: {}, userStats: {}, recentBookings: [] } };
@@ -77,7 +77,7 @@ after(async () => { await browser?.close(); });
 
 test('normal booking form remains: saving goes directly to My Bookings with no checkout or separate request module', options, async () => {
   await browser.evaluate(`document.querySelector('.hd-cta').click()`); await browser.waitFor(`document.querySelector('.hd-bm-policies')`);
-  assert.equal(await browser.evaluate(`document.querySelector('#hd-bm-pay-method')`), null);
+  assert.deepEqual(await browser.evaluate(`[...document.querySelector('#hd-bm-pay-method').options].map(option => option.value)`), ['pay_at_property']);
   assert.doesNotMatch(await browser.evaluate(`document.querySelector('.hd-bm-main').textContent`), /OLD ADVANCE DEPOSIT LINE|Secure the booking now|Owner-approved booking request/);
   await browser.evaluate(`(() => { const node = [...document.querySelectorAll('.hd-bm-main select')].find(node => [...node.options].some(option => option.value === '9')); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(node,'9'); node.dispatchEvent(new Event('change',{bubbles:true})); })()`);
   await setInput('.hd-bm-main input[type="date"]', '2099-12-20');
@@ -236,4 +236,57 @@ test('limited owners also lose payment setup while disabled without gaining acce
     assert.doesNotMatch(await browser.evaluate(`document.querySelector('#owner-nav').textContent`), /Payment History|Daily work/);
     assert.deepEqual(financialWrites(), []); assert.deepEqual(browser.errors, []);
   } finally { authorization = 'full'; policy = { ...policy, online_payments_enabled: false }; }
+});
+
+for (const online of [false, true]) test(`GCash is a manual owner conversation with online payments ${online ? 'ON' : 'OFF'}, visible to guest, owner and admin`, options, async () => {
+  role = 'user'; authorization = 'full'; messages = [];
+  policy = { ...policy, online_payments_enabled: online };
+  hotel.allowed_payment_methods = ['card', 'gcash', 'qrph'];
+  try {
+    await browser.viewport(1280); await browser.navigate('/hotels/46'); await browser.waitFor(`document.querySelector('.hd-cta')`);
+    await browser.evaluate(`document.querySelector('.hd-cta').click()`); await browser.waitFor(`document.querySelector('#hd-bm-pay-method option[value="gcash"]')`);
+    const methods = await browser.evaluate(`[...document.querySelector('#hd-bm-pay-method').options].map(option => option.value)`);
+    assert.deepEqual(methods, online ? ['card', 'gcash', 'qrph'] : ['gcash', 'pay_at_property']);
+    await setSelect('#hd-bm-pay-method', 'gcash');
+    assert.equal(await browser.evaluate(`document.querySelector('.hd-bm-payopts')`), null);
+    assert.match(await browser.evaluate(`document.querySelector('.hd-bm-main').textContent`), /GCash QR code or number.*does not collect or verify/s);
+    await browser.evaluate(`(() => { const node = [...document.querySelectorAll('.hd-bm-main select')].find(node => [...node.options].some(option => option.value === '9')); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set.call(node, '9'); node.dispatchEvent(new Event('change', { bubbles: true })); })()`);
+    await setInput('.hd-bm-main input[type="date"]', '2099-12-20');
+    await browser.evaluate(`(() => { const node = document.querySelectorAll('.hd-bm-main input[type="date"]')[1]; Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(node, '2099-12-21'); node.dispatchEvent(new Event('input', { bubbles: true })); })()`);
+    await setInput('.hd-bm-main input[type="email"]', 'guest@example.test'); await setInput('.hd-bm-main input[inputmode="numeric"]', '9123456789');
+    await browser.evaluate(`document.querySelector('.hd-bm-policies input[type="checkbox"]').click()`);
+    await browser.click('Confirm Booking');
+    await browser.waitFor(`location.pathname === '/bookings' && document.body.textContent.includes('GCash · direct to owner')`);
+    const body = JSON.parse(browser.writes.filter(item => new URL(item.url).pathname === '/api/bookings/hotels').at(-1).postData);
+    assert.equal(body.payment_method, 'gcash'); assert.equal(body.payment_handling, 'external'); assert.equal(body.pay_now, false); assert.equal(body.quoted_total, 500);
+    assert.ok(body.booking_key); assert.equal(body.card_last4, null);
+    assert.ok(!await browser.evaluate(`[...document.querySelectorAll('button')].some(node => /^(Complete payment|Resume payment|Pay balance|Check payment status|Receipt)$/.test(node.textContent.trim()))`));
+    await browser.click('Message property'); await browser.waitFor(`document.querySelector('[aria-label="Booking conversation"]')`);
+    const sentBefore = messages.length;
+    await browser.click('Ask for GCash QR / number');
+    assert.match(await browser.evaluate(`document.querySelector('[role="dialog"] textarea').value`), /booking #88.*GCash QR code or number/);
+    assert.equal(messages.length, sentBefore, 'shortcut fills an editable draft, never sends automatically');
+    for (const width of [320, 393, 768]) {
+      await browser.viewport(width); await browser.evaluate(`document.documentElement.dataset.theme='dark'`);
+      assert.ok(await browser.evaluate(`(() => { const dialog=document.querySelector('[role="dialog"]'), r=dialog.getBoundingClientRect(); return r.left>=0 && r.right<=innerWidth && dialog.scrollWidth<=dialog.clientWidth+1; })()`), `manual GCash dialog overflows at ${width}`);
+    }
+    await browser.click('Send message'); await browser.waitFor(`document.querySelector('[role="dialog"] textarea')?.value === ''`); await browser.click('Close');
+    assert.equal(bookings[0].status, 'pending'); assert.equal(bookings[0].payment_status, 'unpaid');
+
+    await browser.viewport(1280); role = 'owner'; await browser.navigate('/owner/bookings'); await browser.waitFor(`document.querySelector('.gov-table tbody')?.textContent.includes('GCash')`);
+    assert.match(await browser.evaluate(`document.querySelector('.gov-table tbody').textContent`), /GCash · direct to owner/);
+    await browser.click('View details'); await browser.waitFor(`document.querySelector('[role="dialog"]')?.textContent.includes('Reservation #88')`);
+    assert.match(await browser.evaluate(`document.querySelector('[role="dialog"]').textContent`), /GCash.*not processed or verified/s); await browser.click('Close');
+    await browser.click('Message guest'); await browser.waitFor(`document.querySelector('[aria-label="Booking conversation"]')`);
+    assert.match(await browser.evaluate(`document.querySelector('[role="dialog"]').textContent`), /The guest chose GCash/);
+    await setInput('[role="dialog"] textarea', 'Fixture GCash number: 09171234567. Confirm the recipient name and amount with us before sending.');
+    await browser.click('Send message'); await browser.waitFor(`document.querySelector('[role="dialog"] textarea')?.value === ''`); await browser.click('Close');
+    assert.equal(bookings[0].payment_status, 'unpaid');
+
+    role = 'admin'; await browser.navigate('/admin'); await browser.waitFor(`document.querySelector('.gov-nav')`); await browser.click('Bookings'); await browser.waitFor(`document.querySelector('.gov-table tbody')?.textContent.includes('GCash · direct to owner')`);
+    role = 'user'; await browser.navigate('/bookings'); await browser.waitFor(`document.body.textContent.includes('GCash · direct to owner')`);
+    await browser.click('Message property'); await browser.waitFor(`document.querySelector('[aria-label="Booking conversation"]')?.textContent.includes('09171234567')`); await browser.click('Close');
+    await browser.navigate('/hotels/payment/88'); await browser.waitFor(`document.body.textContent.includes('Online payments are unavailable')`);
+    assert.deepEqual(financialWrites(), []); assert.equal(JSON.stringify(historicalPayments), originalPaymentHistory); assert.deepEqual(browser.errors, []);
+  } finally { hotel.allowed_payment_methods = ['card', 'qrph']; policy = { ...policy, online_payments_enabled: false }; }
 });

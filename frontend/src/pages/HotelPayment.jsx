@@ -33,7 +33,7 @@ import { policyLinesFromSnapshot, POLICY_LINE_ICONS } from '../utils/bookingPoli
 import { formatBookingBoundary } from '../utils/stayBooking';
 import StayExtensionHistory from '../components/StayExtensionHistory';
 import useBookingPolicy from '../hooks/useBookingPolicy';
-import { isExternalPaymentBooking, PAY_AT_PROPERTY_NOTICE } from '../utils/bookingPaymentPolicy';
+import { isExternalPaymentBooking, externalPaymentNotice } from '../utils/bookingPaymentPolicy';
 
 const getPaymentMethods = (t) => [
   { 
@@ -281,7 +281,7 @@ const HotelPayment = () => {
     } finally { clearTimeout(slowTimer); setSlowConnection(false); }
   };
 
-  if (bookingPolicy.paymentsDisabled || isExternalPaymentBooking(booking)) return <main style={pageStyle}><section style={cardStyle}><h1>Online payments are unavailable</h1><p>{PAY_AT_PROPERTY_NOTICE}</p><p>Existing bookings and payment records are retained. If you already paid online, check the recorded status before making any other payment.</p><button style={secondaryButtonStyle} onClick={() => navigate('/bookings')}>Open My Bookings</button>{bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button onClick={bookingPolicy.refresh}>Retry policy</button></p>}</section></main>;
+  if (bookingPolicy.paymentsDisabled || isExternalPaymentBooking(booking)) return <main style={pageStyle}><section style={cardStyle}><h1>Online payments are unavailable</h1><p>{isExternalPaymentBooking(booking) ? externalPaymentNotice(booking) : 'Open My Bookings to review your payment arrangement and message the property.'}</p><p>Existing bookings and payment records are retained. If you already paid online, check the recorded status before making any other payment.</p><button style={secondaryButtonStyle} onClick={() => navigate('/bookings')}>Open My Bookings</button>{bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button onClick={bookingPolicy.refresh}>Retry policy</button></p>}</section></main>;
   return (
     <div style={pageStyle}>
       <div style={headerSection}>

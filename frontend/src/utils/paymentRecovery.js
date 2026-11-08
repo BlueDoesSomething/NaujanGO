@@ -1,5 +1,5 @@
 import { bookingInstant, getStayExtensions } from './stayBooking.js';
-import { isExternalPaymentBooking } from './bookingPaymentPolicy.js';
+import { isExternalPaymentBooking, externalPaymentLabel, externalPaymentNotice } from './bookingPaymentPolicy.js';
 
 export const canResumeBookingPayment = (booking, now = Date.now()) => {
   if (!booking || isExternalPaymentBooking(booking) || !['pending', 'confirmed'].includes(booking.status) || Number(booking.archived) === 1
@@ -14,7 +14,7 @@ export const canResumeBookingPayment = (booking, now = Date.now()) => {
 
 export const paymentReturnPresentation = (result, cancelled = false) => {
   if (!result) return { kind: 'unknown', icon: '?', title: 'Payment not verified', text: 'We could not verify this payment. Open Booking History and check the correct booking. Do not pay again if money was deducted.' };
-  if (result.state === 'external') return { kind: 'info', icon: 'i', title: 'Pay at property', text: 'The property handles payment directly. NaujanGO does not process or verify payment for this reservation. Open My Bookings for the owner confirmation.' };
+  if (result.state === 'external') return { kind: 'info', icon: 'i', title: externalPaymentLabel(result.booking), text: externalPaymentNotice(result.booking) };
   if (result.state === 'review' || result.needs_staff_review) return { kind: 'review', icon: '!', title: 'Hotel review needed', text: 'This payment or reservation needs reconciliation. Contact the hotel before paying again. A return from checkout does not confirm a room.' };
   if (result.state === 'succeeded') return { kind: 'success', icon: '✓', title: 'Payment received', text: result.booking?.status === 'confirmed'
     ? Number(result.booking.balance_due) > 0 ? 'Your payment was verified. The booking is confirmed, with a remaining balance shown below.' : 'Your payment was verified and your booking is confirmed.'

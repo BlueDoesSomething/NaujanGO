@@ -113,7 +113,7 @@ test('payments OFF keeps normal bookings: actual pending record, inventory held,
   const { request, state, calls } = await setup(t);
   assert.equal((await request(null, '/bookings/policy')).body.online_payments_enabled, false);
   assert.equal((await request(1, '/bookings/hotels', 'POST', { ...input, payment_handling: undefined })).body.code, 'PAYMENT_MODE_CHANGED');
-  const response = await request(1, '/bookings/hotels', 'POST', { ...input, pay_now: true, payment_method: 'card' });
+  const response = await request(1, '/bookings/hotels', 'POST', { ...input, pay_now: true });
   assert.equal(response.status, 201); assert.equal(response.body.booking.status, 'pending'); assert.equal(response.body.request, undefined); assert.equal(response.body.receipt, undefined);
   assert.equal(response.body.booking.expires_at, null); assert.equal(state().bookings.length, 1);
   assert.equal(response.body.booking.policy_snapshot.payment_handling, 'external');
@@ -122,6 +122,51 @@ test('payments OFF keeps normal bookings: actual pending record, inventory held,
   assert.equal((await request(1, '/bookings/hotels', 'POST', input)).body.booking.booking_id, 1, 'lost-response retry returns the same booking');
   const existing = await request(1, '/bookings/hotels');
   assert.equal(existing.body.length, 1); assert.equal(existing.body[0].amount_due_now, null); assert.equal(existing.body[0].balance_due_at, null);
+});
+
+for (const online of [false, true]) test(`manual GCash stays direct to owner with online payments ${online ? 'ON' : 'OFF'}`, async t => {
+  const { request, state, calls } = await setup(t);
+  state().policy.online_payments_enabled = online ? 1 : 0;
+  const gcashInput = { ...input, payment_method: 'gcash', pay_now: true };
+  assert.equal((await request(1, '/bookings/hotels', 'POST', { ...gcashInput, payment_handling: undefined })).status, 409, 'manual terms must be reviewed, including by older online-checkout clients');
+  const response = await request(1, '/bookings/hotels', 'POST', gcashInput);
+  assert.equal(response.status, 201);
+  assert.equal(response.body.payment_handling, 'external');
+  assert.equal(response.body.booking.payment_method, 'gcash');
+  assert.equal(response.body.booking.policy_snapshot.payment_arrangement, 'gcash');
+  assert.match(response.body.booking.policy_snapshot.payment_terms_text, /QR code or number/);
+  assert.equal(response.body.booking.status, 'pending'); assert.equal(response.body.booking.payment_status, 'unpaid'); assert.equal(response.body.booking.expires_at, null);
+  assert.equal((await request(1, '/bookings/hotels', 'POST', gcashInput)).body.booking.booking_id, 1);
+  assert.equal((await request(1, '/bookings/hotels', 'POST', input)).status, 409, 'retry key cannot silently change the payment choice');
+  await request(1, '/bookings/hotels/1/messages', 'POST', { client_key: 'gcash-request', message: 'Please send your GCash QR code or number.' });
+  await request(5, '/owner/bookings/1/messages', 'POST', { client_key: 'gcash-reply', message: 'Use our GCash number. Confirm the account name before sending.' });
+  assert.equal(state().bookings[0].status, 'pending'); assert.equal(state().bookings[0].payment_status, 'unpaid');
+  const confirmAsOwner = () => request(5, '/owner/bookings/1/status', 'PUT', { status: 'confirmed' });
+  const confirmAsAdmin = () => request(7, '/admin/bookings/1/status', 'PUT', { status: 'confirmed' });
+  for (const confirm of online ? [confirmAsAdmin, confirmAsOwner] : [confirmAsOwner, confirmAsAdmin]) assert.equal((await confirm()).status, 200);
+  assert.equal(state().bookings[0].payment_status, 'unpaid', 'reservation confirmation is not transfer verification');
+  assert.equal((await request(1, '/bookings/hotels/1/receipt')).status, 409);
+  assert.equal((await request(1, '/payments/checkout', 'POST', { booking_id: 1, payment_method: 'gcash' })).status, online ? 409 : 403);
+  assert.ok(calls.every(call => !call.sql.startsWith('INSERT INTO hotel_payments') && !call.sql.startsWith('UPDATE hotels SET rooms_available')));
+});
+
+test('direct payment choices respect accepted GCash methods and reject online method injection', async t => {
+  const { request, hotel, state } = await setup(t, { hotel: { allowed_payment_methods: 'card,pay_at_property' } });
+  assert.equal((await request(1, '/bookings/hotels', 'POST', { ...input, payment_method: 'gcash' })).status, 409);
+  for (const method of ['card', 'qrph', 'unknown', 42]) assert.equal((await request(1, '/bookings/hotels', 'POST', { ...input, payment_method: method })).status, 400);
+  assert.equal(state().bookings.length, 0);
+  hotel.allowed_payment_methods = '["gcash"]';
+  assert.equal((await request(1, '/bookings/hotels', 'POST', { ...input, payment_method: 'gcash' })).status, 201);
+});
+
+test('hourly GCash bookings keep the selected duration, frozen rate and manual arrangement when modified', async t => {
+  const { request, room } = await setup(t);
+  const response = await request(1, '/bookings/hotels', 'POST', { ...input, payment_method: 'gcash', stay_duration_hours: 3, check_in_time: '09:00', quoted_total: 200 });
+  assert.equal(response.status, 201); assert.equal(response.body.booking.total_amount, 200); assert.equal(response.body.booking.check_out_at, '2099-12-20 12:00:00');
+  room.hourly_rates = '{"3":900}';
+  const modified = await request(1, '/bookings/hotels/1/modify', 'PATCH', { check_in: '2099-12-22', check_in_time: '10:00', rooms: 1, guests: 2 });
+  assert.equal(modified.status, 200); assert.equal(modified.body.booking.total_amount, 200); assert.equal(modified.body.booking.check_out_at, '2099-12-22 13:00:00');
+  assert.equal(modified.body.booking.payment_method, 'gcash'); assert.equal(modified.body.booking.policy_snapshot.payment_arrangement, 'gcash'); assert.equal(modified.body.booking.payment_status, 'unpaid');
 });
 
 test('owners confirm and cancel through existing status endpoint without creating another reservation or fake payment', async t => {

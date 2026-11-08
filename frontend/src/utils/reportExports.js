@@ -1,7 +1,7 @@
 import { formatBookingBoundary } from './stayBooking.js';
 import { getBookingGuestName } from './bookingGuestName.js';
 import { getBookingPaymentMethod, getPaymentMethodLabel, getPaymentReferences } from './paymentDisplay.js';
-import { isExternalPaymentBooking } from './bookingPaymentPolicy.js';
+import { isExternalPaymentBooking, externalPaymentLabel } from './bookingPaymentPolicy.js';
 
 const columns = entries => entries.map(([key, label]) => ({ key, label }));
 const number = value => value == null || value === '' || !Number.isFinite(Number(value)) ? '' : Number(value);
@@ -22,7 +22,7 @@ export const ownerRecordReport = (type, rows, notes = '') => {
         id: row.booking_id, reference: row.booking_reference || row.receipt_number || '', hotel: row.hotel_name, room: row.room_type_name,
         guest: getBookingGuestName(row), checkIn: formatBookingBoundary(row), checkOut: formatBookingBoundary(row, 'out'), rooms: row.rooms, guests: row.guests,
         booked: row.booking_date || row.created_at || '', currency: row.currency || 'PHP', total: number(row.total_amount), paid: isExternalPaymentBooking(row) ? '' : number(row.amount_paid),
-        balance: isExternalPaymentBooking(row) ? '' : number(row.balance_due), method: getPaymentMethodLabel(getBookingPaymentMethod(row)), paymentStatus: isExternalPaymentBooking(row) ? 'Pay at property; not verified by NaujanGO' : row.payment_status,
+        balance: isExternalPaymentBooking(row) ? '' : number(row.balance_due), method: getPaymentMethodLabel(getBookingPaymentMethod(row)), paymentStatus: isExternalPaymentBooking(row) ? `${externalPaymentLabel(row)}; not verified by NaujanGO` : row.payment_status,
         status: row.status, archived: Number(row.archived) === 1 ? 'Yes' : 'No'
       })), notes);
     result.printColumns = result.columns.filter(column => ['id', 'hotel', 'guest', 'checkIn', 'checkOut', 'total', 'balance', 'currency', 'status', 'paymentStatus'].includes(column.key));
