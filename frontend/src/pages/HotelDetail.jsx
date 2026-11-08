@@ -719,6 +719,12 @@ export default function HotelDetail() {
 
     setCalendarError('');
     if (isHourlyStay) {
+      if (calendarRange.start === dateKey) {
+        setCalendarRange({ start: null, end: null });
+        setBookingForm(previous => ({ ...previous, checkIn: '', checkOut: '' }));
+        setBookingError('');
+        return;
+      }
       setCalendarRange({ start: dateKey, end: dateKey });
       setBookingForm(previous => ({ ...previous, checkIn: dateKey }));
       setBookingError('');
@@ -1729,37 +1735,65 @@ export default function HotelDetail() {
               <section className="hd-bm-sec">
               <h3 className="hd-bm-sec-h"><Icons.Calendar size={17} /> {t('modal_stay_details')}</h3>
               <div className="hd-bm-grid">
-                  <div>
-                  <label className="hd-bm-label"><Icons.Calendar size={16} /> {t('form_check_in')}</label>
-                  <input
-                    type="date"
-                    value={bookingForm.checkIn}
-                    readOnly
-                    onChange={(e) => { setBookingForm({ ...bookingForm, checkIn: e.target.value }); setCalendarRange({ start: null, end: null }); setBookingError(''); }}
-                    className="hd-input"
-                    min={philippineToday()}
-                    aria-describedby="hd-bm-date-help"
-                  />
-                </div>
-                <div>
-                  <label className="hd-bm-label"><Icons.Calendar size={16} /> {t('form_check_out')}</label>
-                  <input
-                    type="date"
-                    value={isHourlyStay ? hourlyEnd?.date || '' : bookingForm.checkOut}
-                    readOnly={isHourlyStay}
-                    onChange={(e) => { if (isHourlyStay) return; setBookingForm({ ...bookingForm, checkOut: e.target.value }); setCalendarRange({ start: null, end: null }); setBookingError(''); }}
-                    className="hd-input"
-                    min={bookingForm.checkIn || philippineToday()}
-                    aria-describedby="hd-bm-date-help"
-                  />
-                </div>
-                <p id="hd-bm-date-help" className="hd-bm-note hd-bm-grid-full">Select your dates using the availability calendar below so only available dates can be chosen.</p>
-                {isHourlyStay && <div>
-                  <label className="hd-bm-label">Check-in time (Philippine time)</label>
-                  <input className="hd-input" type="time" value={bookingForm.checkInTime}
-                    onChange={event => setBookingForm(previous => ({ ...previous, checkInTime: event.target.value }))} />
-                  <p className="hd-bm-note">Checkout: {hourlyEnd ? `${hourlyEnd.date} at ${fmtTime(hourlyEnd.time)}` : 'Choose a check-in date and time'} (PHT). Availability is checked for these exact hours when confirming.</p>
-                </div>}
+                {isHourlyStay ? (
+                  <>
+                    <div>
+                      <label className="hd-bm-label" htmlFor="hd-bm-checkin-date"><Icons.Calendar size={16} /> Check-in date</label>
+                      <input
+                        id="hd-bm-checkin-date"
+                        type="date"
+                        value={bookingForm.checkIn}
+                        readOnly
+                        onChange={(e) => { setBookingForm({ ...bookingForm, checkIn: e.target.value }); setCalendarRange({ start: null, end: null }); setBookingError(''); }}
+                        className="hd-input"
+                        min={philippineToday()}
+                        aria-describedby="hd-bm-date-help"
+                      />
+                    </div>
+                    <div>
+                      <label className="hd-bm-label" htmlFor="hd-bm-checkin-time">Check-in time (PHT)</label>
+                      <input id="hd-bm-checkin-time" className="hd-input" type="time" value={bookingForm.checkInTime}
+                        onChange={event => setBookingForm(previous => ({ ...previous, checkInTime: event.target.value }))} aria-describedby="hd-bm-date-help" />
+                    </div>
+                    <p id="hd-bm-date-help" className="hd-bm-note hd-bm-grid-full">
+                      Choose a stay package and select one check-in date from the calendar below. Your checkout is calculated automatically from the package duration and check-in time.
+                    </p>
+                    <div className="hd-bm-grid-full" style={{ padding: '0.75rem 1rem', borderRadius: 10, background: 'var(--hd-surface, #f8fafc)', border: '1px solid var(--hd-border, #e5e7eb)' }}>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--hd-muted, #6b7280)', marginBottom: 2 }}>Calculated checkout</div>
+                      <strong>{hourlyEnd ? `${hourlyEnd.date} at ${fmtTime(hourlyEnd.time)} (PHT)` : 'Select a check-in date and time'}</strong>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="hd-bm-label" htmlFor="hd-bm-checkin-date"><Icons.Calendar size={16} /> {t('form_check_in')}</label>
+                      <input
+                        id="hd-bm-checkin-date"
+                        type="date"
+                        value={bookingForm.checkIn}
+                        readOnly
+                        onChange={(e) => { setBookingForm({ ...bookingForm, checkIn: e.target.value }); setCalendarRange({ start: null, end: null }); setBookingError(''); }}
+                        className="hd-input"
+                        min={philippineToday()}
+                        aria-describedby="hd-bm-date-help"
+                      />
+                    </div>
+                    <div>
+                      <label className="hd-bm-label" htmlFor="hd-bm-checkout-date"><Icons.Calendar size={16} /> {t('form_check_out')}</label>
+                      <input
+                        id="hd-bm-checkout-date"
+                        type="date"
+                        value={bookingForm.checkOut}
+                        readOnly
+                        onChange={(e) => { setBookingForm({ ...bookingForm, checkOut: e.target.value }); setCalendarRange({ start: null, end: null }); setBookingError(''); }}
+                        className="hd-input"
+                        min={bookingForm.checkIn || philippineToday()}
+                        aria-describedby="hd-bm-date-help"
+                      />
+                    </div>
+                    <p id="hd-bm-date-help" className="hd-bm-note hd-bm-grid-full">Select your check-in and check-out dates using the availability calendar below so only available dates can be chosen.</p>
+                  </>
+                )}
                 <div>
                   <label className="hd-bm-label"><Icons.User size={16} /> {t('form_guests')}</label>
                   <input
@@ -1885,6 +1919,11 @@ export default function HotelDetail() {
                       <div className="hd-bm-cal-msg is-error">{calendarError}</div>
                     ) : (
                       <>
+                        <p className="hd-bm-note" style={{ margin: '0 0 0.5rem' }}>
+                          {isHourlyStay
+                            ? 'Tap one date to set your check-in. Tap it again to clear.'
+                            : 'Tap your check-in date, then tap your check-out date.'}
+                        </p>
                         <div className="hd-cal-grid">
                           {getWeekdayLabels(getCalendarLocale(language)).map((label, idx) => (
                             <div key={`wd-${idx}`} className="hd-cal-wd">{label}</div>
