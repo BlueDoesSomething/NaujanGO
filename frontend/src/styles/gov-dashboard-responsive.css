@@ -558,3 +558,132 @@
     margin-bottom: 1.5rem;
   }
 }
+
+/* ============================================================
+   Overview refresh (owner + admin)
+   Heading hierarchy ("At a glance" heads, welcome header, card
+   titles), class-based chrome for KPI tiles / section cards /
+   notes — inline styles are removed from the JSX so dark mode
+   can restyle these (React serializes inline styles to rgb(…),
+   which is why the [style*=...] dark rules never matched) — and
+   explicit KPI columns so five owner metrics never orphan a card.
+   ============================================================ */
+.gov-dashboard .gov-ov-welcome {
+  color: #111827;
+}
+
+.gov-dashboard .gov-ov-lede {
+  color: #6b7280;
+}
+
+.gov-dashboard .gov-ov-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.gov-dashboard .gov-ov-head h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1b5e20;
+}
+
+.gov-dashboard .gov-ov-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #111827;
+}
+
+.gov-dashboard .gov-ov-card {
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(2, 6, 23, 0.06);
+}
+
+/* KPI tile: chrome lives here, inline style only sets border-top-color */
+.gov-dashboard .gov-ov-stat {
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-top: 3px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+}
+
+.gov-dashboard .gov-ov-stat-value {
+  color: #111827;
+}
+
+.gov-dashboard .gov-ov-stat-label {
+  color: #374151;
+}
+
+.gov-dashboard .gov-ov-stat-sub {
+  color: #6b7280;
+}
+
+.gov-dashboard .gov-ov-row-label {
+  color: #374151;
+}
+
+.gov-dashboard .gov-ov-sep {
+  border-top: 1px solid #e5e7eb;
+}
+
+.gov-dashboard .gov-ov-note {
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+
+.gov-dashboard .gov-ov-note-label {
+  color: #374151;
+}
+
+.gov-dashboard .gov-ov-err {
+  color: #dc2626;
+}
+
+.gov-dashboard .gov-ov-note-time {
+  color: #6b7280;
+}
+
+/* Owner KPI columns: 5 across on wide desktop, 3 on tablet (auto-fit
+   produced a 4+1 orphan row at 768-1024px), 2 on phones. */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .gov-dashboard .gov-grid-cards.gov-ov-metrics {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .gov-dashboard .gov-grid-cards.gov-ov-metrics {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .gov-dashboard .gov-grid-cards.gov-ov-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Admin insights row: three cards squeeze to ~232px at 768px — go
+   two-up with the odd trailing card spanning the full width. */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .gov-dashboard .gov-ov-insights {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gov-dashboard .gov-ov-insights > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}

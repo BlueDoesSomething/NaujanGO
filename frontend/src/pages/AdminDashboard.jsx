@@ -2748,38 +2748,40 @@ const AdminDashboard = () => {
             return (
               <div>
                 {/* Page Header */}
-                <div style={{ marginBottom: '2rem' }}>
+                <div style={{ marginBottom: '1.5rem' }}>
                   <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{today}</p>
-                  <h1 style={{ margin: '0.25rem 0 0.35rem', fontSize: '1.8rem', fontWeight: 800, color: '#111827', letterSpacing: '-0.5px' }}>
+                  <h1 className="gov-ov-welcome" style={{ margin: '0.25rem 0 0.35rem', fontSize: '1.8rem', fontWeight: 800, letterSpacing: '-0.5px' }}>
                     Welcome back, {user?.first_name || user?.username}
                   </h1>
-                  <p style={{ margin: 0, color: '#6b7280', fontSize: '0.95rem' }}>{t('dashboard_snapshot')}</p>
+                  <p className="gov-ov-lede" style={{ margin: 0, fontSize: '0.95rem' }}>{t('dashboard_snapshot')}</p>
                 </div>
 
-                <TourismArrivalReminder admin onOpen={() => { setReportsInitialCategory('tourism-arrivals'); setActiveModule('reports'); loadAnalytics(); }} />
-                {/* Metric Cards */}
-                <div className="gov-grid-4" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
+                {/* Key metrics */}
+                <div className="gov-ov-head"><h2>At a glance</h2></div>
+                <div className="gov-grid-4" style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
                   {[
                     { label: t('admin_stat_users'), value: stats.totals?.users ?? 0, accent: '#16a34a', sub: t('all_roles') || 'All roles' },
                     { label: t('admin_stat_hotels'), value: stats.totals?.hotels ?? 0, accent: '#2563eb', sub: t('active_properties') || 'Active properties' },
                     { label: t('admin_stat_bookings'), value: stats.totals?.bookings ?? 0, accent: '#7c3aed', sub: `${confirmed} ${t('confirmed') || 'confirmed'}` },
                     { label: t('admin_stat_attractions'), value: stats.totals?.attractions ?? 0, accent: '#d97706', sub: t('registered_sites') || 'Registered sites' },
                   ].map(({ label, value, accent, sub }) => (
-                    <div key={label} style={{ background: '#fff', border: '1px solid #e5e7eb', borderTop: `3px solid ${accent}`, borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
-                      <div className="gov-metric-value" style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', lineHeight: 1, marginBottom: '0.35rem' }}>{value.toLocaleString()}</div>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151' }}>{label}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.2rem' }}>{sub}</div>
+                    <div key={label} className="gov-ov-stat" style={{ borderTopColor: accent }}>
+                      <div className="gov-metric-value gov-ov-stat-value" style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1, marginBottom: '0.35rem' }}>{value.toLocaleString()}</div>
+                      <div className="gov-ov-stat-label" style={{ fontSize: '0.8rem', fontWeight: 700 }}>{label}</div>
+                      <div className="gov-ov-stat-sub" style={{ fontSize: '0.75rem', marginTop: '0.2rem' }}>{sub}</div>
                     </div>
                   ))}
                 </div>
 
+                <TourismArrivalReminder admin onOpen={() => { setReportsInitialCategory('tourism-arrivals'); setActiveModule('reports'); loadAnalytics(); }} />
+
                 {/* Second Row: Booking Breakdown + Recent Users */}
-                <div className="gov-grid-3" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
+                <div className="gov-grid-3 gov-ov-insights" style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
 
                   {/* Booking Status */}
-                  <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.5rem' }}>
+                  <div className="gov-ov-card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
-                      <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>{t('booking_breakdown')}</h2>
+                      <h2 className="gov-ov-title">{t('booking_breakdown')}</h2>
                       <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{total.toLocaleString()} total</span>
                     </div>
                     {/* Progress bar */}
@@ -2806,8 +2808,8 @@ const AdminDashboard = () => {
                   </div>
 
                   {/* Role Distribution */}
-                  <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.5rem' }}>
-                    <h2 style={{ margin: '0 0 1.25rem', fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>User Roles</h2>
+                  <div className="gov-ov-card">
+                    <h2 className="gov-ov-title" style={{ margin: '0 0 1.25rem' }}>User Roles</h2>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {(stats.roleDistribution || []).map((row) => {
                         const roleTotal = stats.totals?.users || 1;
@@ -2817,7 +2819,7 @@ const AdminDashboard = () => {
                         return (
                           <div key={row.role}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
-                              <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151', textTransform: 'capitalize' }}>{t(`${row.role}_role`) || row.role}</span>
+                              <span className="gov-ov-row-label" style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'capitalize' }}>{t(`${row.role}_role`) || row.role}</span>
                               <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>{row.count} · {pct}%</span>
                             </div>
                             <div style={{ height: 6, background: '#f3f4f6', borderRadius: 99, overflow: 'hidden' }}>
@@ -2827,7 +2829,7 @@ const AdminDashboard = () => {
                         );
                       })}
                     </div>
-                    <div style={{ marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid #f3f4f6' }}>
+                    <div className="gov-ov-sep" style={{ marginTop: '1.25rem', paddingTop: '1rem' }}>
                       <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{t('recent_registrations')}</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.5rem' }}>
                         {(stats.recentUsers || []).slice(0, 5).map((u) => (
@@ -2840,9 +2842,9 @@ const AdminDashboard = () => {
                   </div>
 
                   {/* System Health */}
-                  <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.5rem' }}>
+                  <div className="gov-ov-card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                      <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>System Health</h2>
+                      <h2 className="gov-ov-title" style={{ margin: 0 }}>System Health</h2>
                       <button className="gov-btn gov-btn-ghost" style={{ fontSize: '0.8rem', padding: '0.3rem 0.9rem' }}
                         onClick={() => setActiveModule('system-logs')}>View logs →</button>
                     </div>
@@ -2865,12 +2867,12 @@ const AdminDashboard = () => {
                           </div>
                         </div>
                         {logStats.latest_error ? (
-                          <div style={{ fontSize: '0.78rem', color: '#6b7280', background: '#f9fafb', border: '1px solid #f3f4f6', borderRadius: 8, padding: '0.6rem 0.75rem' }}>
-                            <div style={{ fontWeight: 700, color: '#374151', marginBottom: '0.2rem' }}>Latest error</div>
-                            <div style={{ color: '#dc2626', wordBreak: 'break-word' }}>
+                          <div className="gov-ov-note" style={{ fontSize: '0.78rem', wordBreak: 'break-word' }}>
+                            <div className="gov-ov-note-label" style={{ fontWeight: 700, marginBottom: '0.2rem' }}>Latest error</div>
+                            <div className="gov-ov-err">
                               {String(logStats.latest_error.message || '').slice(0, 160)}
                             </div>
-                            <div style={{ color: '#9ca3af', marginTop: '0.15rem' }}>
+                            <div className="gov-ov-note-time" style={{ marginTop: '0.15rem' }}>
                               {new Date(logStats.latest_error.created_at).toLocaleString()}
                             </div>
                           </div>
@@ -2885,9 +2887,9 @@ const AdminDashboard = () => {
                 </div>
 
                 {/* Recent Bookings */}
-                <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.5rem' }}>
+                <div className="gov-ov-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>{t('recent_bookings')}</h2>
+                    <h2 className="gov-ov-title" style={{ margin: 0 }}>{t('recent_bookings')}</h2>
                     <button className="gov-btn gov-btn-ghost" style={{ fontSize: '0.8rem', padding: '0.3rem 0.9rem' }}
                       onClick={() => setActiveModule('bookings')}>{t('view_all')}</button>
                   </div>
@@ -2905,10 +2907,10 @@ const AdminDashboard = () => {
                       <tbody>
                         {bookings.slice(0, 8).map((booking) => (
                           <tr key={booking.booking_id}>
-                            <td data-label={t('id')}><span style={{ fontWeight: 700, color: '#374151' }}>#{booking.booking_id}</span></td>
-                            <td data-label={t('hotel')} style={{ color: '#374151' }}>{booking.hotel_name || '—'}</td>
-                            <td data-label={t('guest')} style={{ color: '#374151' }}>{getBookingGuestName(booking)}</td>
-                            <td data-label={t('check_in')} style={{ color: '#6b7280' }}>{formatBookingBoundary(booking)}</td>
+                            <td data-label={t('id')}><strong>#{booking.booking_id}</strong></td>
+                            <td data-label={t('hotel')}>{booking.hotel_name || '—'}</td>
+                            <td data-label={t('guest')}>{getBookingGuestName(booking)}</td>
+                            <td data-label={t('check_in')}>{formatBookingBoundary(booking)}</td>
                             <td data-label={t('status')}>
                               <span className={`gov-badge-status gov-badge-status--${booking.status}`}>{t(booking.status) || booking.status}</span>
                             </td>

@@ -1391,15 +1391,27 @@ const OwnerDashboard = () => {
           return (
             <div>
               {/* Header */}
-              <div style={{ marginBottom: '2rem' }}>
+              <div style={{ marginBottom: '1.5rem' }}>
                 <p style={{ margin: 0, fontSize: '0.8rem', fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{today}</p>
-                <h1 style={{ margin: '0.25rem 0 0.35rem', fontSize: '1.8rem', fontWeight: 800, color: '#111827', letterSpacing: '-0.5px' }}>
+                <h1 className="gov-ov-welcome" style={{ margin: '0.25rem 0 0.35rem', fontSize: '1.8rem', fontWeight: 800, letterSpacing: '-0.5px' }}>
                   Welcome back, {user?.first_name || user?.username}
                 </h1>
-                <p style={{ margin: 0, color: '#6b7280', fontSize: '0.95rem' }}>Here's how your property is performing.</p>
+                <p className="gov-ov-lede" style={{ margin: 0, fontSize: '0.95rem' }}>Here's how your property is performing.</p>
               </div>
 
-              {/* Metric Cards */}
+              {/* Key metrics */}
+              <div className="gov-ov-head"><h2>At a glance</h2></div>
+              <div className="gov-grid-cards gov-ov-metrics" style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
+                {metricCards.map(({ label, value, accent, sub, prefix }) => (
+                  <div key={label} className="gov-ov-stat" style={{ borderTopColor: accent }}>
+                    <div className="gov-metric-value gov-ov-stat-value" style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1, marginBottom: '0.35rem' }}>{prefix || ''}{Number(value).toLocaleString()}</div>
+                    <div className="gov-ov-stat-label" style={{ fontSize: '0.8rem', fontWeight: 700 }}>{label}</div>
+                    <div className="gov-ov-stat-sub" style={{ fontSize: '0.75rem', marginTop: '0.2rem' }}>{sub}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Today's work */}
               <section className="owner-today" aria-label="Today’s work">
                 <h2>Today’s work <small>Philippine time</small></h2>
                 <div className="owner-task-grid">{[
@@ -1411,23 +1423,14 @@ const OwnerDashboard = () => {
               <TourismArrivalReminder onOpen={() => setActiveTab('tourism-arrivals')} />
               <OwnerSetupChecklist hotel={hotels[0]} rooms={rooms} verified={!isLimitedOwner} onNavigate={setActiveTab}
                 onEdit={(hotel, section) => requestLeave(() => { navigate(OWNER_PATHS.hotels); startHotelEdit(hotel, section); })} />
-              <div className="gov-grid-cards" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
-                {metricCards.map(({ label, value, accent, sub, prefix }) => (
-                  <div key={label} style={{ background: '#fff', border: '1px solid #e5e7eb', borderTop: `3px solid ${accent}`, borderRadius: '10px', padding: '1.25rem 1.5rem' }}>
-                    <div className="gov-metric-value" style={{ fontSize: '2rem', fontWeight: 800, color: '#111827', lineHeight: 1, marginBottom: '0.35rem' }}>{prefix || ''}{Number(value).toLocaleString()}</div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#374151' }}>{label}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: '0.2rem' }}>{sub}</div>
-                  </div>
-                ))}
-              </div>
 
               {/* Booking Breakdown + Quick Actions */}
-              <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div className="gov-grid-2 gov-ov-insights" style={{ display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
 
                 {/* Booking Status */}
-                <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.5rem' }}>
+                <div className="gov-ov-card">
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.25rem' }}>
-                    <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Booking Breakdown</h2>
+                    <h2 className="gov-ov-title">Booking Breakdown</h2>
                     <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>{total.toLocaleString()} total</span>
                   </div>
                   {total > 0 && (
@@ -1453,8 +1456,8 @@ const OwnerDashboard = () => {
                 </div>
 
                 {/* Quick Actions */}
-                <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.5rem' }}>
-                  <h2 style={{ margin: '0 0 1.25rem', fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Quick Actions</h2>
+                <div className="gov-ov-card">
+                  <h2 className="gov-ov-title" style={{ margin: '0 0 1.25rem' }}>Quick Actions</h2>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                     {[
                       { label: 'Manage Bookings', sub: 'Review & update booking status', tab: 'bookings', color: '#7c3aed' },
@@ -1479,9 +1482,9 @@ const OwnerDashboard = () => {
               </div>
 
               {/* Recent Bookings */}
-              <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '10px', padding: '1.5rem' }}>
+              <div className="gov-ov-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                  <h2 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 700, color: '#111827' }}>Recent Bookings</h2>
+                  <h2 className="gov-ov-title" style={{ margin: 0 }}>Recent Bookings</h2>
                   <button className="gov-btn gov-btn-ghost" style={{ fontSize: '0.8rem', padding: '0.3rem 0.9rem' }}
                     onClick={() => setActiveTab('bookings')}>View all</button>
                 </div>
@@ -1499,10 +1502,10 @@ const OwnerDashboard = () => {
                     <tbody>
                       {stats.recentBookings?.slice(0, 8).map((booking) => (
                         <tr key={booking.booking_id}>
-                          <td data-label="ID"><span style={{ fontWeight: 700, color: '#374151' }}>#{booking.booking_id}</span></td>
-                          <td data-label="Hotel" style={{ color: '#374151' }}>{booking.hotel_name || '—'}</td>
-                          <td data-label="Guest" style={{ color: '#374151' }}>{getBookingGuestName(booking)}</td>
-                          <td data-label="Check-in" style={{ color: '#6b7280' }}>{formatBookingBoundary(booking)}</td>
+                          <td data-label="ID"><strong>#{booking.booking_id}</strong></td>
+                          <td data-label="Hotel">{booking.hotel_name || '—'}</td>
+                          <td data-label="Guest">{getBookingGuestName(booking)}</td>
+                          <td data-label="Check-in">{formatBookingBoundary(booking)}</td>
                           <td data-label="Status">
                             <span className={`gov-badge-status gov-badge-status--${booking.status}`}>{t(booking.status) || booking.status}</span>
                           </td>
