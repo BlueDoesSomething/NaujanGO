@@ -56,7 +56,7 @@ export const dashboardPayments = async (user, filters = {}, dbLike = db.promise(
   const [rows] = await dbLike.query(`SELECT hp.*, ${archiveSql('payment', 'hp', user.user_id)} AS archived,
     ${archiveSql('payment', 'hp', user.user_id, true)} AS archived_at,
     hb.hotel_name, hb.customer_name, hb.customer_email, hb.check_in, hb.check_out,
-    hb.receipt_number, hb.room_type_name, hb.rooms, hb.booking_reference
+    hb.receipt_number, hb.room_type_name, hb.rooms, hb.booking_reference, hb.policy_snapshot
     ${scope.from} ${scope.where} ORDER BY ${allArchived ? archiveSql('payment', 'hp', user.user_id, true) : 'hp.created_at'} DESC, hp.payment_id DESC
     ${allArchived ? '' : 'LIMIT ?'}`, allArchived ? scope.params : [...scope.params, limit]);
   return rows;

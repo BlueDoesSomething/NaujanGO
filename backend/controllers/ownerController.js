@@ -31,6 +31,7 @@ import { DOCUMENT_MAX_BYTES, saveBusinessDocument, validateDocumentReferences, r
 import { ownerArrivalReports } from './tourismArrivalReportsController.js';
 import { ownerBookingMessages, postOwnerBookingMessage, bookingMessageLimiter } from './bookingMessagesController.js';
 import { assertPaymentAllowed, externalPaymentBooking, respondBookingPolicyError } from '../services/bookingPaymentPolicy.js';
+import { normalizeManualReceiptInput, recordManualReceipt } from '../services/manualReceipts.js';
 import { updatePayAtPropertyBookingStatus } from '../services/payAtPropertyBookings.js';
 import { serializeCredentialProfile, validateCredentialInput } from '../utils/businessCredentials.js';
 import { respondCredentialError } from '../services/businessCredentials.js';
@@ -1137,6 +1138,46 @@ router.put('/bookings/:bookingId/status', async (req, res) => {
   }
 });
 
+// Record money the owner received directly from the guest for an external
+// (direct-to-owner) booking. Owners verify the off-platform transfer in
+// their own GCash/Maya/bank account first; this writes the succeeded
+// transaction record. It deliberately does NOT call assertPaymentAllowed:
+// the admin online-payments switch gates gateway collection only and must
+// not block the owner's manual receipt for direct arrangements.
+router.post('/bookings/:bookingId/payments/receipt', async (req, res) => {
+  const { bookingId } = req.params;
+  const userId = req.user.user_id;
+  const isAdmin = req.user.role === 'admin';
+
+  if (!/^\d+$/.test(String(bookingId))) {
+    return res.status(400).json({ error: 'Invalid booking ID.' });
+  }
+
+  try {
+    const input = normalizeManualReceiptInput(req.body || {});
+
+    if (!isAdmin) {
+      const [own] = await db.promise().query(`
+        SELECT b.booking_id
+        FROM hotel_bookings b
+        INNER JOIN hotel_owners ho ON b.hotel_id = ho.hotel_id
+        WHERE b.booking_id = ? AND ho.user_id = ?
+      `, [bookingId, userId]);
+
+      if (own.length === 0) {
+        return res.status(403).json({ error: 'You do not have permission to record payments for this booking.' });
+      }
+    }
+
+    const result = await recordManualReceipt(bookingId, input);
+    res.status(201).json({ success: true, message: 'Received payment recorded successfully.', ...result });
+  } catch (error) {
+    if (error.status) return respondBookingPolicyError(res, error);
+    console.error('Record manual receipt error:', error);
+    res.status(500).json({ error: 'Failed to record received payment.' });
+  }
+});
+
 // Personal, idempotent dashboard archive. Never changes booking lifecycle.
 router.put('/bookings/:bookingId/archive', async (req, res) => {
   try {
@@ -1750,13 +1791,13 @@ router.put('/payments/:paymentId/confirm', async (req, res) => {
     let query, params;
     
     if (isAdmin) {
-      query = `SELECT p.*, hb.hotel_id
+      query = `SELECT p.*, hb.hotel_id, hb.policy_snapshot AS booking_policy_snapshot
                FROM hotel_payments p
                INNER JOIN hotel_bookings hb ON p.booking_id = hb.booking_id
                WHERE p.payment_id = ?`;
       params = [paymentId];
     } else {
-      query = `SELECT p.*, hb.hotel_id
+      query = `SELECT p.*, hb.hotel_id, hb.policy_snapshot AS booking_policy_snapshot
                FROM hotel_payments p
                INNER JOIN hotel_bookings hb ON p.booking_id = hb.booking_id
                INNER JOIN hotel_owners ho ON hb.hotel_id = ho.hotel_id
@@ -1772,7 +1813,13 @@ router.put('/payments/:paymentId/confirm', async (req, res) => {
 
     const payment = payments[0];
 
-    await assertPaymentAllowed(payment.booking_id);
+    // Direct-to-owner arrangements are verified by the owner off-platform
+    // (GCash/Maya/bank). The admin switch gates gateway collection only, so
+    // an owner's receipt confirmation for an external booking proceeds even
+    // while online payments are disabled.
+    if (!externalPaymentBooking({ policy_snapshot: payment.booking_policy_snapshot })) {
+      await assertPaymentAllowed(payment.booking_id);
+    }
 
     if (payment.status !== 'pending') {
       return res.status(400).json({ error: 'Can only confirm pending payments' });

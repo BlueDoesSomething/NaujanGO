@@ -23,7 +23,7 @@ import BookingConversation from '../components/BookingConversation';
 import useBookingPolicy from '../hooks/useBookingPolicy';
 import useDashboardNotifications from '../hooks/useDashboardNotifications';
 import DashboardNotifications, { NotificationBadge } from '../components/DashboardNotifications';
-import { isExternalPaymentBooking, externalPaymentLabel } from '../utils/bookingPaymentPolicy';
+import { isExternalPaymentBooking, externalPaymentLabel, externalPaymentArrangement, externalPaymentNotice } from '../utils/bookingPaymentPolicy';
 import { formatHotelCurrency } from '../utils/hotelCurrency';
 import { OWNER_PATHS, ownerTabFromPath, ownerStartingPrice, roomsForHotel, validateOwnerHotel, ownerTodayTasks } from '../utils/ownerDashboard';
 import { registerOwnerHistoryGuard } from '../utils/ownerHistoryGuard';
@@ -107,6 +107,12 @@ const OwnerDashboard = () => {
   const [refundModal, setRefundModal] = useState(null);
   const [refundReason, setRefundReason] = useState('');
   const [refundAmount, setRefundAmount] = useState('');
+  const [receiptBooking, setReceiptBooking] = useState(null);
+  const [receiptAmount, setReceiptAmount] = useState('');
+  const [receiptMethod, setReceiptMethod] = useState('');
+  const [receiptReference, setReceiptReference] = useState('');
+  const [receiptBusy, setReceiptBusy] = useState(false);
+  const [receiptError, setReceiptError] = useState('');
   const [loading, setLoading] = useState(true);
   const activeTab = ownerTabFromPath(location.pathname);
   const [dashboardError, setDashboardError] = useState('');
@@ -1106,6 +1112,45 @@ const OwnerDashboard = () => {
           setNotice(`Reservation #${bookingId} ${newStatus}. Payment records have not been deleted or refunded by this action.`);
         }
       });
+    };
+
+    // Record money the guest sent directly (GCash/Maya/bank/cash) for an
+    // external booking. The owner verifies the transfer in their own
+    // account first; the backend writes the succeeded transaction record.
+    const openReceipt = (booking) => {
+      setReceiptBooking(booking);
+      setReceiptAmount(booking.balance_due != null ? String(booking.balance_due) : String(booking.total_amount ?? ''));
+      setReceiptMethod(externalPaymentArrangement(booking) || '');
+      setReceiptReference('');
+      setReceiptError('');
+    };
+
+    const submitReceipt = async () => {
+      if (!receiptBooking || receiptBusy) return;
+      const amount = Number(receiptAmount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        setReceiptError('Enter the amount received (must be greater than zero).');
+        return;
+      }
+      setReceiptBusy(true);
+      setReceiptError('');
+      try {
+        await api.post(`/owner/bookings/${receiptBooking.booking_id}/payments/receipt`, {
+          amount,
+          method: receiptMethod || undefined,
+          reference: receiptReference.trim() || undefined
+        });
+        setReceiptBooking(null);
+        await fetchDashboardData();
+        fetchPayments();
+        fetchPaymentStats();
+        setNotice(`Received payment recorded for reservation #${receiptBooking.booking_id}. It now appears in Payment History.`);
+      } catch (error) {
+        console.error('Record receipt error:', error);
+        setReceiptError(error.response?.data?.error || 'Failed to record received payment.');
+      } finally {
+        setReceiptBusy(false);
+      }
     };
 
     const handleArchiveBooking = async (bookingId) => {
@@ -2150,6 +2195,16 @@ const OwnerDashboard = () => {
                            <div className="gov-row-actions">
                             <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setSelectedReservation(booking)}>View details</button>
                             <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setMessageBooking(booking)}>Message guest</button>
+                            {isExternalPaymentBooking(booking) && ['pending', 'confirmed'].includes(booking.status) && Number(booking.balance_due) > 0 && (
+                              <button
+                                type="button"
+                                className="gov-btn gov-btn-primary"
+                                onClick={() => openReceipt(booking)}
+                                title="Record money you received directly from this guest (GCash/Maya/bank/cash)"
+                              >
+                                Confirm received
+                              </button>
+                            )}
                             {booking.status === 'pending' && (
                               <>
                                 <button
@@ -2297,8 +2352,8 @@ const OwnerDashboard = () => {
             <h1 className="gov-page-title">{bookingPolicy.paymentsDisabled ? 'Payment History' : 'Payments'}</h1>
             {bookingPolicy.paymentsDisabled ? <section className="gov-glass-panel" aria-label="Online payment availability" aria-busy={bookingPolicy.loading}>
               <p role="status"><strong>{bookingPolicy.loading ? 'Checking online payment policy…' : bookingPolicy.error ? 'Online payment policy unavailable.' : 'Online payments disabled by the administrator.'}</strong></p>
-              <p>{bookingPolicy.loading || bookingPolicy.error ? 'Payment setup and financial actions remain unavailable until the current policy can be confirmed.' : 'Guests pay at the property or arrange accepted GCash payments directly with you. Owners cannot override the admin switch.'} Bookings remain available under Reservations; use Message guest to contact guests.</p>
-              <p>View-only history: existing transactions, filters and downloads are retained. Historical totals do not mean online payments are enabled. Contact the administrator about refunds for earlier payments.</p>
+              <p>{bookingPolicy.loading || bookingPolicy.error ? 'Online payment setup remains unavailable until the current policy can be confirmed.' : 'Guests pay at the property or arrange accepted GCash payments directly with you. Owners cannot override the admin switch.'} Bookings remain available under Reservations; use Message guest to contact guests.</p>
+              <p>When a guest sends money directly (GCash/Maya/bank/cash), verify it in your own account first, then record it: use <strong>Confirm received</strong> on the reservation, or on a pending direct-arrangement payment below. Online checkout and refund controls stay unavailable while the administrator keeps online payments off — contact the administrator about refunds for earlier online payments.</p>
               {bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" className="gov-btn-ghost" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}
             </section> : <p>Recorded transactions and payment attempts. To change how guests pay, open <button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('payment-setup')}>Payment Setup</button>.</p>}
              {/* Payment Filters */}
@@ -2520,7 +2575,49 @@ const OwnerDashboard = () => {
                                 Archive
                               </button>
                             )}
-                            {!bookingPolicy.paymentsDisabled && payment.status === 'pending' && (
+                            {isExternalPaymentBooking(payment) && payment.status === 'pending' && (
+                              <>
+                                <button
+                                  onClick={async () => {
+                                    if (window.confirm('Confirm this received payment? Use this only after you verified the transfer in your own account.')) {
+                                      try {
+                                        await api.put(`/owner/payments/${payment.payment_id}/confirm`);
+                                        alert('Received payment confirmed successfully');
+                                        fetchPayments();
+                                        fetchPaymentStats();
+                                        await fetchDashboardData();
+                                      } catch (error) {
+                                        console.error('Confirm error:', error);
+                                        alert(error.response?.data?.error || 'Failed to confirm payment');
+                                      }
+                                    }
+                                  }}
+                                  className="gov-btn gov-btn-primary"
+                                  title="Verify the off-platform transfer yourself, then confirm it is received"
+                                >
+                                  Confirm received
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    if (window.confirm('Cancel this pending payment?')) {
+                                      try {
+                                        await api.put(`/owner/payments/${payment.payment_id}/cancel`);
+                                        alert('Payment cancelled successfully');
+                                        fetchPayments();
+                                        fetchPaymentStats();
+                                      } catch (error) {
+                                        console.error('Cancel error:', error);
+                                        alert(error.response?.data?.error || 'Failed to cancel payment');
+                                      }
+                                    }
+                                  }}
+                                  className="gov-btn gov-btn-danger"
+                                >
+                                  Cancel
+                                </button>
+                              </>
+                            )}
+                            {!bookingPolicy.paymentsDisabled && !isExternalPaymentBooking(payment) && payment.status === 'pending' && (
                               <>
                                 <button
                                   onClick={async () => {
@@ -2622,6 +2719,13 @@ const OwnerDashboard = () => {
                       <div style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '0.25rem' }}>Amount</div>
                       <div style={{ fontWeight: 700, color: '#1B5E20', fontSize: '1.5rem' }}>{formatHotelCurrency(selectedPayment.amount, selectedPayment.currency)}</div>
                     </div>
+                    {isExternalPaymentBooking(selectedPayment) && (
+                      <div style={{ padding: '1rem', background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '8px' }}>
+                        <div style={{ fontSize: '0.85rem', color: '#92400e', marginBottom: '0.25rem' }}>Arrangement</div>
+                        <div style={{ fontWeight: 700, color: '#78350f' }}>{externalPaymentLabel(selectedPayment)}</div>
+                        <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.85rem', color: '#6b5303' }}>{externalPaymentNotice(selectedPayment)}</p>
+                      </div>
+                    )}
                     <div className="gov-grid-2" style={{ display: 'grid', gap: '1rem' }}>
                       <div style={{ padding: '1rem', background: '#f8fdf7', borderRadius: '8px' }}>
                         <div style={{ fontSize: '0.85rem', color: '#718096', marginBottom: '0.25rem' }}>Method</div>
@@ -3946,6 +4050,66 @@ const OwnerDashboard = () => {
             </>}
             {actionError && <p role="alert" className="owner-error">{actionError}</p>}
           </OwnerDialog>}
+          {receiptBooking && (
+            <div
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '1rem' }}
+              onClick={() => { if (!receiptBusy) setReceiptBooking(null); }}
+            >
+              <div
+                style={{ background: 'white', borderRadius: '12px', padding: '2rem', maxWidth: '520px', width: '100%', maxHeight: '85vh', overflow: 'auto' }}
+                onClick={event => event.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Confirm received payment"
+              >
+                <h2 style={{ margin: '0 0 1rem 0', color: '#1B5E20', fontSize: '1.4rem', fontWeight: 800 }}>Confirm received payment</h2>
+                <p style={{ margin: '0 0 0.5rem 0' }}><strong>{getBookingGuestName(receiptBooking)}</strong> · Reservation #{receiptBooking.booking_id}</p>
+                <p style={{ margin: '0 0 0.5rem 0' }}>{externalPaymentLabel(receiptBooking)} · Outstanding: {formatHotelCurrency(receiptBooking.balance_due ?? 0, receiptBooking.currency)}</p>
+                <p style={{ fontSize: '0.9rem', color: '#4b5563', margin: '0 0 1rem 0' }}>
+                  {externalPaymentNotice(receiptBooking)} Verify the transfer in your own account first — recording creates a received payment record and confirms the reservation.
+                </p>
+                <label style={{ display: 'block', marginBottom: '1rem' }}>
+                  <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#374151', marginBottom: '0.25rem' }}>Amount received</span>
+                  <input
+                    type="number" min="0.01" step="0.01" value={receiptAmount} disabled={receiptBusy}
+                    onChange={event => setReceiptAmount(event.target.value)}
+                    className="gov-input"
+                    style={{ width: '100%', padding: '0.75rem', fontSize: '0.95rem' }}
+                  />
+                </label>
+                <label style={{ display: 'block', marginBottom: '1rem' }}>
+                  <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#374151', marginBottom: '0.25rem' }}>How was it paid?</span>
+                  <select value={receiptMethod} disabled={receiptBusy} onChange={event => setReceiptMethod(event.target.value)} className="gov-select">
+                    <option value="">Use the agreed method</option>
+                    <option value="gcash">GCash</option>
+                    <option value="maya">Maya</option>
+                    <option value="grabpay">GrabPay</option>
+                    <option value="qrph">QR PH</option>
+                    <option value="bank_transfer">Bank transfer</option>
+                    <option value="instapay">InstaPay</option>
+                    <option value="pay_at_property">Pay at property (cash)</option>
+                  </select>
+                </label>
+                <label style={{ display: 'block', marginBottom: '1.25rem' }}>
+                  <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#374151', marginBottom: '0.25rem' }}>Reference / receipt no. (optional)</span>
+                  <input
+                    type="text" maxLength={100} value={receiptReference} disabled={receiptBusy}
+                    onChange={event => setReceiptReference(event.target.value)}
+                    placeholder="e.g. GCash ref, bank transaction ref, or cash receipt no."
+                    className="gov-input"
+                    style={{ width: '100%', padding: '0.75rem', fontSize: '0.95rem' }}
+                  />
+                </label>
+                {receiptError && <p role="alert" className="owner-error" style={{ marginBottom: '1rem' }}>{receiptError}</p>}
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+                  <button type="button" className="gov-btn-ghost" disabled={receiptBusy} onClick={() => setReceiptBooking(null)}>Cancel</button>
+                  <button type="button" className="gov-btn-primary" disabled={receiptBusy} onClick={submitReceipt}>
+                    {receiptBusy ? 'Recording…' : 'Record received payment'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </main>
       </div>
     </div>
