@@ -1437,7 +1437,7 @@ const OwnerDashboard = () => {
                       <div style={{ width: `${cancPct}%`, background: '#ef4444', borderRadius: 99 }} />
                     </div>
                   )}
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem' }}>
+                  <div className="gov-breakdown-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '0.75rem' }}>
                     {[
                       { label: 'Confirmed', value: confirmed, pct: confPct, color: '#16a34a', bg: '#f0fdf4' },
                       { label: 'Pending', value: pending, pct: pendPct, color: '#d97706', bg: '#fffbeb' },
@@ -1486,7 +1486,7 @@ const OwnerDashboard = () => {
                     onClick={() => setActiveTab('bookings')}>View all</button>
                 </div>
                 <div className="gov-table-wrap">
-                  <table className="gov-table" style={{ fontSize: '0.875rem' }}>
+                  <table className="gov-table gov-table--cards" style={{ fontSize: '0.875rem' }}>
                     <thead>
                       <tr>
                         <th style={{ width: 70 }}>ID</th>
@@ -1499,11 +1499,11 @@ const OwnerDashboard = () => {
                     <tbody>
                       {stats.recentBookings?.slice(0, 8).map((booking) => (
                         <tr key={booking.booking_id}>
-                          <td><span style={{ fontWeight: 700, color: '#374151' }}>#{booking.booking_id}</span></td>
-                          <td style={{ color: '#374151' }}>{booking.hotel_name || '—'}</td>
-                          <td style={{ color: '#374151' }}>{getBookingGuestName(booking)}</td>
-                          <td style={{ color: '#6b7280' }}>{formatBookingBoundary(booking)}</td>
-                          <td>
+                          <td data-label="ID"><span style={{ fontWeight: 700, color: '#374151' }}>#{booking.booking_id}</span></td>
+                          <td data-label="Hotel" style={{ color: '#374151' }}>{booking.hotel_name || '—'}</td>
+                          <td data-label="Guest" style={{ color: '#374151' }}>{getBookingGuestName(booking)}</td>
+                          <td data-label="Check-in" style={{ color: '#6b7280' }}>{formatBookingBoundary(booking)}</td>
+                          <td data-label="Status">
                             <span className={`gov-badge-status gov-badge-status--${booking.status}`}>{t(booking.status) || booking.status}</span>
                           </td>
                         </tr>

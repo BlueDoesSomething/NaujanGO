@@ -105,7 +105,7 @@
   .gov-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-@media (max-width: 479px) {
+@media (max-width: 319px) {
   .gov-grid-4 { grid-template-columns: minmax(0, 1fr); }
 }
 
@@ -327,6 +327,15 @@
     grid-row: 1;
   }
 
+  /* Compact the status badge so it never pokes out of the half-width
+     status column on 320px screens. */
+  .gov-dashboard .gov-table.gov-table--cards .gov-badge-status {
+    font-size: 0.64rem;
+    padding: 0.25rem 0.5rem;
+    letter-spacing: 0.3px;
+    max-width: 100%;
+  }
+
   .gov-dashboard .gov-table.gov-table--cards td:has(.gov-badge-status) {
     grid-column: 2;
     grid-row: 1;
@@ -411,6 +420,59 @@
     padding-left: 0.55rem !important;
     padding-right: 0.55rem !important;
     font-size: 0.82rem !important;
+  }
+}
+
+/* ============================================================
+   Overview sections (owner + admin)
+   Metric cards go two-per-row instead of one long stack, the
+   booking-breakdown cells lose their desktop padding, and below
+   480px the breakdown becomes a readable legend list instead of
+   three cramped ~70px columns. Desktop/tablet grids unchanged.
+   ============================================================ */
+@media (max-width: 767px) {
+  .gov-dashboard .gov-grid-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .gov-dashboard .gov-grid-cards > div {
+    padding: 0.9rem 1rem !important;
+  }
+
+  .gov-dashboard .gov-grid-4 > div {
+    padding: 0.9rem 1rem !important;
+  }
+
+  .gov-dashboard .gov-breakdown-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.5rem !important;
+  }
+
+  .gov-dashboard .gov-breakdown-grid > div {
+    padding: 0.6rem 0.5rem !important;
+    min-width: 0;
+  }
+
+  .gov-dashboard .gov-breakdown-grid > div > div:first-child {
+    font-size: 1.15rem !important;
+  }
+}
+
+@media (max-width: 479px) {
+  .gov-dashboard .gov-breakdown-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .gov-dashboard .gov-breakdown-grid > div {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.6rem;
+    padding: 0.65rem 0.9rem !important;
+  }
+
+  .gov-dashboard .gov-breakdown-grid > div > div {
+    margin-top: 0 !important;
   }
 }
 
