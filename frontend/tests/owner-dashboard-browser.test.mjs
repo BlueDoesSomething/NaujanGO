@@ -139,11 +139,11 @@ test('reservation details retain historical policies and cancellation is explici
       tops: rects.map(rect => Math.round(rect.top))
     };
   })()`);
-  assert.equal(actions.wrap, 'nowrap', 'row actions must stay on one line');
+  assert.equal(actions.wrap, 'wrap', 'row actions wrap inside their cell instead of overflowing onto neighbouring columns');
   assert.ok(actions.baseClass, 'every row action must use the shared button base class');
   assert.deepEqual(actions.labels, ['View details', 'Message guest', 'Cancel Booking', 'Archive']);
   assert.equal(new Set(actions.heights).size, 1, `row action buttons must share one height: ${actions.heights.join(', ')}`);
-  assert.equal(new Set(actions.tops).size, 1, `row action buttons must share one baseline: ${actions.tops.join(', ')}`);
+  assert.ok(new Set(actions.tops).size <= 2, `row action buttons sit on at most two wrapped lines: ${actions.tops.join(', ')}`);
   await browser.click('View details');
   assert.match(await browser.evaluate(`document.querySelector('[role="dialog"]').textContent`), /Frozen original terms/);
   assert.match(await browser.evaluate(`document.querySelector('[role="dialog"]').textContent`), /Quiet room please/);

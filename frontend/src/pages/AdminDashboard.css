@@ -791,13 +791,15 @@
   font-weight: 700;
 }
 
-/* Table row actions: one compact, non-wrapping row with consistent sizing. */
+/* Table row actions: compact buttons that wrap inside the action cell when
+   a row has many actions. A non-wrapping row made the pinned action cell
+   paint over the neighbouring columns; wrapping keeps space inside the
+   cell instead. */
 .gov-row-actions {
-  display: inline-flex;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.5rem;
-  flex-wrap: nowrap;
-  vertical-align: middle;
+  gap: 0.45rem;
 }
 
 .gov-row-actions .gov-btn {
@@ -853,6 +855,14 @@
 
 .gov-table tbody tr:hover td:has(.gov-row-actions) {
   background: #f7fdf7;
+}
+
+/* Keep the pinned action column wide enough for two buttons per line on
+   desktop, so crowded rows wrap to two short lines instead of one button
+   per line. Cards mode (max-width 767px) is exempt and uses full-width
+   footers, handled by gov-dashboard-responsive.css. */
+@media (min-width: 768px) {
+  .gov-table td:has(.gov-row-actions) { min-width: 300px; }
 }
 
 /* ════════════════════════════════════════
