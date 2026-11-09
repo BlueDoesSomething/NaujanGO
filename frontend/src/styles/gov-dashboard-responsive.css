@@ -215,7 +215,7 @@
 
   .gov-dashboard .gov-page-title {
     font-size: 1.3rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.4rem;
   }
 
   .gov-dashboard .gov-stats-grid,
@@ -367,6 +367,50 @@
     display: flex;
     flex-wrap: wrap;
     width: 100%;
+  }
+}
+
+/* ============================================================
+   Filter chip rows and export button pairs
+   Desktop keeps the original single-line layout. Below 768px the
+   status chips wrap onto their own rows and the export buttons sit
+   side by side, so nothing is clipped by the viewport.
+   ============================================================ */
+.gov-dashboard .gov-filter-chips {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.gov-dashboard .gov-export-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+@media (max-width: 767px) {
+  .gov-dashboard .gov-filter-chips {
+    flex: 1 1 100%;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .gov-dashboard .gov-export-actions {
+    flex: 1 1 100%;
+    width: 100%;
+    gap: 0.5rem;
+  }
+
+  .gov-dashboard .gov-export-actions > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .gov-dashboard .gov-export-actions button {
+    justify-content: center;
+    /* global-buttons.css forces large padding; trim it so the label stays
+       on one line instead of making the button very tall on 320px screens. */
+    padding-left: 0.55rem !important;
+    padding-right: 0.55rem !important;
+    font-size: 0.82rem !important;
   }
 }
 

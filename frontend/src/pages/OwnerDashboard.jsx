@@ -2049,7 +2049,7 @@ const OwnerDashboard = () => {
                     }}
                   />
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div className="gov-filter-chips">
                   {['all', 'confirmed', 'pending', 'cancelled', 'archived'].map(status => (
                     <button
                       key={status}
@@ -2060,13 +2060,15 @@ const OwnerDashboard = () => {
                     </button>
                   ))}
                 </div>
-                <button
-                  className="gov-btn-primary"
-                  onClick={() => exportReport('bookings')}
-                >
-                  {t('payments_export_csv')}
-                </button>
-                <ExportPdfButton className="gov-btn-ghost" getReport={() => recordReport('bookings')} />
+                <div className="gov-export-actions">
+                  <button
+                    className="gov-btn-primary"
+                    onClick={() => exportReport('bookings')}
+                  >
+                    {t('payments_export_csv')}
+                  </button>
+                  <ExportPdfButton className="gov-btn-ghost" getReport={() => recordReport('bookings')} />
+                </div>
               </div>
               <div style={{ marginTop: '1rem', fontSize: '0.9rem', color: '#718096', fontWeight: 600 }}>
                 Showing {filteredBookings.length} of {bookings.length} bookings
