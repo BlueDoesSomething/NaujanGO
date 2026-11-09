@@ -3156,7 +3156,7 @@ const AdminDashboard = () => {
                   </select>
                 </div>
                 <div className="gov-table-wrap">
-                  <table className="gov-table">
+                  <table className="gov-table gov-table--cards">
                     <thead>
                       <tr>
                         <th>{t('id')}</th>
@@ -3174,9 +3174,9 @@ const AdminDashboard = () => {
                     <tbody>
                       {filteredBookings.slice((bookingsPage - 1) * ADMIN_TABLE_SIZE, bookingsPage * ADMIN_TABLE_SIZE).map((booking) => (
                         <tr key={booking.booking_id}>
-                          <td>#{booking.booking_id}</td>
-                          <td>{booking.hotel_name}</td>
-                          <td>
+                          <td data-label={t('id')}>#{booking.booking_id}</td>
+                          <td data-label={t('hotel')}>{booking.hotel_name}</td>
+                          <td data-label="Room Type">
                             {booking.room_type_name ? (
                               <div>
                                 <div style={{ fontWeight: 600 }}>{booking.room_type_name}</div>
@@ -3186,22 +3186,22 @@ const AdminDashboard = () => {
                               <span style={{ color: '#9ca3af' }}>-</span>
                             )}
                           </td>
-                          <td>{getBookingGuestName(booking)}</td>
-                          <td>
+                          <td data-label={t('guest')}>{getBookingGuestName(booking)}</td>
+                          <td data-label={t('dates')}>
                             {formatBookingBoundary(booking)} → {formatBookingBoundary(booking, 'out')}
                             {booking.stay_duration_hours ? ` · ${booking.stay_duration_hours} hours` : ''}
                           </td>
-                          <td><BookingIssuedCell booking={booking} /></td>
-                          <td>
+                          <td data-label="Booked On"><BookingIssuedCell booking={booking} /></td>
+                          <td data-label={t('amount')}>
                             ₱{parseFloat(booking.total_amount || 0).toLocaleString()}
                           </td>
-                          <td>{isExternalPaymentBooking(booking) ? externalPaymentLabel(booking) : getPaymentMethodLabel(getBookingPaymentMethod(booking), t)}</td>
-                          <td>
+                          <td data-label={t('form_payment_method')}>{isExternalPaymentBooking(booking) ? externalPaymentLabel(booking) : getPaymentMethodLabel(getBookingPaymentMethod(booking), t)}</td>
+                          <td data-label={t('status')}>
                             <span className={`gov-badge-status gov-badge-status--${booking.status}`}>
                               {t(booking.status) || booking.status}
                             </span>
                           </td>
-                          <td>
+                          <td data-label={t('actions')}>
                             <div className="gov-row-actions">
                               {booking.status === 'pending' && (
                                 <>
@@ -7847,7 +7847,7 @@ const AdminDashboard = () => {
                     Archived Bookings
                   </h2>
                   <div className="gov-table-wrap">
-                    <table className="gov-table">
+                    <table className="gov-table gov-table--cards">
                       <thead>
                         <tr>
                           <th>ID</th>
@@ -7863,22 +7863,22 @@ const AdminDashboard = () => {
                       <tbody>
                         {archivedBookings.map((booking) => (
                           <tr key={booking.booking_id}>
-                            <td>#{booking.booking_id}</td>
-                            <td>{booking.hotel_name}</td>
-                            <td>{getBookingGuestName(booking)}</td>
-                            <td>
+                            <td data-label="ID">#{booking.booking_id}</td>
+                            <td data-label="Hotel">{booking.hotel_name}</td>
+                            <td data-label="Guest">{getBookingGuestName(booking)}</td>
+                            <td data-label="Dates">
                               {formatBookingBoundary(booking)} → {formatBookingBoundary(booking, 'out')}
                             </td>
-                            <td><BookingIssuedCell booking={booking} /></td>
-                            <td>
+                            <td data-label="Booked On"><BookingIssuedCell booking={booking} /></td>
+                            <td data-label="Amount">
                               ₱{parseFloat(booking.total_amount || 0).toLocaleString()}
                             </td>
-                            <td>
+                            <td data-label="Status">
                               <span className="gov-badge-status gov-badge-status--cancelled">
                                 {t(booking.status) || booking.status}
                               </span>
                             </td>
-                            <td>
+                            <td data-label="Actions">
                               <div className="gov-row-actions">
                                 <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'booking', record: booking })}>View</button>
                                 <button

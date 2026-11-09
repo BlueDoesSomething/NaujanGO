@@ -2075,7 +2075,7 @@ const OwnerDashboard = () => {
             
             <div className="gov-glass-panel">
               <div className="gov-table-wrap">
-                <table className="gov-table">
+                <table className="gov-table gov-table--cards">
                   <thead>
                     <tr>
                       <th>ID</th>
@@ -2093,9 +2093,9 @@ const OwnerDashboard = () => {
                   <tbody>
                     {filteredBookings.slice((ownerBookingsPage - 1) * OWNER_TABLE_SIZE, ownerBookingsPage * OWNER_TABLE_SIZE).map((booking) => (
                       <tr key={booking.booking_id}>
-                        <td>#{booking.booking_id}</td>
-                        <td>{booking.hotel_name}</td>
-                        <td>
+                        <td data-label="ID">#{booking.booking_id}</td>
+                        <td data-label="Hotel">{booking.hotel_name}</td>
+                        <td data-label="Room Type">
                           {booking.room_type_name ? (
                             <div>
                               <div style={{ fontWeight: 600 }}>{booking.room_type_name}</div>
@@ -2105,13 +2105,13 @@ const OwnerDashboard = () => {
                             <span style={{ color: '#9ca3af' }}> -</span>
                           )}
                         </td>
-                        <td>{getBookingGuestName(booking)}</td>
-                        <td>
+                        <td data-label="Guest">{getBookingGuestName(booking)}</td>
+                        <td data-label="Dates">
                           {formatBookingBoundary(booking)} → {formatBookingBoundary(booking, 'out')}
                           {booking.stay_duration_hours ? ` · ${booking.stay_duration_hours} hours` : ''}
                         </td>
-                        <td><BookingIssuedCell booking={booking} /></td>
-                        <td>
+                        <td data-label="Booked On"><BookingIssuedCell booking={booking} /></td>
+                        <td data-label="Amount">
                           <div style={{ fontWeight: 700 }}>{formatHotelCurrency(booking.total_amount, booking.currency)}</div>
                           <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>
                             {isExternalPaymentBooking(booking) ? 'Payment outside NaujanGO' : <>Paid {formatHotelCurrency(booking.amount_paid ?? 0, booking.currency)}{Number(booking.balance_due) > 0 ? ` · ${formatHotelCurrency(booking.balance_due, booking.currency)} due` : ''}</>}
@@ -2135,13 +2135,13 @@ const OwnerDashboard = () => {
                             </span>
                           )}
                         </td>
-                        <td>{getPaymentMethodLabel(getBookingPaymentMethod(booking), t)}</td>
-                        <td>
+                        <td data-label={t('payment_method_section')}>{getPaymentMethodLabel(getBookingPaymentMethod(booking), t)}</td>
+                        <td data-label="Status">
                           <span className={`gov-badge-status gov-badge-status--${booking.status}`}>
                             {booking.status}
                           </span>
                         </td>
-                        <td>
+                        <td data-label="Actions">
                            <div className="gov-row-actions">
                             <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setSelectedReservation(booking)}>View details</button>
                             <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setMessageBooking(booking)}>Message guest</button>
@@ -3776,7 +3776,7 @@ const OwnerDashboard = () => {
                     <Icons.Calendar size={22} style={{ verticalAlign: 'middle', marginRight: '0.5rem' }} /> Archived Bookings & Reservations
                   </h2>
                   <div className="gov-table-wrap">
-                    <table className="gov-table">
+                    <table className="gov-table gov-table--cards">
                       <thead>
                         <tr>
                           <th>ID</th>
@@ -3793,23 +3793,23 @@ const OwnerDashboard = () => {
                       <tbody>
                         {archivedBookings.map((booking) => (
                           <tr key={booking.booking_id}>
-                            <td>#{booking.booking_id}</td>
-                            <td>{booking.hotel_name}</td>
-                            <td>{getBookingGuestName(booking)}</td>
-                            <td>
+                            <td data-label="ID">#{booking.booking_id}</td>
+                            <td data-label="Hotel">{booking.hotel_name}</td>
+                            <td data-label="Guest">{getBookingGuestName(booking)}</td>
+                            <td data-label="Dates">
                               {formatBookingBoundary(booking)} → {formatBookingBoundary(booking, 'out')}
                             </td>
-                            <td><BookingIssuedCell booking={booking} /></td>
-                            <td style={{ padding: '1rem', fontWeight: 700, color: '#2E7D32' }}>
+                            <td data-label="Booked On"><BookingIssuedCell booking={booking} /></td>
+                            <td data-label="Amount" style={{ padding: '1rem', fontWeight: 700, color: '#2E7D32' }}>
                               {formatHotelCurrency(booking.total_amount, booking.currency)}
                             </td>
-                            <td>{getPaymentMethodLabel(getBookingPaymentMethod(booking), t)}</td>
-                            <td>
+                            <td data-label={t('payment_method_section')}>{getPaymentMethodLabel(getBookingPaymentMethod(booking), t)}</td>
+                            <td data-label="Status">
                               <span className="gov-badge-status gov-badge-status--cancelled">
                                 {booking.status}
                               </span>
                             </td>
-                            <td>
+                            <td data-label="Actions">
                               <div className="gov-row-actions">
                                 <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setArchiveSelection({ type: 'booking', record: booking })}>View</button>
                                 <button

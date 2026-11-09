@@ -263,6 +263,113 @@
   }
 }
 
+/* ============================================================
+   Mobile reservation tables — stacked cards
+   Below 768px the horizontal table is replaced by one card per
+   booking. Every cell keeps its column name via data-label, so
+   booking details stay visible above the row actions instead of
+   being pushed off-screen by the pinned action column.
+   Desktop keeps the original table, sticky actions and scrolling.
+   ============================================================ */
+@media (max-width: 767px) {
+  .gov-dashboard .gov-table-wrap:has(.gov-table--cards) {
+    overflow-x: visible;
+  }
+
+  .gov-dashboard .gov-table.gov-table--cards {
+    display: block;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.82rem;
+  }
+
+  .gov-dashboard .gov-table.gov-table--cards thead {
+    display: none;
+  }
+
+  .gov-dashboard .gov-table.gov-table--cards tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .gov-dashboard .gov-table.gov-table--cards tbody tr {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.1rem 0.9rem;
+    padding: 0.85rem 0.95rem;
+    border: 1px solid #e2e8e4;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15, 61, 46, 0.06);
+  }
+
+  .gov-dashboard .gov-table.gov-table--cards tbody tr:hover {
+    background: #fff;
+  }
+
+  .gov-dashboard .gov-table.gov-table--cards td,
+  .gov-dashboard .gov-table.gov-table--cards td:has(.gov-row-actions) {
+    display: block;
+    grid-column: 1 / -1;
+    padding: 0.32rem 0 !important;
+    border: 0;
+    border-left: 0;
+    background: transparent;
+    position: static;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Keep booking id and status together on the first line. */
+  .gov-dashboard .gov-table.gov-table--cards td:first-child {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .gov-dashboard .gov-table.gov-table--cards td:has(.gov-badge-status) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .gov-dashboard .gov-table.gov-table--cards td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 0.1rem;
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #2e7d32;
+  }
+
+  /* Row actions become a full-width wrapping footer. */
+  .gov-dashboard .gov-table.gov-table--cards td:has(.gov-row-actions) {
+    margin-top: 0.45rem;
+    padding-top: 0.6rem !important;
+    border-top: 1px solid #eef2ee;
+  }
+
+  .gov-dashboard .gov-table.gov-table--cards .gov-row-actions {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 0.45rem;
+  }
+
+  .gov-dashboard .gov-table.gov-table--cards .gov-row-actions .gov-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    white-space: normal !important;
+  }
+
+  .gov-dashboard .gov-table.gov-table--cards .gov-row-extension {
+    display: flex;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+}
+
 /* Tablet: two-column stat cards, drawer stays */
 @media (min-width: 640px) and (max-width: 1023px) {
   .gov-dashboard .gov-stats-grid,

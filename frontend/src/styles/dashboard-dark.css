@@ -53,6 +53,33 @@
   background: #283548;
 }
 
+/* Mobile reservation cards (see gov-dashboard-responsive.css) */
+@media (max-width: 767px) {
+  [data-theme="dark"] .gov-table.gov-table--cards tbody tr {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: none;
+  }
+
+  [data-theme="dark"] .gov-table.gov-table--cards tbody tr:hover {
+    background: #1e293b;
+  }
+
+  [data-theme="dark"] .gov-table.gov-table--cards td,
+  [data-theme="dark"] .gov-table.gov-table--cards td:has(.gov-row-actions) {
+    background: transparent;
+    border-left-color: transparent;
+  }
+
+  [data-theme="dark"] .gov-table.gov-table--cards td::before {
+    color: #4ade80;
+  }
+
+  [data-theme="dark"] .gov-table.gov-table--cards td:has(.gov-row-actions) {
+    border-top-color: #334155;
+  }
+}
+
 [data-theme="dark"] .gov-empty {
   background: #1e293b;
   color: #94a3b8;
