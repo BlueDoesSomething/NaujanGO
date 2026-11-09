@@ -704,6 +704,34 @@
   .gov-table td:has(.gov-row-actions) { min-width: 300px; }
 }
 
+/* Long hourly date ranges are the widest single-line cells in these tables.
+   Giving the column a readable preferred width (about two text lines) and
+   letting the text wrap keeps the table inside its wrap on mid-width
+   screens instead of relying on the pinned action column. The other
+   columns stay single-line as designed. */
+.gov-table td.owner-booking-dates { width: 250px; min-width: 190px; white-space: normal; }
+
+/* Bookings rows carry the most columns on the dashboard; tighter cell
+   padding lets the whole table fit typical desktop widths so the pinned
+   action column has room instead of covering the status column. */
+.gov-table--bookings td, .gov-table--bookings th {
+  padding-left: .75rem;
+  padding-right: .75rem;
+}
+
+/* The bookings table has the most columns; capping the long text cells
+   lets it fit typical desktop widths so the pinned action column keeps
+   reachable buttons without covering STATUS. */
+.gov-table--bookings td[data-label="Hotel"],
+.gov-table--bookings td[data-label="Guest"],
+.gov-table--bookings td[data-label="Room Type"] { white-space: normal; }
+.gov-table--bookings td[data-label="Hotel"] { max-width: 190px; }
+.gov-table--bookings td[data-label="Guest"] { max-width: 160px; }
+.gov-table--bookings td[data-label="Room Type"] { max-width: 170px; }
+@media (min-width: 768px) {
+  .gov-table--bookings td:has(.gov-row-actions) { min-width: 260px; }
+}
+
 /* STATUS BADGES */
 .gov-badge-status { display: inline-block; padding: .28rem .65rem; border-radius: 999px; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; }
 .gov-badge-status--confirmed,.gov-badge-status--active,.gov-badge-status--succeeded { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }

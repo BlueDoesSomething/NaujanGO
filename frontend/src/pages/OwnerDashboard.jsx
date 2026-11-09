@@ -2132,7 +2132,7 @@ const OwnerDashboard = () => {
             
             <div className="gov-glass-panel">
               <div className="gov-table-wrap">
-                <table className="gov-table gov-table--cards">
+                <table className="gov-table gov-table--cards gov-table--bookings">
                   <thead>
                     <tr>
                       <th>ID</th>
@@ -2163,7 +2163,7 @@ const OwnerDashboard = () => {
                           )}
                         </td>
                         <td data-label="Guest">{getBookingGuestName(booking)}</td>
-                        <td data-label="Dates">
+                        <td data-label="Dates" className="owner-booking-dates">
                           {formatBookingBoundary(booking)} → {formatBookingBoundary(booking, 'out')}
                           {booking.stay_duration_hours ? ` · ${booking.stay_duration_hours} hours` : ''}
                         </td>
@@ -2202,16 +2202,6 @@ const OwnerDashboard = () => {
                            <div className="gov-row-actions">
                             <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setSelectedReservation(booking)}>View details</button>
                             <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setMessageBooking(booking)}>Message guest</button>
-                            {isExternalPaymentBooking(booking) && ['pending', 'confirmed'].includes(booking.status) && Number(booking.balance_due) > 0 && (
-                              <button
-                                type="button"
-                                className="gov-btn gov-btn-primary"
-                                onClick={() => openReceipt(booking)}
-                                title="Record money you received directly from this guest (GCash/Maya/bank/cash)"
-                              >
-                                Confirm received
-                              </button>
-                            )}
                             {booking.status === 'pending' && (
                               <>
                                 <button
@@ -2360,7 +2350,7 @@ const OwnerDashboard = () => {
             {bookingPolicy.paymentsDisabled ? <section className="gov-glass-panel" aria-label="Online payment availability" aria-busy={bookingPolicy.loading}>
               <p role="status"><strong>{bookingPolicy.loading ? 'Checking online payment policy…' : bookingPolicy.error ? 'Online payment policy unavailable.' : 'Online payments disabled by the administrator.'}</strong></p>
               <p>{bookingPolicy.loading || bookingPolicy.error ? 'Online payment setup remains unavailable until the current policy can be confirmed.' : 'Guests pay at the property or arrange accepted GCash payments directly with you. Owners cannot override the admin switch.'} Bookings remain available under Reservations; use Message guest to contact guests.</p>
-              <p>When a guest sends money directly (GCash/Maya/bank/cash), verify it in your own account first, then record it: use <strong>Confirm received</strong> on the reservation, or on a pending direct-arrangement payment below. Online checkout and refund controls stay unavailable while the administrator keeps online payments off — contact the administrator about refunds for earlier online payments.</p>
+              <p>When a guest sends money directly (GCash/Maya/bank/cash), verify it in your own account first, then record it with <strong>Confirm received</strong> in the Payments section below, or on a pending direct-arrangement payment further down. Online checkout and refund controls stay unavailable while the administrator keeps online payments off — contact the administrator about refunds for earlier online payments.</p>
               {bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" className="gov-btn-ghost" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}
             </section> : <p>Recorded transactions and payment attempts. To change how guests pay, open <button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('payment-setup')}>Payment Setup</button>.</p>}
             {/* Manual (direct-arrangement) payments awaiting the owner's confirmation */}
@@ -2396,7 +2386,7 @@ const OwnerDashboard = () => {
                           </td>
                           <td data-label="Guest">{getBookingGuestName(booking)}</td>
                           <td data-label="Hotel">{booking.hotel_name}</td>
-                          <td data-label="Dates">
+                          <td data-label="Dates" className="owner-booking-dates">
                             {formatBookingBoundary(booking)} → {formatBookingBoundary(booking, 'out')}
                             {booking.stay_duration_hours ? ` · ${booking.stay_duration_hours} hours` : ''}
                           </td>
@@ -2424,6 +2414,9 @@ const OwnerDashboard = () => {
                 </div>
               )}
             </section>
+             <PaymentSummaryCards stats={paymentStats} />
+             
+             {Number(paymentStats?.total_transactions) > filteredPayments.length && <p>Showing the latest {filteredPayments.length} matching payment attempts. Summary totals include all matches.</p>}
              {/* Payment Filters */}
             <div className="gov-glass-panel">
               {/* Search Bar Section - Prominent and Full Width */}
@@ -2541,8 +2534,8 @@ const OwnerDashboard = () => {
             </div>
 
              {paymentLoadError && <p role="alert" className="owner-error">{paymentLoadError} <button type="button" onClick={() => { fetchPayments(); fetchPaymentStats(); }}>Retry payments</button></p>}
-            <PaymentSummaryCards stats={paymentStats} />
-            {Number(paymentStats?.total_transactions) > filteredPayments.length && <p>Showing the latest {filteredPayments.length} matching payment attempts. Summary totals include all matches.</p>}
+            
+            
 
             <div className="gov-glass-panel">
               <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1B5E20', margin: '0 0 1.5rem 0' }}>
@@ -3973,7 +3966,7 @@ const OwnerDashboard = () => {
                             <td data-label="ID">#{booking.booking_id}</td>
                             <td data-label="Hotel">{booking.hotel_name}</td>
                             <td data-label="Guest">{getBookingGuestName(booking)}</td>
-                            <td data-label="Dates">
+                            <td data-label="Dates" className="owner-booking-dates">
                               {formatBookingBoundary(booking)} → {formatBookingBoundary(booking, 'out')}
                             </td>
                             <td data-label="Booked On"><BookingIssuedCell booking={booking} /></td>
