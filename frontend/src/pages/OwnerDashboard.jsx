@@ -1063,6 +1063,13 @@ const OwnerDashboard = () => {
   
     const ownerHotelIds = new Set(hotels.map((hotel) => hotel.hotel_id));
     const filteredPayments = payments;
+    // Manual-payment queue: live direct-arrangement bookings with an
+    // outstanding balance — the ones waiting for the owner to record money
+    // received off-platform. Oldest first so the most overdue surface first.
+    const manualQueue = bookings
+      .filter(booking => !Number(booking.archived) && isExternalPaymentBooking(booking)
+        && ['pending', 'confirmed'].includes(booking.status) && Number(booking.balance_due) > 0)
+      .sort((a, b) => new Date(a.created_at || a.booking_date || 0) - new Date(b.created_at || b.booking_date || 0));
     const todayTasks = ownerTodayTasks(bookings);
     const taskBookings = bookingDayFilter === 'all' ? null : new Set((todayTasks[bookingDayFilter] || []).map(booking => booking.booking_id));
     const filteredBookings = (bookingFilter === 'archived' ? archivedBookings : bookings).filter(booking => {
@@ -2356,6 +2363,67 @@ const OwnerDashboard = () => {
               <p>When a guest sends money directly (GCash/Maya/bank/cash), verify it in your own account first, then record it: use <strong>Confirm received</strong> on the reservation, or on a pending direct-arrangement payment below. Online checkout and refund controls stay unavailable while the administrator keeps online payments off — contact the administrator about refunds for earlier online payments.</p>
               {bookingPolicy.error && <p role="alert">{bookingPolicy.error} <button type="button" className="gov-btn-ghost" onClick={bookingPolicy.refresh}>Retry booking policy</button></p>}
             </section> : <p>Recorded transactions and payment attempts. To change how guests pay, open <button type="button" className="gov-btn-ghost" onClick={() => setActiveTab('payment-setup')}>Payment Setup</button>.</p>}
+            {/* Manual (direct-arrangement) payments awaiting the owner's confirmation */}
+            <section className="gov-glass-panel" aria-label="Manual payments awaiting confirmation">
+              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#1B5E20', margin: '0 0 0.5rem 0' }}>
+                Payments
+              </h2>
+              <p style={{ margin: '0 0 1rem 0', color: '#4b5563', fontSize: '0.9rem' }}>
+                Direct-arrangement bookings where the guest pays you (GCash, Maya, bank, or cash at the property — no gateway involved). Verify the transfer in your own account first, then record it so the payment and its balance are tracked. Recording a payment does not confirm the reservation.
+              </p>
+              {manualQueue.length === 0 ? (
+                <p role="status" className="gov-empty" style={{ margin: 0 }}>No outstanding manual payments — all direct arrangements are settled.</p>
+              ) : (
+                <div className="gov-table-wrap">
+                  <table className="gov-table gov-table--cards">
+                    <thead>
+                      <tr>
+                        <th>Booking</th>
+                        <th>Guest</th>
+                        <th>Hotel</th>
+                        <th>Dates</th>
+                        <th>Arrangement</th>
+                        <th>Outstanding</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {manualQueue.map(booking => (
+                        <tr key={booking.booking_id}>
+                          <td data-label="Booking">
+                            <div style={{ fontWeight: 600 }}>#{booking.booking_id}</div>
+                            <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>Ref: {booking.booking_reference || booking.receipt_number || '—'}</div>
+                          </td>
+                          <td data-label="Guest">{getBookingGuestName(booking)}</td>
+                          <td data-label="Hotel">{booking.hotel_name}</td>
+                          <td data-label="Dates">
+                            {formatBookingBoundary(booking)} → {formatBookingBoundary(booking, 'out')}
+                            {booking.stay_duration_hours ? ` · ${booking.stay_duration_hours} hours` : ''}
+                          </td>
+                          <td data-label="Arrangement">{externalPaymentLabel(booking)}</td>
+                          <td data-label="Outstanding" style={{ fontWeight: 700 }}>
+                            {formatHotelCurrency(booking.balance_due, booking.currency)}
+                          </td>
+                          <td data-label="Actions">
+                            <div className="gov-row-actions">
+                              <button type="button" className="gov-btn gov-btn-ghost" onClick={() => setMessageBooking(booking)}>Message guest</button>
+                              <button
+                                type="button"
+                                className="gov-btn gov-btn-primary"
+                                onClick={() => openReceipt(booking)}
+                                title="Record money you received directly from this guest (GCash/Maya/bank/cash)"
+                              >
+                                Confirm received
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
              {/* Payment Filters */}
             <div className="gov-glass-panel">
               {/* Search Bar Section - Prominent and Full Width */}
@@ -4066,7 +4134,7 @@ const OwnerDashboard = () => {
                 <p style={{ margin: '0 0 0.5rem 0' }}><strong>{getBookingGuestName(receiptBooking)}</strong> · Reservation #{receiptBooking.booking_id}</p>
                 <p style={{ margin: '0 0 0.5rem 0' }}>{externalPaymentLabel(receiptBooking)} · Outstanding: {formatHotelCurrency(receiptBooking.balance_due ?? 0, receiptBooking.currency)}</p>
                 <p style={{ fontSize: '0.9rem', color: '#4b5563', margin: '0 0 1rem 0' }}>
-                  {externalPaymentNotice(receiptBooking)} Verify the transfer in your own account first — recording creates a received payment record and confirms the reservation.
+                  {externalPaymentNotice(receiptBooking)} Verify the transfer in your own account first — recording creates a received payment record. It does not confirm the reservation; use Confirm on the booking for that.
                 </p>
                 <label style={{ display: 'block', marginBottom: '1rem' }}>
                   <span style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, color: '#374151', marginBottom: '0.25rem' }}>Amount received</span>

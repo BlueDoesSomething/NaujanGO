@@ -50,6 +50,13 @@ before(async () => {
       bookings = [booking]; return { body: { booking, payment_handling: 'external' } };
     }
     if (path === '/api/owner/bookings/88/status') { bookings[0].status = body.status; return { body: { success: true } }; }
+    if (path === '/api/owner/bookings/88/payments/receipt' && incoming.method === 'POST') {
+      const amount = Number(body.amount);
+      bookings[0].amount_paid = Number(bookings[0].amount_paid || 0) + amount;
+      bookings[0].balance_due = Math.max(Number(bookings[0].balance_due || 0) - amount, 0);
+      bookings[0].payment_status = bookings[0].balance_due > 0 ? 'partial' : 'paid';
+      return { status: 201, body: { success: true, payment: { payment_id: 900, booking_id: 88, amount, status: 'succeeded' }, payment_status: bookings[0].payment_status, outstanding_after: bookings[0].balance_due } };
+    }
     if (/\/(?:bookings\/hotels|owner\/bookings)\/88\/messages$/.test(path)) {
       if (incoming.method === 'POST') {
         if (failSend) return { status: 503, body: { error: 'Fixture send failed; message retained.' } };
@@ -226,6 +233,30 @@ test('policy failures show an honest unavailable notice and retry restores contr
     assert.equal(await browser.evaluate(`document.querySelector('[aria-label="Online payment availability"]')`), null);
     assert.deepEqual(financialWrites(), []); assert.deepEqual(browser.errors, []);
   } finally { failPolicy = false; policy = { ...policy, online_payments_enabled: false }; }
+});
+
+test('Payments section queues outstanding manual balances and records receipts while online payments are disabled', options, async () => {
+  // Seed the existing external booking with an outstanding balance so the
+  // queue has a row to act on (the disabled policy is already in effect).
+  role = 'owner'; policy = { ...policy, online_payments_enabled: false };
+  bookings[0].status = 'confirmed'; bookings[0].amount_paid = 0; bookings[0].balance_due = 500;
+  bookings[0].payment_method = 'gcash'; bookings[0].policy_snapshot.payment_arrangement = 'gcash';
+  await browser.navigate('/owner/payments');
+  await browser.waitFor(`document.querySelector('[aria-label="Manual payments awaiting confirmation"]')?.textContent.includes('Payments')`);
+  assert.match(await browser.evaluate(`document.querySelector('[aria-label="Manual payments awaiting confirmation"]').textContent`), /Payments/);
+  await browser.waitFor(`[...document.querySelectorAll('[aria-label="Manual payments awaiting confirmation"] tbody button')].some(node => node.textContent.trim() === 'Confirm received')`);
+  assert.ok(await browser.evaluate(`document.querySelector('[aria-label="Manual payments awaiting confirmation"] tbody').textContent.includes('#88')`));
+  assert.match(await browser.evaluate(`document.querySelector('[aria-label="Manual payments awaiting confirmation"]').textContent`), /GCash · direct to owner/);
+  await browser.click('Confirm received');
+  await browser.waitFor(`document.querySelector('[role="dialog"]')?.textContent.includes('Confirm received payment')`);
+  assert.match(await browser.evaluate(`document.querySelector('[role="dialog"]').textContent`), /GCash QR code or number/);
+  assert.equal(await browser.evaluate(`document.querySelector('[role="dialog"] input[type="number"]').value`), '500');
+  await browser.click('Record received payment');
+  await browser.waitFor(`!document.querySelector('[role="dialog"]') && document.querySelector('[aria-label="Manual payments awaiting confirmation"]').textContent.includes('No outstanding manual payments')`);
+  assert.equal(bookings[0].balance_due, 0);
+  assert.equal(bookings[0].payment_status, 'paid');
+  assert.equal(bookings[0].status, 'confirmed', 'recording a receipt does not change the reservation status');
+  assert.deepEqual(browser.errors, []);
 });
 
 test('limited owners can configure direct payment options while online payments are disabled, without gaining access to history', options, async () => {

@@ -86,7 +86,7 @@ test('outstandingOf never goes negative', () => {
   assert.equal(outstandingOf(0, 0), 0);
 });
 
-test('full receipt for an external booking records a succeeded payment and confirms the booking', async () => {
+test('full receipt for an external booking records a succeeded payment without touching reservation status', async () => {
   const state = { bookings: [externalBooking()], payments: [] };
   const connection = fakeConnection(state);
   const result = await recordManualReceipt(7, { amount: 500, method: null, reference: 'GCASH-REF-1' }, connection);
@@ -98,11 +98,18 @@ test('full receipt for an external booking records a succeeded payment and confi
   assert.equal(result.payment_status, 'paid');
   assert.equal(result.outstanding_after, 0);
   assert.equal(state.payments.length, 1);
-  assert.equal(state.bookings[0].status, 'confirmed');
+  assert.equal(state.bookings[0].status, 'pending', 'receipt never confirms the reservation — that stays a separate owner action');
   assert.equal(state.bookings[0].payment_status, 'paid');
   assert.equal(state.bookings[0].expires_at, null, 'receipt clears the expiry so the stay cannot auto-cancel');
   assert.equal(connection.committed, 0, 'caller-owned connection is not committed by the service');
   assert.equal(connection.released, 0, 'caller-owned connection is not released by the service');
+});
+
+test('receipts also settle already-confirmed bookings without changing their status', async () => {
+  const state = { bookings: [externalBooking({ status: 'confirmed' })], payments: [] };
+  const result = await recordManualReceipt(7, { amount: 500, method: null, reference: null }, fakeConnection(state));
+  assert.equal(result.payment_status, 'paid');
+  assert.equal(state.bookings[0].status, 'confirmed');
 });
 
 test('partial receipt keeps an outstanding balance that later receipts can settle', async () => {
@@ -112,7 +119,7 @@ test('partial receipt keeps an outstanding balance that later receipts can settl
   const first = await recordManualReceipt(7, { amount: 200, method: 'gcash', reference: null }, connection);
   assert.equal(first.payment_status, 'partial');
   assert.equal(first.outstanding_after, 300);
-  assert.equal(state.bookings[0].status, 'confirmed');
+  assert.equal(state.bookings[0].status, 'pending', 'partial receipt must not confirm the reservation');
   assert.equal(state.bookings[0].payment_status, 'partial');
 
   const second = await recordManualReceipt(7, { amount: 300, method: null, reference: null }, connection);

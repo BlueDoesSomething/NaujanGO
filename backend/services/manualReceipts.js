@@ -47,8 +47,10 @@ export const outstandingOf = (totalAmount, succeededTotal) => {
 
 // Record a received manual payment for an external booking, locked so
 // concurrent receipts for the same booking serialize through the booking row.
-// Confirms the booking (status → 'confirmed') and recomputes payment_status
-// from succeeded rows, exactly like a successful gateway payment.
+// Payment-only: recomputes payment_status from succeeded rows but never
+// changes the reservation status — confirming the reservation stays a
+// separate owner action. Money confirmation and room confirmation are
+// deliberately decoupled.
 export const recordManualReceipt = async (bookingId, input, dbLike = null) => {
   const connection = dbLike || (await db.promise().getConnection());
   const ownsTransaction = !dbLike;
@@ -94,7 +96,7 @@ export const recordManualReceipt = async (bookingId, input, dbLike = null) => {
       [bookingId, input.amount, currency, method, MANUAL_RECEIPT_PROVIDER, input.reference]
     );
 
-    const sync = await syncBookingPaymentStatus(bookingId, { confirm: true, dbLike: connection });
+    const sync = await syncBookingPaymentStatus(bookingId, { confirm: false, dbLike: connection });
     if (ownsTransaction) await connection.commit();
 
     return {
