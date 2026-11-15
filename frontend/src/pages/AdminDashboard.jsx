@@ -371,6 +371,39 @@ const AdminDashboard = () => {
     stops: []
   });
   const [itinerarySaving, setItinerarySaving] = useState(false);
+  const itineraryEditorRef = useRef(null);
+  useEffect(() => {
+    if (!editingItinerary) return undefined;
+    const previouslyFocused = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    itineraryEditorRef.current?.querySelector('[aria-label="Close itinerary editor"]')?.focus();
+
+    const handleEditorKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setEditingItinerary(null);
+      }
+      if (event.key !== 'Tab' || !itineraryEditorRef.current) return;
+      const controls = [...itineraryEditorRef.current.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled])')];
+      if (!controls.length) return;
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !itineraryEditorRef.current.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !itineraryEditorRef.current.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleEditorKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleEditorKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (previouslyFocused?.isConnected) previouslyFocused.focus();
+    };
+  }, [editingItinerary]);
   const [viewingItinerary, setViewingItinerary] = useState(null);
   const [ownerAssignments, setOwnerAssignments] = useState({});
   const [ownerAssigning, setOwnerAssigning] = useState({});
@@ -3825,25 +3858,26 @@ const AdminDashboard = () => {
 
               {editingItinerary && (
                 <div
+                  className="gov-itinerary-editor-backdrop"
                   style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}
                   onClick={(e) => { if (e.target === e.currentTarget) setEditingItinerary(null); }}
                 >
-                  <div style={{ background:'#fff', borderRadius:'16px', width:'100%', maxWidth:'600px', maxHeight:'92vh', overflowY:'auto', boxShadow:'0 24px 64px rgba(0,0,0,0.22)', display:'flex', flexDirection:'column' }}>
+                  <div ref={itineraryEditorRef} className="gov-itinerary-editor" role="dialog" aria-modal="true" aria-labelledby="gov-itinerary-editor-title" style={{ background:'#fff', borderRadius:'16px', width:'100%', maxWidth:'600px', maxHeight:'92vh', overflow:'hidden', boxShadow:'0 24px 64px rgba(0,0,0,0.22)', display:'flex', flexDirection:'column' }}>
                     {/* Header */}
-                    <div style={{ background:'linear-gradient(135deg,#1a7a4a 0%,#2ecc71 100%)', borderRadius:'16px 16px 0 0', padding:'1.4rem 1.5rem', color:'#fff', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'1rem' }}>
-                      <div>
+                    <div className="gov-itinerary-editor-header" style={{ background:'linear-gradient(135deg,#1a7a4a 0%,#2ecc71 100%)', borderRadius:'16px 16px 0 0', padding:'1.4rem 1.5rem', color:'#fff', display:'flex', alignItems:'center', justifyContent:'space-between', gap:'1rem' }}>
+                      <div className="gov-itinerary-editor-heading">
                         <div style={{ fontSize:'0.72rem', fontWeight:700, opacity:0.8, textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.3rem' }}>Editing Itinerary</div>
-                        <div style={{ fontSize:'1.25rem', fontWeight:800 }}>{editingItinerary.name || 'Untitled'}</div>
+                        <div id="gov-itinerary-editor-title" style={{ fontSize:'1.25rem', fontWeight:800 }}>{editingItinerary.name || 'Untitled'}</div>
                         {editingItinerary.username && (
                           <div style={{ fontSize:'0.82rem', opacity:0.8, marginTop:'2px' }}>
                             Owner: {editingItinerary.first_name || editingItinerary.last_name ? `${editingItinerary.first_name || ''} ${editingItinerary.last_name || ''}`.trim() : editingItinerary.username} &nbsp;·&nbsp; {editingItinerary.email}
                           </div>
                         )}
                       </div>
-                      <button onClick={() => setEditingItinerary(null)} style={{ background:'rgba(255,255,255,0.2)', border:'none', borderRadius:'50%', width:'34px', height:'34px', cursor:'pointer', color:'#fff', fontSize:'1.1rem', fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
+                      <button className="gov-itinerary-editor-close" aria-label="Close itinerary editor" onClick={() => setEditingItinerary(null)} style={{ background:'rgba(255,255,255,0.2)', border:'none', borderRadius:'50%', width:'34px', height:'34px', cursor:'pointer', color:'#fff', fontSize:'1.1rem', fontWeight:800, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>✕</button>
                     </div>
                     {/* Body */}
-                    <div style={{ padding:'1.5rem', display:'flex', flexDirection:'column', gap:'1.25rem' }}>
+                    <div className="gov-itinerary-editor-body" style={{ padding:'1.5rem', display:'flex', flexDirection:'column', gap:'1.25rem' }}>
                       {/* Details */}
                       <div>
                         <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Details</div>
@@ -3864,7 +3898,7 @@ const AdminDashboard = () => {
                                <option value="confirmed">Confirmed (legacy)</option>
                             </select>
                           </label>
-                          <div />
+                          <div className="gov-itinerary-editor-spacer" />
                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Start Date</span>
                             <input type="date" value={itineraryForm.start_date} onChange={(e) => setItineraryForm({ ...itineraryForm, start_date: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
@@ -3890,15 +3924,15 @@ const AdminDashboard = () => {
                                 <strong style={{ color:'#166534' }}>Day {day}</strong>
                                 {itineraryForm.stops.filter((stop) => Number(stop.day_number) === day).map((stop, index, dayStops) => (
                                   <div key={stop.id} style={{ background:'#f0faf4', border:'1px solid #d1fae5', borderRadius:'10px', padding:'0.75rem', display:'grid', gap:'0.6rem' }}>
-                                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'0.5rem' }}>
+                                    <div className="gov-itinerary-editor-stop-heading" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'0.5rem' }}>
                                       <strong style={{ color:'#1a202c', overflowWrap:'anywhere' }}>{index + 1}. {stop.name}</strong>
-                                      <div style={{ display:'flex', gap:'0.3rem' }}>
+                                      <div className="gov-itinerary-editor-reorder" style={{ display:'flex', gap:'0.3rem' }}>
                                         <button type="button" disabled={index === 0} aria-label={`Move ${stop.name} earlier`} onClick={() => moveAdminStop(stop.id, -1)} className="gov-btn gov-btn-ghost">↑</button>
                                         <button type="button" disabled={index === dayStops.length - 1} aria-label={`Move ${stop.name} later`} onClick={() => moveAdminStop(stop.id, 1)} className="gov-btn gov-btn-ghost">↓</button>
                                       </div>
                                     </div>
                                     <span style={{ fontSize:'0.78rem', color:'#64748b' }}>{stop.location}</span>
-                                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(120px, 1fr))', gap:'0.5rem' }}>
+                                    <div className="gov-itinerary-editor-fields" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(120px, 1fr))', gap:'0.5rem' }}>
                                       <label style={{ fontSize:'0.78rem', color:'#374151' }}>Day
                                         <select className="gov-input" value={stop.day_number} onChange={(e) => updateAdminStop(stop.id, { day_number: Number(e.target.value) })}>
                                           {Array.from({ length: Math.min(365, Math.max(1, adminItineraryDayCount(itineraryForm))) }, (_, i) => i + 1).map((n) => <option key={n} value={n}>Day {n}</option>)}
@@ -3926,7 +3960,7 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                     {/* Footer */}
-                    <div style={{ padding:'1rem 1.5rem', borderTop:'1px solid #e5e7eb', display:'flex', gap:'0.75rem', justifyContent:'flex-end', background:'#f9fafb', borderRadius:'0 0 16px 16px' }}>
+                    <div className="gov-itinerary-editor-footer" style={{ padding:'1rem 1.5rem', borderTop:'1px solid #e5e7eb', display:'flex', gap:'0.75rem', justifyContent:'flex-end', background:'#f9fafb', borderRadius:'0 0 16px 16px' }}>
                       <button className="gov-btn gov-btn-ghost" onClick={() => setEditingItinerary(null)}>{t('cancel')}</button>
                       <button onClick={handleItinerarySave} disabled={itinerarySaving} className="gov-btn gov-btn-primary" style={{ minWidth:'140px' }}>
                         {itinerarySaving ? t('saving') : t('button_save')}

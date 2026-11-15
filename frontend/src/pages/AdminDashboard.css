@@ -1796,3 +1796,31 @@
     padding: 1.5rem;
   }
 }
+
+/* Keep itinerary editing usable when its day-by-day stop list is long. */
+.gov-itinerary-editor-backdrop { overflow: hidden; overscroll-behavior: contain; }
+.gov-itinerary-editor { box-sizing: border-box; min-width: 0; max-height: 92vh; max-height: min(92vh, calc(100dvh - 2rem)) !important; }
+.gov-itinerary-editor-header, .gov-itinerary-editor-footer { flex: 0 0 auto; }
+.gov-itinerary-editor-heading { min-width: 0; overflow-wrap: anywhere; }
+.gov-itinerary-editor-close { width: 44px !important; height: 44px !important; }
+.gov-itinerary-editor-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+.gov-itinerary-editor-body > div, .gov-itinerary-editor-fields label { min-width: 0; }
+.gov-itinerary-editor-fields .gov-input { min-width: 0; min-height: 44px; }
+.gov-itinerary-editor-reorder { flex-shrink: 0; }
+.gov-itinerary-editor-reorder .gov-btn, .gov-itinerary-editor-footer .gov-btn { min-width: 44px; min-height: 44px; justify-content: center; }
+.gov-itinerary-editor-footer { box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.08); }
+.gov-itinerary-editor :is(button, input, select, textarea):focus-visible { outline: 2px solid #15803d; outline-offset: 2px; }
+.gov-itinerary-editor-header .gov-itinerary-editor-close:focus-visible { outline-color: white; }
+
+@media (max-width: 600px) {
+  .gov-itinerary-editor-backdrop { padding: 0.5rem !important; }
+  .gov-itinerary-editor { max-height: calc(100dvh - 1rem) !important; border-radius: 12px !important; }
+  .gov-itinerary-editor-header { padding: 0.9rem 1rem !important; }
+  .gov-itinerary-editor-body { padding: 1rem !important; scrollbar-gutter: auto; }
+  .gov-itinerary-editor-footer { padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom)) !important; gap: 0.5rem !important; }
+  .gov-itinerary-editor-footer .gov-btn { flex: 1 1 0; min-width: 0 !important; }
+  .gov-itinerary-editor-spacer { display: none; }
+  .gov-itinerary-editor-stop-heading { flex-wrap: wrap; }
+  .gov-itinerary-editor-stop-heading strong { min-width: 0; }
+  .gov-itinerary-editor-reorder { margin-left: auto; }
+}

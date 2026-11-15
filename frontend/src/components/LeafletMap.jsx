@@ -270,9 +270,9 @@ const LeafletMap = ({
           icon = L.divIcon({
             html: marker.iconHtml,
             className: 'imap-pin-wrap',
-            iconSize: [36, 44],
-            iconAnchor: [18, 37],
-            popupAnchor: [0, -34]
+            iconSize: marker.iconSize || [36, 44],
+            iconAnchor: marker.iconAnchor || [18, 37],
+            popupAnchor: marker.popupAnchor || [0, -34]
           });
         }
 

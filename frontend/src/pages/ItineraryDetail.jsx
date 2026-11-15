@@ -90,11 +90,27 @@ const ItineraryDetail = () => {
   const [selectedStopId, setSelectedStopId] = useState(null);
   const [mobilePlanView, setMobilePlanView] = useState('list');
   const stopRefs = useRef({});
+  const mapPanelRef = useRef(null);
+  const listPanelRef = useRef(null);
+  const previousPlanViewRef = useRef(mobilePlanView);
   useEffect(() => {
     if (activeTab === 'plan' && mobilePlanView === 'list' && selectedStopId != null) {
       stopRefs.current[selectedStopId]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
   }, [activeTab, mobilePlanView, selectedStopId]);
+  useEffect(() => {
+    if (isMobile && activeTab === 'plan' && mobilePlanView === 'map') {
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      mapPanelRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+    }
+  }, [isMobile, activeTab, mobilePlanView]);
+  useEffect(() => {
+    if (isMobile && activeTab === 'plan' && mobilePlanView === 'list' && previousPlanViewRef.current === 'map' && selectedStopId == null) {
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      listPanelRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+    }
+    previousPlanViewRef.current = mobilePlanView;
+  }, [isMobile, activeTab, mobilePlanView, selectedStopId]);
   const [statistics, setStatistics] = useState(null);
   const [userLocation, setUserLocation] = useState(null);
   const [routeInfo, setRouteInfo] = useState(null);
@@ -485,6 +501,7 @@ const ItineraryDetail = () => {
     return {
       id: item.id, ...coords,
       title: `${index + 1}. ${item.custom_name || item.attraction_name || 'Unnamed stop'}`,
+      iconSize: [44, 52], iconAnchor: [22, 45], popupAnchor: [0, -42],
       iconHtml: `<span class="itin-map-pin"><span class="itin-map-pin-number">${index + 1}</span></span>`,
       popup: itineraryStopPopup(item, index + 1)
     };
@@ -549,7 +566,7 @@ const ItineraryDetail = () => {
   <HeroSlideshow 
         title={itinerary.name}
         subtitle={itinerary.description}
-        height="400px"
+        height={isMobile ? 'clamp(220px, 34vh, 300px)' : '400px'}
         showControls={false}
       />
 
@@ -790,7 +807,7 @@ const ItineraryDetail = () => {
               </div>
             </div>
             <div className="itin-plan-grid">
-              {(!isMobile || mobilePlanView === 'list') && <div className="itin-plan-stops itin-panel" style={styles.card}>
+              {(!isMobile || mobilePlanView === 'list') && <div ref={listPanelRef} className="itin-plan-stops itin-panel" style={styles.card}>
                 <h3>Day {selectedDay} · {dayItems.length} {dayItems.length === 1 ? 'stop' : 'stops'}</h3>
                 {activeCategoryFilter && <button type="button" className="itin-clear-filter" onClick={() => setActiveCategoryFilter(null)}>Clear budget category filter ×</button>}
                 {!dayItems.length && <p className="itin-plan-hint">No stops planned for this day.</p>}
@@ -814,8 +831,11 @@ const ItineraryDetail = () => {
                   </div>;
                 })}
               </div>}
-              {(!isMobile || mobilePlanView === 'map') && <div className="itin-plan-map itin-panel" style={styles.card}>
-                <div className="itin-plan-map-heading"><h3>Day {selectedDay} map</h3><button type="button" onClick={getUserLocation} disabled={gpsLoading}>{gpsLoading ? 'Getting location…' : userLocation ? 'Refresh GPS' : 'Enable GPS'}</button></div>
+              {(!isMobile || mobilePlanView === 'map') && <div ref={mapPanelRef} className="itin-plan-map itin-panel" style={styles.card}>
+                <div className="itin-plan-map-heading"><h3>Day {selectedDay} map</h3><div className="itin-plan-map-actions">
+                  {isMobile && <button type="button" onClick={() => setMobilePlanView('list')}>View list</button>}
+                  <button type="button" onClick={getUserLocation} disabled={gpsLoading}>{gpsLoading ? 'Getting location…' : userLocation ? 'Refresh GPS' : 'Enable GPS'}</button>
+                </div></div>
                 {gpsError && <p className="itin-plan-error" role="alert">{gpsError}</p>}
                 {(allMarkers.length > 1 || navTarget) && <div className="itin-plan-route-summary" role="status">
                   <strong>{navTarget ? `Directions to ${navTarget.name}` : `Day ${selectedDay} route`}</strong>
@@ -824,20 +844,22 @@ const ItineraryDetail = () => {
                 </div>}
                 {allMarkers.length === 1 && !navTarget && <p className="itin-plan-hint">One mapped stop on this day. A route appears when two or more stops have coordinates.</p>}
                 {!allMarkers.length && <p className="itin-plan-hint">No pins yet for this day. Stops without coordinates still appear in the list.</p>}
-                <LeafletMap
-                  center={navTarget ? [navTarget.lat, navTarget.lng] : focusedMarker ? [focusedMarker.lat, focusedMarker.lng] : allMarkers.length ? [allMarkers[0].lat, allMarkers[0].lng] : userLocation || [13.3333, 121.3]}
-                  focusKey={`${selectedDay}:${selectedStopId || ''}`}
-                  zoom={12}
-                  markers={allMarkers}
-                  selectedMarkerId={selectedStopId}
-                  onMarkerClick={handleMapStopClick}
-                  userLocation={userLocation}
-                  followUserLocation={false}
-                  routeDestinationMarker={false}
-                  autoRouteWaypoints={autoRouteWaypoints}
-                  onRoutingChange={handleRoutingChange}
-                  style={{ height:'420px', borderRadius:'12px' }}
-                />
+                <div className="itin-plan-map-canvas" role="region" aria-label={`Day ${selectedDay} route map`}>
+                  <LeafletMap
+                    center={navTarget ? [navTarget.lat, navTarget.lng] : focusedMarker ? [focusedMarker.lat, focusedMarker.lng] : allMarkers.length ? [allMarkers[0].lat, allMarkers[0].lng] : userLocation || [13.3333, 121.3]}
+                    focusKey={`${selectedDay}:${selectedStopId || ''}`}
+                    zoom={12}
+                    markers={allMarkers}
+                    selectedMarkerId={selectedStopId}
+                    onMarkerClick={handleMapStopClick}
+                    userLocation={userLocation}
+                    followUserLocation={false}
+                    routeDestinationMarker={false}
+                    autoRouteWaypoints={autoRouteWaypoints}
+                    onRoutingChange={handleRoutingChange}
+                    style={{ width:'100%', height:'100%' }}
+                  />
+                </div>
                 {selectedStop && <div className="itin-plan-selected" aria-live="polite">
                   <span className="itin-plan-selected-kicker">Day {selectedDay} · Stop {selectedStopIndex} of {dayItems.length}</span>
                   {selectedStop.attraction_image && <img className="itin-plan-selected-image" src={selectedStop.attraction_image} alt={selectedStop.custom_name || selectedStop.attraction_name || 'Stop'} loading="lazy" />}
