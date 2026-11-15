@@ -331,7 +331,8 @@ KEYWORD_INTENT_MAP = {
     "Local_Transport": [
         "jeepney", "tricycle", "habal habal", "multicab",
         "getting around naujan", "commute naujan", "local transport",
-        "van for hire naujan", "pedicab naujan",
+        "van for hire naujan", "pedicab naujan", "get around naujan",
+        "transportation options", "transport options", "transportation in naujan",
     ],
     "Local_Food_Cuisine": [
         "food in naujan", "what to eat", "restaurant naujan",
@@ -553,28 +554,18 @@ def _keyword_score(normalized_text):
     Uses word boundary matching to avoid partial keyword matches.
     Returns (best_tag, best_score). best_tag is None when no keyword matched.
     """
-    import re
-    
-    # Split text into words for matching
-    text_words = set(re.findall(r'\b\w+\b', normalized_text.lower()))
-    
     best_tag = None
     best_score = 0
     
     for tag, keywords in KEYWORD_INTENT_MAP.items():
         score = 0
-        
-        for kw in keywords:
+        # Duplicate keywords must not artificially outweigh a specific phrase.
+        for kw in set(keywords):
             kw_lower = kw.lower()
-            
-            # Check if full keyword phrase is in text (for multi-word keywords)
-            if kw_lower in normalized_text:
-                score += 2  # Multi-word phrase match gets higher weight
-            else:
-                # Check if all words in the keyword are in the text
-                kw_words = set(re.findall(r'\b\w+\b', kw_lower))
-                if kw_words and kw_words.issubset(text_words):
-                    score += 1  # Single words in keyword match
+            # Match whole words in order; substring matches such as "hi" in
+            # "which" or out-of-order words produce unrelated answers.
+            if re.search(r'(?<!\w)' + r'\s+'.join(map(re.escape, kw_lower.split())) + r'(?!\w)', normalized_text):
+                score += 2 if ' ' in kw_lower else 1
         
         if score > best_score:
             best_score = score
@@ -589,6 +580,18 @@ def keyword_fallback(normalized_text):
     """
     tag, _ = _keyword_score(normalized_text)
     return tag
+
+def transport_intent(normalized_text, language='en'):
+    """Distinguish transport within Naujan from directions *to* Naujan."""
+    if language != 'en':
+        return None
+    local = re.search(r'\b(get(?:ting)? around|move around|local transport|transportation options|transport options|transportation in naujan|transport in naujan|jeepney|tricycle|habal habal)\b', normalized_text)
+    arrival = re.search(r'\b(how to get to naujan|travel to naujan|go to naujan|manila to naujan|calapan to naujan|batangas pier|ferry to naujan)\b', normalized_text)
+    if arrival and not re.search(r'\b(get(?:ting)? around|move around)\b', normalized_text):
+        return 'Transportation_How_To_Get_There'
+    if local:
+        return 'Local_Transport'
+    return None
 
 def get_response(user_input, language='en', use_cache=True):
     """
@@ -614,11 +617,20 @@ def get_response(user_input, language='en', use_cache=True):
     
     # Normalize input (language-aware — avoids mangling non-English text)
     normalized = normalize_input(user_input, language)
+    transport_tag = transport_intent(normalized, language)
     
     # Load language-specific models (lazy, cached)
     clf, label_encoder, intent_responses = get_models(language)
     if clf is None:
         return get_low_confidence_response(language)
+
+    # A direct transport question should not be sent to an unrelated model
+    # class or a generic fallback. Use reviewed, non-time-sensitive guidance.
+    if transport_tag:
+        response = intent_responses.get(transport_tag, [get_low_confidence_response(language)])[0]
+        if use_cache:
+            response_cache[cache_key] = response
+        return response
     
     # Keyword-first accuracy: solid curated phrase matches beat the unreliable SVM
     # (score >= 2 means the exact phrase was present verbatim in the message)
@@ -689,19 +701,10 @@ def get_low_confidence_response(language='en'):
     """Get a helpful clarification request with topic suggestions."""
     responses = {
         'en': (
-            "I'm not sure I fully understood that. Here are topics I can help with about Naujan:\n\n"
-            "🏝️ Naujan attractions & natural features\n"
-            "🌊 Naujan Lake & activities\n"
-            "🏨 Hotels & accommodations in Naujan\n"
-            "🗺️ How to get to Naujan\n"
-            "🍽️ Local food & restaurants\n"
-            "🎭 Festivals & cultural events\n"
-            "🏔️ Hiking, eco-tourism & outdoor activities\n"
-            "🛍️ Shopping & local souvenirs\n"
-            "🌤️ Best time to visit & weather\n"
-            "📞 Emergency contacts & travel safety\n\n"
-            "Try asking: \"What are the attractions in Naujan?\" "
-            "or \"How do I get to Naujan?\""
+            "Could you please clarify your question about Naujan? I can help with "
+            "attractions, accommodation, local transportation, directions to Naujan, "
+            "dining, or trip planning. For example, ask: "
+            "\"What transport is available within Naujan?\""
         ),
         'es': "No estoy seguro de entender. ¿Puedes reformular eso? Puedo ayudarte con información sobre Naujan: atracciones, Lago Naujan, hoteles, transporte, comida local, festivales, senderismo, tiendas, clima y seguridad.",
         'tl': "Hindi ko po masyadong naiintindihan. Pwede po bang ulitin? Maaari akong tumulong tungkol sa Naujan: mga atraksyon, Lawa ng Naujan, hotel, transportasyon, pagkain, mga pista, hiking, pamimili, panahon at seguridad.",
@@ -761,7 +764,7 @@ def handle_request(payload):
     
     # Try to detect intent for action buttons
     normalized_msg = normalize_input(user_msg, resolved_language).lower()
-    intent_tag = keyword_fallback(normalized_msg)
+    intent_tag = transport_intent(normalized_msg, resolved_language) or keyword_fallback(normalized_msg)
     
     # Format response with action buttons if formatter available
     if format_response_with_actions and intent_tag:

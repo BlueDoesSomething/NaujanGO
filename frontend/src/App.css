@@ -41,6 +41,12 @@ code {
     margin-top: 72px !important;
   }
 
+  /* The reminder already clears the fixed mobile navbar. Do not insert the
+     navbar offset a second time between the reminder and the page hero. */
+  div:has(> .demographics-reminder) > main {
+    margin-top: 0 !important;
+  }
+
   /* HotelDetail: collapse the fixed sidebar grid on phones */
   .hotel-detail-content {
     grid-template-columns: 1fr !important;

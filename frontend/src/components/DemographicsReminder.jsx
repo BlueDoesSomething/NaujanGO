@@ -23,14 +23,19 @@ const DemographicsReminder = () => {
   // banner must be pushed down by the navbar's real height (it changes with
   // the .scrolled padding). Desktop navbar is sticky (in flow) → no offset.
   useEffect(() => {
+    const nav = document.querySelector('.navbar');
     const measure = () => {
-      const nav = document.querySelector('.navbar');
       const isFixed = window.matchMedia('(max-width: 768px)').matches;
       setNavOffset(isFixed && nav ? nav.offsetHeight : 0);
     };
     measure();
+    const observer = nav && typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if (observer) observer.observe(nav);
     window.addEventListener('resize', measure);
-    return () => window.removeEventListener('resize', measure);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+    };
   }, []);
 
   const needsDemographics =
@@ -51,6 +56,7 @@ const DemographicsReminder = () => {
 
   return (
     <div
+      className="demographics-reminder"
       style={{ ...bannerStyle, marginTop: `calc(${navOffset}px + 6px)` }}
       role="alert"
       aria-live="polite"

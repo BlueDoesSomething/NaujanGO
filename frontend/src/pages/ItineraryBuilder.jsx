@@ -341,7 +341,9 @@ const ItineraryBuilder = () => {
       const start = new Date(itinerary.startDate);
       const end = new Date(itinerary.endDate);
       const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      if (!Number.isFinite(days) || days < 1) return;
       setItinerary(prev => ({ ...prev, durationDays: days }));
+      setCurrentDay(prev => Math.min(prev, days));
       
       const newItemsByDay = {};
       for (let i = 1; i <= days; i++) {
@@ -1020,8 +1022,10 @@ const ItineraryBuilder = () => {
           </div>
         </div>
         <div ref={sidebarRef} style={sidebarStyle}>
-          <div style={styles.tabs}>
+          <div className="ib-attraction-tabs" style={styles.tabs}>
             <button 
+              type="button"
+              aria-pressed={!showTemplates}
               style={!showTemplates ? styles.tabActive : styles.tab}
               onClick={() => setShowTemplates(false)}
             >
@@ -1029,6 +1033,8 @@ const ItineraryBuilder = () => {
               <span>{t('attractions')}</span>
             </button>
             <button 
+              type="button"
+              aria-pressed={showTemplates}
               style={showTemplates ? styles.tabActive : styles.tab}
               onClick={() => setShowTemplates(true)}
             >
@@ -1232,7 +1238,23 @@ const ItineraryBuilder = () => {
                           >
                             + {t('day')} {currentDay}
                           </button>
-                          <div
+                          {isMobile ? (
+                            <select
+                              className="atc-day-select"
+                              aria-label={`Add ${attraction.name} to a specific day`}
+                              value=""
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                if (e.target.value) addToDay(attraction, Number(e.target.value));
+                              }}
+                            >
+                              <option value="">{t('day')} ▾</option>
+                              {Array.from({ length: totalDays }, (_, i) => i + 1).map((day) => (
+                                <option key={day} value={day}>{t('day')} {day}</option>
+                              ))}
+                            </select>
+                          ) : <div
                             className="atc-day-picker-wrap"
                             ref={openDayPickerId === attraction.id ? dayPickerRef : null}
                           >
@@ -1266,7 +1288,7 @@ const ItineraryBuilder = () => {
                                 </div>
                               </div>
                             )}
-                          </div>
+                          </div>}
                         </div>
                       </div>
                     </div>
@@ -1459,7 +1481,16 @@ const ItineraryBuilder = () => {
           
           {/* Day Planning */}
             <div ref={dayPlannerRef} className="ib-days-container" style={styles.daysContainer}>
-              <div className="ib-day-tabs" style={styles.dayTabs}>
+               {sortedDayNumbers.length > 7 ? (
+                 <div className="ib-day-navigation">
+                   <label htmlFor="ib-current-day">{t('day')} ({sortedDayNumbers.length} days)</label>
+                   <select id="ib-current-day" value={currentDay} onChange={(e) => setCurrentDay(Number(e.target.value))}>
+                     {sortedDayNumbers.map((day) => (
+                       <option key={day} value={day}>{t('day')} {day} ({(itemsByDay[day] || []).length})</option>
+                     ))}
+                   </select>
+                 </div>
+               ) : <div className="ib-day-tabs" style={styles.dayTabs}>
               {Object.keys(itemsByDay).map(day => (
                 <button
                   key={day}
@@ -1482,7 +1513,7 @@ const ItineraryBuilder = () => {
                   + {t('add_day')}
                 </button>
               )}
-            </div>
+             </div>}
             
             <div ref={budgetPanelRef} className="ib-day-content" style={dayContentStyle}>
               <div className="ib-card" style={styles.dayBudgetPanel}>

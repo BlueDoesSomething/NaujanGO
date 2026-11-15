@@ -425,6 +425,47 @@
 }
 
 /* --- Templates: grow with the page on mobile -------------------- */
+.ib-attraction-tabs {
+  padding: 0 12px;
+  gap: 12px !important;
+}
+
+.ib-attraction-tabs button {
+  min-width: 0;
+  flex: 1 1 0 !important;
+}
+
+.ib-day-navigation {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--ib-border, #1e3a5f);
+  color: var(--ib-text, #e8edf3);
+}
+
+.ib-days-container {
+  scroll-margin-top: 90px;
+}
+
+.ib-day-navigation select {
+  flex: 1;
+  min-width: 0;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--ib-border, #1e3a5f);
+  background: var(--ib-bg-input, #1a2d47);
+  color: var(--ib-text, #e8edf3);
+  font: inherit;
+}
+
+.ib-day-navigation select:focus-visible,
+.ib-attraction-tabs button:focus-visible,
+.atc-day-select:focus-visible {
+  outline: 2px solid var(--ib-primary, #22c55e);
+  outline-offset: 2px;
+}
+
 .ib-templates-panel {
   box-sizing: border-box;
   width: 100%;
@@ -697,6 +738,18 @@
   border-color: rgba(255, 255, 255, 0.35);
 }
 
+.atc-day-select {
+  min-width: 90px;
+  padding: 9px 12px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(10, 22, 40, 0.72);
+  color: white;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
 .atc-day-picker-caret {
   font-size: 10px;
   opacity: 0.8;
@@ -769,9 +822,9 @@
     flex: 0 0 85%;
     min-width: 0;
     /* The wide image ratio alone is too short for the title/actions at 320px. */
-    min-height: 220px;
+    min-height: 280px;
     max-width: 340px;
-    aspect-ratio: 16 / 10;
+    aspect-ratio: auto;
     scroll-snap-align: start;
     scroll-snap-stop: always;
     margin: 0;
@@ -811,6 +864,7 @@
   .itinerary-attraction-day-actions {
     width: 100%;
     margin-top: 2px;
+    align-items: center;
   }
   .itinerary-attraction-day-actions button {
     padding: 10px 14px;
@@ -844,6 +898,17 @@
 }
 
 @media (max-width: 480px) {
+  .ib-attraction-tabs {
+    padding: 0 8px;
+    gap: 6px !important;
+  }
+  .ib-attraction-tabs button {
+    padding: 12px 6px !important;
+    font-size: 13px !important;
+  }
+  .ib-day-navigation {
+    flex-wrap: wrap;
+  }
   .itinerary-attraction-card {
     flex: 0 0 90%;
   }
