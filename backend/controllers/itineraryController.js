@@ -578,7 +578,7 @@ export const getItineraryWeather = async (req, res) => {
 
 export const saveItineraryAssumptions = async (req, res) => {
   const { id } = req.params;
-  const { farePerDay = 0, foodPerDay = 0, otherPerDay = 0 } = req.body || {};
+  const { farePerDay = 0, foodPerDay = 0, otherPerDay = 0, spendingLimit = null, perDay = {} } = req.body || {};
 
   try {
     const [itineraries] = await db.promise().query(
@@ -602,7 +602,12 @@ export const saveItineraryAssumptions = async (req, res) => {
       }
     }
 
-    const assumptions = { farePerDay: Number(farePerDay || 0), foodPerDay: Number(foodPerDay || 0), otherPerDay: Number(otherPerDay || 0) };
+    const limit = spendingLimit === '' || spendingLimit == null ? null : Number(spendingLimit);
+    if (limit !== null && (!Number.isFinite(limit) || limit < 0)) {
+      return res.status(400).json({ error: 'Spending limit must be a non-negative amount' });
+    }
+    const assumptions = { farePerDay: Number(farePerDay || 0), foodPerDay: Number(foodPerDay || 0), otherPerDay: Number(otherPerDay || 0), spendingLimit: limit,
+      perDay: perDay && typeof perDay === 'object' && !Array.isArray(perDay) ? perDay : {} };
 
     // Try to persist as JSON string (works for MySQL 5.7+ JSON or TEXT fallback)
     await db.promise().query(
@@ -694,21 +699,32 @@ export const recalculateItineraryBudget = async (req, res) => {
     let totalBudget = parseFloat(budgetResult[0].total_budget);
 
     // Calculate number of days
-    let numDays = itinerary.duration_days || 1;
+    let numDays = Number(itinerary.duration_days) || 1;
     if (itinerary.start_date && itinerary.end_date) {
       const start = new Date(itinerary.start_date);
       const end = new Date(itinerary.end_date);
-      const diffTime = Math.abs(end - start);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      numDays = diffDays > 0 ? diffDays : (itinerary.duration_days || 1);
+      const diffDays = Math.round((Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()) - Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())) / 86400000) + 1;
+      if (Number.isFinite(diffDays) && diffDays > 0) numDays = Math.max(numDays, Math.min(diffDays, 365));
     }
+    const hasDayNumber = await hasItineraryAttractionColumn('day_number');
+    const [[{ max_day: maxDay }]] = await db.promise().query(
+      `SELECT ${hasDayNumber ? 'COALESCE(MAX(day_number), 1)' : '1'} AS max_day FROM itinerary_attractions WHERE itinerary_id = ?`, [id]
+    );
+    numDays = Math.max(numDays, Number(maxDay) || 1);
 
     // Add daily budget assumptions from the request (current UI values)
     const farePerDayVal = parseFloat(farePerDay) || 0;
     const foodPerDayVal = parseFloat(foodPerDay) || 0;
     const otherPerDayVal = parseFloat(otherPerDay) || 0;
     
-    const dailyBudgetTotal = (farePerDayVal + foodPerDayVal + otherPerDayVal) * numDays;
+    const dailyCosts = Array.isArray(req.body?.dailyCosts) ? req.body.dailyCosts : null;
+    if (dailyCosts?.length) numDays = Math.max(numDays, ...dailyCosts.map(row => Number(row.day) || 1));
+    const dailyBudgetTotal = dailyCosts
+      ? Array.from({ length: numDays }, (_, i) => dailyCosts.find(row => Number(row.day) === i + 1))
+        .reduce((sum, row) => sum + (row
+          ? (Number(row.fareCost) || 0) + (Number(row.foodCost) || 0) + (Number(row.otherCost) || 0)
+          : farePerDayVal + foodPerDayVal + otherPerDayVal), 0)
+      : (farePerDayVal + foodPerDayVal + otherPerDayVal) * numDays;
     totalBudget += dailyBudgetTotal;
 
     await db.promise().query(
@@ -729,9 +745,6 @@ export const recalculateItineraryBudget = async (req, res) => {
 
 export const getItineraryBudgetBreakdown = async (req, res) => {
   const { id } = req.params;
-  const farePerDay = parseFloat(req.query.farePerDay || '0') || 0;
-  const foodPerDay = parseFloat(req.query.foodPerDay || '0') || 0;
-  const otherPerDay = parseFloat(req.query.otherPerDay || '0') || 0;
 
   try {
     const [itineraries] = await db.promise().query(
@@ -744,6 +757,18 @@ export const getItineraryBudgetBreakdown = async (req, res) => {
     }
 
     const itinerary = itineraries[0];
+    const saved = typeof itinerary.budget_assumptions === 'string'
+      ? JSON.parse(itinerary.budget_assumptions) : (itinerary.budget_assumptions || {});
+    const useSavedDailyCosts = ['farePerDay', 'foodPerDay', 'otherPerDay'].every(key => req.query[key] == null);
+    const savedPerDay = useSavedDailyCosts ? (saved?.perDay || {}) : {};
+    const farePerDay = Number(req.query.farePerDay ?? saved?.farePerDay) || 0;
+    const foodPerDay = Number(req.query.foodPerDay ?? saved?.foodPerDay) || 0;
+    const otherPerDay = Number(req.query.otherPerDay ?? saved?.otherPerDay) || 0;
+    const limitInput = req.query.spendingLimit ?? saved?.spendingLimit;
+    const spendingLimit = limitInput == null || limitInput === '' ? null : Number(limitInput);
+    if (spendingLimit !== null && (!Number.isFinite(spendingLimit) || spendingLimit < 0)) {
+      return res.status(400).json({ error: 'Spending limit must be a non-negative amount' });
+    }
 
     const itineraryColumns = await getItineraryAttractionColumns();
     const hasDayNumber = itineraryColumns.has('day_number');
@@ -800,21 +825,34 @@ export const getItineraryBudgetBreakdown = async (req, res) => {
     });
 
     const maxDay = Math.max(...Object.keys(itemsByDay).map(Number), 1);
-    const durationDays = itinerary.duration_days || maxDay || 1;
-    const perDayBudget = durationDays > 0 ? (parseFloat(itinerary.total_budget || 0) / durationDays) : 0;
+    let dateDays = 0;
+    if (itinerary.start_date && itinerary.end_date) {
+      const start = new Date(itinerary.start_date);
+      const end = new Date(itinerary.end_date);
+      const diff = Math.round((Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()) - Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())) / 86400000) + 1;
+      if (Number.isFinite(diff) && diff > 0) dateDays = Math.min(diff, 365);
+    }
+    const durationDays = Math.max(Number(itinerary.duration_days) || 0, maxDay, dateDays, 1);
+    const perDayBudget = spendingLimit === null ? null : spendingLimit / durationDays;
 
     const breakdown = Array.from({ length: durationDays }, (_, i) => i + 1).map(day => {
-      const estimatedNeed = farePerDay + foodPerDay + otherPerDay;
-      const balance = perDayBudget - estimatedNeed;
+      const attractionCost = (itemsByDay[day] || []).reduce((sum, item) => sum + (Number(item.estimated_cost) || 0), 0);
+      const daily = savedPerDay[day];
+      const fareCost = daily ? Number(daily.fareCost) || 0 : Object.keys(savedPerDay).length ? 0 : farePerDay;
+      const foodCost = daily ? Number(daily.foodCost) || 0 : Object.keys(savedPerDay).length ? 0 : foodPerDay;
+      const otherCost = daily ? Number(daily.otherCost) || 0 : Object.keys(savedPerDay).length ? 0 : otherPerDay;
+      const estimatedNeed = attractionCost + fareCost + foodCost + otherCost;
+      const balance = perDayBudget === null ? null : perDayBudget - estimatedNeed;
       return {
         day,
         dayBudget: perDayBudget,
-        fareCost: farePerDay,
-        foodCost: foodPerDay,
-        otherCost: otherPerDay,
+        attractionCost,
+        fareCost,
+        foodCost,
+        otherCost,
         estimatedNeed,
         balance,
-        fits: balance >= 0
+        fits: balance === null ? null : balance >= 0
       };
     });
 

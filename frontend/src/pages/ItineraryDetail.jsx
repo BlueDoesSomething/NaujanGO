@@ -14,6 +14,7 @@ import useMediaQuery from '../hooks/useMediaQuery';
 import { itineraryStopReport, itineraryBudgetReport, itineraryPrintReport } from '../utils/itineraryExports';
 import { stopCoordinates } from '../utils/itineraryStopCoordinates';
 import { itineraryStopPopup } from '../utils/itineraryStopPopup';
+import { estimateDailyCosts } from '../utils/itineraryBudget';
 import './ItineraryDetail.css';
 
 const API_BASE_URL = getApiBaseUrl();
@@ -121,13 +122,14 @@ const ItineraryDetail = () => {
   const gpsWatchIdRef = useRef(null);
   const [budgetAssumptions, setBudgetAssumptions] = useState({
     foodPerDay: 300,
-    otherPerDay: 100
+    otherPerDay: 100,
+    spendingLimit: '',
+    perDay: {}
   });
   // Restore saved assumptions (including farePerDay) when itinerary loads
   const assumptionsRestoredRef = useRef(false);
   const [globalTransportMode, setGlobalTransportMode] = useState('jeepney');
   const [farePerDay, setFarePerDay] = useState(null);
-  const [serverBreakdown, setServerBreakdown] = useState(null);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState(null);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [archiving, setArchiving] = useState(false);
@@ -139,6 +141,9 @@ const ItineraryDetail = () => {
     setArchiveError('');
     setSelectedDay(1);
     setSelectedStopId(null);
+    assumptionsRestoredRef.current = false;
+    setFarePerDay(null);
+    setBudgetAssumptions({ foodPerDay: 300, otherPerDay: 100, spendingLimit: '', perDay: {} });
     loadItinerary();
     loadStatistics();
     getUserLocation();
@@ -167,11 +172,13 @@ const ItineraryDetail = () => {
           const saved = typeof data.budget_assumptions === 'string'
             ? JSON.parse(data.budget_assumptions)
             : data.budget_assumptions;
-          if (saved.foodPerDay != null || saved.otherPerDay != null) {
+          if (saved.foodPerDay != null || saved.otherPerDay != null || saved.spendingLimit != null || saved.perDay) {
             setBudgetAssumptions(prev => ({
               ...prev,
               ...(saved.foodPerDay != null && { foodPerDay: saved.foodPerDay }),
               ...(saved.otherPerDay != null && { otherPerDay: saved.otherPerDay }),
+              ...(saved.spendingLimit != null && { spendingLimit: saved.spendingLimit }),
+              ...(saved.perDay && { perDay: saved.perDay }),
             }));
           }
           if (saved.farePerDay != null) setFarePerDay(saved.farePerDay);
@@ -261,9 +268,10 @@ const ItineraryDetail = () => {
         headers: { 'Content-Type': 'application/json', ...csrfHeaders() },
         credentials: 'include',
         body: JSON.stringify({
-          farePerDay: farePerDay !== null ? farePerDay : 0,
+          farePerDay: farePerDay !== null ? farePerDay : calculateDefaultFarePerDay(),
           foodPerDay: parseFloat(budgetAssumptions.foodPerDay) || 0,
-          otherPerDay: parseFloat(budgetAssumptions.otherPerDay) || 0
+          otherPerDay: parseFloat(budgetAssumptions.otherPerDay) || 0,
+          dailyCosts: displayedBreakdown.map(({ day, fareCost, foodCost, otherCost }) => ({ day, fareCost, foodCost, otherCost }))
         })
       });
       
@@ -272,20 +280,6 @@ const ItineraryDetail = () => {
         setItinerary(prev => ({ ...prev, total_budget: data.total_budget }));
         alert(`${t('budget_recalculated')}: ₱${data.total_budget.toFixed(2)}`);
         loadStatistics(); // Reload statistics
-
-        // Fetch server-side per-day breakdown with current assumptions
-        try {
-          const breakdownResp = await fetch(`${API_BASE_URL}/api/itinerary/${id}/budget-breakdown?farePerDay=${encodeURIComponent(farePerDay !== null ? farePerDay : 0)}&foodPerDay=${encodeURIComponent(budgetAssumptions.foodPerDay || 0)}&otherPerDay=${encodeURIComponent(budgetAssumptions.otherPerDay || 0)}`, {
-            credentials: 'include'
-          });
-
-          if (breakdownResp.ok) {
-            const bd = await breakdownResp.json();
-            setServerBreakdown(bd);
-          }
-        } catch (err) {
-          console.warn('Failed to fetch server budget breakdown', err);
-        }
       } else {
         alert(t('failed_recalculate_budget'));
       }
@@ -445,31 +439,35 @@ const ItineraryDetail = () => {
 
   const dayBreakdown = useMemo(() => {
     const durationDays = dayNumbers.length;
-    const perDayBudget = durationDays > 0 ? (parseFloat(itinerary?.total_budget || 0) / durationDays) : 0;
     const mode = TRANSPORT_MODES[globalTransportMode] || TRANSPORT_MODES.jeepney;
     const totalDist = parseFloat(itinerary?.total_distance || 0);
-    const kmPerDay = durationDays > 0 ? totalDist / durationDays : 20;
+    const kmPerDay = totalDist / durationDays;
     const suggestedFare = Math.ceil(mode.base + kmPerDay * mode.perKm);
     const resolvedFare = farePerDay !== null ? farePerDay : suggestedFare;
-    const foodPerDayVal = Number(budgetAssumptions.foodPerDay) || 0;
-    const otherPerDayVal = Number(budgetAssumptions.otherPerDay) || 0;
-
-    const days = Array.from({ length: durationDays }, (_, i) => i + 1);
-    const breakdown = days.map(day => {
-      const fareCost = resolvedFare;
-      const foodCost = foodPerDayVal;
-      const otherCost = otherPerDayVal;
-      const attractionCost = (itemsByDay[day] || []).reduce((sum, item) => sum + (parseFloat(item.estimated_cost) || 0), 0);
-      const estimatedNeed = fareCost + foodCost + otherCost + attractionCost;
-      const balance = perDayBudget - estimatedNeed;
-      const fits = balance >= 0;
-      return { day, dayBudget: perDayBudget, fareCost, foodCost, otherCost, attractionCost, estimatedNeed, balance, fits };
-    });
-
-    return { perDayBudget, days: durationDays, breakdown };
+    const savedPerDay = budgetAssumptions.perDay || {};
+    const useDailyValues = Object.keys(savedPerDay).length > 0;
+    return estimateDailyCosts({ days: dayNumbers, itemsByDay,
+      fareForDay: day => savedPerDay[day]?.fareCost ?? (useDailyValues ? 0 : resolvedFare),
+      foodForDay: day => savedPerDay[day]?.foodCost ?? (useDailyValues ? 0 : budgetAssumptions.foodPerDay),
+      otherForDay: day => savedPerDay[day]?.otherCost ?? (useDailyValues ? 0 : budgetAssumptions.otherPerDay),
+      spendingLimit: budgetAssumptions.spendingLimit });
   }, [itemsByDay, itinerary, budgetAssumptions, globalTransportMode, farePerDay, dayNumbers.length]);
 
-  const displayedBreakdown = serverBreakdown?.breakdown || dayBreakdown.breakdown;
+  const displayedBreakdown = dayBreakdown;
+  const dailyFieldValue = (field, fallback) => {
+    const rows = Object.values(budgetAssumptions.perDay || {});
+    if (!rows.length) return fallback;
+    const first = Number(rows[0][field]) || 0;
+    return rows.every(row => (Number(row[field]) || 0) === first) ? first : '';
+  };
+  const updateDailyAssumption = (field, value) => {
+    setBudgetAssumptions(prev => ({ ...prev,
+      ...(field === 'foodCost' ? { foodPerDay: value } : field === 'otherCost' ? { otherPerDay: value } : {}),
+      perDay: Object.keys(prev.perDay || {}).length
+        ? Object.fromEntries(dayNumbers.map(day => [day, { ...prev.perDay[day], [field]: Number(value) || 0 }]))
+        : {}
+    }));
+  };
 
   const toggleCategoryFilter = (category) => {
     if (!category) return setActiveCategoryFilter(null);
@@ -615,7 +613,7 @@ const ItineraryDetail = () => {
         <div style={styles.statCard}>
           <Icons.MoneyIcon size={18} color="#f59e0b" />
           <div>
-            <div style={styles.statLabel}>{t('budget')}</div>
+            <div style={styles.statLabel}>Est. trip cost</div>
             <div style={styles.statValue}>₱{(parseFloat(itinerary.total_budget) || 0).toFixed(2)}</div>
           </div>
         </div>
@@ -885,52 +883,57 @@ const ItineraryDetail = () => {
             {!statistics && (
               <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>
                 <Icons.MoneyIcon size={32} color="#d1d5db" />
-                <p style={{ marginTop: '0.75rem' }}>Budget statistics are loading or unavailable. You can still use the per-day breakdown below.</p>
+                <p style={{ marginTop: '0.75rem' }}>Stop cost categories are loading or unavailable. Daily estimates remain available below.</p>
               </div>
             )}
-            {statistics && <div style={styles.card}>
+            <div style={styles.card}>
               <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem'}}>
                 <h2>{t('budget_breakdown')}</h2>
               </div>
               
               {(() => {
-                const totalNeed = dayBreakdown.breakdown.reduce((s, d) => s + d.estimatedNeed, 0);
-                const totalBudget = parseFloat(itinerary.total_budget) || 0;
-                const balance = totalBudget - totalNeed;
-                return (
+                const totalNeed = displayedBreakdown.reduce((s, d) => s + d.estimatedNeed, 0);
+                const parsedLimit = Number(budgetAssumptions.spendingLimit);
+                const limit = budgetAssumptions.spendingLimit == null || budgetAssumptions.spendingLimit === '' || !Number.isFinite(parsedLimit) || parsedLimit < 0 ? null : parsedLimit;
+                const balance = limit === null ? null : limit - totalNeed;
+                const savedEstimate = Number(itinerary.total_budget) || 0;
+                return (<>
                   <div style={styles.budgetSummary}>
                     <div style={styles.budgetItem}>
-                      <span>{t('total_budget')}</span>
-                      <strong>₱{totalBudget.toFixed(2)}</strong>
+                      <span>Saved trip estimate</span>
+                      <strong>₱{savedEstimate.toFixed(2)}</strong>
                     </div>
                     <div style={styles.budgetItem}>
                       <span>Est. Total Need</span>
-                      <strong style={{ color: totalNeed > totalBudget ? '#dc2626' : '#16a34a' }}>₱{totalNeed.toFixed(2)}</strong>
+                      <strong>₱{totalNeed.toFixed(2)}</strong>
                     </div>
-                    <div style={styles.budgetItem}>
-                      <span>Balance</span>
+                    {balance !== null && <div style={styles.budgetItem}>
+                      <span>Remaining from spending limit</span>
                       <strong style={{ color: balance >= 0 ? '#16a34a' : '#dc2626' }}>{balance >= 0 ? '+' : ''}₱{balance.toFixed(2)}</strong>
-                    </div>
+                    </div>}
                     {itinerary.actual_cost > 0 && (
                       <div style={styles.budgetItem}>
                         <span>{t('actual_cost')}</span>
-                        <strong>₱{(itinerary.actual_cost).toFixed(2)}</strong>
+                        <strong>₱{Number(itinerary.actual_cost).toFixed(2)}</strong>
                       </div>
                     )}
                   </div>
-                );
+                  {Math.abs(savedEstimate - totalNeed) > 0.01 && <p style={{ fontSize: '0.8rem', color: '#92400e', marginTop: '0.75rem' }}>
+                    The saved estimate differs from these current assumptions. Refresh totals to update it; save assumptions to keep your daily values.
+                  </p>}
+                </>);
               })()}
 
               <div style={{marginTop: '0.75rem'}}>
                 <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem'}}>
                   <span style={styles.budgetActionHeader}>Budget actions</span>
-                  <Tooltip id="budget-actions" text="Refresh totals recalculates the total budget from items and daily assumptions. Save assumptions remembers your fare, food, and other daily estimates." />
+                  <Tooltip id="budget-actions" text="Refresh totals updates the saved cost estimate. Save assumptions remembers daily estimates and your optional spending limit." />
                 </div>
                 <div style={styles.budgetActionGrid}>
                 <button
                   onClick={recalculateBudget}
                   style={styles.budgetActionBtn}
-                  title="Recalculates total budget from all items and daily budget assumptions (fare, food, other)">
+                  title="Updates the saved trip cost estimate from stops and daily estimates">
                   <Icons.ChartLineUpIcon size={14} /> Refresh totals
                 </button>
                 <button
@@ -942,7 +945,7 @@ const ItineraryDetail = () => {
                         credentials: 'include',
                         body: JSON.stringify({
                           ...budgetAssumptions,
-                          ...(farePerDay !== null && { farePerDay })
+                          farePerDay: farePerDay !== null ? farePerDay : calculateDefaultFarePerDay()
                         })
                       });
                       if (resp.ok) {
@@ -970,11 +973,18 @@ const ItineraryDetail = () => {
               </div>
 
               <div style={styles.budgetToolCaption}>
-                <strong>Budget tools:</strong> Refresh totals updates the saved itinerary budget from its items. Save assumptions remembers your fare, food, and other daily estimates for this itinerary. Export CSV downloads the day-by-day budget table.
+                <strong>Budget tools:</strong> Refresh totals updates the saved trip cost estimate. Save assumptions remembers your estimates and optional spending limit. The estimate is not a spending limit. Export CSV downloads the day-by-day cost table.
               </div>
 
               <div style={styles.budgetSubsection}>
-                <h3 style={styles.budgetSubsectionTitle}>{L('per_day_budget_fit','Per-day Budget Fit')}</h3>
+                <h3 style={styles.budgetSubsectionTitle}>Daily cost estimates</h3>
+                {Object.keys(budgetAssumptions.perDay || {}).length > 0 && <p style={{ fontSize: '0.8rem', color: '#6b7280' }}>Showing per-day estimates saved in Builder. Editing a daily assumption below applies the new value to all days for that category.</p>}
+                <label style={{ ...styles.assumptionField, display: 'grid', maxWidth: '280px', marginBottom: '1rem' }}>
+                  <span style={styles.assumptionLabel}>Optional trip spending limit (₱)</span>
+                  <input type="number" min="0" step="0.01" placeholder="No limit set" value={budgetAssumptions.spendingLimit ?? ''}
+                    onChange={e => setBudgetAssumptions(prev => ({ ...prev, spendingLimit: e.target.value }))} style={styles.assumptionInput} />
+                </label>
+                <p style={{ fontSize: '0.8rem', color: '#6b7280' }}>If set, the trip limit is divided equally across {dayNumbers.length} days for the daily comparison. Save assumptions to keep it.</p>
 
                 {/* Fare suggestion cards */}
                 <div style={{ marginBottom: '1rem' }}>
@@ -996,7 +1006,12 @@ const ItineraryDetail = () => {
                       const high = Math.ceil(mode.base + kmPerDay * mode.perKm * 1.4);
                       const isSelected = globalTransportMode === v.key;
                       return (
-                        <div key={v.key} onClick={() => { setGlobalTransportMode(v.key); setFarePerDay(null); }}
+                        <div key={v.key} onClick={() => {
+                          setGlobalTransportMode(v.key);
+                          setFarePerDay(null);
+                          const suggested = Math.ceil(mode.base + (dist / days) * mode.perKm);
+                          updateDailyAssumption('fareCost', suggested);
+                        }}
                           style={{ position: 'relative', overflow: 'hidden', padding: '0.65rem 0.6rem 0.65rem 0.85rem', borderRadius: '10px', background: '#fff', border: isSelected ? `2px solid ${v.color}` : '1px solid #fde68a', boxShadow: isSelected ? `0 0 0 3px ${v.color}22` : 'none', cursor: 'pointer' }}
                         >
                           <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: v.color, borderRadius: '10px 0 0 10px' }} />
@@ -1017,26 +1032,27 @@ const ItineraryDetail = () => {
                   <div style={styles.assumptionField}>
                     <label style={styles.assumptionLabel}>🚌 Fare / Day</label>
                     <input type="number" min="0"
-                      value={farePerDay !== null ? farePerDay : calculateDefaultFarePerDay()}
-                      onChange={e => setFarePerDay(parseFloat(e.target.value) || 0)}
+                      value={dailyFieldValue('fareCost', farePerDay !== null ? farePerDay : calculateDefaultFarePerDay())}
+                      placeholder="Varies by day"
+                      onChange={e => { setFarePerDay(parseFloat(e.target.value) || 0); updateDailyAssumption('fareCost', e.target.value); }}
                       style={styles.assumptionInput}
                     />
-                    <span style={{ fontSize: '0.7rem', color: '#6b7280' }}>{farePerDay !== null ? 'Manual' : 'âš¡ Auto-suggested'}</span>
+                    <span style={{ fontSize: '0.7rem', color: '#6b7280' }}>{Object.keys(budgetAssumptions.perDay || {}).length ? 'Saved daily estimates' : farePerDay !== null ? 'Manual' : 'Auto-suggested'}</span>
                   </div>
                   <div style={styles.assumptionField}>
                     <label style={styles.assumptionLabel}>{L('food_per_day','Food / Day')}</label>
-                    <input type="number" value={budgetAssumptions.foodPerDay} onChange={e => setBudgetAssumptions(prev => ({ ...prev, foodPerDay: e.target.value }))} style={styles.assumptionInput} />
+                    <input type="number" min="0" value={dailyFieldValue('foodCost', budgetAssumptions.foodPerDay)} placeholder="Varies by day" onChange={e => updateDailyAssumption('foodCost', e.target.value)} style={styles.assumptionInput} />
                   </div>
                   <div style={styles.assumptionField}>
                     <label style={styles.assumptionLabel}>{L('other_per_day','Other / Day')}</label>
-                    <input type="number" value={budgetAssumptions.otherPerDay} onChange={e => setBudgetAssumptions(prev => ({ ...prev, otherPerDay: e.target.value }))} style={styles.assumptionInput} />
+                    <input type="number" min="0" value={dailyFieldValue('otherCost', budgetAssumptions.otherPerDay)} placeholder="Varies by day" onChange={e => updateDailyAssumption('otherCost', e.target.value)} style={styles.assumptionInput} />
                   </div>
                 </div>
 
                 <div style={{marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '2px solid #f0f0f0'}}>
                   <div style={{display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem'}}>
                     <h3 style={{margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1f2937'}}>Day-by-Day Budget Breakdown</h3>
-                    <Tooltip id="breakdown-help" text="Shows what you need to spend each day: Transportation (Fare) + Attraction Entries + Food + Other costs. Compare with your Daily Budget to see if you're within budget." />
+                    <Tooltip id="breakdown-help" text="Estimated daily cost includes stops, fare, food and other expenses. A daily comparison appears only when you set a spending limit." />
                   </div>
 
                   {displayedBreakdown.map(d => (
@@ -1044,74 +1060,72 @@ const ItineraryDetail = () => {
                       <div style={{flex: 1}}>
                         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem'}}>
                           <strong style={{fontSize: '1rem', color: '#1f2937'}}>{L('day','Day')} {d.day}</strong>
-                          <span style={{fontSize: '0.85rem', color: '#666', backgroundColor: '#f5f5f5', padding: '0.35rem 0.65rem', borderRadius: '12px'}}>
-                            {d.fits ? '✓ Within budget' : '⚠ Over budget'}
-                          </span>
+                          {d.fits !== null && <span style={{fontSize: '0.85rem', color: '#666', backgroundColor: '#f5f5f5', padding: '0.35rem 0.65rem', borderRadius: '12px'}}>
+                            {d.fits ? '✓ Within limit' : '⚠ Over limit'}
+                          </span>}
                         </div>
                         
                         <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem'}}>
                           <div style={{padding: '0.75rem', backgroundColor: '#f0fdf4', borderRadius: '8px', border: '1px solid #dcfce7'}}>
                             <div style={{fontSize: '0.8rem', color: '#22863a', fontWeight: 600}}>🚌 Transport</div>
-                            <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#16a34a', marginTop: '0.25rem'}}>₱{(d.fareCost || 0).toFixed(0)}</div>
+                             <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#16a34a', marginTop: '0.25rem'}}>₱{d.fareCost.toFixed(2)}</div>
                           </div>
                           
                           <div style={{padding: '0.75rem', backgroundColor: '#fef3c7', borderRadius: '8px', border: '1px solid #fde68a'}}>
                             <div style={{fontSize: '0.8rem', color: '#92400e', fontWeight: 600}}>🎟️ Attractions</div>
-                            <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#d97706', marginTop: '0.25rem'}}>₱{(d.attractionCost || 0).toFixed(0)}</div>
+                             <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#d97706', marginTop: '0.25rem'}}>₱{d.attractionCost.toFixed(2)}</div>
                           </div>
                           
                           <div style={{padding: '0.75rem', backgroundColor: '#e0e7ff', borderRadius: '8px', border: '1px solid #c7d2fe'}}>
                             <div style={{fontSize: '0.8rem', color: '#3730a3', fontWeight: 600}}>🍽️ Food</div>
-                            <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#4f46e5', marginTop: '0.25rem'}}>₱{(d.foodCost || 0).toFixed(0)}</div>
+                             <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#4f46e5', marginTop: '0.25rem'}}>₱{d.foodCost.toFixed(2)}</div>
                           </div>
                           
                           <div style={{padding: '0.75rem', backgroundColor: '#f3e8ff', borderRadius: '8px', border: '1px solid #e9d5ff'}}>
                             <div style={{fontSize: '0.8rem', color: '#6b21a8', fontWeight: 600}}>✨ Other</div>
-                            <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#a855f7', marginTop: '0.25rem'}}>₱{(d.otherCost || 0).toFixed(0)}</div>
+                             <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#a855f7', marginTop: '0.25rem'}}>₱{d.otherCost.toFixed(2)}</div>
                           </div>
                         </div>
 
                         <div style={{marginTop: '0.75rem', padding: '0.85rem', backgroundColor: '#ecfdf3', borderRadius: '8px', border: '2px solid #bbf7d0'}}>
                           <div style={{fontSize: '0.8rem', color: '#166534', fontWeight: 600}}>Total You Need This Day</div>
-                          <div style={{fontSize: '1.35rem', fontWeight: 900, color: '#15803d', marginTop: '0.2rem'}}>₱{(d.estimatedNeed || 0).toFixed(0)}</div>
+                           <div style={{fontSize: '1.35rem', fontWeight: 900, color: '#15803d', marginTop: '0.2rem'}}>₱{d.estimatedNeed.toFixed(2)}</div>
                         </div>
                       </div>
 
-                      <div style={{width: '200px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.5rem'}}>
+                      {d.dayBudget !== null && <div style={{width: '200px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.5rem'}}>
                         <div>
-                          <div style={{fontSize: '0.75rem', color: '#999', marginBottom: '0.3rem', fontWeight: 600}}>YOUR BUDGET THIS DAY</div>
-                          <strong style={{fontSize: '1.25rem', color: '#1f2937'}}>₱{(d.dayBudget || 0).toFixed(0)}</strong>
+                          <div style={{fontSize: '0.75rem', color: '#999', marginBottom: '0.3rem', fontWeight: 600}}>DAILY SHARE OF SPENDING LIMIT</div>
+                          <strong style={{fontSize: '1.25rem', color: '#1f2937'}}>₱{d.dayBudget.toFixed(2)}</strong>
                         </div>
                         <div style={{padding: '0.5rem', backgroundColor: d.fits ? '#e7f6e9' : '#fbe4e6', borderRadius: '6px'}}>
                           <span style={{fontSize: '0.75rem', fontWeight: 700, color: d.fits ? '#16a34a' : '#dc2626'}}>
-                            {d.fits ? `✓ ₱${Math.abs(d.balance || 0).toFixed(0)} extra` : `✗ ₱${Math.abs(d.balance || 0).toFixed(0)} short`}
+                            {d.fits ? `✓ ₱${Math.abs(d.balance).toFixed(2)} extra` : `✗ ₱${Math.abs(d.balance).toFixed(2)} short`}
                           </span>
                         </div>
-                      </div>
+                      </div>}
                     </div>
                   ))}
                 </div>
               </div>
               
               {/* By Category section */}
-              {(() => {
+              {statistics && (() => {
                 const totalEstimated = calculateTotalEstimatedBudget();
-                const totalBudget = parseFloat(itinerary.total_budget) || 0;
                 const catColors = ['#2e7d32','#0891b2','#7c3aed','#d97706','#dc2626','#0d9488','#9333ea','#ea580c'];
-                const overBudget = totalEstimated > totalBudget;
                 return (
                   <div style={{ marginTop: '2rem', paddingTop: '1.5rem', borderTop: '2px solid #f0f0f0' }}>
                     {/* Section header */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                         <Icons.ChartPieIcon size={18} color="#2e7d32" />
-                        <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#1a1a1a' }}>Spending by Category</span>
-                        <Tooltip id="spending-category" text="Groups spending by category. Click a card to highlight matching stops in Trip Plan." />
+                        <span style={{ fontWeight: 700, fontSize: '1.05rem', color: '#1a1a1a' }}>Stop costs by category</span>
+                        <Tooltip id="spending-category" text="Groups estimated stop costs only; fare, food and other costs are shown in the daily estimates. Click a card to highlight matching stops in Trip Plan." />
                         <span style={{ fontSize: '0.78rem', color: '#6b7280', fontWeight: 400 }}>· click a card to highlight stops in Trip Plan</span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                        <span style={{ fontSize: '0.85rem', color: overBudget ? '#dc2626' : '#16a34a', fontWeight: 700, background: overBudget ? '#fef2f2' : '#f0fdf4', padding: '0.3rem 0.75rem', borderRadius: '20px', border: `1px solid ${overBudget ? '#fecaca' : '#bbf7d0'}` }}>
-                          {overBudget ? '⚠ Over budget' : '✓ Within budget'} · ₱{totalEstimated.toFixed(0)} / ₱{totalBudget.toFixed(0)}
+                        <span style={{ fontSize: '0.85rem', color: '#166534', fontWeight: 700, background: '#f0fdf4', padding: '0.3rem 0.75rem', borderRadius: '20px', border: '1px solid #bbf7d0' }}>
+                          Estimated stop costs · ₱{totalEstimated.toFixed(0)}
                         </span>
                         {activeCategoryFilter && (
                           <button onClick={() => setActiveCategoryFilter(null)} style={{ fontSize: '0.8rem', padding: '0.3rem 0.75rem', borderRadius: '20px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
@@ -1137,7 +1151,7 @@ const ItineraryDetail = () => {
                         const color = catColors[i % catColors.length];
                         const est = parseFloat(category.estimated_total || 0);
                         const pct = totalEstimated > 0 ? Math.round((est / totalEstimated) * 100) : 0;
-                        const budgetShare = totalBudget > 0 ? Math.min((est / totalBudget) * 100, 100) : 0;
+                        const budgetShare = totalEstimated > 0 ? (est / totalEstimated) * 100 : 0;
                         return (
                           <div
                             key={catKey}
@@ -1176,7 +1190,7 @@ const ItineraryDetail = () => {
                                 <div style={{ height: '100%', width: `${budgetShare}%`, background: color, borderRadius: '999px', transition: 'width 0.3s' }} />
                               </div>
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.3rem', fontSize: '0.7rem', color: '#9ca3af' }}>
-                                <span>of total budget</span>
+                                <span>of stop costs</span>
                                 <span>{budgetShare.toFixed(0)}%</span>
                               </div>
                             </div>
@@ -1200,7 +1214,7 @@ const ItineraryDetail = () => {
                   </div>
                 );
               })()}
-            </div>}
+            </div>
           </div>
         )}
 

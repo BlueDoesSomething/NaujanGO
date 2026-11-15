@@ -41,17 +41,17 @@ export const itineraryStopReport = ({ itinerary = {}, items = [], draft = false 
 });
 
 export const itineraryBudgetReport = (rows = [], name = 'itinerary') => ({
-  title: 'Daily estimated budget', filename: `${name}-budget-breakdown`,
+  title: 'Daily cost estimate', filename: `${name}-budget-breakdown`,
   documentType: 'BUDGET BREAKDOWN', pdfLandscape: true,
   summary: [['Trip', name], ['Days in breakdown', rows.length], ['Basis', 'Displayed estimates, not payments']],
-  columns: columns([['day', 'Day'], ['dayBudget', 'Allocated budget (PHP)'], ['attractionCost', 'Attractions (PHP)'],
+  columns: columns([['day', 'Day'], ['dayBudget', 'Daily share of spending limit (PHP)'], ['attractionCost', 'Stops (PHP)'],
     ['fareCost', 'Fare (PHP)'], ['foodCost', 'Food (PHP)'], ['otherCost', 'Other (PHP)'],
-    ['estimatedNeed', 'Estimated need (PHP)'], ['balance', 'Balance (PHP)'], ['fits', 'Within allocated budget']]),
-  printColumns: columns([['day', 'Day', 7], ['dayBudget', 'Allocated budget (PHP)', 14], ['attractionCost', 'Attractions (PHP)', 13],
-    ['fareCost', 'Fare (PHP)', 13], ['foodCost', 'Food (PHP)', 13], ['otherCost', 'Other (PHP)', 13], ['estimatedNeed', 'Estimated need (PHP)', 14], ['balance', 'Balance (PHP)', 13]]),
+    ['estimatedNeed', 'Estimated daily cost (PHP)'], ['balance', 'Remaining from limit (PHP)'], ['fits', 'Within limit']]),
+  printColumns: columns([['day', 'Day', 7], ['dayBudget', 'Daily share of limit (PHP)', 14], ['attractionCost', 'Stops (PHP)', 13],
+    ['fareCost', 'Fare (PHP)', 13], ['foodCost', 'Food (PHP)', 13], ['otherCost', 'Other (PHP)', 13], ['estimatedNeed', 'Estimated daily cost (PHP)', 14], ['balance', 'Remaining from limit (PHP)', 13]]),
   rows: rows.map(row => ({ ...Object.fromEntries(['day', 'dayBudget', 'attractionCost', 'fareCost', 'foodCost', 'otherCost', 'estimatedNeed', 'balance']
     .map(key => [key, amount(row[key])])), fits: row.fits == null ? '' : row.fits === true || Number(row.fits) === 1 ? 'Yes' : 'No' })),
-  notes: 'Estimates reflect the displayed assumptions, not actual payments. Blank values are not available. Exporting does not save assumptions.'
+  notes: 'Daily cost includes stops, fare, food and other estimates, not actual payments. Limit and balance are blank when no spending limit is set. Exporting does not save assumptions.'
 });
 
 export const itineraryPrintReport = ({ itinerary, items, budget = [], draft = false, totals = {} }) => {
@@ -65,18 +65,18 @@ export const itineraryPrintReport = ({ itinerary, items, budget = [], draft = fa
       columns: columns([['order', '#', 6], ['destination', 'Destination', 32], ['details', 'Schedule / notes', 38], ['cost', 'Est. cost (PHP)', 14], ['completed', 'Visited', 10]]),
       rows: stops.rows.filter(row => row.day === day).map(row => ({ ...row, destination: [row.place || 'Unnamed stop', row.location].filter(Boolean).join('\n') })) }];
     if (costs) sections.push({ title: `Day ${day} · Budget estimate`,
-      notes: draft ? 'Daily estimated need covers fare, food and other costs. Attraction estimates are separate and included in the trip summary.' : 'Based on the displayed budget assumptions; these are estimates, not actual payments.',
+      notes: 'Daily estimated cost includes stops, fare, food and other costs. These are estimates, not actual payments.',
       columns: columns([['field', 'Category', 50], ['value', 'Estimate', 50]]),
       rows: [['Attractions', costs.attractionCost], ['Fare', costs.fareCost], ['Food', costs.foodCost], ['Other', costs.otherCost],
-        ['Estimated need', costs.estimatedNeed], ...(costs.dayBudget != null ? [['Allocated budget', costs.dayBudget]] : []),
-        ...(costs.balance != null ? [['Balance', costs.balance]] : [])].map(([field, value]) => ({ field, value: money(value) })) });
+        ['Estimated daily cost', costs.estimatedNeed], ...(costs.dayBudget != null ? [['Daily share of spending limit', costs.dayBudget]] : []),
+        ...(costs.balance != null ? [['Remaining from limit', costs.balance]] : [])].map(([field, value]) => ({ field, value: money(value) })) });
     return sections;
   });
   return {
     title: itinerary.name || 'Untitled itinerary', filename: itinerary.name ? `${itinerary.name}-itinerary-summary` : 'itinerary-summary', documentType: 'ITINERARY SUMMARY',
     subtitle: `${draft ? 'Current builder draft · Unsaved changes are included, not saved.' : `Saved itinerary${itinerary.itinerary_id ? ` #${itinerary.itinerary_id}` : ''}`}\n${itinerary.description || ''}`,
     summary: [['Trip status', statusLabel(itinerary.status)], ['Travel dates', `${dateLabel(itinerary.start_date || itinerary.startDate)} — ${dateLabel(itinerary.end_date || itinerary.endDate)}`],
-      ['Days / stops', `${itinerary.duration_days || itinerary.durationDays || days.length || 1} day(s) · ${items.length} stop(s)`], ['Estimated trip budget', money(totals.budget ?? itinerary.total_budget)],
+      ['Days / stops', `${itinerary.duration_days || itinerary.durationDays || days.length || 1} day(s) · ${items.length} stop(s)`], ['Estimated trip cost', money(totals.budget ?? itinerary.total_budget)],
       ['Travel estimates', `${totals.distance ?? itinerary.total_distance ?? 'Not available'} km · ${totals.time ?? itinerary.total_time ?? 'Not available'} minutes`],
       ['Visited stops', `${stops.rows.filter(row => row.completed === 'Yes').length} of ${items.length}`]],
     sections: [stops, dailyBudget], pdfSections: pdfSections.length ? pdfSections : [stops, dailyBudget],

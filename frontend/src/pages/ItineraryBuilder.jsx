@@ -13,6 +13,7 @@ import useMediaQuery from '../hooks/useMediaQuery';
 import { downloadReportCsv, shareSavedTrip } from '../utils/exportFiles';
 import ExportPdfButton from '../components/ExportPdfButton';
 import { itineraryStopReport, itineraryPrintReport } from '../utils/itineraryExports';
+import { estimateDailyCosts } from '../utils/itineraryBudget';
 import './ItineraryBuilder.css';
 
 const API_BASE_URL = getApiBaseUrl();
@@ -309,6 +310,24 @@ const ItineraryBuilder = () => {
     const defaultPerDayBudget = plannedDays > 0
       ? parseFloat((existingTotalBudget / plannedDays).toFixed(2))
       : 0;
+    const savedAssumptions = typeof itineraryData.budget_assumptions === 'string'
+      ? JSON.parse(itineraryData.budget_assumptions) : itineraryData.budget_assumptions;
+    if (savedAssumptions?.perDay && Object.keys(savedAssumptions.perDay).length) {
+      const perDay = savedAssumptions.perDay;
+      setFarePerDay(Object.fromEntries(Object.entries(perDay).map(([day, row]) => [day, Number(row.fareCost) || 0])));
+      setFoodPerDay(Object.fromEntries(Object.entries(perDay).map(([day, row]) => [day, Number(row.foodCost) || 0])));
+      setOtherPerDay(Object.fromEntries(Object.entries(perDay).map(([day, row]) => [day, Number(row.otherCost) || 0])));
+      Object.keys(perDay).forEach(day => { fareOverriddenRef.current[day] = true; });
+    } else if (savedAssumptions) {
+      const days = [...new Set((itineraryData.items || []).map(item => Number(item.day_number) || 1))];
+      const forDays = value => Object.fromEntries(days.map(day => [day, Number(value) || 0]));
+      if (savedAssumptions.farePerDay != null) {
+        setFarePerDay(forDays(savedAssumptions.farePerDay));
+        days.forEach(day => { fareOverriddenRef.current[day] = true; });
+      }
+      if (savedAssumptions.foodPerDay != null) setFoodPerDay(forDays(savedAssumptions.foodPerDay));
+      if (savedAssumptions.otherPerDay != null) setOtherPerDay(forDays(savedAssumptions.otherPerDay));
+    }
     
     // Set basic itinerary info
     setItinerary({
@@ -319,7 +338,8 @@ const ItineraryBuilder = () => {
       durationDays: itineraryData.duration_days || 1,
       status: itineraryData.status || 'draft',
       visibility: itineraryData.visibility || 'private',
-      totalBudget: itineraryData.total_budget || 0
+      totalBudget: itineraryData.total_budget || 0,
+      spendingLimit: savedAssumptions?.spendingLimit ?? null
     });
     
     // Load items by day if available
@@ -469,7 +489,9 @@ const ItineraryBuilder = () => {
       });
       
       // Add daily budget breakdowns (Fare, Food, Other)
-      const fareCost = farePerDay[day] !== undefined ? farePerDay[day] : 0;
+      const mode = TRANSPORT_MODES[transportPerDay[day] || globalTransportMode];
+      const suggestedFare = Math.ceil(mode.base + (routeInfo ? routeInfo.distance / Math.max(itinerary.durationDays, 1) : 0) * mode.perKm);
+      const fareCost = farePerDay[day] !== undefined ? farePerDay[day] : suggestedFare;
       const foodCost = foodPerDay[day] !== undefined ? foodPerDay[day] : DEFAULT_FOOD;
       const otherCost = otherPerDay[day] !== undefined ? otherPerDay[day] : DEFAULT_OTHER;
       
@@ -540,8 +562,23 @@ const ItineraryBuilder = () => {
       }
       
       if (result.data?.success || result.data?.itinerary_id) {
+        const savedId = result.data.itinerary_id || editingItineraryId;
+        const perDay = Object.fromEntries(Object.keys(itemsByDay).map(day => [day, {
+          fareCost: dayBudgetBreakdown[day].fareCost,
+          foodCost: dayBudgetBreakdown[day].foodCost,
+          otherCost: dayBudgetBreakdown[day].otherCost
+        }]));
+        try {
+          await apiPost(`/itinerary/${savedId}/save-assumptions`, {
+            farePerDay: 0, foodPerDay: DEFAULT_FOOD, otherPerDay: DEFAULT_OTHER,
+            perDay, spendingLimit: itinerary.spendingLimit ?? null
+          });
+        } catch (error) {
+          console.error('Itinerary saved but daily estimates could not be saved:', error);
+          alert('Trip saved, but daily cost estimates could not be saved. Please review them in the Budget tab.');
+        }
         alert(editingItineraryId ? t('itinerary_updated') : t('itinerary_saved'));
-        navigate(`/itinerary/${result.data.itinerary_id || editingItineraryId}`);
+        navigate(`/itinerary/${savedId}`);
         loadSavedItineraries();
       } else {
         alert(`${t('failed_save')}: ${result.data?.error || t('unknown_error')}`);
@@ -572,22 +609,20 @@ const ItineraryBuilder = () => {
 
   const totals = calculateTotals();
   const dayBudgetBreakdown = useMemo(() => {
-    const result = {};
-    Object.keys(itemsByDay).forEach((dayKey) => {
-      const day = parseInt(dayKey, 10) || 1;
-      const dayItems = itemsByDay[day] || [];
-      const attractionCost = dayItems.reduce((sum, item) => sum + (parseFloat(item.estimated_cost) || 0), 0);
-      const foodCost = foodPerDay[day] !== undefined ? foodPerDay[day] : DEFAULT_FOOD;
-      const otherCost = otherPerDay[day] !== undefined ? otherPerDay[day] : DEFAULT_OTHER;
-      const modeKey = transportPerDay[day] || globalTransportMode;
-      const mode = TRANSPORT_MODES[modeKey];
-      const kmPerDay = routeInfo ? (routeInfo.distance / Math.max(itinerary.durationDays, 1)) : 0;
-      const suggestedFare = Math.ceil(mode.base + (kmPerDay * mode.perKm));
-      const fareCost = farePerDay[day] !== undefined ? farePerDay[day] : suggestedFare;
-      const estimatedNeed = fareCost + foodCost + otherCost;
-      result[day] = { attractionCost, fareCost, foodCost, otherCost, estimatedNeed, modeKey };
+    const days = Object.keys(itemsByDay).map(Number);
+    const rows = estimateDailyCosts({
+      days, itemsByDay,
+      foodForDay: day => foodPerDay[day] !== undefined ? foodPerDay[day] : DEFAULT_FOOD,
+      otherForDay: day => otherPerDay[day] !== undefined ? otherPerDay[day] : DEFAULT_OTHER,
+      fareForDay: day => {
+        const modeKey = transportPerDay[day] || globalTransportMode;
+        const mode = TRANSPORT_MODES[modeKey];
+        const kmPerDay = routeInfo ? (routeInfo.distance / Math.max(itinerary.durationDays, 1)) : 0;
+        const suggestedFare = Math.ceil(mode.base + (kmPerDay * mode.perKm));
+        return farePerDay[day] !== undefined ? farePerDay[day] : suggestedFare;
+      }
     });
-    return result;
+    return Object.fromEntries(rows.map(row => [row.day, { ...row, modeKey: transportPerDay[row.day] || globalTransportMode }]));
   }, [itemsByDay, foodPerDay, otherPerDay, farePerDay, transportPerDay, globalTransportMode, routeInfo, itinerary.durationDays]);
 
   const currentDayBudget = dayBudgetBreakdown[currentDay] || {
@@ -604,7 +639,6 @@ const ItineraryBuilder = () => {
   const itineraryPdfReport = () => {
     const budget = Object.entries(dayBudgetBreakdown).map(([day, row]) => ({ day: Number(day), ...row }));
     const report = itineraryPrintReport({ itinerary, items: exportItems, budget, totals, draft: true });
-    report.sections[1].notes += ' Builder daily estimated need covers fare, food and other costs only; attraction estimates are listed separately and are included in the trip summary.';
     return report;
   };
   const shareItinerary = async () => {
@@ -1854,7 +1888,7 @@ const ItineraryBuilder = () => {
             <div style={styles.summaryItem}>
               <span style={{display:'flex',alignItems:'center',gap:'8px'}}>
                 <Icons.MoneyIcon size={16} color={THEME.textSecondary} />
-                Budget
+                 Est. trip cost
               </span>
               <strong>₱{totals.budget.toFixed(2)}</strong>
             </div>
@@ -2004,7 +2038,7 @@ const ItineraryBuilder = () => {
                     <div style={{display: 'flex', gap: '8px', flexWrap: 'wrap'}}>
                       <span style={{display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', backgroundColor: 'rgba(251, 191, 36, 0.12)', border: '1px solid rgba(251, 191, 36, 0.25)', fontSize: '12px', fontWeight: 600, color: THEME.accent}}>
                         <Icons.MoneyIcon size={11} />
-                        ₱{Number(saved.total_budget || 0).toFixed(2)}
+                         Est. cost ₱{Number(saved.total_budget || 0).toFixed(2)}
                       </span>
                       <span style={{display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '3px 8px', borderRadius: '6px', backgroundColor: saved.status === 'published' ? 'rgba(34, 197, 94, 0.12)' : 'rgba(99, 102, 241, 0.12)', border: `1px solid ${saved.status === 'published' ? 'rgba(34, 197, 94, 0.25)' : 'rgba(99, 102, 241, 0.25)'}`, fontSize: '12px', fontWeight: 600, color: saved.status === 'published' ? THEME.primary : '#818cf8', textTransform: 'capitalize'}}>
                         <span style={{width: '6px', height: '6px', borderRadius: '50%', backgroundColor: saved.status === 'published' ? THEME.primary : '#818cf8'}} />
