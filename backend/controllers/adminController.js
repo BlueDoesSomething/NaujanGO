@@ -21,6 +21,7 @@ import { updatePayAtPropertyBookingStatus } from '../services/payAtPropertyBooki
 import { ownerBookingMessages, postOwnerBookingMessage, bookingMessageLimiter } from './bookingMessagesController.js';
 import { CREDENTIAL_TYPES, credentialMatches, serializeCredentialProfile } from '../utils/businessCredentials.js';
 import { flagBusinessCredential, respondCredentialError } from '../services/businessCredentials.js';
+import { validateAdminStops, itineraryDateDays, AdminItineraryValidationError } from '../utils/adminItineraryStops.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -2327,7 +2328,7 @@ router.get('/itineraries/:id', async (req, res) => {
       FROM itinerary_attractions ia
       LEFT JOIN attractions a ON ia.attraction_id = a.id
       WHERE ia.itinerary_id = ?
-      ORDER BY ia.order_sequence
+       ORDER BY COALESCE(ia.day_number, 1), ia.order_sequence, ia.id
     `, [id]);
     
     itinerary.items = items;
@@ -2353,15 +2354,39 @@ router.delete('/itineraries/:id', async (req, res) => {
 // Update itinerary details (admin)
 router.put('/itineraries/:id', async (req, res) => {
   const { id } = req.params;
-  const { name, description, start_date, end_date, status } = req.body;
+  const { name, description, start_date, end_date, status, stops } = req.body;
+  if (!String(name || '').trim()) return res.status(400).json({ error: 'Itinerary name is required.' });
+  let connection;
 
   try {
-    const [result] = await db.promise().query(
+    const days = itineraryDateDays(start_date, end_date);
+    connection = await db.promise().getConnection();
+    await connection.beginTransaction();
+    const [rows] = await connection.query('SELECT itinerary_id FROM itineraries WHERE itinerary_id = ? FOR UPDATE', [id]);
+    if (!rows.length) {
+      await connection.rollback();
+      return res.status(404).json({ error: 'Itinerary not found' });
+    }
+    if (stops !== undefined) {
+      const [existing] = await connection.query('SELECT id, day_number FROM itinerary_attractions WHERE itinerary_id = ? FOR UPDATE', [id]);
+      const maxDay = days || 365;
+      const checked = validateAdminStops(stops, existing, maxDay);
+      const counts = new Map();
+      for (const stop of checked) {
+        const order = counts.get(stop.day) || 0;
+        counts.set(stop.day, order + 1);
+        await connection.query(
+          'UPDATE itinerary_attractions SET day_number = ?, order_sequence = ?, start_time = ?, latitude = ?, longitude = ? WHERE id = ? AND itinerary_id = ?',
+          [stop.day, order, stop.time, stop.lat, stop.lng, stop.id, id]
+        );
+      }
+    }
+    await connection.query(
       `UPDATE itineraries
        SET name = ?, description = ?, start_date = ?, end_date = ?, status = ?
        WHERE itinerary_id = ?`,
       [
-        name,
+        name.trim(),
         description || null,
         start_date || null,
         end_date || null,
@@ -2369,15 +2394,14 @@ router.put('/itineraries/:id', async (req, res) => {
         id
       ]
     );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Itinerary not found' });
-    }
-
+    await connection.commit();
     res.json({ success: true, message: 'Itinerary updated successfully' });
   } catch (error) {
+    if (connection) await connection.rollback();
     console.error('Update itinerary error:', error);
-    res.status(500).json({ error: 'Failed to update itinerary' });
+    res.status(error instanceof AdminItineraryValidationError ? 400 : 500).json({ error: error instanceof AdminItineraryValidationError ? error.message : 'Failed to update itinerary' });
+  } finally {
+    connection?.release();
   }
 });
 

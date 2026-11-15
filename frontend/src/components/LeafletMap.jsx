@@ -48,6 +48,7 @@ if (typeof document !== 'undefined') {
 
 const LeafletMap = ({
   center,
+  focusKey = null,
   zoom = 14,
   markers = [],
   routes = [],
@@ -135,6 +136,14 @@ const LeafletMap = ({
       mapInstanceRef.current.panTo(center, { animate: true, duration: 0.5 });
     }
   }, [center]);
+
+  // Explicit selection in a linked list may be very close to the current
+  // center; unlike ordinary prop updates it should still focus the marker.
+  useEffect(() => {
+    if (focusKey != null && mapInstanceRef.current && center) {
+      mapInstanceRef.current.panTo(center, { animate: true, duration: 0.4 });
+    }
+  }, [focusKey, center?.[0], center?.[1]]);
 
   // Update tile layer when URL changes
   useEffect(() => {
@@ -250,7 +259,7 @@ const LeafletMap = ({
 
     // Add new markers
     markers.forEach((marker, index) => {
-      if (marker.lat && marker.lng && mapInstanceRef.current) {
+      if (marker.lat != null && marker.lng != null && Number.isFinite(Number(marker.lat)) && Number.isFinite(Number(marker.lng)) && mapInstanceRef.current) {
         let icon;
         if (marker.iconHtml && !marker.draggable) {
           icon = L.divIcon({

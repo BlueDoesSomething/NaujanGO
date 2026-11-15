@@ -57,6 +57,13 @@ const CHATBOT_TRAINING_LANGUAGES = [
   { value: 'de', label: 'German' },
 ];
 
+const adminItineraryDayCount = (form) => {
+  if (form.start_date && form.end_date) {
+    return Math.round((Date.parse(`${form.end_date}T00:00:00Z`) - Date.parse(`${form.start_date}T00:00:00Z`)) / 86400000) + 1;
+  }
+  return 365;
+};
+
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -359,7 +366,8 @@ const AdminDashboard = () => {
     description: '',
     start_date: '',
     end_date: '',
-    status: 'planning'
+    status: 'planning',
+    stops: []
   });
   const [itinerarySaving, setItinerarySaving] = useState(false);
   const [viewingItinerary, setViewingItinerary] = useState(null);
@@ -2356,7 +2364,16 @@ const AdminDashboard = () => {
         description: response.data.description || '',
         start_date: response.data.start_date ? response.data.start_date.split('T')[0] : '',
         end_date: response.data.end_date ? response.data.end_date.split('T')[0] : '',
-        status: response.data.status || 'planning'
+        status: response.data.status || 'planning',
+        stops: (response.data.items || []).map((item) => ({
+          id: item.id,
+          name: item.custom_name || item.attraction_name || 'Unnamed Stop',
+          location: item.custom_location || item.attraction_location || '',
+          day_number: Number(item.day_number) || 1,
+          start_time: item.start_time ? String(item.start_time).slice(0, 5) : '',
+          latitude: item.latitude ?? '',
+          longitude: item.longitude ?? ''
+        }))
       });
     } catch (error) {
       console.error('Error loading itinerary:', error);
@@ -2369,16 +2386,37 @@ const AdminDashboard = () => {
 
     try {
       setItinerarySaving(true);
-      await api.put(`/admin/itineraries/${editingItinerary.itinerary_id}`, itineraryForm);
+      const { stops, ...details } = itineraryForm;
+      const days = adminItineraryDayCount(itineraryForm);
+      if (!Number.isInteger(days) || days < 1 || days > 365) throw new Error('Choose a valid date range (up to 365 days).');
+      if (stops.some((stop) => Number(stop.day_number) > days)) throw new Error('Move stops into the selected date range before saving.');
+      await api.put(`/admin/itineraries/${editingItinerary.itinerary_id}`, { ...details, stops: stops.map(({ id, day_number, start_time, latitude, longitude }) => ({ id, day_number, start_time, latitude, longitude })) });
       setEditingItinerary(null);
-      setItineraryForm({ name: '', description: '', start_date: '', end_date: '', status: 'planning' });
+      setItineraryForm({ name: '', description: '', start_date: '', end_date: '', status: 'planning', stops: [] });
       await loadItineraries();
     } catch (error) {
       console.error('Error saving itinerary:', error);
-      alert('Failed to save itinerary.');
+      alert(error.response?.data?.error || error.message || 'Failed to save itinerary.');
     } finally {
       setItinerarySaving(false);
     }
+  };
+
+  const updateAdminStop = (id, changes) => {
+    setItineraryForm((prev) => ({ ...prev, stops: prev.stops.map((stop) => stop.id === id ? { ...stop, ...changes } : stop) }));
+  };
+
+  const moveAdminStop = (id, direction) => {
+    setItineraryForm((prev) => {
+      const stops = [...prev.stops];
+      const index = stops.findIndex((stop) => stop.id === id);
+      const peers = stops.map((stop, i) => stop.day_number === stops[index]?.day_number ? i : -1).filter((i) => i >= 0);
+      const peerIndex = peers.indexOf(index);
+      const swapIndex = peers[peerIndex + direction];
+      if (swapIndex === undefined) return prev;
+      [stops[index], stops[swapIndex]] = [stops[swapIndex], stops[index]];
+      return { ...prev, stops };
+    });
   };
 
   const handleItineraryDelete = async (itineraryId) => {
@@ -3811,13 +3849,16 @@ const AdminDashboard = () => {
                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Itinerary Name</span>
                             <input type="text" value={itineraryForm.name} onChange={(e) => setItineraryForm({ ...itineraryForm, name: e.target.value })} className="gov-input" style={{ borderRadius:'8px' }} />
                           </label>
-                          <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
-                            <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Status</span>
-                            <select value={itineraryForm.status} onChange={(e) => setItineraryForm({ ...itineraryForm, status: e.target.value })} className="gov-input" style={{ borderRadius:'8px', cursor:'pointer' }}>
-                              <option value="planning">Planning</option>
-                              <option value="confirmed">Confirmed</option>
-                              <option value="completed">Completed</option>
-                              <option value="cancelled">Cancelled</option>
+                           <label style={{ display:'flex', flexDirection:'column', gap:'0.35rem' }}>
+                             <span style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Status</span>
+                             <select value={itineraryForm.status} onChange={(e) => setItineraryForm({ ...itineraryForm, status: e.target.value })} className="gov-input" style={{ borderRadius:'8px', cursor:'pointer' }}>
+                               <option value="draft">Draft</option>
+                               <option value="planned">Planned</option>
+                               <option value="in-progress">In progress</option>
+                               <option value="completed">Completed</option>
+                               <option value="cancelled">Cancelled</option>
+                               <option value="planning">Planning (legacy)</option>
+                               <option value="confirmed">Confirmed (legacy)</option>
                             </select>
                           </label>
                           <div />
@@ -3835,16 +3876,44 @@ const AdminDashboard = () => {
                           </label>
                         </div>
                       </div>
-                      {/* Stops preview */}
+                      {/* Stops used by both the trip timeline and its map */}
                       <div>
-                        <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Stops Preview</div>
-                        {editingItinerary.items && editingItinerary.items.length > 0 ? (
-                          <div style={{ display:'flex', flexDirection:'column', gap:'0.45rem' }}>
-                            {editingItinerary.items.map((item, idx) => (
-                              <div key={idx} style={{ display:'flex', alignItems:'center', gap:'0.65rem', padding:'0.6rem 0.85rem', background:'#f0faf4', border:'1px solid #d1fae5', borderRadius:'8px' }}>
-                                <span style={{ width:'22px', height:'22px', borderRadius:'50%', background:'linear-gradient(135deg,#1a7a4a,#2ecc71)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.68rem', fontWeight:800, flexShrink:0 }}>{idx + 1}</span>
-                                <span style={{ fontSize:'0.875rem', fontWeight:600, color:'#1a202c' }}>{item.attraction_name || item.custom_name || 'Unnamed Stop'}</span>
-                                {item.attraction_location && <span style={{ fontSize:'0.78rem', color:'#6b7280', marginLeft:'auto' }}>{item.attraction_location}</span>}
+                        <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Day-by-day Stop Manager</div>
+                        <p style={{ fontSize:'0.8rem', color:'#64748b', marginBottom:'0.75rem' }}>Changes to days, order, times, and coordinates appear in the guest Trip Plan after saving. A stop without coordinates stays in the list but not on the map.</p>
+                        {itineraryForm.stops.length > 0 ? (
+                          <div style={{ display:'grid', gap:'0.85rem' }}>
+                            {[...new Set(itineraryForm.stops.map((stop) => Number(stop.day_number)))].sort((a, b) => a - b).map((day) => (
+                              <div key={day} style={{ display:'grid', gap:'0.5rem' }}>
+                                <strong style={{ color:'#166534' }}>Day {day}</strong>
+                                {itineraryForm.stops.filter((stop) => Number(stop.day_number) === day).map((stop, index, dayStops) => (
+                                  <div key={stop.id} style={{ background:'#f0faf4', border:'1px solid #d1fae5', borderRadius:'10px', padding:'0.75rem', display:'grid', gap:'0.6rem' }}>
+                                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:'0.5rem' }}>
+                                      <strong style={{ color:'#1a202c', overflowWrap:'anywhere' }}>{index + 1}. {stop.name}</strong>
+                                      <div style={{ display:'flex', gap:'0.3rem' }}>
+                                        <button type="button" disabled={index === 0} aria-label={`Move ${stop.name} earlier`} onClick={() => moveAdminStop(stop.id, -1)} className="gov-btn gov-btn-ghost">↑</button>
+                                        <button type="button" disabled={index === dayStops.length - 1} aria-label={`Move ${stop.name} later`} onClick={() => moveAdminStop(stop.id, 1)} className="gov-btn gov-btn-ghost">↓</button>
+                                      </div>
+                                    </div>
+                                    <span style={{ fontSize:'0.78rem', color:'#64748b' }}>{stop.location}</span>
+                                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(120px, 1fr))', gap:'0.5rem' }}>
+                                      <label style={{ fontSize:'0.78rem', color:'#374151' }}>Day
+                                        <select className="gov-input" value={stop.day_number} onChange={(e) => updateAdminStop(stop.id, { day_number: Number(e.target.value) })}>
+                                          {Array.from({ length: Math.min(365, Math.max(1, adminItineraryDayCount(itineraryForm))) }, (_, i) => i + 1).map((n) => <option key={n} value={n}>Day {n}</option>)}
+                                        </select>
+                                      </label>
+                                      <label style={{ fontSize:'0.78rem', color:'#374151' }}>Start time
+                                        <input type="time" className="gov-input" value={stop.start_time} onChange={(e) => updateAdminStop(stop.id, { start_time: e.target.value })} />
+                                      </label>
+                                      <label style={{ fontSize:'0.78rem', color:'#374151' }}>Latitude
+                                        <input type="number" min="-90" max="90" step="any" className="gov-input" value={stop.latitude} onChange={(e) => updateAdminStop(stop.id, { latitude: e.target.value })} placeholder="Not on map" />
+                                      </label>
+                                      <label style={{ fontSize:'0.78rem', color:'#374151' }}>Longitude
+                                        <input type="number" min="-180" max="180" step="any" className="gov-input" value={stop.longitude} onChange={(e) => updateAdminStop(stop.id, { longitude: e.target.value })} placeholder="Not on map" />
+                                      </label>
+                                    </div>
+                                    <small style={{ color: stop.latitude !== '' && stop.longitude !== '' ? '#166534' : '#b45309' }}>{stop.latitude !== '' && stop.longitude !== '' ? 'Map pin available' : 'No map pin'}</small>
+                                  </div>
+                                ))}
                               </div>
                             ))}
                           </div>
@@ -4057,9 +4126,12 @@ const AdminDashboard = () => {
                           Stops / Attractions
                         </div>
                         {viewingItinerary.items && viewingItinerary.items.length > 0 ? (
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                            {viewingItinerary.items.map((item, idx) => (
-                              <div key={idx} style={{
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {[...new Set(viewingItinerary.items.map((item) => Number(item.day_number) || 1))].sort((a, b) => a - b).map((day) => (
+                              <div key={day} style={{ display: 'grid', gap: '0.6rem' }}>
+                                <strong style={{ color: '#166534' }}>Day {day}</strong>
+                                {viewingItinerary.items.filter((item) => (Number(item.day_number) || 1) === day).map((item, idx) => (
+                              <div key={item.id || idx} style={{
                                 display: 'flex',
                                 alignItems: 'flex-start',
                                 gap: '0.75rem',
@@ -4085,13 +4157,16 @@ const AdminDashboard = () => {
                                 </div>
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                   <div style={{ fontWeight: 700, color: '#1a202c', fontSize: '0.9rem' }}>
-                                    {item.attraction_name || item.custom_name || 'Unnamed Stop'}
+                                    {item.custom_name || item.attraction_name || 'Unnamed Stop'}
                                   </div>
-                                  {item.attraction_location && (
+                                  {(item.custom_location || item.attraction_location) && (
                                     <div style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '2px' }}>
-                                      {item.attraction_location}
+                                      {item.custom_location || item.attraction_location}
                                     </div>
                                   )}
+                                  <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
+                                    {item.start_time ? `Starts ${String(item.start_time).slice(0, 5)}` : 'Time not set'} · {item.latitude != null && item.longitude != null ? 'Map pin available' : 'No map pin'}
+                                  </div>
                                   {(item.visit_duration || item.estimated_cost) && (
                                     <div style={{ display: 'flex', gap: '1rem', marginTop: '4px', flexWrap: 'wrap' }}>
                                       {item.visit_duration && (
@@ -4112,6 +4187,8 @@ const AdminDashboard = () => {
                                     </div>
                                   )}
                                 </div>
+                              </div>
+                                ))}
                               </div>
                             ))}
                           </div>

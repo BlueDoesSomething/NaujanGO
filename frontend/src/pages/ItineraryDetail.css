@@ -35,6 +35,35 @@
 }
 
 .itinerary-detail-page .itin-summary-heading h3 { margin: 0; }
+.itin-plan { display: grid; gap: 1rem; min-width: 0; }
+.itin-plan-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
+.itin-plan-header h2, .itin-plan-stops h3, .itin-plan-map h3 { margin: 0 0 0.4rem; }
+.itin-plan-hint { margin: 0.4rem 0 0.8rem; font-size: 0.85rem; color: var(--text-secondary, #64748b); line-height: 1.5; }
+.itin-plan-day-select { display: grid; gap: 0.3rem; font-weight: 700; font-size: 0.8rem; color: var(--text, #243746); }
+.itin-plan-day-select select { min-width: 180px; max-width: 100%; padding: 0.65rem; background: var(--surface, #fff); color: var(--text, #243746); border: 1px solid var(--border, #cbd5e1); border-radius: 10px; }
+.itin-plan-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 1rem; align-items: start; }
+.itin-plan-stops, .itin-plan-map { min-width: 0; }
+.itin-plan-map { position: sticky; top: 1rem; }
+.itin-plan-stop { padding: 0.75rem; border: 1px solid var(--border, #dce5df); border-radius: 12px; margin-top: 0.65rem; background: var(--surface, #fff); }
+.itin-plan-stop.is-selected { border-color: #16a34a; box-shadow: 0 0 0 2px rgba(22,163,74,0.2); }
+.itin-plan-stop.is-dimmed { opacity: 0.45; }
+.itin-plan-stop-main { display: flex; align-items: start; gap: 0.75rem; width: 100%; text-align: left; background: none; border: 0; color: inherit; cursor: pointer; }
+.itin-plan-number, .itin-map-pin { display: inline-flex; justify-content: center; align-items: center; width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; background: #16a34a; color: white; font-weight: 800; }
+.itin-map-pin { box-shadow: 0 2px 8px rgba(0,0,0,0.4); border: 2px solid white; }
+.itin-map-pin.is-selected { background: #d97706; transform: scale(1.2); }
+.itin-plan-stop-text { display: grid; gap: 0.3rem; min-width: 0; overflow-wrap: anywhere; }
+.itin-plan-stop-text small { color: var(--text-secondary, #64748b); }
+.itin-plan-stop-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; padding-left: 2.75rem; margin-top: 0.45rem; color: #15803d; font-size: 0.8rem; }
+.itin-plan-stop-footer button, .itin-plan-directions button, .itin-plan-map-heading button, .itin-clear-filter { border: 1px solid #16a34a; background: transparent; color: #15803d; border-radius: 8px; padding: 0.45rem 0.7rem; cursor: pointer; }
+.itin-plan-stop-footer button:focus-visible, .itin-plan-stop-main:focus-visible, .itin-overview-day:focus-visible, .itin-plan-day-select select:focus-visible { outline: 2px solid #16a34a; outline-offset: 2px; }
+.itin-plan-note { margin: 0.5rem 0 0 2.75rem; font-size: 0.8rem; overflow-wrap: anywhere; }
+.itin-plan-map-heading, .itin-plan-directions { display: flex; justify-content: space-between; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.itin-plan-error { color: #b91c1c; }
+.itin-plan-mobile-switch { display: none; }
+.itin-overview-days { display: grid; gap: 0.75rem; }
+.itin-overview-day { display: grid; gap: 0.4rem; width: 100%; text-align: left; padding: 1rem; border: 1px solid var(--border, #dce5df); border-radius: 12px; background: var(--surface, #fff); color: var(--text, #243746); cursor: pointer; }
+.itin-overview-day:hover { border-color: #16a34a; }
+.itin-overview-day span, .itin-overview-day small { color: var(--text-secondary, #64748b); }
 .itinerary-detail-page .itin-summary-panel > div:last-child {
   margin-bottom: 0 !important;
   padding-bottom: 0 !important;
@@ -71,6 +100,8 @@
 .itin-archive-buttons button:disabled { opacity: 0.65; cursor: wait; }
 
 @media (max-width: 900px) {
+  .itin-plan-grid { grid-template-columns: 1fr; }
+  .itin-plan-map { position: static; }
   .itin-overview {
     grid-template-columns: 1fr !important;
     gap: 1.5rem !important;
@@ -78,6 +109,9 @@
 }
 
 @media (max-width: 768px) {
+  .itin-plan-mobile-switch { display: flex; width: 100%; gap: 0.5rem; }
+  .itin-plan-mobile-switch button { flex: 1; padding: 0.65rem; border-radius: 10px; border: 1px solid #16a34a; background: transparent; color: #15803d; }
+  .itin-plan-mobile-switch button[aria-pressed="true"] { color: white; background: #16a34a; }
   .website-main--itinerary-detail { margin-top: 0 !important; }
   .itinerary-detail-page { padding-bottom: 1.5rem !important; }
   .itinerary-detail-page .itin-sidebar { gap: 1rem !important; }
