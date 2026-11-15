@@ -2324,7 +2324,8 @@ router.get('/itineraries/:id', async (req, res) => {
     const itinerary = itineraries[0];
     
     const [items] = await db.promise().query(`
-      SELECT ia.*, a.name as attraction_name, a.location as attraction_location
+      SELECT ia.*, a.name as attraction_name, a.location as attraction_location,
+             a.latitude as attraction_latitude, a.longitude as attraction_longitude
       FROM itinerary_attractions ia
       LEFT JOIN attractions a ON ia.attraction_id = a.id
       WHERE ia.itinerary_id = ?

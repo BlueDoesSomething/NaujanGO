@@ -21,6 +21,7 @@ import useDashboardNotifications from '../hooks/useDashboardNotifications';
 import AboutPageManager from '../components/AboutPageManager';
 import AdminCredentialReview from '../components/AdminCredentialReview';
 import api from '../api';
+import { stopCoordinates } from '../utils/itineraryStopCoordinates';
 import Pagination from '../components/Pagination';
 import BookingIssuedCell from '../components/BookingIssuedCell';
 import { formatBookingBoundary } from '../utils/stayBooking';
@@ -2371,8 +2372,10 @@ const AdminDashboard = () => {
           location: item.custom_location || item.attraction_location || '',
           day_number: Number(item.day_number) || 1,
           start_time: item.start_time ? String(item.start_time).slice(0, 5) : '',
-          latitude: item.latitude ?? '',
-          longitude: item.longitude ?? ''
+          latitude: stopCoordinates(item)?.lat ?? '',
+          longitude: stopCoordinates(item)?.lng ?? '',
+          attraction_latitude: item.attraction_latitude,
+          attraction_longitude: item.attraction_longitude
         }))
       });
     } catch (error) {
@@ -3879,7 +3882,7 @@ const AdminDashboard = () => {
                       {/* Stops used by both the trip timeline and its map */}
                       <div>
                         <div style={{ fontSize:'0.7rem', fontWeight:800, color:'#6b7280', textTransform:'uppercase', letterSpacing:'0.08em', marginBottom:'0.75rem', paddingBottom:'0.4rem', borderBottom:'2px solid #e5e7eb' }}>Day-by-day Stop Manager</div>
-                        <p style={{ fontSize:'0.8rem', color:'#64748b', marginBottom:'0.75rem' }}>Changes to days, order, times, and coordinates appear in the guest Trip Plan after saving. A stop without coordinates stays in the list but not on the map.</p>
+                        <p style={{ fontSize:'0.8rem', color:'#64748b', marginBottom:'0.75rem' }}>Changes to days, order, times, and coordinates appear in the guest Trip Plan after saving. When stop coordinates are blank, the map uses the attraction's coordinates if available.</p>
                         {itineraryForm.stops.length > 0 ? (
                           <div style={{ display:'grid', gap:'0.85rem' }}>
                             {[...new Set(itineraryForm.stops.map((stop) => Number(stop.day_number)))].sort((a, b) => a - b).map((day) => (
@@ -3905,13 +3908,13 @@ const AdminDashboard = () => {
                                         <input type="time" className="gov-input" value={stop.start_time} onChange={(e) => updateAdminStop(stop.id, { start_time: e.target.value })} />
                                       </label>
                                       <label style={{ fontSize:'0.78rem', color:'#374151' }}>Latitude
-                                        <input type="number" min="-90" max="90" step="any" className="gov-input" value={stop.latitude} onChange={(e) => updateAdminStop(stop.id, { latitude: e.target.value })} placeholder="Not on map" />
+                                        <input type="number" min="-90" max="90" step="any" className="gov-input" value={stop.latitude} onChange={(e) => updateAdminStop(stop.id, { latitude: e.target.value })} placeholder="Attraction latitude" />
                                       </label>
                                       <label style={{ fontSize:'0.78rem', color:'#374151' }}>Longitude
-                                        <input type="number" min="-180" max="180" step="any" className="gov-input" value={stop.longitude} onChange={(e) => updateAdminStop(stop.id, { longitude: e.target.value })} placeholder="Not on map" />
+                                        <input type="number" min="-180" max="180" step="any" className="gov-input" value={stop.longitude} onChange={(e) => updateAdminStop(stop.id, { longitude: e.target.value })} placeholder="Attraction longitude" />
                                       </label>
                                     </div>
-                                    <small style={{ color: stop.latitude !== '' && stop.longitude !== '' ? '#166534' : '#b45309' }}>{stop.latitude !== '' && stop.longitude !== '' ? 'Map pin available' : 'No map pin'}</small>
+                                    <small style={{ color: stopCoordinates(stop) ? '#166534' : '#b45309' }}>{stopCoordinates(stop) ? 'Map pin available' : 'No map pin'}</small>
                                   </div>
                                 ))}
                               </div>
@@ -4165,7 +4168,7 @@ const AdminDashboard = () => {
                                     </div>
                                   )}
                                   <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '4px' }}>
-                                    {item.start_time ? `Starts ${String(item.start_time).slice(0, 5)}` : 'Time not set'} · {item.latitude != null && item.longitude != null ? 'Map pin available' : 'No map pin'}
+                                    {item.start_time ? `Starts ${String(item.start_time).slice(0, 5)}` : 'Time not set'} · {stopCoordinates(item) ? 'Map pin available' : 'No map pin'}
                                   </div>
                                   {(item.visit_duration || item.estimated_cost) && (
                                     <div style={{ display: 'flex', gap: '1rem', marginTop: '4px', flexWrap: 'wrap' }}>

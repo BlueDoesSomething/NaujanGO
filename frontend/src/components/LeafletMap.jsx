@@ -49,6 +49,7 @@ if (typeof document !== 'undefined') {
 const LeafletMap = ({
   center,
   focusKey = null,
+  selectedMarkerId = null,
   zoom = 14,
   markers = [],
   routes = [],
@@ -67,6 +68,7 @@ const LeafletMap = ({
   navTarget = null,
   autoRouteWaypoints = [],
   followUserLocation = true,
+  routeDestinationMarker = true,
   rerouteDistanceThresholdM = 50,
   rerouteIntervalMs = 5000,
   clusterMarkers = false,
@@ -76,6 +78,8 @@ const LeafletMap = ({
   const mapInstanceRef = useRef(null);
   const tileLayerRef = useRef(null);
   const markerGroupRef = useRef(null);
+  const markerInstancesRef = useRef(new Map());
+  const previousSelectedMarkerRef = useRef(null);
   const routeLayersRef = useRef([]);
   const poiLayersRef = useRef([]);
   const routePolylineRef = useRef(null);
@@ -217,6 +221,7 @@ const LeafletMap = ({
     if (!mapInstanceRef.current) return;
 
     const map = mapInstanceRef.current;
+    markerInstancesRef.current = new Map();
 
     // Remove previously created marker layer/group
     if (markerGroupRef.current) {
@@ -273,9 +278,11 @@ const LeafletMap = ({
 
         const leafletMarker = L.marker([marker.lat, marker.lng], {
           draggable: !!marker.draggable,
+          ...(marker.title ? { title: marker.title, alt: marker.title } : {}),
           ...(icon ? { icon } : {})
         });
         addTarget.addLayer(leafletMarker);
+        if (marker.id != null) markerInstancesRef.current.set(String(marker.id), leafletMarker);
 
         if (marker.popup) {
           leafletMarker.bindPopup(marker.popup);
@@ -318,6 +325,19 @@ const LeafletMap = ({
       }
     });
   }, [markers, onMarkerClick, onMarkerDrag, clusterMarkers]);
+
+  // Keep markers mounted when a stop is selected so its popup stays open.
+  useEffect(() => {
+    for (const [id, leafletMarker] of markerInstancesRef.current) {
+      leafletMarker.getElement()?.querySelector('.itin-map-pin')?.classList.toggle('is-selected', id === String(selectedMarkerId));
+    }
+    if (selectedMarkerId != null) {
+      markerInstancesRef.current.get(String(selectedMarkerId))?.openPopup();
+    } else if (previousSelectedMarkerRef.current != null) {
+      mapInstanceRef.current?.closePopup();
+    }
+    previousSelectedMarkerRef.current = selectedMarkerId;
+  }, [selectedMarkerId, markers, onMarkerClick]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !onMapClick) return;
@@ -606,7 +626,7 @@ const LeafletMap = ({
       }).addTo(group);
     }
 
-    const destMarker = L.marker(latLngs[latLngs.length - 1], { icon: destIcon }).addTo(group);
+    const destMarker = routeDestinationMarker ? L.marker(latLngs[latLngs.length - 1], { icon: destIcon }).addTo(group) : null;
 
     return { group, main, destMarker };
   };
@@ -725,7 +745,8 @@ const LeafletMap = ({
           rerouting,
           steps: selected.steps,
           alternatives: routeAlternativesForPayload(alternatives),
-          selectedIndex: selected.index
+          selectedIndex: selected.index,
+          isFallback: false
         });
       }
 
@@ -767,7 +788,8 @@ const LeafletMap = ({
           rerouting,
           steps: [],
           alternatives: [],
-          selectedIndex: 0
+          selectedIndex: 0,
+          isFallback: true
         });
       }
 
@@ -796,7 +818,8 @@ const LeafletMap = ({
         rerouting: false,
         steps: selected.steps,
         alternatives: routeAlternativesForPayload(alts),
-        selectedIndex: selected.index
+        selectedIndex: selected.index,
+        isFallback: false
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

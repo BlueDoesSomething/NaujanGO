@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import Icons from '../components/Icons';
@@ -12,6 +12,8 @@ import ExportPdfButton from '../components/ExportPdfButton';
 import ItineraryArchiveDialog from '../components/ItineraryArchiveDialog';
 import useMediaQuery from '../hooks/useMediaQuery';
 import { itineraryStopReport, itineraryBudgetReport, itineraryPrintReport } from '../utils/itineraryExports';
+import { stopCoordinates } from '../utils/itineraryStopCoordinates';
+import { itineraryStopPopup } from '../utils/itineraryStopPopup';
 import './ItineraryDetail.css';
 
 const API_BASE_URL = getApiBaseUrl();
@@ -23,16 +25,6 @@ const dateRangeDays = (start, end) => {
   return Number.isFinite(startMs) && Number.isFinite(endMs) && endMs >= startMs
     ? Math.min(365, Math.round((endMs - startMs) / 86400000) + 1) : 0;
 };
-const stopCoordinates = (item) => {
-  // The saved stop owns its pin: an admin clearing coordinates must remove it.
-  const latValue = item.latitude;
-  const lngValue = item.longitude;
-  if (latValue === '' || latValue == null || lngValue === '' || lngValue == null) return null;
-  const lat = Number(latValue);
-  const lng = Number(lngValue);
-  return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 ? { lat, lng } : null;
-};
-
 const csrfHeaders = () => {
   const token = getCsrfToken();
   return token ? { 'X-CSRF-Token': token } : {};
@@ -66,12 +58,12 @@ const ItineraryDetail = () => {
   };
   
   const TRANSPORT_MODES = {
-    tricycle:   { label: 'ðŸ›º Tricycle',    base: 10, perKm: 2.00 },
-    jeepney:    { label: 'ðŸšŒ Jeepney',     base: 13, perKm: 1.80 },
-    bus:        { label: 'ðŸš Bus',          base: 15, perKm: 2.65 },
-    van:        { label: 'ðŸš Van/FX',       base: 20, perKm: 3.50 },
-    motorcycle: { label: 'ðŸï¸ Motorcycle',  base: 8,  perKm: 1.50 },
-    car:        { label: 'ðŸš— Private Car',  base: 0,  perKm: 7.00 },
+    tricycle:   { label: '🛺 Tricycle',    base: 10, perKm: 2.00 },
+    jeepney:    { label: '🚌 Jeepney',     base: 13, perKm: 1.80 },
+    bus:        { label: '🚍 Bus',          base: 15, perKm: 2.65 },
+    van:        { label: '🚐 Van/FX',       base: 20, perKm: 3.50 },
+    motorcycle: { label: '🏍️ Motorcycle',  base: 8,  perKm: 1.50 },
+    car:        { label: '🚗 Private Car',  base: 0,  perKm: 7.00 },
   };
 
   // Helper function to calculate default fare per day
@@ -239,7 +231,7 @@ const ItineraryDetail = () => {
     try {
       const result = await shareSavedTrip({ id, name: itinerary.name });
       if (result === 'copied') alert('Saved itinerary link copied. Existing access permissions still apply.');
-      if (result === 'unavailable') alert('Sharing is unavailable in this browser. Copy this pageâ€™s address instead.');
+      if (result === 'unavailable') alert('Sharing is unavailable in this browser. Copy this page’s address instead.');
     } catch (error) {
       console.error('Error sharing itinerary:', error);
       alert(t('error_sharing_itinerary'));
@@ -262,7 +254,7 @@ const ItineraryDetail = () => {
       if (response.ok) {
         const data = await response.json();
         setItinerary(prev => ({ ...prev, total_budget: data.total_budget }));
-        alert(`${t('budget_recalculated')}: â‚±${data.total_budget.toFixed(2)}`);
+        alert(`${t('budget_recalculated')}: ₱${data.total_budget.toFixed(2)}`);
         loadStatistics(); // Reload statistics
 
         // Fetch server-side per-day breakdown with current assumptions
@@ -360,6 +352,7 @@ const ItineraryDetail = () => {
       ...coords,
       name: item.custom_name || item.attraction_name
     });
+    setRouteInfo(null);
     setSelectedDay(Number(item.day_number) || 1);
     setSelectedStopId(item.id);
     setMobilePlanView('map');
@@ -486,14 +479,27 @@ const ItineraryDetail = () => {
     </div>
   );
 
-  const allMarkers = dayItems.map((item, index) => {
+  const allMarkers = useMemo(() => dayItems.map((item, index) => {
     const coords = stopCoordinates(item);
     if (!coords) return null;
     return {
       id: item.id, ...coords,
-      iconHtml: `<span class="itin-map-pin${selectedStopId === item.id ? ' is-selected' : ''}">${index + 1}</span>`
+      title: `${index + 1}. ${item.custom_name || item.attraction_name || 'Unnamed stop'}`,
+      iconHtml: `<span class="itin-map-pin"><span class="itin-map-pin-number">${index + 1}</span></span>`,
+      popup: itineraryStopPopup(item, index + 1)
     };
-  }).filter(Boolean);
+  }).filter(Boolean), [dayItems]);
+
+  const selectedStop = dayItems.find((item) => item.id === selectedStopId);
+  const selectedStopIndex = selectedStop ? dayItems.indexOf(selectedStop) + 1 : 0;
+  const focusedMarker = allMarkers.find((marker) => marker.id === selectedStopId);
+  const handleMapStopClick = useCallback((marker) => {
+    setSelectedStopId(marker.id);
+    if (navTarget) {
+      setNavTarget(null);
+      setRouteInfo(null);
+    }
+  }, [navTarget]);
 
   const autoRouteWaypoints = useMemo(() => {
     const points = [];
@@ -530,7 +536,7 @@ const ItineraryDetail = () => {
       <div style={styles.error}>
         <h2>Itinerary not found</h2>
         <button onClick={() => navigate('/itinerary')} style={styles.backBtn}>
-          â† Back to Itineraries
+          ← Back to Itineraries
         </button>
       </div>
     );
@@ -593,7 +599,7 @@ const ItineraryDetail = () => {
           <Icons.MoneyIcon size={18} color="#f59e0b" />
           <div>
             <div style={styles.statLabel}>{t('budget')}</div>
-            <div style={styles.statValue}>â‚±{(parseFloat(itinerary.total_budget) || 0).toFixed(2)}</div>
+            <div style={styles.statValue}>₱{(parseFloat(itinerary.total_budget) || 0).toFixed(2)}</div>
           </div>
         </div>
         <div style={styles.statCard}>
@@ -638,7 +644,7 @@ const ItineraryDetail = () => {
           </button>
         </div>
         <div style={{paddingRight: '1.5rem'}}>
-          <Tooltip id="tabs-help" text="Overview: Trip summary Â· Trip Plan: Daily stops and map Â· Budget: Spending breakdown Â· Weather: Forecasts at each stop" />
+          <Tooltip id="tabs-help" text="Overview: Trip summary · Trip Plan: Daily stops and map · Budget: Spending breakdown · Weather: Forecasts at each stop" />
         </div>
       </div>
       
@@ -669,9 +675,9 @@ const ItineraryDetail = () => {
                     const stops = itemsByDay[day] || EMPTY_STOPS;
                     const cost = stops.reduce((sum, stop) => sum + (Number(stop.estimated_cost) || 0), 0);
                     return <button key={day} type="button" className="itin-overview-day" onClick={() => { selectDay(day); setActiveTab('plan'); }}>
-                      <strong>Day {day} <span>Â· {stops.length} {stops.length === 1 ? 'stop' : 'stops'}</span></strong>
-                      <span>{stops.length ? stops.map((stop) => stop.custom_name || stop.attraction_name || 'Stop').slice(0, 2).join(' Â· ') + (stops.length > 2 ? ' â€¦' : '') : 'No stops planned yet'}</span>
-                      <small>Attractions: â‚±{cost.toFixed(2)} Â· View day â†’</small>
+                      <strong>Day {day} <span>· {stops.length} {stops.length === 1 ? 'stop' : 'stops'}</span></strong>
+                      <span>{stops.length ? stops.map((stop) => stop.custom_name || stop.attraction_name || 'Stop').slice(0, 2).join(' · ') + (stops.length > 2 ? ' …' : '') : 'No stops planned yet'}</span>
+                      <small>Attractions: ₱{cost.toFixed(2)} · View day →</small>
                     </button>;
                   })}
                   {dayNumbers.length > 6 && <button type="button" className="itin-overview-day" onClick={() => setActiveTab('plan')}>Explore all {dayNumbers.length} days in Trip Plan →</button>}
@@ -747,7 +753,7 @@ const ItineraryDetail = () => {
                     <Icons.MoneyIcon size={16} color="#666" />
                     {t('budget')}
                   </span>
-                  <strong>â‚±{parseFloat(itinerary.total_budget || 0).toFixed(2)}</strong>
+                  <strong>₱{parseFloat(itinerary.total_budget || 0).toFixed(2)}</strong>
                 </div>
               </div>
               
@@ -771,11 +777,11 @@ const ItineraryDetail = () => {
             <div className="itin-plan-header itin-panel" style={styles.card}>
               <div>
                 <h2>Trip Plan</h2>
-                <p className="itin-plan-hint">Stops and map pins follow the same saved day and order.</p>
+                <p className="itin-plan-hint">Choose a day, follow its route, or select a numbered pin to explore a stop.</p>
               </div>
               <label className="itin-plan-day-select">Choose a day
                 <select value={selectedDay} onChange={(e) => selectDay(Number(e.target.value))}>
-                  {dayNumbers.map((day) => <option key={day} value={day}>Day {day} Â· {(itemsByDay[day] || EMPTY_STOPS).length} stops</option>)}
+                  {dayNumbers.map((day) => <option key={day} value={day}>Day {day} · {(itemsByDay[day] || EMPTY_STOPS).length} stops</option>)}
                 </select>
               </label>
               <div className="itin-plan-mobile-switch" role="group" aria-label="Trip plan view">
@@ -785,8 +791,8 @@ const ItineraryDetail = () => {
             </div>
             <div className="itin-plan-grid">
               {(!isMobile || mobilePlanView === 'list') && <div className="itin-plan-stops itin-panel" style={styles.card}>
-                <h3>Day {selectedDay} Â· {dayItems.length} {dayItems.length === 1 ? 'stop' : 'stops'}</h3>
-                {activeCategoryFilter && <button type="button" className="itin-clear-filter" onClick={() => setActiveCategoryFilter(null)}>Clear budget category filter Ã—</button>}
+                <h3>Day {selectedDay} · {dayItems.length} {dayItems.length === 1 ? 'stop' : 'stops'}</h3>
+                {activeCategoryFilter && <button type="button" className="itin-clear-filter" onClick={() => setActiveCategoryFilter(null)}>Clear budget category filter ×</button>}
                 {!dayItems.length && <p className="itin-plan-hint">No stops planned for this day.</p>}
                 {dayItems.map((item, index) => {
                   const coords = stopCoordinates(item);
@@ -794,14 +800,14 @@ const ItineraryDetail = () => {
                   const dimmed = activeCategoryFilter && activeCategoryFilter !== (item.cost_category || item.costCategory || 'uncategorized');
                   const name = item.custom_name || item.attraction_name || 'Unnamed stop';
                   return <div key={item.id || index} ref={(element) => { if (item.id) stopRefs.current[item.id] = element; }} className={`itin-plan-stop${selected ? ' is-selected' : ''}${dimmed ? ' is-dimmed' : ''}`}>
-                    <button type="button" className="itin-plan-stop-main" aria-pressed={selected} onClick={() => { setSelectedStopId(item.id); setNavTarget(null); setRouteInfo(null); if (isMobile && coords) setMobilePlanView('map'); }}>
+                    <button type="button" className="itin-plan-stop-main" aria-pressed={selected} onClick={() => { setSelectedStopId(item.id); if (navTarget) { setNavTarget(null); setRouteInfo(null); } if (isMobile && coords) setMobilePlanView('map'); }}>
                       <span className="itin-plan-number">{index + 1}</span>
-                      <span className="itin-plan-stop-text"><strong>{name}</strong><small>{item.start_time ? String(item.start_time).slice(0, 5) : 'Time not set'} Â· {Number(item.duration_minutes || item.estimated_duration) || 0} min</small><small>{item.custom_location || item.attraction_location || 'Location not specified'}{!coords && ' Â· Not shown on map'}</small></span>
+                      <span className="itin-plan-stop-text"><strong>{name}</strong><small>{item.start_time ? String(item.start_time).slice(0, 5) : 'Time not set'} · {Number(item.duration_minutes || item.estimated_duration) || 0} min</small><small>{item.custom_location || item.attraction_location || 'Location not specified'}{!coords && ' · Not shown on map'}</small></span>
                     </button>
                     <div className="itin-plan-stop-footer">
-                      {item.estimated_cost > 0 && <span>Est. â‚±{Number(item.estimated_cost).toFixed(2)}</span>}
+                      {item.estimated_cost > 0 && <span>Est. ₱{Number(item.estimated_cost).toFixed(2)}</span>}
                       {itinerary.status === 'in-progress' && <label><input type="checkbox" checked={!!item.completed} onChange={(e) => markItemComplete(item.id, e.target.checked)} /> Completed</label>}
-                      {coords && <button type="button" onClick={() => { setSelectedStopId(item.id); setMobilePlanView('map'); handleRouteToAttraction(item); }}>Directions</button>}
+                      {coords && <button type="button" onClick={() => { setSelectedStopId(item.id); if (userLocation) { setMobilePlanView('map'); handleRouteToAttraction(item); } else getUserLocation(); }}>{userLocation ? 'Directions' : 'Enable GPS for directions'}</button>}
                     </div>
                     {item.notes && <p className="itin-plan-note">{item.notes}</p>}
                     {item.booking_reference && <p className="itin-plan-note">Booking: {item.booking_reference}</p>}
@@ -809,21 +815,44 @@ const ItineraryDetail = () => {
                 })}
               </div>}
               {(!isMobile || mobilePlanView === 'map') && <div className="itin-plan-map itin-panel" style={styles.card}>
-                <div className="itin-plan-map-heading"><h3>Day {selectedDay} map</h3><button type="button" onClick={getUserLocation} disabled={gpsLoading}>{gpsLoading ? 'Getting locationâ€¦' : userLocation ? 'Refresh GPS' : 'Enable GPS'}</button></div>
+                <div className="itin-plan-map-heading"><h3>Day {selectedDay} map</h3><button type="button" onClick={getUserLocation} disabled={gpsLoading}>{gpsLoading ? 'Getting location…' : userLocation ? 'Refresh GPS' : 'Enable GPS'}</button></div>
                 {gpsError && <p className="itin-plan-error" role="alert">{gpsError}</p>}
-                {navTarget && <div className="itin-plan-directions"><strong>Route to {navTarget.name}</strong>{routeInfo && <span> Â· {routeInfo.distance} km Â· about {routeInfo.duration} min</span>}<button type="button" onClick={() => { setNavTarget(null); setRouteInfo(null); }}>Clear</button></div>}
-                {allMarkers.length ? <LeafletMap
-                  center={navTarget ? [navTarget.lat, navTarget.lng] : selectedStopId && allMarkers.find((marker) => marker.id === selectedStopId) ? [allMarkers.find((marker) => marker.id === selectedStopId).lat, allMarkers.find((marker) => marker.id === selectedStopId).lng] : [allMarkers[0].lat, allMarkers[0].lng]}
+                {(allMarkers.length > 1 || navTarget) && <div className="itin-plan-route-summary" role="status">
+                  <strong>{navTarget ? `Directions to ${navTarget.name}` : `Day ${selectedDay} route`}</strong>
+                  <span>{routeInfo ? routeInfo.isFallback ? `Straight-line preview · ${routeInfo.distance} km (not a road travel estimate)` : `Road route · ${routeInfo.distance} km · about ${routeInfo.duration} min` : 'Connecting mapped stops in schedule order…'}</span>
+                  {navTarget && <button type="button" onClick={() => { setNavTarget(null); setRouteInfo(null); }}>Show day route</button>}
+                </div>}
+                {allMarkers.length === 1 && !navTarget && <p className="itin-plan-hint">One mapped stop on this day. A route appears when two or more stops have coordinates.</p>}
+                {!allMarkers.length && <p className="itin-plan-hint">No pins yet for this day. Stops without coordinates still appear in the list.</p>}
+                <LeafletMap
+                  center={navTarget ? [navTarget.lat, navTarget.lng] : focusedMarker ? [focusedMarker.lat, focusedMarker.lng] : allMarkers.length ? [allMarkers[0].lat, allMarkers[0].lng] : userLocation || [13.3333, 121.3]}
                   focusKey={`${selectedDay}:${selectedStopId || ''}`}
                   zoom={12}
                   markers={allMarkers}
-                  onMarkerClick={(marker) => { setSelectedStopId(marker.id); setNavTarget(null); setRouteInfo(null); if (isMobile) setMobilePlanView('list'); }}
+                  selectedMarkerId={selectedStopId}
+                  onMarkerClick={handleMapStopClick}
                   userLocation={userLocation}
+                  followUserLocation={false}
+                  routeDestinationMarker={false}
                   autoRouteWaypoints={autoRouteWaypoints}
                   onRoutingChange={handleRoutingChange}
                   style={{ height:'420px', borderRadius:'12px' }}
-                /> : <p className="itin-plan-hint">No map pins for this day. Stops without coordinates are still shown in the list.</p>}
-                <p className="itin-plan-hint">Route lines and travel estimates depend on available map data; confirm travel times locally.</p>
+                />
+                {selectedStop && <div className="itin-plan-selected" aria-live="polite">
+                  <span className="itin-plan-selected-kicker">Day {selectedDay} · Stop {selectedStopIndex} of {dayItems.length}</span>
+                  {selectedStop.attraction_image && <img className="itin-plan-selected-image" src={selectedStop.attraction_image} alt={selectedStop.custom_name || selectedStop.attraction_name || 'Stop'} loading="lazy" />}
+                  <h4>{selectedStop.custom_name || selectedStop.attraction_name || 'Unnamed stop'}</h4>
+                  <p>{selectedStop.start_time ? String(selectedStop.start_time).slice(0, 5) : 'Time not set'} · {Number(selectedStop.duration_minutes || selectedStop.estimated_duration) || 0} min</p>
+                  <p>{selectedStop.custom_location || selectedStop.attraction_location || 'Location not specified'}</p>
+                  {Number(selectedStop.estimated_cost) > 0 && <p>Estimated cost: ₱{Number(selectedStop.estimated_cost).toFixed(2)}</p>}
+                  {selectedStop.notes && <p className="itin-plan-selected-note">Note: {selectedStop.notes}</p>}
+                  <div className="itin-plan-selected-actions">
+                    {stopCoordinates(selectedStop) && <button type="button" onClick={() => userLocation ? handleRouteToAttraction(selectedStop) : getUserLocation()}>{userLocation ? 'Directions from my location' : 'Enable GPS for directions'}</button>}
+                    {isMobile && <button type="button" onClick={() => setMobilePlanView('list')}>View in list</button>}
+                  </div>
+                  {!userLocation && stopCoordinates(selectedStop) && <small>Enable GPS above to get directions from your location.</small>}
+                </div>}
+                <p className="itin-plan-hint">Travel estimates depend on available road data. Straight-line previews are not driving directions.</p>
               </div>}
             </div>
           </div>
@@ -850,20 +879,20 @@ const ItineraryDetail = () => {
                   <div style={styles.budgetSummary}>
                     <div style={styles.budgetItem}>
                       <span>{t('total_budget')}</span>
-                      <strong>â‚±{totalBudget.toFixed(2)}</strong>
+                      <strong>₱{totalBudget.toFixed(2)}</strong>
                     </div>
                     <div style={styles.budgetItem}>
                       <span>Est. Total Need</span>
-                      <strong style={{ color: totalNeed > totalBudget ? '#dc2626' : '#16a34a' }}>â‚±{totalNeed.toFixed(2)}</strong>
+                      <strong style={{ color: totalNeed > totalBudget ? '#dc2626' : '#16a34a' }}>₱{totalNeed.toFixed(2)}</strong>
                     </div>
                     <div style={styles.budgetItem}>
                       <span>Balance</span>
-                      <strong style={{ color: balance >= 0 ? '#16a34a' : '#dc2626' }}>{balance >= 0 ? '+' : ''}â‚±{balance.toFixed(2)}</strong>
+                      <strong style={{ color: balance >= 0 ? '#16a34a' : '#dc2626' }}>{balance >= 0 ? '+' : ''}₱{balance.toFixed(2)}</strong>
                     </div>
                     {itinerary.actual_cost > 0 && (
                       <div style={styles.budgetItem}>
                         <span>{t('actual_cost')}</span>
-                        <strong>â‚±{(itinerary.actual_cost).toFixed(2)}</strong>
+                        <strong>₱{(itinerary.actual_cost).toFixed(2)}</strong>
                       </div>
                     )}
                   </div>
@@ -928,7 +957,7 @@ const ItineraryDetail = () => {
                 {/* Fare suggestion cards */}
                 <div style={{ marginBottom: '1rem' }}>
                   <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', color: '#d97706', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <Icons.MoneyIcon size={13} color="#d97706" /> Suggested Fare Estimate Â· click a card to pre-fill
+                    <Icons.MoneyIcon size={13} color="#d97706" /> Suggested Fare Estimate · click a card to pre-fill
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem', marginBottom: '0.75rem' }}>
                     {[
@@ -950,8 +979,8 @@ const ItineraryDetail = () => {
                         >
                           <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', background: v.color, borderRadius: '10px 0 0 10px' }} />
                           <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#374151', textTransform: 'uppercase' }}>{v.label}</div>
-                          <div style={{ fontSize: '0.9rem', fontWeight: 900, color: v.color, marginTop: '0.1rem' }}>â‚±{low}â€“â‚±{high}</div>
-                          <div style={{ fontSize: '0.65rem', color: isSelected ? v.color : '#9ca3af', marginTop: '0.1rem' }}>{isSelected ? 'âœ“ Pre-filling fare' : v.note}</div>
+                          <div style={{ fontSize: '0.9rem', fontWeight: 900, color: v.color, marginTop: '0.1rem' }}>₱{low}–₱{high}</div>
+                          <div style={{ fontSize: '0.65rem', color: isSelected ? v.color : '#9ca3af', marginTop: '0.1rem' }}>{isSelected ? '✓ Pre-filling fare' : v.note}</div>
                         </div>
                       );
                     })}
@@ -964,7 +993,7 @@ const ItineraryDetail = () => {
 
                 <div style={{ ...styles.assumptionGrid, gridTemplateColumns: 'repeat(3, minmax(0,1fr))' }}>
                   <div style={styles.assumptionField}>
-                    <label style={styles.assumptionLabel}>ðŸšŒ Fare / Day</label>
+                    <label style={styles.assumptionLabel}>🚌 Fare / Day</label>
                     <input type="number" min="0"
                       value={farePerDay !== null ? farePerDay : calculateDefaultFarePerDay()}
                       onChange={e => setFarePerDay(parseFloat(e.target.value) || 0)}
@@ -994,46 +1023,46 @@ const ItineraryDetail = () => {
                         <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem'}}>
                           <strong style={{fontSize: '1rem', color: '#1f2937'}}>{L('day','Day')} {d.day}</strong>
                           <span style={{fontSize: '0.85rem', color: '#666', backgroundColor: '#f5f5f5', padding: '0.35rem 0.65rem', borderRadius: '12px'}}>
-                            {d.fits ? 'âœ“ Within budget' : 'âš  Over budget'}
+                            {d.fits ? '✓ Within budget' : '⚠ Over budget'}
                           </span>
                         </div>
                         
                         <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem'}}>
                           <div style={{padding: '0.75rem', backgroundColor: '#f0fdf4', borderRadius: '8px', border: '1px solid #dcfce7'}}>
-                            <div style={{fontSize: '0.8rem', color: '#22863a', fontWeight: 600}}>ðŸšŒ Transport</div>
-                            <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#16a34a', marginTop: '0.25rem'}}>â‚±{(d.fareCost || 0).toFixed(0)}</div>
+                            <div style={{fontSize: '0.8rem', color: '#22863a', fontWeight: 600}}>🚌 Transport</div>
+                            <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#16a34a', marginTop: '0.25rem'}}>₱{(d.fareCost || 0).toFixed(0)}</div>
                           </div>
                           
                           <div style={{padding: '0.75rem', backgroundColor: '#fef3c7', borderRadius: '8px', border: '1px solid #fde68a'}}>
-                            <div style={{fontSize: '0.8rem', color: '#92400e', fontWeight: 600}}>ðŸŽŸï¸ Attractions</div>
-                            <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#d97706', marginTop: '0.25rem'}}>â‚±{(d.attractionCost || 0).toFixed(0)}</div>
+                            <div style={{fontSize: '0.8rem', color: '#92400e', fontWeight: 600}}>🎟️ Attractions</div>
+                            <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#d97706', marginTop: '0.25rem'}}>₱{(d.attractionCost || 0).toFixed(0)}</div>
                           </div>
                           
                           <div style={{padding: '0.75rem', backgroundColor: '#e0e7ff', borderRadius: '8px', border: '1px solid #c7d2fe'}}>
-                            <div style={{fontSize: '0.8rem', color: '#3730a3', fontWeight: 600}}>ðŸ½ï¸ Food</div>
-                            <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#4f46e5', marginTop: '0.25rem'}}>â‚±{(d.foodCost || 0).toFixed(0)}</div>
+                            <div style={{fontSize: '0.8rem', color: '#3730a3', fontWeight: 600}}>🍽️ Food</div>
+                            <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#4f46e5', marginTop: '0.25rem'}}>₱{(d.foodCost || 0).toFixed(0)}</div>
                           </div>
                           
                           <div style={{padding: '0.75rem', backgroundColor: '#f3e8ff', borderRadius: '8px', border: '1px solid #e9d5ff'}}>
-                            <div style={{fontSize: '0.8rem', color: '#6b21a8', fontWeight: 600}}>âœ¨ Other</div>
-                            <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#a855f7', marginTop: '0.25rem'}}>â‚±{(d.otherCost || 0).toFixed(0)}</div>
+                            <div style={{fontSize: '0.8rem', color: '#6b21a8', fontWeight: 600}}>✨ Other</div>
+                            <div style={{fontSize: '1.1rem', fontWeight: 700, color: '#a855f7', marginTop: '0.25rem'}}>₱{(d.otherCost || 0).toFixed(0)}</div>
                           </div>
                         </div>
 
                         <div style={{marginTop: '0.75rem', padding: '0.85rem', backgroundColor: '#ecfdf3', borderRadius: '8px', border: '2px solid #bbf7d0'}}>
                           <div style={{fontSize: '0.8rem', color: '#166534', fontWeight: 600}}>Total You Need This Day</div>
-                          <div style={{fontSize: '1.35rem', fontWeight: 900, color: '#15803d', marginTop: '0.2rem'}}>â‚±{(d.estimatedNeed || 0).toFixed(0)}</div>
+                          <div style={{fontSize: '1.35rem', fontWeight: 900, color: '#15803d', marginTop: '0.2rem'}}>₱{(d.estimatedNeed || 0).toFixed(0)}</div>
                         </div>
                       </div>
 
                       <div style={{width: '200px', textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.5rem'}}>
                         <div>
                           <div style={{fontSize: '0.75rem', color: '#999', marginBottom: '0.3rem', fontWeight: 600}}>YOUR BUDGET THIS DAY</div>
-                          <strong style={{fontSize: '1.25rem', color: '#1f2937'}}>â‚±{(d.dayBudget || 0).toFixed(0)}</strong>
+                          <strong style={{fontSize: '1.25rem', color: '#1f2937'}}>₱{(d.dayBudget || 0).toFixed(0)}</strong>
                         </div>
                         <div style={{padding: '0.5rem', backgroundColor: d.fits ? '#e7f6e9' : '#fbe4e6', borderRadius: '6px'}}>
                           <span style={{fontSize: '0.75rem', fontWeight: 700, color: d.fits ? '#16a34a' : '#dc2626'}}>
-                            {d.fits ? `âœ“ â‚±${Math.abs(d.balance || 0).toFixed(0)} extra` : `âœ— â‚±${Math.abs(d.balance || 0).toFixed(0)} short`}
+                            {d.fits ? `✓ ₱${Math.abs(d.balance || 0).toFixed(0)} extra` : `✗ ₱${Math.abs(d.balance || 0).toFixed(0)} short`}
                           </span>
                         </div>
                       </div>
@@ -1060,11 +1089,11 @@ const ItineraryDetail = () => {
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <span style={{ fontSize: '0.85rem', color: overBudget ? '#dc2626' : '#16a34a', fontWeight: 700, background: overBudget ? '#fef2f2' : '#f0fdf4', padding: '0.3rem 0.75rem', borderRadius: '20px', border: `1px solid ${overBudget ? '#fecaca' : '#bbf7d0'}` }}>
-                          {overBudget ? 'âš  Over budget' : 'âœ“ Within budget'} Â· â‚±{totalEstimated.toFixed(0)} / â‚±{totalBudget.toFixed(0)}
+                          {overBudget ? '⚠ Over budget' : '✓ Within budget'} · ₱{totalEstimated.toFixed(0)} / ₱{totalBudget.toFixed(0)}
                         </span>
                         {activeCategoryFilter && (
                           <button onClick={() => setActiveCategoryFilter(null)} style={{ fontSize: '0.8rem', padding: '0.3rem 0.75rem', borderRadius: '20px', border: '1px solid #d1d5db', background: '#f9fafb', cursor: 'pointer', color: '#374151', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                            âœ• Clear filter
+                            ✕ Clear filter
                           </button>
                         )}
                       </div>
@@ -1074,7 +1103,7 @@ const ItineraryDetail = () => {
                     <div style={{ height: '8px', borderRadius: '999px', overflow: 'hidden', display: 'flex', marginBottom: '1.25rem', background: '#f3f4f6' }}>
                       {statistics.budget?.map((cat, i) => {
                         const pct = totalEstimated > 0 ? (parseFloat(cat.estimated_total || 0) / totalEstimated) * 100 : 0;
-                        return <div key={cat.cost_category || i} title={`${cat.cost_category}: â‚±${parseFloat(cat.estimated_total||0).toFixed(0)}`} style={{ width: `${pct}%`, background: catColors[i % catColors.length], transition: 'width 0.3s' }} />;
+                        return <div key={cat.cost_category || i} title={`${cat.cost_category}: ₱${parseFloat(cat.estimated_total||0).toFixed(0)}`} style={{ width: `${pct}%`, background: catColors[i % catColors.length], transition: 'width 0.3s' }} />;
                       })}
                     </div>
 
@@ -1111,7 +1140,7 @@ const ItineraryDetail = () => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                               <div>
                                 <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1a1a1a', textTransform: 'capitalize' }}>{catKey}</div>
-                                <div style={{ fontSize: '1.35rem', fontWeight: 900, color, marginTop: '0.2rem' }}>â‚±{est.toFixed(0)}</div>
+                                <div style={{ fontSize: '1.35rem', fontWeight: 900, color, marginTop: '0.2rem' }}>₱{est.toFixed(0)}</div>
                               </div>
                               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem' }}>
                                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'white', background: color, padding: '0.2rem 0.55rem', borderRadius: '20px' }}>{pct}%</span>
@@ -1133,7 +1162,7 @@ const ItineraryDetail = () => {
                             {category.actual_total > 0 && (
                               <div style={{ marginTop: '0.6rem', fontSize: '0.8rem', color: '#374151', display: 'flex', justifyContent: 'space-between' }}>
                                 <span style={{ color: '#6b7280' }}>Actual spent</span>
-                                <strong style={{ color: parseFloat(category.actual_total) > est ? '#dc2626' : '#16a34a' }}>â‚±{parseFloat(category.actual_total).toFixed(0)}</strong>
+                                <strong style={{ color: parseFloat(category.actual_total) > est ? '#dc2626' : '#16a34a' }}>₱{parseFloat(category.actual_total).toFixed(0)}</strong>
                               </div>
                             )}
 
@@ -1177,7 +1206,7 @@ const ItineraryDetail = () => {
                   .map((item, idx) => (
                     <div key={item.id || idx}>
                       <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
-                        Day {item.day_number} Â· Stop {idx + 1}
+                        Day {item.day_number} · Stop {idx + 1}
                       </div>
                       <WeatherWidget
                         attractionId={item.attraction_id}
@@ -1200,7 +1229,7 @@ const ItineraryDetail = () => {
       {showArchiveDialog && <ItineraryArchiveDialog name={itinerary.name}
         message={t('confirm_archive_itinerary')} busy={archiving} error={archiveError}
         onCancel={() => { if (!archiveRequestRef.current) setShowArchiveDialog(false); }} onConfirm={deleteItinerary}
-        labels={{ title: L('archive_itinerary_title', 'Archive itinerary?'), cancel: t('cancel'), confirm: L('archive_itinerary_action', 'Archive itinerary'), busy: L('archiving_itinerary', 'Archivingâ€¦') }} />}
+        labels={{ title: L('archive_itinerary_title', 'Archive itinerary?'), cancel: t('cancel'), confirm: L('archive_itinerary_action', 'Archive itinerary'), busy: L('archiving_itinerary', 'Archiving…') }} />}
     </div>
   );
 };
