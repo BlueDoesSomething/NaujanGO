@@ -21,6 +21,12 @@
   line-height: 1.35;
 }
 
+.itin-budget-assumptions,
+.itin-budget-assumptions > div,
+.itin-budget-limit {
+  min-width: 0;
+}
+
 .itinerary-detail-page .itin-quick-actions {
   display: grid;
   gap: 0.625rem;
@@ -133,6 +139,7 @@
 }
 
 @media (max-width: 768px) {
+  .itin-budget-assumptions { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
   .itin-plan-map { scroll-margin-top: 5rem; }
   .itin-plan-stops { scroll-margin-top: 5rem; }
   .itin-plan-header { align-items: stretch; }
@@ -205,6 +212,7 @@
 }
 
 @media (max-width: 480px) {
+  .itin-budget-assumptions { grid-template-columns: minmax(0, 1fr) !important; }
   .itin-stats { gap: 0.5rem !important; }
   .itin-stats > div {
     padding: 0.75rem !important;

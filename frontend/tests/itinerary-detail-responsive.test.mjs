@@ -172,6 +172,36 @@ for (const [width, height] of [[320, 568], [360, 640], [393, 780], [480, 900], [
     }
   });
 }
+for (const [width, columns] of [[320, 1], [393, 1], [640, 2], [1024, 3]]) {
+  test(`daily budget fields fit without overlap at ${width}px`, options, async () => {
+    await open(width, 800);
+    await evaluate(`document.querySelectorAll('.itin-tabs button')[2].click()`);
+    await waitFor(`document.querySelector('.itin-budget-assumptions input')`);
+    await frame();
+    const view = await evaluate(`(() => {
+      const grid = document.querySelector('.itin-budget-assumptions');
+      const fields = [...grid.children].map(field => {
+        const box = field.getBoundingClientRect(), input = field.querySelector('input').getBoundingClientRect();
+        return { left: box.left, right: box.right, top: box.top, bottom: box.bottom,
+          inputLeft: input.left, inputRight: input.right, inputHeight: input.height };
+      });
+      return { scrollWidth: document.documentElement.scrollWidth, grid: grid.getBoundingClientRect().toJSON(), fields };
+    })()`);
+    assert.ok(view.scrollWidth <= width + 1, `Page overflow: ${JSON.stringify(view)}`);
+    assert.ok(view.grid.left >= 0 && view.grid.right <= width, 'budget grid stays inside the viewport');
+    assert.equal(new Set(view.fields.map(field => Math.round(field.top))).size, columns === 3 ? 1 : columns === 2 ? 2 : 3);
+    view.fields.forEach(field => {
+      assert.ok(field.inputLeft >= field.left - 1 && field.inputRight <= field.right + 1, `Input escapes field: ${JSON.stringify(view)}`);
+      assert.ok(field.inputHeight >= 44, 'number field is large enough to tap');
+    });
+    if (width === 393) {
+      await evaluate(`document.querySelector('.itin-budget-assumptions').scrollIntoView({ block: 'center', behavior: 'instant' })`);
+      await frame();
+      const screenshot = await client.send('Page.captureScreenshot', { format: 'png' });
+      await writeFile(path.join(tempRoot, 'itinerary-detail-budget-fields.png'), Buffer.from(screenshot.data, 'base64'));
+    }
+  });
+}
 for (const [width, height] of [[320, 568], [393, 780], [640, 360]]) {
   test(`archive confirmation is compact, focus-contained and cancellable at ${width}×${height}`, options, async () => {
     await open(width, height); const before = writes.length;

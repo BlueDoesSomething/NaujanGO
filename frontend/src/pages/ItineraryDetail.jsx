@@ -979,7 +979,7 @@ const ItineraryDetail = () => {
               <div style={styles.budgetSubsection}>
                 <h3 style={styles.budgetSubsectionTitle}>Daily cost estimates</h3>
                 {Object.keys(budgetAssumptions.perDay || {}).length > 0 && <p style={{ fontSize: '0.8rem', color: '#6b7280' }}>Showing per-day estimates saved in Builder. Editing a daily assumption below applies the new value to all days for that category.</p>}
-                <label style={{ ...styles.assumptionField, display: 'grid', maxWidth: '280px', marginBottom: '1rem' }}>
+                 <label className="itin-budget-limit" style={{ ...styles.assumptionField, display: 'grid', maxWidth: '280px', marginBottom: '1rem' }}>
                   <span style={styles.assumptionLabel}>Optional trip spending limit (₱)</span>
                   <input type="number" min="0" step="0.01" placeholder="No limit set" value={budgetAssumptions.spendingLimit ?? ''}
                     onChange={e => setBudgetAssumptions(prev => ({ ...prev, spendingLimit: e.target.value }))} style={styles.assumptionInput} />
@@ -1028,24 +1028,24 @@ const ItineraryDetail = () => {
                   </div>
                 </div>
 
-                <div style={{ ...styles.assumptionGrid, gridTemplateColumns: 'repeat(3, minmax(0,1fr))' }}>
-                  <div style={styles.assumptionField}>
-                    <label style={styles.assumptionLabel}>🚌 Fare / Day</label>
-                    <input type="number" min="0"
+                 <div className="itin-budget-assumptions" style={styles.assumptionGrid}>
+                   <div style={styles.assumptionField}>
+                     <label htmlFor="itin-fare-per-day" style={styles.assumptionLabel}>🚌 Fare / Day</label>
+                     <input id="itin-fare-per-day" type="number" min="0"
                       value={dailyFieldValue('fareCost', farePerDay !== null ? farePerDay : calculateDefaultFarePerDay())}
                       placeholder="Varies by day"
                       onChange={e => { setFarePerDay(parseFloat(e.target.value) || 0); updateDailyAssumption('fareCost', e.target.value); }}
                       style={styles.assumptionInput}
                     />
                     <span style={{ fontSize: '0.7rem', color: '#6b7280' }}>{Object.keys(budgetAssumptions.perDay || {}).length ? 'Saved daily estimates' : farePerDay !== null ? 'Manual' : 'Auto-suggested'}</span>
-                  </div>
-                  <div style={styles.assumptionField}>
-                    <label style={styles.assumptionLabel}>{L('food_per_day','Food / Day')}</label>
-                    <input type="number" min="0" value={dailyFieldValue('foodCost', budgetAssumptions.foodPerDay)} placeholder="Varies by day" onChange={e => updateDailyAssumption('foodCost', e.target.value)} style={styles.assumptionInput} />
-                  </div>
-                  <div style={styles.assumptionField}>
-                    <label style={styles.assumptionLabel}>{L('other_per_day','Other / Day')}</label>
-                    <input type="number" min="0" value={dailyFieldValue('otherCost', budgetAssumptions.otherPerDay)} placeholder="Varies by day" onChange={e => updateDailyAssumption('otherCost', e.target.value)} style={styles.assumptionInput} />
+                   </div>
+                   <div style={styles.assumptionField}>
+                     <label htmlFor="itin-food-per-day" style={styles.assumptionLabel}>{L('food_per_day','Food / Day')}</label>
+                     <input id="itin-food-per-day" type="number" min="0" value={dailyFieldValue('foodCost', budgetAssumptions.foodPerDay)} placeholder="Varies by day" onChange={e => updateDailyAssumption('foodCost', e.target.value)} style={styles.assumptionInput} />
+                   </div>
+                   <div style={styles.assumptionField}>
+                     <label htmlFor="itin-other-per-day" style={styles.assumptionLabel}>{L('other_per_day','Other / Day')}</label>
+                     <input id="itin-other-per-day" type="number" min="0" value={dailyFieldValue('otherCost', budgetAssumptions.otherPerDay)} placeholder="Varies by day" onChange={e => updateDailyAssumption('otherCost', e.target.value)} style={styles.assumptionInput} />
                   </div>
                 </div>
 
@@ -1880,13 +1880,14 @@ const styles = {
   },
   assumptionGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+    gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
     gap: '0.75rem',
     alignItems: 'stretch'
   },
   assumptionField: {
     display: 'flex',
     flexDirection: 'column',
+    minWidth: 0,
     gap: '0.45rem',
     padding: '0.9rem',
     backgroundColor: '#fafafa',
@@ -1978,7 +1979,10 @@ const styles = {
     marginBottom: '0.75rem'
   },
   assumptionInput: {
-    width: '110px',
+    boxSizing: 'border-box',
+    width: '100%',
+    minWidth: 0,
+    minHeight: '44px',
     padding: '0.45rem 0.6rem',
     border: '1px solid #e0e0e0',
     borderRadius: '6px'
