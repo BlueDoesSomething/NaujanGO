@@ -18,6 +18,7 @@ test('owner starting prices use active room rates, never a competing zero hotel 
   assert.equal(ownerStartingPrice({ ...hotel, price_per_night: 300 }, []), 'Starting price ₱300/night · no room types yet');
   assert.equal(ownerStartingPrice(hotel, [{ ...room, hotel_id: 9 }]), 'Add room types and rates');
   assert.equal(ownerStartingPrice(hotel, [{ ...room, is_active: 0 }]), 'No active room rates');
+  assert.equal(ownerStartingPrice(hotel, [{ ...room, nightly_enabled: 0, hourly_rates: { 3: 200 } }]), 'From ₱200 · see stay packages');
   assert.match(ownerStartingPrice(hotel, [room, { ...room, currency: 'USD' }]), /Multiple room currencies/);
 });
 

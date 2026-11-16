@@ -12,6 +12,7 @@ export const validateOwnerRoomWrite = (body, creating = false) => {
   }
   if (body.currency !== undefined && (typeof body.currency !== 'string' || !/^[A-Z]{3}$/.test(body.currency))) return 'Use a three-letter currency code.';
   if (body.is_active !== undefined && ![0, 1, '0', '1'].includes(body.is_active)) return 'Room visibility must be 0 or 1.';
+  if (body.nightly_enabled !== undefined && ![0, 1, '0', '1'].includes(body.nightly_enabled)) return 'Nightly stay availability must be 0 or 1.';
   return null;
 };
 

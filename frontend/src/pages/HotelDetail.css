@@ -3688,6 +3688,34 @@
   line-height: 1.25;
 }
 
+.hd-bm-availability {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.hd-bm-availability.is-valid { border-color: #86efac; background: #f0fdf4; color: #166534; }
+.hd-bm-availability.is-invalid, .hd-bm-availability.is-error { border-color: #fcd34d; background: #fffbeb; color: #92400e; }
+.hd-bm-availability button {
+  min-height: 40px;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+[data-theme="dark"] .hd-bm-availability { background: #1e293b; color: #e2e8f0; }
+[data-theme="dark"] .hd-bm-availability.is-valid { background: #133627; color: #bbf7d0; }
+[data-theme="dark"] .hd-bm-availability.is-invalid, [data-theme="dark"] .hd-bm-availability.is-error { background: #422f16; color: #fde68a; }
+
 .hd-bm-slow {
   background: #fef3cd;
   border: 1.5px solid #ffc107;

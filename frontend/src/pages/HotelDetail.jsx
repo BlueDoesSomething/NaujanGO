@@ -13,6 +13,7 @@ import { RoomPerfectFor, RoomCommonQuestions } from '../components/RoomGuestCont
 import { buildPolicyLines, POLICY_LINE_ICONS } from '../utils/bookingPolicy';
 import { formatHotelCurrency } from '../utils/hotelCurrency';
 import { getHourlyRates, getPaymentPlans, hourlyCheckout, philippineToday, STAY_HOURS } from '../utils/stayBooking';
+import { assessStayAvailability } from '../utils/stayAvailability';
 import useBookingPolicy from '../hooks/useBookingPolicy';
 import { PAY_AT_PROPERTY_NOTICE, manualDirectNotice } from '../utils/bookingPaymentPolicy';
 import './HotelDetail.css';
@@ -297,6 +298,8 @@ export default function HotelDetail() {
   const bookingKey = useRef(null);
   const submittingBooking = useRef(false);
   const [bookingError, setBookingError] = useState('');
+  const [stayAvailability, setStayAvailability] = useState({ key: '', status: 'idle', message: '' });
+  const [availabilityRetry, setAvailabilityRetry] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [policyAgreed, setPolicyAgreed] = useState(false);
   const [slowConnection, setSlowConnection] = useState(false);
@@ -353,6 +356,16 @@ export default function HotelDetail() {
     if (showBookingModal) return;
     setCalendarRange({ start: null, end: null });
     setCalendarError('');
+    setStayAvailability({ key: '', status: 'idle', message: '' });
+  }, [showBookingModal]);
+
+  useEffect(() => {
+    if (!showBookingModal || !bookingForm.checkIn || !bookingForm.checkOut) return;
+    setCalendarRange({ start: bookingForm.checkIn, end: bookingForm.stayHours ? bookingForm.checkIn : bookingForm.checkOut });
+    const selectedDate = new Date(`${bookingForm.checkIn}T00:00:00`);
+    if (Number.isFinite(selectedDate.getTime())) {
+      setCalendarMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+    }
   }, [showBookingModal]);
 
   // Load per-date availability for the visible month (room-type aware)
@@ -389,6 +402,70 @@ export default function HotelDetail() {
       cancelled = true;
     };
   }, [showBookingModal, calendarMonth, bookingForm.selectedRoomId, id]);
+
+  const selectedAvailabilityRoom = rooms.find(room => Number(room.room_id) === Number(bookingForm.selectedRoomId));
+  const availabilityKey = JSON.stringify([id, bookingForm.checkIn, bookingForm.checkOut,
+    bookingForm.selectedRoomId, bookingForm.rooms, bookingForm.guests, bookingForm.stayHours,
+    rooms.length, selectedAvailabilityRoom?.capacity, selectedAvailabilityRoom?.quantity_available,
+    selectedAvailabilityRoom?.hourly_rates, selectedAvailabilityRoom?.nightly_enabled, availabilityRetry]);
+  const currentAvailability = stayAvailability.key === availabilityKey
+    ? stayAvailability
+    : { status: bookingForm.checkIn && bookingForm.checkOut ? 'checking' : 'idle', message: '' };
+
+  // A room or party change must not discard the stay. Recheck every occupied
+  // night for the new room/count, and ignore responses from older selections.
+  useEffect(() => {
+    if (!showBookingModal || !bookingForm.checkIn || !bookingForm.checkOut) return undefined;
+    let cancelled = false;
+    const room = rooms.find(candidate => Number(candidate.room_id) === Number(bookingForm.selectedRoomId));
+    const reject = message => setStayAvailability({ key: availabilityKey, status: 'invalid', message });
+    if (rooms.length && !bookingForm.selectedRoomId) {
+      setStayAvailability({ key: availabilityKey, status: 'idle', message: 'Select a room type to check your chosen dates.' });
+      return undefined;
+    }
+    if (room && Number(room.capacity) < Number(bookingForm.guests)) {
+      reject(`This room does not fit ${bookingForm.guests} guest(s). Choose another room or reduce the guest count.`);
+      return undefined;
+    }
+    if (room && Number(room.quantity_available) < Number(bookingForm.rooms)) {
+      reject(`Only ${room.quantity_available} unit(s) of this room type remain. Choose fewer rooms or another room type.`);
+      return undefined;
+    }
+    if (room && !bookingForm.stayHours && Number(room.nightly_enabled ?? 1) === 0) {
+      reject('Nightly stays are not offered for this room. Choose an hourly package.');
+      return undefined;
+    }
+    if (room && bookingForm.stayHours && !getHourlyRates(room.hourly_rates)[bookingForm.stayHours]) {
+      reject('This room does not offer the selected hourly package. Choose another package or room.');
+      return undefined;
+    }
+    const start = bookingForm.checkIn;
+    const checkout = bookingForm.checkOut;
+    const startMs = Date.parse(`${start}T00:00:00Z`);
+    const endMs = Date.parse(`${checkout}T00:00:00Z`);
+    const nights = Math.round((endMs - startMs) / 86400000);
+    if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || start < philippineToday()
+      || (bookingForm.stayHours ? nights < 0 : nights < 1 || nights > 180)) {
+      reject('Choose a valid check-in and check-out date (up to 180 nights).');
+      return undefined;
+    }
+    const lastNight = new Date(`${checkout}T00:00:00Z`);
+    lastNight.setUTCDate(lastNight.getUTCDate() - 1);
+    const end = bookingForm.stayHours ? start : lastNight.toISOString().slice(0, 10);
+    setStayAvailability({ key: availabilityKey, status: 'checking', message: '' });
+    fetchHotelCalendar(id, start, end, bookingForm.selectedRoomId || null)
+      .then(response => {
+        if (cancelled) return;
+        const result = assessStayAvailability(response.data?.days, start, checkout,
+          Number(bookingForm.rooms) || 1, Boolean(bookingForm.stayHours));
+        setStayAvailability({ key: availabilityKey, ...result,
+          message: room && result.status === 'invalid' ? `${room.room_type_name}: ${result.message}` : result.message });
+      })
+      .catch(() => {
+        if (!cancelled) setStayAvailability({ key: availabilityKey, status: 'error', message: 'Could not check room availability. Please retry.' });
+      });
+    return () => { cancelled = true; };
+  }, [showBookingModal, availabilityKey, rooms]);
 
   const maxGuestsAllowed = 100;
 
@@ -592,7 +669,8 @@ export default function HotelDetail() {
   const hourlyRates = getHourlyRates(modalSelectedRoom?.hourly_rates);
   const isHourlyStay = Boolean(bookingForm.stayHours);
   const hourlyEnd = hourlyCheckout(bookingForm.checkIn, bookingForm.checkInTime, bookingForm.stayHours);
-  const modalPricePerNight = isHourlyStay ? hourlyRates[bookingForm.stayHours] : modalSelectedRoom ? modalSelectedRoom.price_per_night : hotel?.pricePerNight;
+  const modalPricePerNight = isHourlyStay ? hourlyRates[bookingForm.stayHours] : Number(modalSelectedRoom?.nightly_enabled ?? 1) === 0
+    ? null : modalSelectedRoom ? modalSelectedRoom.price_per_night : hotel?.pricePerNight;
   const bookingTotal = Number((modalPricePerNight || 0)) * (isHourlyStay ? (hourlyEnd ? 1 : 0) : modalNights) * (bookingForm.rooms || 1);
   const reservationFee = hotel?.reservation_fee;
   const reservationFeeUsable = reservationFee != null && Number(reservationFee) > 0;
@@ -630,7 +708,8 @@ export default function HotelDetail() {
   const suitableRoomTypesForGuests = rooms.filter((room) => {
     const capacity = Number(room.capacity || 0);
     const quantityAvailable = Number(room.quantity_available || 0);
-    return capacity >= Number(bookingForm.guests || 1) && quantityAvailable > 0;
+    return (capacity >= Number(bookingForm.guests || 1) && quantityAvailable > 0)
+      || Number(room.room_id) === Number(bookingForm.selectedRoomId);
   });
 
   const renderStars = (rating) => {
@@ -684,13 +763,10 @@ export default function HotelDetail() {
 
   const changeCalendarMonth = (delta) => {
     setCalendarMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + delta, 1));
-    setCalendarRange({ start: null, end: null });
+    setCalendarRange(prev => prev.end ? prev : { start: null, end: null });
   };
 
-  // The calendar's room-type dropdown doubles as the booking's room choice:
-  // same filtering/clamping the old Select Room Type field had, plus a range
-  // reset because availability differs per type. The fetch effect watches
-  // bookingForm.selectedRoomId, so the calendar refetches for the new type.
+  // Keep the chosen stay while the new room's inventory is checked.
   const handleRoomSelectChange = (event) => {
     const value = event.target.value;
     const selectedRoom = rooms.find((room) => String(room.room_id) === String(value));
@@ -699,18 +775,20 @@ export default function HotelDetail() {
       ...prev,
       selectedRoomId: value ? Number(value) : null,
       selectedRoomType: selectedRoom ? selectedRoom.room_type_name : null,
-      stayHours: '',
-      checkOut: '',
       rooms: Math.min(prev.rooms || 1, Math.max(1, maxAllowed))
     }));
-    setCalendarRange({ start: null, end: null });
     setCalendarError('');
     setBookingError('');
   };
 
   const isCalendarDayBookable = (dateKey) => {
     const day = calendarDays[dateKey];
-    if (!day || day.closed === 1 || (!isHourlyStay && Number(day.available) <= 0)) return false;
+    if (!day) return false;
+    // The checkout date is not occupied; it may be sold out for arrivals.
+    if (!isHourlyStay && calendarRange.start && !calendarRange.end && dateKey > calendarRange.start) {
+      return dateKey >= philippineToday();
+    }
+    if (day.closed === 1 || (!isHourlyStay && Number(day.available) < Number(bookingForm.rooms || 1))) return false;
     return dateKey >= philippineToday();
   };
 
@@ -759,7 +837,7 @@ export default function HotelDetail() {
     }
     const allAvailable = nights.length > 0 && nights.every((key) => {
       const day = calendarDays[key];
-      return day && day.closed !== 1 && Number(day.available) > 0;
+      return day && day.closed !== 1 && Number(day.available) >= Number(bookingForm.rooms || 1);
     });
 
     if (!allAvailable) {
@@ -792,6 +870,14 @@ export default function HotelDetail() {
 
     if (!bookingForm.checkIn || !bookingForm.checkOut) {
       setBookingError('Please select check-in and check-out dates.');
+      return;
+    }
+    if (currentAvailability.status !== 'valid') {
+      setBookingError(currentAvailability.message || 'Please wait while we check availability for these dates and rooms.');
+      return;
+    }
+    if (!bookingForm.stayHours && Number(modalSelectedRoom?.nightly_enabled ?? 1) === 0) {
+      setBookingError('Nightly stays are not offered for this room. Choose an hourly package.');
       return;
     }
 
@@ -1165,15 +1251,26 @@ export default function HotelDetail() {
   const activeIndex = gallery.length > 0 ? Math.min(galleryIndex, gallery.length - 1) : 0;
   const activeImage = gallery[activeIndex] || '/placeholder-hotel.svg';
 
-  const priceMin = rooms.length > 0 ? Math.min(...rooms.map(r => parseFloat(r.price_per_night) || 0)) : null;
-  const priceMax = rooms.length > 0 ? Math.max(...rooms.map(r => parseFloat(r.price_per_night) || 0)) : null;
+  const nightlyRooms = rooms.filter(room => Number(room.nightly_enabled ?? 1) !== 0);
+  const priceMin = nightlyRooms.length > 0 ? Math.min(...nightlyRooms.map(r => parseFloat(r.price_per_night) || 0)) : null;
+  const priceMax = nightlyRooms.length > 0 ? Math.max(...nightlyRooms.map(r => parseFloat(r.price_per_night) || 0)) : null;
+  const roomDisplayRate = room => {
+    if (Number(room?.nightly_enabled ?? 1) !== 0) return { label: t('per_night'), price: room?.price_per_night };
+    const [hours, price] = Object.entries(getHourlyRates(room?.hourly_rates)).sort((a, b) => Number(a[1]) - Number(b[1]))[0] || [];
+    return { label: hours ? `${hours}-hour package` : 'Hourly stays only', price };
+  };
   const roomCurrencies = [...new Set(rooms.map(room => room.currency || hotel.currency || 'PHP'))];
   const mixedRoomCurrencies = roomCurrencies.length > 1;
   const rateCurrency = roomCurrencies[0] || hotel.currency;
+  const hourlyStartingRate = rooms.flatMap(room => Object.entries(getHourlyRates(room.hourly_rates))
+    .map(([hours, price]) => ({ hours, price, currency: room.currency || hotel.currency })))
+    .sort((a, b) => a.price - b.price)[0];
   const heroPrice = priceMin === null
-    ? (hotel.pricePerNight || hotel.price_per_night
-      ? formatCurrency(hotel.pricePerNight || hotel.price_per_night)
-      : null)
+    ? rooms.length && hourlyStartingRate
+      ? mixedRoomCurrencies ? 'See individual room rates' : `From ${formatCurrency(hourlyStartingRate.price, hourlyStartingRate.currency)} · ${hourlyStartingRate.hours} hours`
+      : (hotel.pricePerNight || hotel.price_per_night
+        ? formatCurrency(hotel.pricePerNight || hotel.price_per_night)
+        : null)
     : mixedRoomCurrencies ? 'See individual room rates'
       : priceMin === priceMax
         ? formatCurrency(priceMin, rateCurrency)
@@ -1237,9 +1334,7 @@ export default function HotelDetail() {
     setBookingForm(prev => ({
       ...prev,
       selectedRoomId: selectedRoom.room_id,
-      selectedRoomType: selectedRoom.room_type_name,
-      stayHours: '',
-      checkOut: ''
+      selectedRoomType: selectedRoom.room_type_name
     }));
     setSelectedRoom(null);
     setRoomImageIndex(0);
@@ -1351,16 +1446,16 @@ export default function HotelDetail() {
         <section className="hd-card hd-book">
           {bookingForm.selectedRoomId && rooms.length > 0 ? (
             <div>
-              <div className="hd-price-label">{t('price_per_night')}</div>
+              <div className="hd-price-label">{roomDisplayRate(modalSelectedRoom).label}</div>
               <div className="hd-price-amount">
-                {formatCurrency(modalSelectedRoom?.price_per_night, bookingCurrency)}
+                {formatCurrency(roomDisplayRate(modalSelectedRoom).price, bookingCurrency)}
               </div>
             </div>
           ) : rooms.length > 0 ? (
             <div>
-              <div className="hd-price-label">{t('price_range')}</div>
+              <div className="hd-price-label">{priceMin == null ? 'Hourly stays only' : t('price_range')}</div>
               <div className="hd-price-amount">
-                {mixedRoomCurrencies ? 'See individual room rates' : `${formatCurrency(priceMin, rateCurrency)} – ${formatCurrency(priceMax, rateCurrency)}`}
+                {priceMin == null || mixedRoomCurrencies ? 'See individual room rates' : `${formatCurrency(priceMin, rateCurrency)} – ${formatCurrency(priceMax, rateCurrency)}`}
               </div>
               <small className="hd-price-note">{t('select_room_for_exact_price')}</small>
             </div>
@@ -1520,8 +1615,8 @@ export default function HotelDetail() {
 
                       <div className="hd-room-foot">
                         <div className="hd-room-price">
-                          <small>{t('per_night')}</small>
-                          <strong>{formatCurrency(room.price_per_night, room.currency || hotel.currency)}</strong>
+                          <small>{roomDisplayRate(room).label}</small>
+                          <strong>{formatCurrency(roomDisplayRate(room).price, room.currency || hotel.currency)}</strong>
                         </div>
                         <button
                           className="hd-room-cta"
@@ -1794,6 +1889,17 @@ export default function HotelDetail() {
                     <p id="hd-bm-date-help" className="hd-bm-note hd-bm-grid-full">Select your check-in and check-out dates using the availability calendar below so only available dates can be chosen.</p>
                   </>
                 )}
+                {bookingForm.checkIn && bookingForm.checkOut && (
+                  <div className={`hd-bm-availability is-${currentAvailability.status} hd-bm-grid-full`}
+                    role={currentAvailability.status === 'invalid' || currentAvailability.status === 'error' ? 'alert' : 'status'}>
+                    <span>{currentAvailability.status === 'checking'
+                      ? 'Checking these dates for your selected room and number of rooms…'
+                      : currentAvailability.status === 'valid'
+                        ? isHourlyStay ? 'This date is open. Final hourly availability is confirmed when booking.' : 'These dates are available for your selection.'
+                        : currentAvailability.message}</span>
+                    {currentAvailability.status === 'error' && <button type="button" onClick={() => setAvailabilityRetry(value => value + 1)}>Retry availability check</button>}
+                  </div>
+                )}
                 <div>
                   <label className="hd-bm-label"><Icons.User size={16} /> {t('form_guests')}</label>
                   <input
@@ -1803,15 +1909,7 @@ export default function HotelDetail() {
                     value={bookingForm.guests}
                     onChange={(e) => {
                       const value = Math.min(maxGuestsAllowed, Math.max(1, Number(e.target.value)));
-                      const matchingRoom = suitableRoomTypesForGuests.find((room) => Number(room.capacity || 0) >= value) || null;
-                      setBookingForm({ 
-                        ...bookingForm, 
-                        guests: value,
-                        stayHours: '',
-                        selectedRoomId: matchingRoom ? Number(matchingRoom.room_id) : null,
-                        selectedRoomType: matchingRoom ? matchingRoom.room_type_name : null,
-                        rooms: matchingRoom ? Math.min(bookingForm.rooms || 1, Number(matchingRoom.quantity_available || 1)) : 1
-                      });
+                      setBookingForm(previous => ({ ...previous, guests: value }));
                       setBookingError('');
                     }}
                     className="hd-input"
@@ -1866,17 +1964,20 @@ export default function HotelDetail() {
                           {suitableRoomTypesForGuests.length > 0 ? (
                             suitableRoomTypesForGuests.map((room) => {
                               const quantityOk = room.quantity_available >= bookingForm.rooms;
-                              const warningText = !quantityOk
+                              const fitsGuests = Number(room.capacity || 0) >= Number(bookingForm.guests || 1);
+                              const warningText = !fitsGuests
+                                ? ` [Fits at most ${room.capacity} guest(s)]`
+                                : !quantityOk
                                 ? ` [Only ${room.quantity_available} available, need ${bookingForm.rooms}]`
                                 : '';
                               return (
                                 <option
                                   key={room.room_id}
                                   value={room.room_id}
-                                  disabled={!quantityOk}
-                                  style={{ opacity: quantityOk ? 1 : 0.5 }}
+                                  disabled={!quantityOk || !fitsGuests}
+                                  style={{ opacity: quantityOk && fitsGuests ? 1 : 0.5 }}
                                 >
-                                  {room.room_type_name} ({formatCurrency(room.price_per_night, room.currency || hotel.currency)}/night, exact for {room.capacity} guest{room.capacity > 1 ? 's' : ''}, {room.quantity_available} avail){warningText}
+                                  {room.room_type_name} ({Number(room.nightly_enabled ?? 1) === 0 ? 'Hourly only' : `${formatCurrency(room.price_per_night, room.currency || hotel.currency)}/night`}, exact for {room.capacity} guest{room.capacity > 1 ? 's' : ''}, {room.quantity_available} avail){warningText}
                                 </option>
                               );
                             })
@@ -1894,7 +1995,11 @@ export default function HotelDetail() {
                             setBookingForm(previous => ({ ...previous, stayHours: event.target.value, checkOut: '' }));
                             setCalendarRange({ start: null, end: null }); setBookingError('');
                           }}>
-                          <option value="">Nightly stay</option>
+                          {Number(modalSelectedRoom.nightly_enabled ?? 1) !== 0
+                            ? <option value="">Nightly stay</option>
+                            : !bookingForm.stayHours && <option value="" disabled>Choose an hourly package</option>}
+                          {bookingForm.stayHours && !hourlyRates[bookingForm.stayHours] &&
+                            <option value={bookingForm.stayHours} disabled>Previous hourly package unavailable — choose another</option>}
                           {STAY_HOURS.filter(hours => hourlyRates[hours]).map(hours => <option key={hours} value={hours}>
                             {hours} hours — {formatCurrency(hourlyRates[hours], modalSelectedRoom.currency || hotel.currency)} per room
                           </option>)}
@@ -1936,8 +2041,11 @@ export default function HotelDetail() {
                             const todayKey = philippineToday();
                             const isPast = dateKey < todayKey;
                             const isToday = dateKey === todayKey;
-                            const isClosed = day?.closed === 1;
-                            const isFull = !isHourlyStay && !!day && Number(day.available) <= 0;
+                            const checkoutOnly = !isHourlyStay && !!calendarRange.start && !calendarRange.end
+                              && dateKey > calendarRange.start && !!day
+                              && (day.closed === 1 || Number(day.available) < Number(bookingForm.rooms || 1));
+                            const isClosed = day?.closed === 1 && !checkoutOnly;
+                            const isFull = !isHourlyStay && !!day && !checkoutOnly && Number(day.available) < Number(bookingForm.rooms || 1);
                             const isSelectable = isCalendarDayBookable(dateKey);
                             const isSelected = calendarRange.start === dateKey || calendarRange.end === dateKey;
                             const inRange = !!calendarRange.start && !!calendarRange.end
@@ -1961,7 +2069,9 @@ export default function HotelDetail() {
                                 className={`hd-cal-day${dayState ? ` ${dayState}` : ''}`}
                               >
                                 <div className="hd-cal-day-num">{date.getDate()}</div>
-                                {isClosed ? (
+                                {checkoutOnly ? (
+                                  <div className="hd-cal-day-tag">Checkout only</div>
+                                ) : isClosed ? (
                                   <div className="hd-cal-day-tag is-closed">Closed</div>
                                 ) : isFull ? (
                                   <div className="hd-cal-day-tag is-full">{t('availability_sold_out')}</div>
@@ -2308,9 +2418,9 @@ export default function HotelDetail() {
                 <span className="hd-bm-foot-ic"><Icons.X size={15} /> {t('cancel_button')}</span>
               </button>
               <button
-                className={`hd-bm-confirm${isSubmitting || !policyAgreed ? ' is-disabled' : ''}`}
+                className={`hd-bm-confirm${isSubmitting || !policyAgreed || currentAvailability.status !== 'valid' ? ' is-disabled' : ''}`}
                 onClick={handleSubmitBooking}
-                disabled={isSubmitting || !!checkoutState || !policyAgreed || !selectedPaymentOption || bookingPolicy.loading || Boolean(bookingPolicy.error) || manualPayment && !bookingPolicy.policy.storage_ready}
+                disabled={isSubmitting || !!checkoutState || !policyAgreed || !selectedPaymentOption || currentAvailability.status !== 'valid' || bookingPolicy.loading || Boolean(bookingPolicy.error) || manualPayment && !bookingPolicy.policy.storage_ready}
               >
                 {slowConnection ? (
                   <span className="hd-bm-foot-ic"><Icons.Clock size={15} /> {t('button_connecting_slow')}</span>
@@ -2651,8 +2761,10 @@ export default function HotelDetail() {
                     {/* Price + availability */}
                     <div className="hd-rm-pricebox">
                       <div>
-                        <p className="hd-rm-sec-title">Price per night</p>
-                        <p className="hd-rm-price">{formatCurrency(selectedRoom.price_per_night, selectedRoom.currency || hotel.currency)}</p>
+                        {Number(selectedRoom.nightly_enabled ?? 1) !== 0 ? <>
+                          <p className="hd-rm-sec-title">Price per night</p>
+                          <p className="hd-rm-price">{formatCurrency(selectedRoom.price_per_night, selectedRoom.currency || hotel.currency)}</p>
+                        </> : <p className="hd-rm-sec-title">Hourly stays only</p>}
                         {STAY_HOURS.filter(hours => getHourlyRates(selectedRoom.hourly_rates)[hours]).map(hours => (
                           <p key={hours} className="hd-bm-note">{hours} hours: {formatCurrency(getHourlyRates(selectedRoom.hourly_rates)[hours], selectedRoom.currency || hotel.currency)} per room</p>
                         ))}
@@ -2709,8 +2821,8 @@ export default function HotelDetail() {
             {/* Mobile sticky CTA */}
             <div className="hd-rm-mbar">
               <div className="hd-rm-mbar-price">
-                <small>{t('per_night')}</small>
-                <strong>{formatCurrency(selectedRoom.price_per_night, selectedRoom.currency || hotel.currency)}</strong>
+                <small>{roomDisplayRate(selectedRoom).label}</small>
+                <strong>{formatCurrency(roomDisplayRate(selectedRoom).price, selectedRoom.currency || hotel.currency)}</strong>
               </div>
               {roomBookable ? (
                 <button className="hd-rm-book" onClick={roomBookNow}>{t('book_now')}</button>

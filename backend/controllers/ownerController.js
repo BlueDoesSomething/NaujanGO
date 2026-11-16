@@ -2006,7 +2006,7 @@ router.get('/hotels/:hotelId/rooms', async (req, res) => {
         `SELECT room_id, hotel_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
                 price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
                 primary_image_url, check_in_time, check_out_time,
-                smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, hourly_rates,
+                smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, hourly_rates, nightly_enabled,
                 is_active, created_at, updated_at
          FROM rooms
          WHERE hotel_id = ?
@@ -2060,6 +2060,9 @@ router.post('/hotels/:hotelId/rooms', uploadRoomImages, async (req, res) => {
     const perfectForJson = serializeRoomContentInput(perfect_for, 'perfect_for');
     const commonQuestionsJson = serializeRoomContentInput(common_questions, 'common_questions');
     const hourlyRatesJson = req.body.hourly_rates === undefined ? null : JSON.stringify(parseHourlyRates(req.body.hourly_rates, true));
+    if (Number(req.body.nightly_enabled) === 0 && !Object.keys(JSON.parse(hourlyRatesJson || '{}')).length) {
+      return res.status(400).json({ error: 'Set at least one hourly rate before hiding nightly stays.' });
+    }
     let imageUrlsJson = serializeRoomListInput(image_urls, 'image_urls');
 
     // Add uploaded images to image_urls if provided
@@ -2078,13 +2081,13 @@ router.post('/hotels/:hotelId/rooms', uploadRoomImages, async (req, res) => {
       `INSERT INTO rooms (hotel_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
                          price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
                          primary_image_url, check_in_time, check_out_time,
-                         smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, hourly_rates, is_active)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                         smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, hourly_rates, nightly_enabled, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [hotelId, room_type_name, bed_type || null, description || null, capacity, room_size_sqm || null, 
        price_per_night, currency || 'PHP', quantity_available, amenitiesJson, roomFeaturesJson,
        imageUrlsJson, primaryImage, check_in_time || '14:00', check_out_time || '11:00',
         Number(smoking_allowed) ? 1 : 0, Number(pets_allowed) ? 1 : 0, Number(events_allowed) ? 1 : 0,
-        perfectForJson, commonQuestionsJson, hourlyRatesJson, is_active === undefined ? 1 : Number(is_active)]
+        perfectForJson, commonQuestionsJson, hourlyRatesJson, req.body.nightly_enabled === undefined ? 1 : Number(req.body.nightly_enabled), is_active === undefined ? 1 : Number(is_active)]
     );
 
     res.status(201).json({
@@ -2110,7 +2113,7 @@ router.put('/hotels/:hotelId/rooms/:roomId', uploadRoomImages, async (req, res) 
 
     // Verify ownership
     const [ownerCheck] = await db.promise().query(
-      `SELECT r.room_id FROM rooms r
+      `SELECT r.room_id, r.nightly_enabled, r.hourly_rates FROM rooms r
        INNER JOIN hotel_owners ho ON r.hotel_id = ho.hotel_id
        WHERE r.room_id = ? AND r.hotel_id = ? AND ho.user_id = ?`,
       [roomId, hotelId, userId]
@@ -2122,6 +2125,11 @@ router.put('/hotels/:hotelId/rooms/:roomId', uploadRoomImages, async (req, res) 
 
     const validationError = validateOwnerRoomWrite(req.body);
     if (validationError) return res.status(400).json({ error: validationError });
+    const nightlyEnabled = req.body.nightly_enabled === undefined ? Number(ownerCheck[0].nightly_enabled ?? 1) : Number(req.body.nightly_enabled);
+    const configuredRates = req.body.hourly_rates === undefined ? ownerCheck[0].hourly_rates : req.body.hourly_rates;
+    if (nightlyEnabled === 0 && !Object.keys(parseHourlyRates(configuredRates, true)).length) {
+      return res.status(400).json({ error: 'Set at least one hourly rate before hiding nightly stays.' });
+    }
     const amenitiesJson = serializeRoomListInput(amenities, 'amenities');
     const roomFeaturesJson = serializeRoomListInput(room_features, 'room_features');
     const perfectForJson = serializeRoomContentInput(perfect_for, 'perfect_for');
@@ -2152,6 +2160,10 @@ router.put('/hotels/:hotelId/rooms/:roomId', uploadRoomImages, async (req, res) 
     if (req.body.hourly_rates !== undefined) {
       updates.push('hourly_rates = ?');
       params.push(JSON.stringify(parseHourlyRates(req.body.hourly_rates, true)));
+    }
+    if (req.body.nightly_enabled !== undefined) {
+      updates.push('nightly_enabled = ?');
+      params.push(Number(req.body.nightly_enabled));
     }
 
     if (room_type_name !== undefined) {
@@ -2366,7 +2378,7 @@ router.get('/public/hotels/:hotelId/rooms', async (req, res) => {
       `SELECT room_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
               price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
               primary_image_url, check_in_time, check_out_time,
-              smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, hourly_rates
+              smoking_allowed, pets_allowed, events_allowed, perfect_for, common_questions, hourly_rates, nightly_enabled
        FROM rooms
        WHERE hotel_id = ? AND is_active = 1
        ORDER BY price_per_night`,

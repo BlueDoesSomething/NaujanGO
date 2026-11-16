@@ -144,6 +144,7 @@ test('hourly schema setup is additive, idempotent, and never rewrites financial 
   } }));
   await ensureHourlyStaySchema();
   await ensureHourlyStaySchema();
-  assert.equal(statements.length, 6);
+  assert.equal(statements.length, 7);
+  assert.ok(statements.some(sql => sql.includes('`nightly_enabled`') && sql.includes('DEFAULT 1')));
   assert.ok(statements.every(sql => !/UPDATE|DELETE|INSERT|MODIFY COLUMN/i.test(sql)));
 });

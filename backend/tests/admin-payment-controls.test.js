@@ -21,7 +21,7 @@ async function setup(t, options = {}) {
   clearUserColumnCache();
   let state = { policy: { online_payments_enabled: 0, lock_version: 1 }, messages: [], bookings: [], notifications: [], audit: [] }, tail = Promise.resolve();
   const hotel = { hotel_id: 8, name: 'Fixture Inn', location: 'Naujan', rooms_total: 1, is_active: 1, currency: 'PHP', check_in_time: '14:00', check_out_time: '12:00', payment_terms_text: 'Old deposit instruction', ...options.hotel };
-  const room = { room_id: 9, hotel_id: 8, room_type_name: 'Queen', quantity_available: 1, is_active: 1, capacity: 2, price_per_night: 500, hourly_rates: '{"3":200}', ...options.room };
+const room = { room_id: 9, hotel_id: 8, room_type_name: 'Queen', quantity_available: 1, is_active: 1, capacity: 2, price_per_night: 500, hourly_rates: '{"3":200}', ...options.room };
   const calls = [], transactions = [];
   const insert = (sql, params, table, idName) => {
     const columns = sql.match(/\(([^)]+)\) (?:VALUES|SELECT)/)[1].split(/,\s*/);
@@ -122,6 +122,19 @@ test('payments OFF keeps normal bookings: actual pending record, inventory held,
   assert.equal((await request(1, '/bookings/hotels', 'POST', input)).body.booking.booking_id, 1, 'lost-response retry returns the same booking');
   const existing = await request(1, '/bookings/hotels');
   assert.equal(existing.body.length, 1); assert.equal(existing.body[0].amount_due_now, null); assert.equal(existing.body[0].balance_due_at, null);
+});
+
+test('hourly-only room rejects new nightly bookings but accepts its configured hourly package', async t => {
+  const { request, room, state } = await setup(t, { room: { nightly_enabled: 0 } });
+  const nightly = await request(1, '/bookings/hotels', 'POST', input);
+  assert.equal(nightly.status, 409);
+  assert.match(nightly.body.error, /Nightly stays are not offered/);
+  assert.equal(state().bookings.length, 0);
+  const hourly = await request(1, '/bookings/hotels', 'POST', { ...input, stay_duration_hours: 3, check_in_time: '09:00', quoted_total: 200 });
+  assert.equal(hourly.status, 201);
+  assert.equal(hourly.body.booking.stay_duration_hours, 3);
+  room.nightly_enabled = 1;
+  assert.equal((await request(2, '/bookings/hotels', 'POST', { ...input, check_in: '2099-12-23', check_out: '2099-12-24', booking_key: 'other-guest' })).status, 201);
 });
 
 for (const online of [false, true]) test(`manual GCash stays direct to owner with online payments ${online ? 'ON' : 'OFF'}`, async t => {

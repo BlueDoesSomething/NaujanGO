@@ -329,8 +329,13 @@ export const createHotelBooking = async (req, res) => {
       }
       const stay = makeStay(req.body, hotelRow);
       const [inventoryRoomRows] = room_id ? await connection.execute(
-        'SELECT room_id, room_type_name, capacity, quantity_available FROM rooms WHERE room_id = ? AND hotel_id = ? FOR UPDATE', [room_id, hotel_id]) : [[]];
+        'SELECT room_id, room_type_name, capacity, quantity_available, nightly_enabled FROM rooms WHERE room_id = ? AND hotel_id = ? FOR UPDATE', [room_id, hotel_id]) : [[]];
       if (room_id && !inventoryRoomRows.length) throw Object.assign(new Error('Selected room type not found'), { status: 404 });
+      if (Number(inventoryRoomRows[0]?.nightly_enabled ?? 1) === 0) {
+        await connection.rollback();
+        connection.release();
+        return res.status(409).json({ error: 'Nightly stays are not offered for this room. Choose an hourly package.' });
+      }
       await validateStayInventory(connection, hotelRow, inventoryRoomRows[0] || null, stay, numRooms, userId);
       amountDueNow = dueNow(payment_option, totalAmount, hotelRow.reservation_fee);
       if (amountDueNow === null) {

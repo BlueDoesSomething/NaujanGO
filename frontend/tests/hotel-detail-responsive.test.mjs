@@ -8,6 +8,7 @@ import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createServer } from 'vite';
+import { philippineToday } from '../src/utils/stayBooking.js';
 
 // Real Chromium layout checks for the hotel detail page with mocked APIs. No
 // production hotel, booking, payment, map tile or weather service is contacted.
@@ -38,11 +39,23 @@ const hotel = {
 };
 
 const rooms = [
-  { room_id: 1, room_type_name: 'Standard Queen', price_per_night: 260, quantity: 12, quantity_available: 12,
-    max_guests: 2, amenities: ['Air Conditioning', 'Wi-Fi'], image_urls: [], primary_image_url: '' },
-  { room_id: 2, room_type_name: 'Family Suite', price_per_night: 780, quantity: 10, quantity_available: 10,
-    max_guests: 4, amenities: ['Air Conditioning', 'Wi-Fi'], image_urls: [], primary_image_url: '' }
+  { room_id: 1, room_type_name: 'Standard Queen', is_active: 1, price_per_night: 260, quantity: 12, quantity_available: 12,
+    capacity: 2, max_guests: 2, amenities: ['Air Conditioning', 'Wi-Fi'], image_urls: [], primary_image_url: '' },
+  { room_id: 2, room_type_name: 'Family Suite', is_active: 1, price_per_night: 780, quantity: 10, quantity_available: 10,
+    capacity: 4, max_guests: 4, amenities: ['Air Conditioning', 'Wi-Fi'], image_urls: [], primary_image_url: '' }
 ];
+
+let unavailableRoomId = null;
+let failingRoomId = null;
+const calendarFixture = (url) => {
+  const result = [];
+  const start = Date.parse(`${url.searchParams.get('start')}T00:00:00Z`);
+  const end = Date.parse(`${url.searchParams.get('end')}T00:00:00Z`);
+  for (let day = start; day <= end; day += 86400000) {
+    result.push({ date: new Date(day).toISOString().slice(0, 10), available: Number(url.searchParams.get('room_id')) === unavailableRoomId ? 0 : 4, closed: 0 });
+  }
+  return { days: result };
+};
 
 let vite, browser, profile, client, origin, initScript;
 const errors = [];
@@ -142,6 +155,13 @@ before(async () => {
         else if (url.pathname === '/api/hotels') body = { data: [hotel] };
         else if (url.pathname.endsWith('/reviews')) body = [];
         else if (url.pathname.endsWith('/rooms')) body = rooms;
+        else if (url.pathname.endsWith('/calendar')) {
+          if (Number(url.searchParams.get('room_id')) === failingRoomId) {
+            await fulfill(requestId, { error: 'Offline fixture error' }, 503);
+            return;
+          }
+          body = calendarFixture(url);
+        }
         else if (url.pathname.endsWith('/average-rating')) body = { average: 4.4, total: 3 };
         else if (url.pathname === '/api/languages') body = [];
         else if (url.pathname.includes('/languages/preference/')) body = { language_code: 'en' };
@@ -314,4 +334,109 @@ test('short landscape phones keep the hero readable without clipping', options, 
   assert.ok(view.viewport.scrollWidth <= 641, `overflow: ${view.viewport.scrollWidth}`);
   const screenshot = await client.send('Page.captureScreenshot', { format: 'png' });
   await writeFile(path.join(tempRoot, 'hotel-detail-mobile-spacing.png'), Buffer.from(screenshot.data, 'base64'));
+});
+
+test('choosing a different room keeps dates visible and blocks unavailable stays until resolved', options, async () => {
+  await open(393, 780);
+  unavailableRoomId = null;
+  await evaluate(`document.querySelector('.hd-cta').click()`);
+  await waitFor(`document.querySelector('#booking-room-type') && document.querySelectorAll('.hd-cal-day.is-selectable').length`);
+  const today = philippineToday();
+  const todayDate = new Date(`${today}T00:00:00Z`);
+  const nextMonth = todayDate.getUTCDate() > 25;
+  const start = nextMonth
+    ? new Date(Date.UTC(todayDate.getUTCFullYear(), todayDate.getUTCMonth() + 1, 3))
+    : new Date(Date.parse(`${today}T00:00:00Z`) + 2 * 86400000);
+  const end = new Date(start.getTime() + 86400000);
+  const startKey = start.toISOString().slice(0, 10), endKey = end.toISOString().slice(0, 10);
+  if (nextMonth) {
+    await evaluate(`document.querySelectorAll('.hd-bm-cal-nav-btn')[1].click()`);
+    await waitFor(`document.querySelector('.hd-bm-cal-month')?.textContent.includes(${JSON.stringify(start.toLocaleString('en-US', { month: 'long' }))})`);
+  }
+  const chooseDay = async (key) => {
+    const day = Number(key.slice(8));
+    await evaluate(`(() => { const cell = [...document.querySelectorAll('.hd-cal-day')]
+      .find(node => Number(node.querySelector('.hd-cal-day-num')?.textContent) === ${day});
+      if (!cell) throw new Error('Calendar day not found'); cell.click(); })()`);
+    await frame();
+  };
+  await chooseDay(startKey); await chooseDay(endKey);
+  await evaluate(`document.querySelector('#booking-room-type').value = '1'; document.querySelector('#booking-room-type').dispatchEvent(new Event('change', { bubbles: true }))`);
+  await waitFor(`document.querySelector('.hd-bm-availability.is-valid')`);
+  const dates = () => evaluate(`[document.querySelector('#hd-bm-checkin-date').value, document.querySelector('#hd-bm-checkout-date').value]`);
+  assert.deepEqual(await dates(), [startKey, endKey]);
+  unavailableRoomId = 2;
+  await evaluate(`document.querySelector('#booking-room-type').value = '2'; document.querySelector('#booking-room-type').dispatchEvent(new Event('change', { bubbles: true }))`);
+  await waitFor(`document.querySelector('.hd-bm-availability.is-invalid')`);
+  assert.deepEqual(await dates(), [startKey, endKey], 'room change must not erase either date');
+  assert.equal(await evaluate(`document.querySelector('.hd-bm-confirm').disabled`), true);
+  assert.match(await evaluate(`document.querySelector('.hd-bm-availability').textContent`), /Choose new dates/);
+  assert.equal(await evaluate(`document.querySelectorAll('.hd-cal-day.is-selected').length`), 2);
+  await evaluate(`document.querySelector('#booking-room-type').value = '1'; document.querySelector('#booking-room-type').dispatchEvent(new Event('change', { bubbles: true }))`);
+  await waitFor(`document.querySelector('.hd-bm-availability.is-valid')`);
+  assert.deepEqual(await dates(), [startKey, endKey]);
+  const setNumber = async (index, value) => evaluate(`(() => {
+    const input = document.querySelectorAll('.hd-bm-main .hd-bm-grid input[type="number"]')[${index}];
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, ${JSON.stringify(String(value))});
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`);
+  await setNumber(1, 5);
+  await waitFor(`document.querySelector('.hd-bm-availability.is-invalid')`);
+  assert.deepEqual(await dates(), [startKey, endKey], 'increasing room count must keep selected dates');
+  assert.equal(await evaluate(`document.querySelector('.hd-bm-confirm').disabled`), true);
+  await setNumber(1, 1);
+  await waitFor(`document.querySelector('.hd-bm-availability.is-valid')`);
+  await setNumber(0, 3);
+  await waitFor(`document.querySelector('#booking-room-type').value === '1' && document.querySelector('.hd-bm-availability.is-invalid')`);
+  assert.match(await evaluate(`document.querySelector('.hd-bm-availability').textContent`), /does not fit 3 guest/);
+  assert.deepEqual(await dates(), [startKey, endKey], 'changing guests must not silently change rooms or dates');
+  await evaluate(`document.querySelector('#booking-room-type').value = '2'; document.querySelector('#booking-room-type').dispatchEvent(new Event('change', { bubbles: true }))`);
+  await waitFor(`document.querySelector('.hd-bm-availability.is-invalid')`);
+  assert.deepEqual(await dates(), [startKey, endKey]);
+  await setNumber(0, 2);
+  await waitFor(`document.querySelector('#booking-room-type').value === '2' && document.querySelector('.hd-bm-availability.is-invalid')`);
+  await evaluate(`document.querySelector('#booking-room-type').value = '1'; document.querySelector('#booking-room-type').dispatchEvent(new Event('change', { bubbles: true }))`);
+  await waitFor(`document.querySelector('.hd-bm-availability.is-valid')`);
+  assert.deepEqual(await dates(), [startKey, endKey]);
+  unavailableRoomId = null;
+  await evaluate(`document.querySelector('.hd-bm-close').click()`);
+  await waitFor(`!document.querySelector('.hd-bm-back')`);
+  await evaluate(`document.querySelectorAll('.hd-room')[1].click()`);
+  await waitFor(`document.querySelector('.hd-rm-book')`);
+  await evaluate(`document.querySelector('.hd-rm-book').click()`);
+  await waitFor(`document.querySelector('.hd-bm-availability.is-valid')`);
+  assert.deepEqual(await dates(), [startKey, endKey], 'booking from a room card must not erase the selected stay');
+  await waitFor(`document.querySelectorAll('.hd-cal-day.is-selected').length === 2`);
+  assert.equal(await evaluate(`document.querySelectorAll('.hd-cal-day.is-selected').length`), 2);
+  failingRoomId = 1;
+  await evaluate(`document.querySelector('#booking-room-type').value = '1'; document.querySelector('#booking-room-type').dispatchEvent(new Event('change', { bubbles: true }))`);
+  await waitFor(`document.querySelector('.hd-bm-availability.is-error')`);
+  assert.deepEqual(await dates(), [startKey, endKey], 'network errors must not erase the selected stay');
+  assert.equal(await evaluate(`document.querySelector('.hd-bm-confirm').disabled`), true);
+  failingRoomId = null;
+  await evaluate(`document.querySelector('.hd-bm-availability button').click()`);
+  await waitFor(`document.querySelector('.hd-bm-availability.is-valid')`);
+  assert.deepEqual(await dates(), [startKey, endKey]);
+});
+
+test('hourly-only rooms omit Nightly stay and require an hourly package', options, async () => {
+  rooms[1].nightly_enabled = 0;
+  rooms[1].hourly_rates = { 3: 300 };
+  try {
+    await open(393, 780);
+    await client.send('Page.navigate', { url: `${origin}/hotels/46?hourly-only-test=1` });
+    await waitFor(`document.querySelector('.hd-cta') && document.querySelectorAll('.hd-room').length === 2`);
+    await evaluate(`document.querySelector('.hd-cta').click()`);
+    await waitFor(`document.querySelector('#booking-room-type')`);
+    await evaluate(`document.querySelector('#booking-room-type').value = '2'; document.querySelector('#booking-room-type').dispatchEvent(new Event('change', { bubbles: true }))`);
+    await waitFor(`document.querySelector('#booking-room-type').value === '2' && document.querySelector('#booking-stay-package')?.options[0]?.textContent === 'Choose an hourly package'`);
+    assert.equal(await evaluate(`[...document.querySelector('#booking-stay-package').options].some(option => option.textContent === 'Nightly stay')`), false);
+    assert.equal(await evaluate(`document.querySelector('#booking-stay-package').value`), '');
+    assert.equal(await evaluate(`document.querySelector('.hd-bm-confirm').disabled`), true);
+    await evaluate(`document.querySelector('#booking-stay-package').value = '3'; document.querySelector('#booking-stay-package').dispatchEvent(new Event('change', { bubbles: true }))`);
+    assert.equal(await evaluate(`document.querySelector('#booking-stay-package').value`), '3');
+  } finally {
+    delete rooms[1].nightly_enabled;
+    delete rooms[1].hourly_rates;
+  }
 });

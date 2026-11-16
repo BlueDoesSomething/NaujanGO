@@ -36,7 +36,7 @@ const setup = async (t, options = {}) => {
         user_id: 5, role: options.role || 'owner', email_verified: 1, archived: 0
       }]];
       if (sql.includes('FROM hotel_owners') || sql.includes('INNER JOIN hotel_owners')) {
-        return [options.denied ? [] : [{ room_id: 7 }]];
+         return [options.denied ? [] : [{ room_id: 7, nightly_enabled: row.nightly_enabled, hourly_rates: row.hourly_rates }]];
       }
       if (sql.startsWith('UPDATE rooms')) {
         writes.push({ sql, params });
@@ -93,6 +93,28 @@ test('hourly room rates persist through multipart edits and both owner and publi
   assert.deepEqual((await publicRead.json())[0].hourly_rates, { 3: 300, 12: 900 });
   await request('/7', { hourly_rates: '{}' });
   assert.deepEqual(JSON.parse(row().hourly_rates), {});
+});
+
+test('owners can hide nightly stays only when hourly packages remain bookable', async t => {
+  const { request, row, publicRooms } = await setup(t);
+  assert.equal((await request('/7', { nightly_enabled: '0', hourly_rates: '{"3":300}' })).status, 200);
+  assert.equal(row().nightly_enabled, 0);
+  assert.equal((await (await request('', undefined, 'GET')).json())[0].nightly_enabled, 0);
+  assert.equal((await (await publicRooms()).json())[0].nightly_enabled, 0);
+  assert.equal((await request('/7', { hourly_rates: '{}' })).status, 400);
+  assert.equal((await request('/7', { nightly_enabled: '0', hourly_rates: '{}' })).status, 400);
+  assert.equal(row().nightly_enabled, 0);
+  assert.equal((await request('/7', { nightly_enabled: '1', hourly_rates: '{}' })).status, 200);
+  assert.equal(row().nightly_enabled, 1);
+  assert.equal((await request('/7', { nightly_enabled: 'false' })).status, 400);
+});
+
+test('new hourly-only rooms require an hourly price', async t => {
+  const { request, row } = await setup(t);
+  const fields = { room_type_name: 'Short stay', capacity: '2', price_per_night: '500', quantity_available: '1', nightly_enabled: '0' };
+  assert.equal((await request('', fields, 'POST')).status, 400);
+  assert.equal((await request('', { ...fields, hourly_rates: '{"12":400}' }, 'POST')).status, 201);
+  assert.equal(row().nightly_enabled, 0);
 });
 
 test('malformed hourly rates and unauthorized changes are rejected before any write', async t => {

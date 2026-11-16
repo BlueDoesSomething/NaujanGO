@@ -142,6 +142,7 @@ export const ensureHourlyStaySchema = async () => {
   try {
     await ensureColumn('hotels', 'allowed_payment_options', 'TEXT NULL');
     await ensureColumn('rooms', 'hourly_rates', 'TEXT NULL');
+    await ensureColumn('rooms', 'nightly_enabled', 'TINYINT(1) NOT NULL DEFAULT 1');
     await ensureColumn('hotel_bookings', 'check_in_at', 'DATETIME NULL');
     await ensureColumn('hotel_bookings', 'check_out_at', 'DATETIME NULL');
     await ensureColumn('hotel_bookings', 'stay_duration_hours', 'SMALLINT UNSIGNED NULL');

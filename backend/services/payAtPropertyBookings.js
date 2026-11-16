@@ -72,6 +72,7 @@ export const createPayAtPropertyBooking = async (user, body) => {
     const [roomRows] = await connection.execute('SELECT * FROM rooms WHERE room_id = ? AND hotel_id = ? FOR UPDATE', [roomId, hotelId]);
     const room = roomRows[0]; activeRoom(room, guests);
     const stay = makeStay(body, hotel);
+    if (!stay.hours && Number(room.nightly_enabled ?? 1) === 0) throw policyError('Nightly stays are not offered for this room. Choose an hourly package.', 409);
     if (stay.start <= Date.now() + MANILA_OFFSET_MS) throw policyError('The booking arrival must be in the future.');
     const rate = stay.hours ? parseHourlyRates(room.hourly_rates)[stay.hours] : Number(room.price_per_night);
     if (!Number.isFinite(rate) || rate <= 0) throw policyError('This room rate is not available.');

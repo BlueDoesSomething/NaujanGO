@@ -1,5 +1,5 @@
 import { formatHotelCurrency } from './hotelCurrency.js';
-import { philippineToday } from './stayBooking.js';
+import { getHourlyRates, philippineToday } from './stayBooking.js';
 import { isExternalPaymentBooking } from './bookingPaymentPolicy.js';
 
 export const OWNER_PATHS = {
@@ -22,11 +22,14 @@ export const ownerStartingPrice = (hotel, rooms) => {
       ? `Starting price ${formatHotelCurrency(hotel.price_per_night, hotel.currency)}/night · no room types yet`
       : 'Add room types and rates';
   }
-  const active = propertyRooms.filter(room => Number(room.is_active) === 1 && Number(room.price_per_night) > 0);
+  const active = propertyRooms.filter(room => Number(room.is_active) === 1 && (Number(room.nightly_enabled ?? 1) === 0
+    ? Object.keys(getHourlyRates(room.hourly_rates)).length > 0 : Number(room.price_per_night) > 0));
   if (!active.length) return 'No active room rates';
   const currencies = [...new Set(active.map(room => room.currency || hotel.currency || 'PHP'))];
   if (currencies.length > 1) return 'Multiple room currencies · see Rooms & Rates';
-  return `From ${formatHotelCurrency(Math.min(...active.map(room => Number(room.price_per_night))), currencies[0])}/night`;
+  const prices = active.map(room => Number(room.nightly_enabled ?? 1) === 0
+    ? Math.min(...Object.values(getHourlyRates(room.hourly_rates))) : Number(room.price_per_night));
+  return `From ${formatHotelCurrency(Math.min(...prices), currencies[0])}${active.every(room => Number(room.nightly_enabled ?? 1) !== 0) ? '/night' : ' · see stay packages'}`;
 };
 
 export const validateOwnerHotel = (form, hasRooms = false) => {

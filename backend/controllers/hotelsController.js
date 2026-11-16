@@ -656,7 +656,7 @@ export const getHotelRooms = async (req, res) => {
       `SELECT room_id, room_type_name, bed_type, description, capacity, room_size_sqm, 
               price_per_night, currency, quantity_available, amenities, room_features, image_urls, 
               primary_image_url, check_in_time, check_out_time,
-              smoking_allowed, pets_allowed, events_allowed, is_active, perfect_for, common_questions, hourly_rates
+               smoking_allowed, pets_allowed, events_allowed, is_active, perfect_for, common_questions, hourly_rates, nightly_enabled
        FROM rooms
        WHERE hotel_id = ? AND is_active = 1
        ORDER BY price_per_night`,

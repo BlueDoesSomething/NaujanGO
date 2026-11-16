@@ -57,6 +57,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged, embe
     capacity: 1,
     room_size_sqm: '',
     price_per_night: '',
+    nightly_enabled: 1,
     hourly_rates: {},
     currency: hotel.currency || 'PHP',
     quantity_available: 1,
@@ -154,6 +155,9 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged, embe
   const handleSaveRoom = async () => {
     if (saveInFlight.current) return;
     const fieldErrors = validateOwnerRoom(roomForm);
+    if (!roomForm.nightly_enabled && !Object.keys(getHourlyRates(roomForm.hourly_rates)).length) {
+      fieldErrors.hourly_rates = 'Set at least one hourly package before hiding nightly stays.';
+    }
     setErrors(fieldErrors); setSaveError('');
     if (Object.keys(fieldErrors).length) { formRef.current?.scrollIntoView({ block: 'start' }); return; }
 
@@ -186,6 +190,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged, embe
       formData.append('room_size_sqm', roomForm.room_size_sqm || '');
       formData.append('price_per_night', roomForm.price_per_night);
       formData.append('hourly_rates', JSON.stringify(roomForm.hourly_rates));
+      formData.append('nightly_enabled', roomForm.nightly_enabled ? 1 : 0);
       formData.append('currency', roomForm.currency);
       formData.append('quantity_available', roomForm.quantity_available);
       formData.append('amenities', JSON.stringify(amenities));
@@ -262,6 +267,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged, embe
       bed_type: room.bed_type || '',
       currency: room.currency || emptyRoom.currency,
       is_active: Number(room.is_active) === 1 ? 1 : 0,
+      nightly_enabled: Number(room.nightly_enabled ?? 1) === 1 ? 1 : 0,
       smoking_allowed: Number(room.smoking_allowed) === 1,
       pets_allowed: Number(room.pets_allowed) === 1,
       events_allowed: Number(room.events_allowed) === 1,
@@ -626,6 +632,7 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged, embe
                             min="0"
                             required
                           />
+                          <small>{roomForm.nightly_enabled ? 'Shown to guests booking overnight.' : 'Required base rate for records; not offered as a nightly stay.'}</small>
                         </label>
 
                         <label className="rm-field">
@@ -667,7 +674,17 @@ const RoomManagement = ({ hotel, onClose, t = (key) => key, onRoomsChanged, embe
                     <div className="rm-form-sec">
                       <p className="hd-rm-sec-title">Hourly stay packages (optional)</p>
                       <label className="rm-field"><span className="rm-label">Room currency</span><input className="rm-input" maxLength={3} value={roomForm.currency} onChange={event => setRoomForm({ ...roomForm, currency: event.target.value.toUpperCase() })} /><small>Changing the code does not convert existing prices or historical payments.</small></label>
-                      <p className="rm-hint">Set a price per room for each package. Leave a rate empty to disable it. Nightly pricing remains available.</p>
+                      <p className="rm-hint">Set a price per room for each package. Leave a rate empty to disable it.</p>
+                      <label className="rm-field">
+                        <span className="rm-label">Offer nightly stays</span>
+                        <select className="rm-input" value={roomForm.nightly_enabled ? '1' : '0'} disabled={roomSaving}
+                          onChange={event => setRoomForm(current => ({ ...current, nightly_enabled: Number(event.target.value) }))}>
+                          <option value="1">Yes — show nightly stay to guests</option>
+                          <option value="0">No — hourly packages only</option>
+                        </select>
+                        <small>Hiding nightly stays prevents new nightly bookings for this room. At least one hourly rate is required; existing bookings are unaffected.</small>
+                      </label>
+                      {errors.hourly_rates && <p className="rm-hint" role="alert">{errors.hourly_rates}</p>}
                       <div className="rm-grid2">
                         {STAY_HOURS.map(hours => <label className="rm-field" key={hours}>
                           <span className="rm-label">{hours} hours ({roomForm.currency || 'PHP'})</span>
