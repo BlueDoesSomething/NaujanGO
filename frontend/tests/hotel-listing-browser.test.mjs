@@ -60,6 +60,29 @@ test('hotel results show essential information and real detail/calendar/map link
   }
 });
 
+test('accommodation hero, search and navbar fit iPhone-sized viewports without clipped text', options, async () => {
+  for (const width of [320, 375, 393, 430]) {
+    await browser.viewport(width, 740); await open();
+    const view = await browser.evaluate(`(() => {
+      const bounds = selector => {
+        const node = document.querySelector(selector), rect = node.getBoundingClientRect();
+        return { left: rect.left, right: rect.right, scroll: node.scrollWidth, client: node.clientWidth };
+      };
+      return {
+        width: innerWidth, pageWidth: document.documentElement.scrollWidth,
+        hero: bounds('.ng-hero'), title: bounds('.ng-hero h1'), subtitle: bounds('.ng-hero p'),
+        search: bounds('.search-bar-inner'), navbar: bounds('.navbar-container'),
+        theme: bounds('.mobile-theme-toggle'), menu: bounds('.navbar-toggle')
+      };
+    })()`);
+    assert.ok(view.pageWidth <= width + 1, `${width}px page overflows`);
+    for (const key of ['hero', 'title', 'subtitle', 'search', 'navbar', 'theme', 'menu']) {
+      assert.ok(view[key].left >= -1 && view[key].right <= width + 1, `${width}px ${key} outside viewport: ${JSON.stringify(view[key])}`);
+    }
+    assert.ok(view.title.scroll <= view.title.client + 1, `${width}px accommodation heading clipped`);
+  }
+});
+
 test('hotel search, amenity/rating filters and sorting work in either view', options, async () => {
   for (const view of ['Grid', 'List']) {
     await browser.click(view);

@@ -33,6 +33,51 @@ test('empty database reviews never become sample testimonials or fabricated prop
   assert.ok(await browser.evaluate('document.documentElement.scrollWidth <= innerWidth + 1'));
 });
 
+test('phone swipes over the homepage hero move the page instead of an inner scroll container', options, async () => {
+  for (const width of [320, 393]) {
+    await browser.viewport(width, 850);
+    await openHome();
+    const layout = await browser.evaluate(`(() => ({
+      heroOverflow: getComputedStyle(document.querySelector('.hero-section')).overflowY,
+      stageOverflow: getComputedStyle(document.querySelector('.featured-stage')).overflowY,
+      horizontalOverflow: document.documentElement.scrollWidth > innerWidth + 1,
+      scrollHeight: document.documentElement.scrollHeight
+    }))()`);
+    assert.equal(layout.heroOverflow, 'clip');
+    assert.equal(layout.stageOverflow, 'clip');
+    assert.equal(layout.horizontalOverflow, false);
+    assert.ok(layout.scrollHeight > 850);
+    await browser.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 1 });
+    try {
+      await browser.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: width / 2, y: 520 }] });
+      for (const y of [490, 460, 430, 400, 370, 340, 310, 280, 250]) {
+        await browser.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: width / 2, y }] });
+      }
+      await browser.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      const scrolled = await browser.evaluate('new Promise(resolve => setTimeout(() => resolve(scrollY), 150))');
+      assert.ok(scrolled > 80, `${width}px hero swipe did not scroll the page: ${scrolled}`);
+      const card = await browser.evaluate(`(() => {
+        const node = document.querySelector('.info-body');
+        window.scrollTo({ top: node.getBoundingClientRect().top + scrollY - 240, behavior: 'instant' });
+        const rect = node.getBoundingClientRect();
+        const x = Math.round(rect.left + rect.width / 2), y = Math.round(Math.max(150, Math.min(570, rect.top + 80)));
+        return { x, y, inside: node.contains(document.elementFromPoint(x, y)), before: scrollY, overflow: getComputedStyle(node).overflowY };
+      })()`);
+      assert.ok(card.inside, `${width}px info card is not reachable for touch: ${JSON.stringify(card)}`);
+      assert.notEqual(card.overflow, 'auto', 'phone info card must not trap vertical swipes');
+      await browser.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: card.x, y: card.y }] });
+      for (const delta of [25, 50, 75, 100, 125, 150]) {
+        await browser.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: card.x, y: card.y - delta }] });
+      }
+      await browser.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      const afterCard = await browser.evaluate('new Promise(resolve => setTimeout(() => resolve(scrollY), 150))');
+      assert.ok(afterCard > card.before + 40, `${width}px info card swipe did not scroll the page: ${card.before} -> ${afterCard}`);
+    } finally {
+      await browser.send('Emulation.setTouchEmulationEnabled', { enabled: false });
+    }
+  }
+});
+
 test('real saved traveler reviews display without being padded with invented five-star stories', options, async () => {
   mode = 'reviews'; await openHome();
   await browser.waitFor(`document.querySelector('.eco-testimonial-card blockquote')?.textContent.includes('A genuine saved review.')`);

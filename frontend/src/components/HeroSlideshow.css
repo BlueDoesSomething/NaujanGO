@@ -9,3 +9,22 @@
   color: #ffffff !important;
   text-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 2px 8px rgba(0, 0, 0, 0.35) !important;
 }
+
+@media (max-width: 480px) {
+  .ng-hero .hero-slideshow-content {
+    max-width: 100%;
+    min-width: 0;
+    padding-inline: 1rem !important;
+  }
+  .ng-hero h1 {
+    max-width: 100% !important;
+    font-size: clamp(1.75rem, 8vw, 2.25rem) !important;
+    overflow-wrap: anywhere;
+    margin-bottom: 0.75rem !important;
+  }
+  .ng-hero p {
+    max-width: 100%;
+    font-size: clamp(1rem, 4.5vw, 1.2rem) !important;
+    line-height: 1.4;
+  }
+}

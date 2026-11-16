@@ -27,7 +27,8 @@
   background: var(--eco-bg);
   color: var(--eco-text);
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: hidden; /* Older Safari fallback. */
+  overflow-x: clip;
   font-family: var(--eco-font-display);
   scroll-behavior: smooth;
 }
@@ -54,7 +55,8 @@
   min-height: 100vh;
   padding-top: 40px;
   padding-bottom: 88px;
-  overflow: hidden;
+  overflow: hidden; /* Older Safari fallback. */
+  overflow: clip;
 }
 .eco-hero-head {
   position: relative;
@@ -225,7 +227,8 @@
   position: relative;
   height: 620px;
   border-radius: 28px;
-  overflow: hidden;
+  overflow: hidden; /* Older Safari fallback. */
+  overflow: clip;
   background: #0f1419;
   border: 1px solid rgba(255, 255, 255, 0.1);
   outline: none;
@@ -1886,4 +1889,13 @@
   .eco-home .shimmer::after,
   .eco-home .hero-pill .pulse-dot { animation: none !important; }
   .eco-reveal, .eco-stagger > * { transition: none !important; opacity: 1 !important; transform: none !important; }
+}
+
+/* On phones the page, not the card, owns vertical swipes. Otherwise Safari
+   can keep the gesture inside the hero and bounce it back to the top. */
+@media (max-width: 767px) {
+  .eco-home .info-body {
+    overflow-y: visible;
+    overscroll-behavior: auto;
+  }
 }
