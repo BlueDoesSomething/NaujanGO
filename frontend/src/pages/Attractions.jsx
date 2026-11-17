@@ -318,7 +318,8 @@ const Attractions = () => {
                 <button
                   type="button"
                   className={`attr-heart${favs[a.id] ? ' attr-heart--on' : ''}`}
-                  aria-label="Favorite"
+                  aria-label={favs[a.id] ? t('saved_to_favorites') : t('save_to_favorites')}
+                  aria-pressed={!!favs[a.id]}
                   onClick={(e) => {
                     e.stopPropagation();
                     setFavs(f => ({ ...f, [a.id]: !f[a.id] }));

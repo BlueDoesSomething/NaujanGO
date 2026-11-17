@@ -26,9 +26,9 @@
   --ng-card-overlay: linear-gradient(to top, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
   --ng-card-title: #0f172a;
   --ng-card-location: #475569;
-  --ng-heart-bg: rgba(255, 255, 255, 0.8);
-  --ng-heart-border: rgba(0, 0, 0, 0.06);
-  --ng-heart-icon: #0f172a;
+  --ng-heart-bg: #122a22;
+  --ng-heart-border: rgba(255, 255, 255, 0.85);
+  --ng-heart-icon: #ffffff;
   --ng-rating-bg: rgba(255, 255, 255, 0.6);
   --ng-rating-border: rgba(0, 0, 0, 0.06);
   --ng-rating-text: #0f172a;
@@ -83,8 +83,8 @@ html[data-theme="dark"] .attractions-page {
   --ng-card-overlay: linear-gradient(to top, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0.4) 50%, transparent 100%);
   --ng-card-title: #f8fafc;
   --ng-card-location: #94a3b8;
-  --ng-heart-bg: rgba(2, 6, 23, 0.55);
-  --ng-heart-border: rgba(255, 255, 255, 0.16);
+  --ng-heart-bg: #122a22;
+  --ng-heart-border: rgba(255, 255, 255, 0.85);
   --ng-heart-icon: #ffffff;
   --ng-rating-bg: rgba(2, 6, 23, 0.6);
   --ng-rating-border: rgba(255, 255, 255, 0.14);
@@ -502,19 +502,21 @@ html[data-theme="dark"] .clear-all-filters-btn {
   background: var(--ng-card-overlay);
 }
 
-.attr-heart {
+.attractions-page .attr-heart {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 12px;
+  right: 12px;
   z-index: 10;
-  width: 24px;
-  height: 24px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
   border-radius: 50%;
   background: var(--ng-heart-bg);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
   border: 1px solid var(--ng-heart-border);
   color: var(--ng-heart-icon);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -526,13 +528,19 @@ html[data-theme="dark"] .clear-all-filters-btn {
   transform: scale(1.12);
 }
 
-.attr-heart--on {
+.attr-heart:focus-visible {
+  outline: 3px solid #facc15;
+  outline-offset: 2px;
+}
+
+.attractions-page .attr-heart--on {
   color: #fb7185;
 }
 
 .attr-heart svg {
-  width: 11px;
-  height: 11px;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
 }
 
 .attr-card-content {
@@ -963,15 +971,9 @@ html[data-theme="dark"] .clear-all-filters-btn {
 
 /* ── Responsive ── */
 @media (min-width: 640px) {
-  .attr-heart {
+  .attractions-page .attr-heart {
     top: 16px;
     right: 16px;
-    width: 40px;
-    height: 40px;
-  }
-  .attr-heart svg {
-    width: 15px;
-    height: 15px;
   }
   .attr-card-content {
     padding: 20px;
