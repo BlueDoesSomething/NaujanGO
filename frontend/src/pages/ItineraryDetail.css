@@ -70,7 +70,7 @@
 .itin-plan-stop-footer button, .itin-plan-directions button, .itin-plan-map-heading button, .itin-clear-filter { min-height: 44px; border: 1px solid #16a34a; background: transparent; color: #15803d; border-radius: 8px; padding: 0.5rem 0.75rem; cursor: pointer; }
 .itin-plan-stop-footer label { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 44px; cursor: pointer; }
 .itin-plan-stop-footer input { width: 18px; height: 18px; }
-.itin-plan-stop-footer button:focus-visible, .itin-plan-stop-main:focus-visible, .itin-overview-day:focus-visible, .itin-plan-day-select select:focus-visible { outline: 2px solid #16a34a; outline-offset: 2px; }
+.itin-plan-stop-footer button:focus-visible, .itin-plan-stop-main:focus-visible, .itin-overview-day-cta:focus-visible, .itin-summary-link:focus-visible, .itin-empty button:focus-visible, .itin-plan-day-select select:focus-visible { outline: 2px solid #16a34a; outline-offset: 2px; }
 .itin-plan-note { margin: 0.5rem 0 0 2.75rem; font-size: 0.8rem; overflow-wrap: anywhere; }
 .itin-plan-map-heading, .itin-plan-directions { display: flex; justify-content: space-between; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.75rem; }
 .itin-plan-map-heading h3 { flex: 1 1 100px; min-width: 0; }
@@ -128,6 +128,45 @@
 .itin-archive-buttons .itin-archive-confirm { background: #dc2626; border-color: #dc2626; color: #fff; }
 .itin-archive-buttons button:disabled { opacity: 0.65; cursor: wait; }
 
+/* ---------- Overview refresh: route preview, day timeline, cost snapshot ---------- */
+.itin-overview-map-canvas { width: 100%; height: clamp(260px, 34vw, 400px); border-radius: 12px; overflow: hidden; isolation: isolate; background: #eef2f0; }
+.itin-overview-day { gap: 0.6rem; cursor: default; }
+.itin-overview-day-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 0.6rem; }
+.itin-overview-day-head strong { font-size: 1rem; }
+.itin-overview-stops { list-style: none; display: grid; gap: 0.15rem; margin: 0; padding: 0; }
+.itin-overview-stop { display: flex; align-items: center; gap: 0.6rem; min-width: 0; padding: 0.3rem 0; font-size: 0.85rem; }
+.itin-overview-stop-thumb { width: 36px; height: 36px; flex: 0 0 36px; border-radius: 8px; object-fit: cover; background: #eef2f0; }
+.itin-overview-stop-time { flex: 0 0 auto; min-width: 3em; font-variant-numeric: tabular-nums; font-size: 0.8rem; }
+.itin-overview-stop-name { flex: 1 1 auto; min-width: 0; font-weight: 600; overflow-wrap: anywhere; }
+.itin-overview-stop-meta { flex: 0 0 auto; font-size: 0.78rem; white-space: nowrap; }
+.itin-overview-day .itin-overview-day-date,
+.itin-overview-day .itin-overview-stop-time,
+.itin-overview-day .itin-overview-stop-meta { color: #6b7280; }
+.itin-overview-day .itin-overview-day-cost { margin-left: auto; color: #15803d; font-weight: 700; font-size: 0.85rem; white-space: nowrap; }
+.itin-overview-day .itin-overview-stop-name { color: #1f2937; }
+.itin-overview-day .itin-overview-stop-empty { color: #9ca3af; font-style: italic; }
+.itin-overview-day-cta { display: block; width: 100%; min-height: 44px; padding: 0.6rem 0.75rem; border: 1px dashed #cbd5e1; border-radius: 10px; background: #f8fafc; color: #15803d; font-weight: 700; font-size: 0.85rem; text-align: left; cursor: pointer; }
+.itin-overview-day-cta:hover { border-color: #16a34a; background: #f0fdf4; }
+
+.itin-empty { display: grid; justify-items: center; gap: 0.75rem; padding: 2.5rem 1.5rem; text-align: center; }
+.itin-empty h2 { margin: 0; }
+.itin-empty p { margin: 0; max-width: 46ch; color: #6b7280; line-height: 1.6; overflow-wrap: anywhere; }
+.itin-empty button { min-height: 44px; padding: 0.75rem 1.75rem; border: 0; border-radius: 10px; background: #16a34a; color: #fff; font-weight: 700; font-size: 0.95rem; cursor: pointer; }
+.itin-empty button:hover { background: #15803d; }
+
+.itin-summary-total { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 0.6rem 0.7rem; border-radius: 8px; background: #f0fdf4; color: #14532d; font-size: 0.95rem; font-weight: 700; }
+.itin-summary-total strong { color: #15803d; font-size: 1.05rem; }
+.itin-summary-limit { margin-top: 0.85rem; padding: 0.55rem 0.7rem; border-radius: 8px; font-size: 0.8rem; line-height: 1.45; overflow-wrap: anywhere; }
+.itin-summary-limit--none { background: #f3f4f6; color: #6b7280; }
+.itin-summary-limit--ok { background: #ecfdf5; color: #15803d; }
+.itin-summary-limit--over { background: #fef2f2; color: #b91c1c; }
+.itin-summary-link { display: block; width: 100%; min-height: 44px; margin-top: 0.85rem; padding: 0.6rem 0.75rem; border: 1px solid #16a34a; border-radius: 10px; background: #fff; color: #15803d; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+.itin-summary-link:hover { background: #f0fdf4; }
+.itin-summary-note { margin-top: 0.75rem; color: #9ca3af; font-size: 0.72rem; line-height: 1.45; }
+
+.itin-about-text { margin: 0; color: #374151; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.itin-about-empty { margin: 0; color: #9ca3af; font-style: italic; }
+
 @media (max-width: 900px) {
   .itin-plan-grid { grid-template-columns: 1fr; }
   .itin-plan-map { position: static; }
@@ -150,6 +189,7 @@
   .itin-plan-mobile-switch button { flex: 1; min-height: 44px; padding: 0.65rem; border-radius: 10px; border: 1px solid #16a34a; background: transparent; color: #15803d; }
   .itin-plan-mobile-switch button[aria-pressed="true"] { color: white; background: #16a34a; }
   .itin-plan-map-canvas { height: clamp(270px, 48dvh, 390px); }
+  .itin-overview-map-canvas { height: clamp(240px, 60vw, 340px); }
   .itin-plan-map .leaflet-popup-content { width: min(240px, calc(100vw - 6.5rem)) !important; max-width: calc(100vw - 6.5rem); }
   .itin-plan-stop-footer { padding-left: 0; }
   .itin-plan-note { margin-left: 0; }
@@ -213,6 +253,10 @@
 
 @media (max-width: 480px) {
   .itin-budget-assumptions { grid-template-columns: minmax(0, 1fr) !important; }
+  .itin-overview-day { padding: 0.875rem; }
+  .itin-overview-stop { flex-wrap: wrap; }
+  .itin-overview-stop-meta { white-space: normal; }
+  .itin-empty { padding: 2rem 1rem; }
   .itin-stats { gap: 0.5rem !important; }
   .itin-stats > div {
     padding: 0.75rem !important;

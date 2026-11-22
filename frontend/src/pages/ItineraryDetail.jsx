@@ -26,6 +26,14 @@ const dateRangeDays = (start, end) => {
   return Number.isFinite(startMs) && Number.isFinite(endMs) && endMs >= startMs
     ? Math.min(365, Math.round((endMs - startMs) / 86400000) + 1) : 0;
 };
+// "Tue, Nov 3" style label for a day offset from the trip start (UTC-safe).
+const dayDateLabel = (start, day) => {
+  if (!start) return '';
+  const startMs = Date.parse(`${String(start).slice(0, 10)}T00:00:00Z`);
+  if (!Number.isFinite(startMs)) return '';
+  return new Date(startMs + (day - 1) * 86400000)
+    .toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' });
+};
 const csrfHeaders = () => {
   const token = getCsrfToken();
   return token ? { 'X-CSRF-Token': token } : {};
@@ -536,6 +544,60 @@ const ItineraryDetail = () => {
 
     return points;
   }, [dayItems, navTarget, userLocation]);
+
+  // The hero prefers the trip's own stop photos (unique, in stop order).
+  const heroImages = useMemo(() => {
+    const seen = new Set();
+    const images = [];
+    (itinerary?.items || []).forEach((item) => {
+      const src = item.attraction_image;
+      if (src && !seen.has(src)) {
+        seen.add(src);
+        images.push(src);
+      }
+    });
+    return images;
+  }, [itinerary?.items]);
+
+  // Route preview markers across every day; stops without coordinates are skipped.
+  const overviewMarkers = useMemo(() => {
+    const markers = [];
+    dayNumbers.forEach((day) => {
+      (itemsByDay[day] || EMPTY_STOPS).forEach((item) => {
+        const coords = stopCoordinates(item);
+        if (!coords) return;
+        const number = markers.length + 1;
+        markers.push({
+          id: item.id ?? `overview-${day}-${number}`,
+          ...coords,
+          title: `${number}. ${item.custom_name || item.attraction_name || 'Unnamed stop'}`,
+          iconSize: [44, 52], iconAnchor: [22, 45], popupAnchor: [0, -42],
+          iconHtml: `<span class="itin-map-pin"><span class="itin-map-pin-number">${number}</span></span>`,
+          popup: itineraryStopPopup(item, number)
+        });
+      });
+    });
+    return markers;
+  }, [itemsByDay, dayNumbers.length]);
+
+  const overviewWaypoints = useMemo(
+    () => overviewMarkers.map(({ lat, lng, title }) => ({ lat, lng, name: title })),
+    [overviewMarkers]
+  );
+
+  // Cost snapshot: breakdown totals shared with the Budget tab (estimates only).
+  const budgetTotals = useMemo(() => displayedBreakdown.reduce((totals, row) => ({
+    attraction: totals.attraction + row.attractionCost,
+    fare: totals.fare + row.fareCost,
+    food: totals.food + row.foodCost,
+    other: totals.other + row.otherCost,
+    need: totals.need + row.estimatedNeed
+  }), { attraction: 0, fare: 0, food: 0, other: 0, need: 0 }), [displayedBreakdown]);
+
+  const parsedSpendingLimit = Number(budgetAssumptions.spendingLimit);
+  const spendingLimit = budgetAssumptions.spendingLimit == null || budgetAssumptions.spendingLimit === ''
+    || !Number.isFinite(parsedSpendingLimit) || parsedSpendingLimit < 0 ? null : parsedSpendingLimit;
+  const limitRemaining = spendingLimit === null ? null : spendingLimit - budgetTotals.need;
   
   if (loading) {
     return (
@@ -564,6 +626,7 @@ const ItineraryDetail = () => {
   <HeroSlideshow 
         title={itinerary.name}
         subtitle={itinerary.description}
+        images={heroImages.length ? heroImages : undefined}
         height={isMobile ? 'clamp(220px, 34vh, 300px)' : '400px'}
         showControls={false}
       />
@@ -659,12 +722,12 @@ const ItineraryDetail = () => {
           </button>
         </div>
         <div style={{paddingRight: '1.5rem'}}>
-          <Tooltip id="tabs-help" text="Overview: Trip summary · Trip Plan: Daily stops and map · Budget: Spending breakdown · Weather: Forecasts at each stop" />
+          <Tooltip id="tabs-help" text="Overview: Route preview, day timeline and costs · Trip Plan: Daily stops and map · Budget: Spending breakdown · Weather: Forecasts at each stop" />
         </div>
       </div>
       
       {/* Progress bar for in-progress itineraries */}
-      {itinerary.status === 'in-progress' && totalCount > 0 && (
+      {['in-progress', 'in_progress'].includes(itinerary.status) && totalCount > 0 && (
         <div style={styles.progressBarWrap}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
             <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#374151' }}>Trip Progress</span>
@@ -682,23 +745,93 @@ const ItineraryDetail = () => {
         {activeTab === 'overview' && (
           <div style={styles.overviewContent} className="itin-overview">
             <div style={styles.mainColumn} className="itin-main-column">
-              <div style={styles.card} className="itin-panel">
-                <h2>At a glance</h2>
-                <p className="itin-plan-hint">Choose a day below to see its stops and route together in Trip Plan.</p>
-                <div className="itin-overview-days">
-                  {dayNumbers.slice(0, 6).map((day) => {
-                    const stops = itemsByDay[day] || EMPTY_STOPS;
-                    const cost = stops.reduce((sum, stop) => sum + (Number(stop.estimated_cost) || 0), 0);
-                    return <button key={day} type="button" className="itin-overview-day" onClick={() => { selectDay(day); setActiveTab('plan'); }}>
-                      <strong>Day {day} <span>· {stops.length} {stops.length === 1 ? 'stop' : 'stops'}</span></strong>
-                      <span>{stops.length ? stops.map((stop) => stop.custom_name || stop.attraction_name || 'Stop').slice(0, 2).join(' · ') + (stops.length > 2 ? ' …' : '') : 'No stops planned yet'}</span>
-                      <small>Attractions: ₱{cost.toFixed(2)} · View day →</small>
-                    </button>;
-                  })}
-                  {dayNumbers.length > 6 && <button type="button" className="itin-overview-day" onClick={() => setActiveTab('plan')}>Explore all {dayNumbers.length} days in Trip Plan →</button>}
+              {totalCount === 0 ? (
+                <div style={styles.card} className="itin-panel itin-empty">
+                  <Icons.MapIcon size={40} color="#9ca3af" />
+                  <h2>{L('no_stops_title', 'No stops planned yet')}</h2>
+                  <p>{L('no_stops_body', 'Add attractions, hotels and activities to build this trip. Your route, day-by-day timeline and cost estimate will appear here.')}</p>
+                  <button type="button" onClick={() => navigate('/itinerary', { state: { editItinerary: itinerary, itineraryId: id, globalTransportMode } })}>
+                    {L('add_stops', 'Add stops')}
+                  </button>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div style={styles.card} className="itin-panel">
+                    <h2>{L('route_preview', 'Route preview')}</h2>
+                    {overviewMarkers.length > 0 ? (
+                      <>
+                        <div className="itin-overview-map-canvas" role="region" aria-label="Trip route map">
+                          <LeafletMap
+                            center={[overviewMarkers[0].lat, overviewMarkers[0].lng]}
+                            focusKey="overview-route"
+                            zoom={12}
+                            markers={overviewMarkers}
+                            followUserLocation={false}
+                            routeDestinationMarker={false}
+                            autoRouteWaypoints={overviewWaypoints}
+                            style={{ width: '100%', height: '100%' }}
+                          />
+                        </div>
+                        <p className="itin-plan-hint">
+                          {overviewMarkers.length} mapped {overviewMarkers.length === 1 ? 'stop' : 'stops'} across {dayNumbers.length} {dayNumbers.length === 1 ? 'day' : 'days'}. Select a pin for details, or open Trip Plan for the full route.
+                        </p>
+                      </>
+                    ) : (
+                      <p className="itin-plan-hint">None of this trip's stops have mapped locations yet, so there is nothing to plot. Add coordinates in Trip Plan to preview the route here.</p>
+                    )}
+                  </div>
 
+                  <div style={styles.card} className="itin-panel">
+                    <h2>{L('day_timeline', 'Day-by-day timeline')}</h2>
+                    <p className="itin-plan-hint">Times, stops and estimated cost for every day. Open a day to adjust it in Trip Plan.</p>
+                    <div className="itin-overview-days">
+                      {dayNumbers.map((day) => {
+                        const stops = itemsByDay[day] || EMPTY_STOPS;
+                        const row = displayedBreakdown.find((entry) => entry.day === day);
+                        const dateLabel = dayDateLabel(itinerary.start_date, day);
+                        const costTitle = row
+                          ? `Attractions ₱${row.attractionCost.toFixed(2)} · Transport ₱${row.fareCost.toFixed(2)} · Food ₱${row.foodCost.toFixed(2)} · Other ₱${row.otherCost.toFixed(2)}`
+                          : '';
+                        return (
+                          <div key={day} className="itin-overview-day">
+                            <div className="itin-overview-day-head">
+                              <strong>Day {day}</strong>
+                              {dateLabel && <span className="itin-overview-day-date">{dateLabel}</span>}
+                              <span className="itin-overview-day-cost" title={costTitle}>Est. ₱{(row ? row.estimatedNeed : 0).toFixed(2)}</span>
+                            </div>
+                            <ul className="itin-overview-stops">
+                              {stops.map((stop, index) => {
+                                const minutes = Number(stop.duration_minutes || stop.estimated_duration) || 0;
+                                const cost = Number(stop.estimated_cost) || 0;
+                                const meta = [minutes > 0 ? `${minutes} min` : '', cost > 0 ? `₱${cost.toFixed(2)}` : ''].filter(Boolean).join(' · ');
+                                return (
+                                  <li key={stop.id ?? `day-${day}-stop-${index}`} className="itin-overview-stop">
+                                    {stop.attraction_image && <img className="itin-overview-stop-thumb" src={stop.attraction_image} alt="" loading="lazy" />}
+                                    <span className="itin-overview-stop-time">{stop.start_time ? String(stop.start_time).slice(0, 5) : '--:--'}</span>
+                                    <span className="itin-overview-stop-name">{stop.custom_name || stop.attraction_name || 'Unnamed stop'}</span>
+                                    <span className="itin-overview-stop-meta">{meta}</span>
+                                  </li>
+                                );
+                              })}
+                              {!stops.length && <li className="itin-overview-stop itin-overview-stop-empty">No stops planned for this day yet.</li>}
+                            </ul>
+                            <button type="button" className="itin-overview-day-cta" onClick={() => { selectDay(day); setActiveTab('plan'); }}>
+                              View Day {day} in Trip Plan →
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div style={styles.card} className="itin-panel itin-about">
+                    <h2>{L('about_this_trip', 'About this trip')}</h2>
+                    {itinerary.description
+                      ? <p className="itin-about-text">{itinerary.description}</p>
+                      : <p className="itin-about-empty">{L('no_description', 'No description yet. Add one when editing so travelers know what this trip is about.')}</p>}
+                  </div>
+                </>
+              )}
             </div>
             
             <div style={styles.sidebar} className="itin-sidebar">
@@ -740,36 +873,39 @@ const ItineraryDetail = () => {
               <div style={styles.card} className="itin-panel itin-summary-panel">
                 <div className="itin-summary-heading" style={{display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem'}}>
                   <Icons.ChartPieIcon size={18} color="#2e7d32" />
-                  <h3>{t('trip_summary')}</h3>
+                  <h3>{L('cost_snapshot', 'Cost snapshot')}</h3>
                 </div>
                 <div style={styles.summaryItem}>
-                  <span style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                    <Icons.CalendarIcon size={16} color="#666" />
-                    {t('duration')}
-                  </span>
-                  <strong>{itinerary.duration_days || Object.keys(itemsByDay).length} {(itinerary.duration_days || Object.keys(itemsByDay).length) === 1 ? t('day') : t('days')}</strong>
+                  <span>Attractions</span>
+                  <strong>₱{budgetTotals.attraction.toFixed(2)}</strong>
                 </div>
                 <div style={styles.summaryItem}>
-                  <span style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                    <Icons.LocationIcon size={16} color="#666" />
-                    Destinations
-                  </span>
-                  <strong>{(itinerary.items || []).length}</strong>
+                  <span>Transport</span>
+                  <strong>₱{budgetTotals.fare.toFixed(2)}</strong>
                 </div>
                 <div style={styles.summaryItem}>
-                  <span style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                    <Icons.MapIcon size={16} color="#666" />
-                    {t('distance')}
-                  </span>
-                  <strong>{itinerary.total_distance || 0} km</strong>
+                  <span>Food</span>
+                  <strong>₱{budgetTotals.food.toFixed(2)}</strong>
                 </div>
                 <div style={styles.summaryItem}>
-                  <span style={{display:'flex',alignItems:'center',gap:'8px'}}>
-                    <Icons.MoneyIcon size={16} color="#666" />
-                    {t('budget')}
-                  </span>
-                  <strong>₱{parseFloat(itinerary.total_budget || 0).toFixed(2)}</strong>
+                  <span>Other</span>
+                  <strong>₱{budgetTotals.other.toFixed(2)}</strong>
                 </div>
+                <div className="itin-summary-total">
+                  <span>Estimated total</span>
+                  <strong>₱{budgetTotals.need.toFixed(2)}</strong>
+                </div>
+                {spendingLimit === null ? (
+                  <div className="itin-summary-limit itin-summary-limit--none">No spending limit set yet — add one in Budget to track it here.</div>
+                ) : (
+                  <div className={`itin-summary-limit ${limitRemaining >= 0 ? 'itin-summary-limit--ok' : 'itin-summary-limit--over'}`}>
+                    {limitRemaining >= 0
+                      ? `₱${limitRemaining.toFixed(2)} left of your ₱${spendingLimit.toFixed(2)} spending limit`
+                      : `₱${Math.abs(limitRemaining).toFixed(2)} over your ₱${spendingLimit.toFixed(2)} spending limit`}
+                  </div>
+                )}
+                <button type="button" className="itin-summary-link" onClick={() => setActiveTab('budget')}>Open budget breakdown →</button>
+                <div className="itin-summary-note">Saved total is an estimate; actual spending may differ.</div>
               </div>
               
               {itinerary.collaborators && itinerary.collaborators.length > 0 && (
@@ -821,7 +957,7 @@ const ItineraryDetail = () => {
                     </button>
                     <div className="itin-plan-stop-footer">
                       {item.estimated_cost > 0 && <span>Est. ₱{Number(item.estimated_cost).toFixed(2)}</span>}
-                      {itinerary.status === 'in-progress' && <label><input type="checkbox" checked={!!item.completed} onChange={(e) => markItemComplete(item.id, e.target.checked)} /> Completed</label>}
+                      {['in-progress', 'in_progress'].includes(itinerary.status) && <label><input type="checkbox" checked={!!item.completed} onChange={(e) => markItemComplete(item.id, e.target.checked)} /> Completed</label>}
                       {coords && <button type="button" onClick={() => { setSelectedStopId(item.id); if (userLocation) { setMobilePlanView('map'); handleRouteToAttraction(item); } else getUserLocation(); }}>{userLocation ? 'Directions' : 'Enable GPS for directions'}</button>}
                     </div>
                     {item.notes && <p className="itin-plan-note">{item.notes}</p>}
