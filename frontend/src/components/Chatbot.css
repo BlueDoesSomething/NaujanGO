@@ -340,6 +340,8 @@
 }
 
 .chatbot-close-button svg {
+  width: 22px;
+  height: 22px;
   filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
 }
 
@@ -1700,7 +1702,7 @@
   .agent-toggle-label .agent-label { font-size: 8px; }
 
   .chatbot-close-button { width: 32px; height: 32px; min-width: 32px; }
-  .chatbot-close-button svg { width: 16px; height: 16px; }
+  .chatbot-close-button svg { width: 20px; height: 20px; }
 
   .quick-actions-grid { gap: 5px; }
   .chatbot-message { max-width: 90%; }
@@ -1757,7 +1759,7 @@
   }
 
   .chatbot-close-button { width: 34px; height: 34px; min-width: 34px; }
-  .chatbot-close-button svg { width: 18px; height: 18px; }
+  .chatbot-close-button svg { width: 20px; height: 20px; }
 
   .quick-actions-grid { gap: 6px; }
 
@@ -1810,7 +1812,7 @@
   }
 
   .chatbot-close-button { width: 34px; height: 34px; min-width: 34px; }
-  .chatbot-close-button svg { width: 18px; height: 18px; }
+  .chatbot-close-button svg { width: 20px; height: 20px; }
 }
 
 /* ===== Tablets (769px - 1024px) ===== */
@@ -1870,7 +1872,7 @@
   }
 
   .chatbot-close-button { width: 32px; height: 32px; min-width: 32px; }
-  .chatbot-close-button svg { width: 16px; height: 16px; }
+  .chatbot-close-button svg { width: 20px; height: 20px; }
 
   .chatbot-messages { gap: 10px; }
   .chatbot-message { max-width: 80%; }
