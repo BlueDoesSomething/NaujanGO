@@ -46,6 +46,15 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(routeStyleEl);
 }
 
+const DAY_ROUTE_COLORS = [
+  '#16a34a', // green
+  '#0891b2', // blue
+  '#7c3aed', // purple
+  '#d97706', // amber
+  '#db2777', // pink
+  '#10b981', // emerald
+];
+
 const LeafletMap = ({
   center,
   focusKey = null,
@@ -54,6 +63,7 @@ const LeafletMap = ({
   markers = [],
   routes = [],
   pois = [],
+  routeSegments = [],
   style,
   tileLayerUrl,
   onMarkerClick,
@@ -414,6 +424,108 @@ const LeafletMap = ({
     });
   }, [routes, onRouteClick]);
 
+  // Draw per-day route segments using the OSRM routing engine (real roads,
+  // never straight lines), with numbered sequence markers at each stop.
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+
+    // Clear any previously drawn day-segment routes and their number markers
+    routeLayersRef.current.forEach(layer => {
+      mapInstanceRef.current.removeLayer(layer);
+    });
+
+    if (!Array.isArray(routeSegments) || routeSegments.length === 0) return;
+
+    const drawSegment = async (segment, dayIndex) => {
+      const waypoints = segment.waypoints
+        ?.filter(p => p != null && Number.isFinite(Number(p.lat ?? p.latitude)) && Number.isFinite(Number(p.lng ?? p.longitude)))
+        .map(p => ({ lat: Number(p.lat ?? p.latitude), lng: Number(p.lng ?? p.longitude), name: p.name }))
+        .filter(Boolean);
+
+      if (!waypoints || waypoints.length < 2) return;
+
+      const color = DAY_ROUTE_COLORS[dayIndex % DAY_ROUTE_COLORS.length];
+      const coordinateString = waypoints.map(p => `${p.lng},${p.lat}`).join(';');
+
+      try {
+        const response = await fetch(
+          `https://router.project-osrm.org/route/v1/driving/${coordinateString}?overview=full&geometries=geojson&steps=true`
+        );
+        if (!response.ok) throw new Error(`Routing failed: ${response.status}`);
+        const data = await response.json();
+        const route = Array.isArray(data?.routes) && data.routes[0]
+          ? data.routes[0]
+          : null;
+        if (!route?.geometry?.coordinates?.length) throw new Error('No route geometry');
+
+        const latLngs = route.geometry.coordinates.map(([lng, lat]) => [lat, lng]);
+        const distanceKm = Number((route.distance / 1000).toFixed(2));
+        const durationMin = Math.max(1, Math.round(route.duration / 60));
+
+        // Casing for contrast
+        const casing = L.polyline(latLngs, {
+          color: '#ffffff',
+          weight: 7,
+          opacity: 1,
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(mapInstanceRef.current);
+        routeLayersRef.current.push(casing);
+
+        // Main colored route line
+        const polyline = L.polyline(latLngs, {
+          color,
+          weight: 5,
+          opacity: 0.9,
+          lineJoin: 'round',
+          lineCap: 'round'
+        }).addTo(mapInstanceRef.current);
+        routeLayersRef.current.push(polyline);
+
+        polyline.bindPopup(`
+          <div style="min-width: 200px;">
+            <strong>${segment.label || `Day ${dayIndex + 1}`}</strong><br/>
+            <small>Distance: ${distanceKm} km</small><br/>
+            <small>Duration: ≈ ${durationMin} min</small><br/>
+            <small>Stops: ${waypoints.length}</small>
+          </div>
+        `);
+
+        // Sequence number markers at each waypoint (stop locations)
+        waypoints.forEach((wp, idx) => {
+          const numMarker = L.circleMarker([wp.lat, wp.lng], {
+            radius: 9,
+            color: '#ffffff',
+            weight: 2,
+            fillColor: color,
+            fillOpacity: 1
+          }).addTo(mapInstanceRef.current);
+          routeLayersRef.current.push(numMarker);
+
+          const label = L.divIcon({
+            className: '',
+            html: `<div style="color:#ffffff;font-weight:800;font-size:10px;text-align:center;line-height:1.2;">${idx + 1}</div>`,
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+          });
+          const labelMarker = L.marker([wp.lat, wp.lng], { icon: label, interactive: false }).addTo(mapInstanceRef.current);
+          routeLayersRef.current.push(labelMarker);
+        });
+
+        return { dayIndex, distanceKm, durationMin, stops: waypoints.length };
+      } catch (error) {
+        console.error(`Error drawing route for ${segment.label || `Day ${dayIndex + 1}`}:`, error);
+        return null;
+      }
+    };
+
+    // Draw all segments concurrently
+    const promises = routeSegments.map((seg, i) => drawSegment(seg, i));
+    Promise.allSettled(promises).catch(() => {
+      // Individual errors are logged inside drawSegment
+    });
+  }, [routeSegments]);
+
   // Handle POIs
   useEffect(() => {
     if (!mapInstanceRef.current) return;
@@ -560,14 +672,6 @@ const LeafletMap = ({
       Math.sin(dLat / 2) ** 2 +
       Math.cos(toRad(from[0])) * Math.cos(toRad(to[0])) * Math.sin(dLng / 2) ** 2;
     return 2 * 6371000 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  };
-
-  const computeRouteDistanceKm = (latLngs) => {
-    let meters = 0;
-    for (let i = 1; i < latLngs.length; i++) {
-      meters += haversineMeters(latLngs[i - 1], latLngs[i]);
-    }
-    return Number((meters / 1000).toFixed(2));
   };
 
   const destIcon = L.divIcon({
@@ -755,45 +859,12 @@ const LeafletMap = ({
       if (currentRequestId !== routeRequestIdRef.current) return;
       console.error('Error drawing route:', error);
 
-      // Fallback: draw a direct line so the route is still visible, and report
-      // estimated stats so the banner always updates.
+      // No straight-line fallback: only real routing-engine geometry (road
+      // network) should ever be drawn. Clear the route instead of plotting a
+      // straight line between stops when routing fails.
       routeAlternativesRef.current = [];
-      const straightLine = normalizedWaypoints.map((point) => [point.lat, point.lng]);
-      const straightDistanceKm = computeRouteDistanceKm(straightLine);
-      const straightDurationMin = Math.max(1, Math.round((straightDistanceKm / 30) * 60));
-      const routeLayer = buildRouteLayer(straightLine, { color: '#1976d2', animated: false });
-      routePolylineRef.current = routeLayer.group;
-      routeLayer.group.addTo(mapInstanceRef.current);
-
-      routeLayer.main.bindPopup(`
-        <div style="min-width: 200px;">
-          <strong>${routeLabel}</strong><br/>
-          <small>Direct route (road map unavailable): ${straightDistanceKm} km</small><br/>
-          <small>Estimated duration: ≈ ${straightDurationMin} min</small>
-        </div>
-      `);
-
-      if (!keepView) {
-        mapInstanceRef.current.fitBounds(routeLayer.group.getBounds(), {
-          padding: [30, 30],
-          animate: true
-        });
-      }
-
-      if (onRoutingChange) {
-        onRoutingChange({
-          distance: straightDistanceKm,
-          duration: straightDurationMin,
-          destination: destinationWaypoint,
-          rerouting,
-          steps: [],
-          alternatives: [],
-          selectedIndex: 0,
-          isFallback: true
-        });
-      }
-
-      setRoutingActive(true);
+      clearRouting();
+      setRoutingActive(false);
     } finally {
       if (currentRequestId === routeRequestIdRef.current) {
         setRerouting(false);

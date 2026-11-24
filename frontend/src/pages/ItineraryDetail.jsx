@@ -19,6 +19,14 @@ import './ItineraryDetail.css';
 
 const API_BASE_URL = getApiBaseUrl();
 const EMPTY_STOPS = [];
+const DAY_ROUTE_COLORS = [
+  '#16a34a', // green
+  '#0891b2', // blue
+  '#7c3aed', // purple
+  '#d97706', // amber
+  '#db2777', // pink
+  '#10b981', // emerald
+];
 const dateRangeDays = (start, end) => {
   if (!start || !end) return 0;
   const startMs = Date.parse(`${String(start).slice(0, 10)}T00:00:00Z`);
@@ -585,6 +593,30 @@ const ItineraryDetail = () => {
     [overviewMarkers]
   );
 
+  // Per-day route segments for the overview map: one real road route per day,
+  // colored differently, with sequence numbers at each stop.
+  const dayRouteSegments = useMemo(() => {
+    const segments = [];
+    dayNumbers.forEach((day, dayIndex) => {
+      const stops = itemsByDay[day] || EMPTY_STOPS;
+      const waypoints = stops
+        .map((item) => {
+          const coords = stopCoordinates(item);
+          if (!coords) return null;
+          return { ...coords, name: item.custom_name || item.attraction_name || 'Unnamed stop' };
+        })
+        .filter(Boolean);
+      if (waypoints.length >= 2) {
+        segments.push({
+          waypoints,
+          label: `Day ${day}`,
+          color: DAY_ROUTE_COLORS[dayIndex % DAY_ROUTE_COLORS.length]
+        });
+      }
+    });
+    return segments;
+  }, [itemsByDay, dayNumbers]);
+
   // Cost snapshot: breakdown totals shared with the Budget tab (estimates only).
   const budgetTotals = useMemo(() => displayedBreakdown.reduce((totals, row) => ({
     attraction: totals.attraction + row.attractionCost,
@@ -769,6 +801,7 @@ const ItineraryDetail = () => {
                             followUserLocation={false}
                             routeDestinationMarker={false}
                             autoRouteWaypoints={overviewWaypoints}
+                            routeSegments={dayRouteSegments}
                             style={{ width: '100%', height: '100%' }}
                           />
                         </div>
@@ -973,7 +1006,7 @@ const ItineraryDetail = () => {
                 {gpsError && <p className="itin-plan-error" role="alert">{gpsError}</p>}
                 {(allMarkers.length > 1 || navTarget) && <div className="itin-plan-route-summary" role="status">
                   <strong>{navTarget ? `Directions to ${navTarget.name}` : `Day ${selectedDay} route`}</strong>
-                  <span>{routeInfo ? routeInfo.isFallback ? `Straight-line preview · ${routeInfo.distance} km (not a road travel estimate)` : `Road route · ${routeInfo.distance} km · about ${routeInfo.duration} min` : 'Connecting mapped stops in schedule order…'}</span>
+                  <span>{routeInfo ? `Road route · ${routeInfo.distance} km · about ${routeInfo.duration} min` : 'Connecting mapped stops in schedule order…'}</span>
                   {navTarget && <button type="button" onClick={() => { setNavTarget(null); setRouteInfo(null); }}>Show day route</button>}
                 </div>}
                 {allMarkers.length === 1 && !navTarget && <p className="itin-plan-hint">One mapped stop on this day. A route appears when two or more stops have coordinates.</p>}
@@ -1008,7 +1041,7 @@ const ItineraryDetail = () => {
                   </div>
                   {!userLocation && stopCoordinates(selectedStop) && <small>Enable GPS above to get directions from your location.</small>}
                 </div>}
-                <p className="itin-plan-hint">Travel estimates depend on available road data. Straight-line previews are not driving directions.</p>
+                <p className="itin-plan-hint">Routes follow real roads using OpenStreetMap data. Travel estimates are approximate.</p>
               </div>}
             </div>
           </div>

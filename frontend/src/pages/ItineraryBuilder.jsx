@@ -151,7 +151,15 @@ const ItineraryBuilder = () => {
     motorcycle:{ label: '🏍️ Motorcycle', base: 8,   perKm: 1.50 },
     car:       { label: '🚗 Private Car', base: 0,   perKm: 7.00 },
   };
-  const DEFAULT_FOOD = 300;
+  const DAY_ROUTE_COLORS = [
+  '#16a34a', // green
+  '#0891b2', // blue
+  '#7c3aed', // purple
+  '#d97706', // amber
+  '#db2777', // pink
+  '#10b981', // emerald
+];
+const DEFAULT_FOOD = 300;
   const DEFAULT_OTHER = 100;
   const [foodPerDay, setFoodPerDay] = useState({});
   const [otherPerDay, setOtherPerDay] = useState({});
@@ -697,6 +705,35 @@ const ItineraryBuilder = () => {
     }
     return destinationPoints;
   }, [allPlannedItems, userLocation]);
+
+  // Per-day route segments for the builder map: one real road route per day,
+  // colored differently, with sequence numbers at each stop.
+  const dayRouteSegments = useMemo(() => {
+    const segments = [];
+    const sortedDays = Object.keys(itemsByDay)
+      .map((day) => parseInt(day, 10))
+      .filter((day) => Number.isFinite(day))
+      .sort((a, b) => a - b);
+    sortedDays.forEach((day, dayIndex) => {
+      const stops = itemsByDay[day] || [];
+      const waypoints = stops
+        .map((item) => {
+          const lat = parseFloat(item.latitude);
+          const lng = parseFloat(item.longitude);
+          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+          return { lat, lng, name: item.custom_name || item.name || 'Unnamed stop' };
+        })
+        .filter(Boolean);
+      if (waypoints.length >= 2) {
+        segments.push({
+          waypoints,
+          label: `Day ${day}`,
+          color: DAY_ROUTE_COLORS[dayIndex % DAY_ROUTE_COLORS.length]
+        });
+      }
+    });
+    return segments;
+  }, [itemsByDay]);
 
   const mapCenter = useMemo(() => {
     if (mapMarkers.length === 0) {
@@ -1820,6 +1857,7 @@ const ItineraryBuilder = () => {
                 zoom={12}
                 markers={mapMarkers}
                 autoRouteWaypoints={mapRouteWaypoints}
+                routeSegments={dayRouteSegments}
                 userLocation={userLocation}
                 style={{ height: '480px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.6)', boxShadow: '0 18px 44px rgba(15, 23, 42, 0.12)' }}
                 onRoutingChange={setRouteInfo}
