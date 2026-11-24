@@ -1700,6 +1700,7 @@
   .agent-toggle-label .agent-label { font-size: 8px; }
 
   .chatbot-close-button { width: 32px; height: 32px; min-width: 32px; }
+  .chatbot-close-button svg { width: 16px; height: 16px; }
 
   .quick-actions-grid { gap: 5px; }
   .chatbot-message { max-width: 90%; }
@@ -1756,6 +1757,7 @@
   }
 
   .chatbot-close-button { width: 34px; height: 34px; min-width: 34px; }
+  .chatbot-close-button svg { width: 18px; height: 18px; }
 
   .quick-actions-grid { gap: 6px; }
 
@@ -1808,6 +1810,7 @@
   }
 
   .chatbot-close-button { width: 34px; height: 34px; min-width: 34px; }
+  .chatbot-close-button svg { width: 18px; height: 18px; }
 }
 
 /* ===== Tablets (769px - 1024px) ===== */
@@ -1867,6 +1870,7 @@
   }
 
   .chatbot-close-button { width: 32px; height: 32px; min-width: 32px; }
+  .chatbot-close-button svg { width: 16px; height: 16px; }
 
   .chatbot-messages { gap: 10px; }
   .chatbot-message { max-width: 80%; }
