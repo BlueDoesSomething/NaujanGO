@@ -43,9 +43,9 @@ const THEME = {
 };
 
 export const MINUTES_BY_TIME_OF_DAY = {
-  morning: 120,
-  afternoon: 120,
-  evening: 120,
+  morning: 120,   // 2 hours
+  afternoon: 240, // 4 hours
+  evening: 360,   // 6 hours
 };
 
 export const timeOfDayForMinutes = (minutes) => {
